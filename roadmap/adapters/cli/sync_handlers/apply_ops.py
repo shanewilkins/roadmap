@@ -30,7 +30,6 @@ def perform_apply_phase(
         dry_run=False,
         force_local=force_local,
         force_remote=force_remote,
-        show_progress=True,
         push_only=push,
         pull_only=pull,
     )
@@ -95,13 +94,7 @@ def confirm_and_apply(
     pull: bool,
     verbose: bool,
 ) -> Any | None:
-    """Ask for confirmation and run the apply phase if confirmed."""
-    from roadmap.adapters.cli.sync_presenter import confirm_apply
-
-    if not confirm_apply():
-        console_inst.print("Aborting sync (user cancelled)")
-        return None
-
+    """Run the apply phase without confirmation."""
     report = perform_apply_phase(
         core,
         orchestrator,
@@ -163,19 +156,6 @@ def run_analysis_phase(
         )
 
         progress.update(task, description="Analysis complete")
-
-    console_inst.print("\n[bold cyan]📈 Sync Analysis[/bold cyan]")
-    console_inst.print(f"   ✓ Up-to-date: {analysis_report.issues_up_to_date}")
-    if push:
-        console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
-    elif pull:
-        console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
-    else:
-        console_inst.print(f"   📤 Needs Push: {analysis_report.issues_needs_push}")
-        console_inst.print(f"   📥 Needs Pull: {analysis_report.issues_needs_pull}")
-    console_inst.print(
-        f"   ✓ Potential Conflicts: {analysis_report.conflicts_detected}"
-    )
 
     present_analysis(analysis_report, verbose=verbose)
 

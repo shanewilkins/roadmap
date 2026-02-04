@@ -78,6 +78,11 @@ class GitHubClient(BaseGitHubHandler):
         # Initialize label handler
         self._label_handler = LabelHandler(self.session, owner, repo)
 
+        # Initialize issue handler
+        from roadmap.adapters.github.handlers.issues import IssueHandler
+
+        self._issue_handler = IssueHandler(self.session, owner, repo)
+
     def _get_token_secure(self) -> str | None:
         """Get token from secure sources (environment variable or credential manager)."""
         # First try environment variable
@@ -180,6 +185,36 @@ class GitHubClient(BaseGitHubHandler):
         self._label_handler.owner = self.owner
         self._label_handler.repo = self.repo
         self._label_handler.setup_default_labels()
+
+    def get_issues(
+        self,
+        state: str = "all",
+        labels: list[str] | None = None,
+        milestone: str | None = None,
+        assignee: str | None = None,
+        per_page: int = 100,
+    ) -> list[dict[str, Any]]:
+        """Get issues from the repository.
+
+        Args:
+            state: Issue state ('open', 'closed', 'all')
+            labels: Optional list of label names to filter by
+            milestone: Optional milestone title to filter by
+            assignee: Optional assignee username to filter by
+            per_page: Number of issues per page (max 100)
+
+        Returns:
+            List of issue dictionaries
+        """
+        self._issue_handler.owner = self.owner
+        self._issue_handler.repo = self.repo
+        return self._issue_handler.get_issues(
+            state=state,
+            labels=labels,
+            milestone=milestone,
+            assignee=assignee,
+            per_page=per_page,
+        )
 
     def fetch_issue(self, issue_number: int) -> dict[str, Any]:
         """Fetch a GitHub issue by number.

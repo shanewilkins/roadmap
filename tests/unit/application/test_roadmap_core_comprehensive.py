@@ -28,7 +28,13 @@ class TestRoadmapCore:
     @pytest.fixture
     def core(self, temp_dir):
         """Create RoadmapCore instance for testing."""
-        return RoadmapCore(temp_dir)
+        instance = RoadmapCore(temp_dir)
+        yield instance
+        try:
+            if hasattr(instance, "db") and hasattr(instance.db, "close"):
+                instance.db.close()
+        except Exception:
+            pass
 
     def test_initialization(self, temp_dir):
         """Test core initialization."""
@@ -428,9 +434,14 @@ class TestCoreEdgeCases:
     @pytest.fixture
     def initialized_core(self, temp_dir):
         """Create an initialized roadmap core."""
-        core = RoadmapCore(temp_dir)
-        core.initialize()
-        return core
+        instance = RoadmapCore(temp_dir)
+        instance.initialize()
+        yield instance
+        try:
+            if hasattr(instance, "db") and hasattr(instance.db, "close"):
+                instance.db.close()
+        except Exception:
+            pass
 
     def test_list_issues_with_malformed_files(self, initialized_core):
         """Test listing issues when some files are malformed."""
@@ -486,14 +497,19 @@ class TestCoreEdgeCases:
 
 
 class TestRoadmapCoreUncoveredLines:
-    """Test specific uncovered lines and edge cases - coverage targeting."""
+    """Test complex filtering with multiple criteria and edge cases."""
 
     @pytest.fixture
     def core(self, temp_dir):
         """Create and initialize RoadmapCore for testing."""
-        core = RoadmapCore(temp_dir)
-        core.initialize()
-        return core
+        instance = RoadmapCore(temp_dir)
+        instance.initialize()
+        yield instance
+        try:
+            if hasattr(instance, "db") and hasattr(instance.db, "close"):
+                instance.db.close()
+        except Exception:
+            pass
 
     def test_list_issues_with_multiple_filters(self, core):
         """Test list_issues with multiple filter combinations to hit duplicate filter lines."""

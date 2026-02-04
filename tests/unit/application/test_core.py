@@ -15,7 +15,13 @@ class TestRoadmapCore:
     @pytest.fixture
     def core(self, temp_dir):
         """Create RoadmapCore instance for testing."""
-        return RoadmapCore(temp_dir)
+        instance = RoadmapCore(temp_dir)
+        yield instance
+        try:
+            if hasattr(instance, "db") and hasattr(instance.db, "close"):
+                instance.db.close()
+        except Exception:
+            pass
 
     def test_initialization(self, temp_dir):
         """Test core initialization."""

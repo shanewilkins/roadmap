@@ -49,9 +49,19 @@ class GitHubIssueFetchService:
             return {}
 
         try:
-            logger.debug("github_fetching_issues", owner=owner, repo=repo)
-            issues_data = self.github_client.get_issues(owner, repo, state="all") or []
-            logger.info("github_issues_fetched", count=len(issues_data))
+            logger.debug(
+                "github_issue_fetch_start",
+                owner=owner,
+                repo=repo,
+            )
+            issues_data = self.github_client.get_issues(owner, repo, state="all")
+
+            logger.info(
+                "github_issues_fetched",
+                owner=owner,
+                repo=repo,
+                count=len(issues_data),
+            )
 
             # Convert each GitHub issue to SyncIssue
             result = {}
@@ -63,7 +73,11 @@ class GitHubIssueFetchService:
                     result[remote_id] = sync_issue
                 except Exception as e:
                     failed_conversions += 1
-                    issue_number = issue_dict.get("number")
+                    issue_number = (
+                        issue_dict.get("number")
+                        if isinstance(issue_dict, dict)
+                        else "unknown"
+                    )
                     log_error_with_context(
                         e,
                         operation="convert_github_issue_to_sync",
@@ -79,6 +93,8 @@ class GitHubIssueFetchService:
             if failed_conversions > 0:
                 logger.warning(
                     "github_issue_conversions_failed",
+                    owner=owner,
+                    repo=repo,
                     total=len(issues_data),
                     failed=failed_conversions,
                     successful=len(result),
@@ -106,16 +122,34 @@ class GitHubIssueFetchService:
         Returns:
             SyncIssue with normalized data
         """
+        if not issue_dict:
+            raise ValueError("Cannot convert None/empty issue dict to SyncIssue")
+
         backend_id = issue_dict.get("number")
+        assignee_obj = issue_dict.get("assignee") or {}
+        milestone_obj = issue_dict.get("milestone") or {}
+
+        # Extract label names from label objects
+        labels_raw = issue_dict.get("labels", [])
+        label_names = []
+        if isinstance(labels_raw, list):
+            for label in labels_raw:
+                if isinstance(label, dict) and "name" in label:
+                    label_names.append(label["name"])
+                elif isinstance(label, str):
+                    label_names.append(label)
+
         return SyncIssue(
             id=f"github-{backend_id}" if backend_id else "unknown",
             title=issue_dict.get("title") or "Untitled",
             headline=issue_dict.get("body") or "",
             status="open" if issue_dict.get("state") == "open" else "closed",
-            labels=issue_dict.get("labels", []),
-            assignee=issue_dict.get("assignee", {}).get("login"),
-            milestone=issue_dict.get("milestone", {}).get("title")
-            if issue_dict.get("milestone")
+            labels=label_names,
+            assignee=assignee_obj.get("login")
+            if isinstance(assignee_obj, dict)
+            else None,
+            milestone=milestone_obj.get("title")
+            if isinstance(milestone_obj, dict)
             else None,
             backend_id=backend_id,
         )

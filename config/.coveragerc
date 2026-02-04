@@ -1,0 +1,24 @@
+[run]
+# Omit configuration files and stubs from coverage
+omit = [
+    "*/settings.py",           # Configuration constants, not logic
+    "*/version.py",            # Version metadata, not logic
+    "*/adapters/cli/init.py",  # Stub module
+    "*/adapters/cli/sync_context.py",  # Integration scaffolding
+    "*/adapters/cli/sync_service.py",  # Thin wrapper, tested elsewhere
+]
+
+[report]
+# Set minimum coverage requirement for reporting
+fail_under = 77
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "@abstractmethod",
+    "@abc.abstractmethod",
+]

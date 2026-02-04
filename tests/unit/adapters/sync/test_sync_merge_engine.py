@@ -223,11 +223,11 @@ class TestSyncMergeEngine:
         (
             changes,
             conflicts,
-            local_only,
-            remote_only,
+            _local_only,
+            _remote_only,
             no_changes,
-            updates,
-            pulls,
+            _updates,
+            _pulls,
             up_to_date,
         ) = result
         assert changes == [change]
@@ -527,87 +527,6 @@ class TestSyncMergeEngine:
 
         assert result_report.error == "Execution failed"
 
-    def test_push_updates_single_issue_success(self, engine):
-        """Test _push_updates with single issue push."""
-        issue = MagicMock()
-        issue.id = "1"
-        issue.title = "Test"
-        report = SyncReport()
-
-        engine.backend.push_issue.return_value = True
-        engine.state_manager.save_base_state.return_value = None
-
-        pushed_count, errors = engine._push_updates([issue], report)
-
-        assert pushed_count == 1
-        assert errors == []
-        engine.backend.push_issue.assert_called_once_with(issue)
-
-    def test_push_updates_batch_issues_success(self, engine):
-        """Test _push_updates with batch of issues."""
-        issue1 = MagicMock()
-        issue1.id = "1"
-        issue2 = MagicMock()
-        issue2.id = "2"
-        report = SyncReport()
-
-        push_report = MagicMock()
-        push_report.errors = None
-        engine.backend.push_issues.return_value = push_report
-        engine.state_manager.save_base_state.return_value = None
-
-        pushed_count, errors = engine._push_updates([issue1, issue2], report)
-
-        assert pushed_count == 2
-        assert errors == []
-
-    def test_push_updates_with_errors(self, engine):
-        """Test _push_updates when batch push fails."""
-        issue1 = MagicMock()
-        issue1.id = "1"
-        issue2 = MagicMock()
-        issue2.id = "2"
-        report = SyncReport()
-
-        push_report = MagicMock()
-        push_report.errors = {"1": "Push failed"}
-        engine.backend.push_issues.return_value = push_report
-
-        with patch("roadmap.adapters.sync.sync_merge_engine.logger"):
-            pushed_count, errors = engine._push_updates([issue1, issue2], report)
-
-        assert pushed_count == 0
-        assert "1" in errors
-
-    def test_pull_updates_success(self, engine):
-        """Test _pull_updates successful pull."""
-        with patch(
-            "roadmap.adapters.sync.sync_merge_engine.RemoteFetcher"
-        ) as mock_fetcher:
-            mock_fetcher.fetch_issues.return_value = {"123": {}}
-            engine._process_fetched_pull_result = MagicMock(
-                return_value=(1, [], ["123"])
-            )
-
-            pulled_count, errors = engine._pull_updates(["remote-1"])
-
-        assert pulled_count == 1
-        assert errors == []
-
-    def test_pull_updates_error(self, engine):
-        """Test _pull_updates with fetch error."""
-        with patch(
-            "roadmap.adapters.sync.sync_merge_engine.RemoteFetcher"
-        ) as mock_fetcher:
-            mock_fetcher.fetch_issues.side_effect = RuntimeError("Fetch failed")
-
-            with patch("roadmap.adapters.sync.sync_merge_engine.logger"):
-                pulled_count, errors = engine._pull_updates(["remote-1"])
-
-        assert pulled_count == 0
-
-    def test_match_and_link_no_remote_issues(self, engine):
-        """Test _match_and_link_remote_issues with no remote issues."""
         result = engine._match_and_link_remote_issues({}, {})
 
         assert result == {
@@ -629,41 +548,3 @@ class TestSyncMergeEngine:
 
 class TestSyncMergeEngineIntegration:
     """Integration tests for SyncMergeEngine."""
-
-    def test_push_pull_round_trip(self):
-        """Test push and pull operations in sequence."""
-        mock_core = MagicMock()
-        mock_backend = MagicMock()
-        mock_comparator = MagicMock(spec=SyncStateComparator)
-        mock_resolver = MagicMock(spec=SyncConflictResolver)
-        mock_state_manager = MagicMock(spec=SyncStateManager)
-
-        engine = SyncMergeEngine(
-            core=mock_core,
-            backend=mock_backend,
-            state_comparator=mock_comparator,
-            conflict_resolver=mock_resolver,
-            state_manager=mock_state_manager,
-        )
-
-        # Setup for push
-        issue_to_push = MagicMock()
-        issue_to_push.id = "1"
-        mock_backend.push_issue.return_value = True
-
-        pushed, push_errors = engine._push_updates([issue_to_push], SyncReport())
-        assert pushed == 1
-        assert push_errors == []
-
-        # Setup for pull
-        with patch(
-            "roadmap.adapters.sync.sync_merge_engine.RemoteFetcher"
-        ) as mock_fetcher:
-            mock_fetcher.fetch_issues.return_value = {"remote-1": {}}
-            engine._process_fetched_pull_result = MagicMock(
-                return_value=(1, [], ["remote-1"])
-            )
-            pulled, pull_errors = engine._pull_updates(["remote-1"])
-
-        assert pulled == 1
-        assert pull_errors == []

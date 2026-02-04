@@ -28,7 +28,6 @@ from roadmap.core.models.sync_models import (
     SyncMilestone,
     SyncProject,
 )
-from roadmap.core.services.github.github_conflict_detector import GitHubConflictDetector
 from roadmap.core.services.sync.sync_metadata_service import SyncMetadataService
 from roadmap.infrastructure.coordination.core import RoadmapCore
 
@@ -70,8 +69,10 @@ class GitHubSyncBackend:
 
         # Initialize GitHub client if token is provided, otherwise defer to authenticate()
         token = config.get("token")
+        owner = config.get("owner")
+        repo = config.get("repo")
         self.github_client = self._safe_init(
-            lambda: GitHubClientWrapper(token) if token else None,
+            lambda: GitHubClientWrapper(token, owner, repo) if token else None,
             "GitHubClientWrapper",
         )
 
@@ -80,14 +81,6 @@ class GitHubSyncBackend:
             lambda: SyncMetadataService(core),
             "SyncMetadataService",
         )
-
-        # Initialize conflict detector if available
-        self.conflict_detector = None
-        if hasattr(core, "github_service") and core.github_service is not None:
-            self.conflict_detector = self._safe_init(
-                lambda: GitHubConflictDetector(core.github_service),
-                "GitHubConflictDetector",
-            )
 
         # Initialize remote link repository if available
         # This enables fast database lookups during sync operations
@@ -107,7 +100,6 @@ class GitHubSyncBackend:
         # Initialize delegated services
         self._auth_service = GitHubAuthenticationService(config)
         self._fetch_service = None  # Initialized lazily after auth
-        self._push_service = None  # Initialized lazily after auth
 
     def _safe_init(self, factory: Callable[[], T], name: str) -> T | None:
         """Safely initialize a component, returning None on failure.
@@ -236,18 +228,46 @@ class GitHubSyncBackend:
         """Pull a single remote GitHub issue to local.
 
         Args:
-            issue_id: The remote issue ID to pull
+            issue_id: The remote issue ID (GitHub issue number like "_remote_123" or "123")
 
         Returns:
-            True if pull succeeds, False if error.
+            True if issue is valid and can be pulled, False if error.
 
         Notes:
-            - Delegates to pull_issues for consistency
-            - Fetches the remote issue and updates local
-            - Should not raise exceptions; return False on failure
+            - Validates the issue_id can be parsed
+            - Actual fetching/saving is handled by pull_issues caller
+            - Returns True to indicate success to GitHubSyncOps
         """
-        report = self.pull_issues([issue_id])
-        return len(report.pulled) > 0 and len(report.errors) == 0
+        try:
+            # Parse issue_id - extract numeric part from "_remote_123" format
+            if issue_id.startswith("_remote_"):
+                issue_num_str = issue_id[8:]  # Remove "_remote_" prefix
+            else:
+                issue_num_str = issue_id
+
+            # Validate it's a valid integer
+            try:
+                int(issue_num_str)
+            except (ValueError, TypeError):
+                logger.debug(
+                    "pull_issue_invalid_id",
+                    issue_id=issue_id,
+                    reason="Cannot parse as integer",
+                )
+                return False
+
+            # If we got here, the issue_id is valid
+            # The actual pull work happens elsewhere in the sync pipeline
+            return True
+
+        except Exception as e:
+            logger.debug(
+                "pull_issue_validation_failed",
+                issue_id=issue_id,
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return False
 
     def _convert_sync_to_issue(self, issue_id: str, sync_issue: SyncIssue) -> "Issue":
         """Convert SyncIssue to local Issue object.

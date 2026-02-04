@@ -106,145 +106,77 @@ roadmap = "roadmap.adapters.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["roadmap"]
 
-[tool.ruff]
-line-length = 88
-target-version = "py312"
-exclude = [
-    "roadmap/cli_backup_original.py",
-]
-
-[tool.ruff.lint]
-select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
-]
-ignore = [
-    "E501",  # line too long, handled by formatter
-    "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
-]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-
-# Security configuration for Bandit
-[tool.bandit]
-exclude_dirs = ["tests"]
-# Skip assert_used: we use asserts in tests (B101)
-# Skip try_except_pass: intentional in cleanup/cleanup handlers (B110)
-skips = ["B101", "B110"]
+# Tool configurations have been moved to config/ directory:
+# - ruff.toml: Linting and formatting rules
+# - bandit.toml: Security scanning configuration
+# - .coveragerc: Test coverage thresholds and exclusions
+# - import-linter.ini: Architecture boundary enforcement
+# - pyrightconfig.json: Type checking configuration
+# - .vultureignore: Dead code detection whitelist
 
 # Dead code detection configuration for Vulture
 [tool.vulture]
-ignore_names = ["include_traceback", "filters", "log_level", "log_file", "force"]
-min_confidence = 80
+ignore_names = [
+    # Function parameters (public API)
+    "include_traceback", "filters", "log_level", "log_file", "force",
+    # Protocol/Interface methods (contract definitions)
+    "authenticate", "get_backend_name", "get_issues", "push_issues", "push_issue",
+    "pull_issues", "pull_issue", "get_conflict_resolution_options", "resolve_conflict",
+    "get_milestones", "get_projects", "create_backend", "list_supported_backends",
+    "get_default_backend", "validate_credentials", "parse_issue_content",
+    "parse_milestone_content", "parse_project_content", "list_files_in_directory",
+    "bulk_update", "find_by_milestone", "find_by_status", "get_current", "get_status",
+    "save_sync_state", "clear_sync_state", "get_last_sync_time", "update_last_sync_time",
+    "link_issues", "unlink_issue", "get_linked_remote_id", "get_linked_local_id",
+    "cache_remote_issue", "get_cached_remote_issue", "invalidate_cache", "is_cache_fresh",
+    "delete_token", "is_available",
+    # Interface attributes & parameters
+    "conflicts", "error", "local_issues", "issue_ids", "conflict", "resolution",
+    # Backends implementing SyncBackendInterface (polymorphic)
+    "SyncBackendInterface", "GitHubSyncBackend", "VanillaGitSyncBackend",
+    # Click command handlers (decorator-registered)
+    "main", "cli", "setup_git", "hooks_status", "sync_git", "git_status", "git_link",
+    "sync", "validate_links", "view", "get_cmd", "set_cmd", "generate_report",
+    "edit_comment", "delete_comment", "add_dependency", "handle_archive_parse_error",
+    "handle_restore_parse_error", "confirm_action", "check_entity_exists",
+    # CLI helper functions
+    "_detect_project_context", "_validate_branch_environment", "_get_and_validate_issue",
+    "_show_baseline", "_reset_baseline", "_capture_and_save_post_sync_baseline",
+    "_perform_apply_phase", "_clear_baseline", "_show_conflicts", "_handle_link_unlink",
+    # CLI decorator factories
+    "add_output_flags", "health_check_options",
+    # Exception/error handlers
+    "with_exception_handler", "setup_cli_exception_handling", "handle_exception",
+    # Provider/factory functions
+    "get_settings", "get_database_path", "get_log_directory", "is_github_enabled",
+    "get_export_settings", "switch_environment", "create_output_manager",
+    # Test patterns
+    "Test",
+]
+min_confidence = 60  # Lowered from 80 to catch more dead code
 
 # Type checking is now handled by Pyright
 # Configuration is in pyrightconfig.json
-# Pyright provides superior type inference and VSCode integration
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = """
-    --cov=roadmap
-    --cov-report=term-missing
-    --cov-report=html
-    --strict-markers
-    --strict-config
-    --disable-warnings
-    -ra
-"""
+addopts = "--tb=short --strict-markers -n auto --maxfail=3 --strict-config --cov=roadmap --cov-report=term-missing --cov-report=html --disable-warnings -ra"
 markers = [
     "unit: Unit tests (fast, no filesystem operations)",
     "integration: Integration tests (slower, with filesystem operations)",
     "filesystem: Tests that require real filesystem operations",
-    "slow: Tests that are known to be slow",
-    "parallel: Tests that can run in parallel"
+    "slow: Slow tests that may be skipped in CI",
+    "performance: Performance-focused tests",
+    "mock_scanning: Tests with mocked repository scanning operations",
+    "no_xdist: Tests that should not run in parallel (disables xdist parallelization)"
 ]
 filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning"
+    "ignore::DeprecationWarning:pydantic.*",
+    "ignore::UserWarning:pydantic.*",
+    "ignore::DeprecationWarning:dynaconf.*"
 ]
 
-# Coverage configuration - exclude non-logic files
-[tool.coverage.run]
-# Omit configuration files and stubs from coverage
-omit = [
-    "*/settings.py",           # Configuration constants, not logic
-    "*/version.py",            # Version metadata, not logic
-    "*/adapters/cli/init.py",  # Stub module
-    "*/adapters/cli/sync_context.py",  # Integration scaffolding
-    "*/adapters/cli/sync_service.py",  # Thin wrapper, tested elsewhere
-]
-
-[tool.coverage.report]
-# Set minimum coverage requirement for reporting
-fail_under = 77
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
-    "if typing.TYPE_CHECKING:",
-    "@abstractmethod",
-    "@abc.abstractmethod",
-]
-
-# Import linter - enforce architectural layer boundaries
-[tool.import_linter]
-root_package = "roadmap"
-
-[[tool.import_linter.contracts]]
-# Core should not import adapters
-type = "forbidden"
-source_module = "roadmap.core"
-forbidden_modules = [
-    "roadmap.adapters"
-]
-
-[[tool.import_linter.contracts]]
-# Common should not import core or adapters
-type = "forbidden"
-source_module = "roadmap.common"
-forbidden_modules = [
-    "roadmap.core",
-    "roadmap.adapters"
-]
-
-[[tool.import_linter.contracts]]
-# Infrastructure should not import adapters (they coordinate, not integrate)
-type = "forbidden"
-source_module = "roadmap.infrastructure"
-forbidden_modules = [
-    "roadmap.adapters"
-]
-
-[[tool.import_linter.contracts]]
-# Adapters can import core, common, infrastructure but not other adapters from different domains
-# (GitHub adapter shouldn't import git adapter internals, etc.)
-type = "forbidden"
-source_module = "roadmap.adapters.sync"
-forbidden_modules = [
-    "roadmap.adapters.persistence",
-    "roadmap.adapters.github"
-]
-
-[[tool.import_linter.contracts]]
-type = "forbidden"
-source_module = "roadmap.adapters.persistence"
-forbidden_modules = [
-    "roadmap.adapters.sync",
-    "roadmap.adapters.github"
-]
+# Coverage configuration moved to config/.coveragerc
+# Import linter configuration moved to config/import-linter.ini

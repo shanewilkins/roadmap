@@ -21,11 +21,15 @@ class GitHubClientWrapper:
     stub behaviours.
     """
 
-    def __init__(self, token: str | None):
+    def __init__(
+        self, token: str | None, owner: str | None = None, repo: str | None = None
+    ):
         """Initialize GitHubClientWrapper.
 
         Args:
             token: GitHub API token.
+            owner: Repository owner (username or organization).
+            repo: Repository name.
         """
         self._client = None
         if token:
@@ -36,6 +40,9 @@ class GitHubClientWrapper:
                 )
 
                 self._client = GitHubIssueClient(token)
+                # Store owner and repo for later use if needed
+                self._owner = owner
+                self._repo = repo
             except Exception as e:
                 logger.warning(
                     "github_client_init_failed",
@@ -45,7 +52,40 @@ class GitHubClientWrapper:
                 )
 
     def __getattr__(self, item: str) -> Any:
-        """Get attribute from wrapped GitHub client."""
+        """Get attribute from wrapped GitHub client.
+
+        Lazy-initializes client on first method access if not already initialized.
+        """
+        # Lazy initialization: if client is None, try to initialize it now
+        if self._client is None:
+            try:
+                # Try to get token from environment or credential manager
+                import os
+
+                token = os.getenv("GITHUB_TOKEN")
+
+                if not token:
+                    from roadmap.infrastructure.security.credentials import (
+                        CredentialManager,
+                    )
+
+                    cred_manager = CredentialManager()  # type: ignore[call-arg]
+                    token = cred_manager.get_token()
+
+                if token:
+                    from roadmap.core.services.github.github_issue_client import (
+                        GitHubIssueClient,
+                    )
+
+                    self._client = GitHubIssueClient(token)
+                    logger.debug("github_client_lazy_initialized")
+            except Exception as e:
+                logger.debug(
+                    "github_client_lazy_init_failed",
+                    error=str(e),
+                    error_type=type(e).__name__,
+                )
+
         if self._client is None:
             raise AttributeError(f"GitHub client not initialized, no attribute {item}")
         return getattr(self._client, item)

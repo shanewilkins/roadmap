@@ -35,7 +35,13 @@ class TestFileSynchronizer:
     @pytest.fixture
     def db_manager(self, temp_db):
         """Create a DatabaseManager with temp database."""
-        return DatabaseManager(db_path=temp_db)
+        manager = DatabaseManager(db_path=temp_db)
+        yield manager
+        # Cleanup: close database connection
+        try:
+            manager.close()
+        except Exception:
+            pass
 
     @pytest.fixture
     def file_synchronizer(self, db_manager):

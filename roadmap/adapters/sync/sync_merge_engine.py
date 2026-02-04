@@ -35,7 +35,6 @@ from roadmap.core.services.sync.sync_plan_executor import SyncPlanExecutor
 from roadmap.core.services.sync.sync_report import SyncReport
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from roadmap.core.services.sync.sync_state_manager import SyncStateManager
-from roadmap.core.services.utils.remote_fetcher import RemoteFetcher
 
 logger = get_logger(__name__)
 
@@ -210,141 +209,6 @@ class SyncMergeEngine:
 
         return report
 
-    def _push_updates(self, issues_to_push: list, report: SyncReport):
-        pushed_count = 0
-        push_errors = []
-
-        issue_ids = [issue.id for issue in issues_to_push]
-        logger.info(
-            "pushing_issues_start",
-            count=len(issue_ids),
-            ids=",".join(issue_ids[:5]),
-            total_ids=len(issue_ids),
-        )
-
-        try:
-            if len(issues_to_push) == 1:
-                issue = issues_to_push[0]
-                logger.debug(
-                    "pushing_single_issue",
-                    issue_id=issue.id,
-                    issue_title=(
-                        issue.title[:50] if getattr(issue, "title", None) else None
-                    ),
-                )
-                success = self.backend.push_issue(issue)
-                if not success:
-                    report.error = "Failed to push issue"
-                    logger.error(
-                        "push_single_issue_failed",
-                        issue_id=issue.id,
-                        issue_title=getattr(issue, "title", None),
-                        severity="operational",
-                    )
-                    push_errors.append(issue.id)
-                else:
-                    try:
-                        self.state_manager.save_base_state(issue, remote_version=True)
-                        pushed_count += 1
-                        logger.debug(
-                            "single_issue_sync_state_updated", issue_id=issue.id
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            "single_issue_state_update_failed",
-                            issue_id=issue.id,
-                            error=str(e),
-                            severity="operational",
-                        )
-            else:
-                logger.debug("pushing_batch_issues", batch_size=len(issues_to_push))
-                push_report = self.backend.push_issues(issues_to_push)
-                if push_report and getattr(push_report, "errors", None):
-                    report.error = f"Push failed: {getattr(push_report, 'errors', {})}"
-                    logger.error(
-                        "push_batch_failed",
-                        error_count=len(getattr(push_report, "errors", {})),
-                        errors=str(getattr(push_report, "errors", {}))[:200],
-                        severity="operational",
-                    )
-                    try:
-                        push_errors = (
-                            list(push_report.errors.keys())
-                            if isinstance(push_report.errors, dict)
-                            else []
-                        )
-                    except Exception:
-                        push_errors = []
-                else:
-                    state_update_failures = 0
-                    for issue in issues_to_push:
-                        try:
-                            self.state_manager.save_base_state(
-                                issue, remote_version=True
-                            )
-                            pushed_count += 1
-                        except Exception as e:
-                            logger.warning(
-                                "batch_issue_state_update_failed",
-                                issue_id=issue.id,
-                                error=str(e),
-                                severity="operational",
-                            )
-                            state_update_failures += 1
-
-                    logger.info(
-                        "batch_issues_pushed",
-                        pushed_count=pushed_count,
-                        state_update_failures=state_update_failures,
-                    )
-
-        except Exception as e:
-            report.error = f"Error during push operation: {str(e)}"
-            logger.error(
-                "push_operation_exception",
-                error=str(e),
-                error_type=type(e).__name__,
-                severity="system_error",
-            )
-            pushed_count = 0
-
-        return pushed_count, push_errors
-
-    def _pull_updates(self, pulls: list):
-        pulled_count = 0
-        pull_errors = []
-        pulled_remote_ids = []
-
-        logger.info("pulling_remote_updates_start", count=len(pulls))
-        try:
-            fetched = RemoteFetcher.fetch_issues(self.backend, pulls)
-            pulled_count, pull_errors, pulled_remote_ids = (
-                self._process_fetched_pull_result(fetched)
-            )
-
-            try:
-                self._update_baseline_for_pulled(pulled_remote_ids)
-            except Exception:
-                logger.debug(
-                    "pull_baseline_update_skipped", reason="baseline_update_error"
-                )
-
-            logger.info(
-                "pulling_complete",
-                successful_count=pulled_count,
-                failed_count=len(pull_errors) if pull_errors else 0,
-            )
-        except Exception as e:
-            logger.error(
-                "pull_operation_exception",
-                error=str(e),
-                error_type=type(e).__name__,
-                severity="system_error",
-            )
-            pulled_count = 0
-
-        return pulled_count, pull_errors
-
     def _match_and_link_remote_issues(
         self, local_issues_dict: dict, remote_issues_data: dict, dry_run: bool = False
     ) -> dict[str, list[Any]]:
@@ -370,7 +234,7 @@ class SyncMergeEngine:
         try:
             local_issues = list(local_issues_dict.values())
             matcher = __import__(
-                "roadmap.core.services.issue_matching_service",
+                "roadmap.core.services.issue.issue_matching_service",
                 fromlist=["IssueMatchingService"],
             ).IssueMatchingService(local_issues)
 

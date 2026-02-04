@@ -13,10 +13,22 @@ Fixture organization:
   tests/fixtures/validators.py  - Infrastructure validator fixtures
 """
 
+import gc
+import sqlite3
+from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
+
+from roadmap.adapters.persistence.storage import StateManager
+from roadmap.adapters.persistence.yaml_repositories import YAMLIssueRepository
+from roadmap.common.constants import IssueType, MilestoneStatus, Priority, Status
+from roadmap.core.domain.comment import Comment
+from roadmap.core.domain.issue import Issue
+from roadmap.core.domain.milestone import Milestone
 
 # Import setup function from fixtures
 # Import all fixtures from fixtures module - they're automatically available to tests
@@ -465,19 +477,6 @@ def clear_session_cache_between_tests():
 # These fixtures support high-quality functional tests with real code paths,
 # minimal mocking, and parameterization for comprehensive coverage.
 
-
-from datetime import UTC, datetime
-from pathlib import Path
-from typing import Any
-from unittest.mock import MagicMock
-
-from roadmap.adapters.persistence.storage import StateManager
-from roadmap.adapters.persistence.yaml_repositories import YAMLIssueRepository
-from roadmap.common.constants import IssueType, MilestoneStatus, Priority, Status
-from roadmap.core.domain.comment import Comment
-from roadmap.core.domain.issue import Issue
-from roadmap.core.domain.milestone import Milestone
-
 # ============================================================================
 # DATA FIXTURES: Raw dictionaries for test parameterization
 # ============================================================================
@@ -710,3 +709,22 @@ def p8_populated_issue_repository(
 ) -> YAMLIssueRepository:
     """Create YAMLIssueRepository with pre-populated data."""
     return YAMLIssueRepository(p8_mock_state_manager, p8_populated_issues_dir)
+
+
+# ============================================================================
+# Database Connection Cleanup
+# ============================================================================
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Clean up database connections after all tests complete."""
+    # Close any unclosed sqlite3 connections
+    for obj in gc.get_objects():
+        if isinstance(obj, sqlite3.Connection):
+            try:
+                obj.close()
+            except (sqlite3.ProgrammingError, Exception):
+                pass
+
+    # Force garbage collection to free resources
+    gc.collect()

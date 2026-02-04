@@ -4,7 +4,7 @@
 ## Purpose
 This document defines a phased, tool-driven refactor plan to raise this Python CLI codebase to professional quality: maintainable architecture, consistent style, strong static guarantees, robust tests, structured observability, and deterministic builds.
 
-This document is written as operating instructions for an AI assistant or senior contributor.
+This document is written as operating instructions for an AI assistant or senior contributor.ok
 
 ---
 

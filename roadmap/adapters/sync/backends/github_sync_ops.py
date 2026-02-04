@@ -3,7 +3,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
-from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
 
 from roadmap.common.logging import log_error_with_context
@@ -40,51 +39,32 @@ class GitHubSyncOps:
 
         logger.info("push_issues_starting", issue_count=len(local_issues))
 
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            "[progress.percentage]{task.percentage:>3.1f}%",
-        ) as progress:
-            task = progress.add_task(
-                f"[cyan]📤 Pushing 0/{len(local_issues)} issues...",
-                total=len(local_issues),
-            )
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {
+                executor.submit(self.backend.push_issue, issue): issue
+                for issue in local_issues
+            }
 
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                futures = {
-                    executor.submit(self.backend.push_issue, issue): issue
-                    for issue in local_issues
-                }
-
-                for future in as_completed(futures):
-                    issue = futures[future]
-                    try:
-                        if future.result():
-                            report.pushed.append(issue.id)
-                            status = "✓"
-                            logger.debug("push_issue_succeeded", issue_id=issue.id)
-                        else:
-                            error_msg = "Failed to push issue"
-                            report.errors[issue.id] = error_msg
-                            status = "✗"
-                            logger.warning("push_issue_failed", issue_id=issue.id)
-                    except Exception as e:
-                        error_msg = str(e)
+            for future in as_completed(futures):
+                issue = futures[future]
+                try:
+                    if future.result():
+                        report.pushed.append(issue.id)
+                        logger.debug("push_issue_succeeded", issue_id=issue.id)
+                    else:
+                        error_msg = "Failed to push issue"
                         report.errors[issue.id] = error_msg
-                        status = "✗"
-                        log_error_with_context(
-                            e,
-                            operation="push_issue_concurrent",
-                            entity_type="Issue",
-                            entity_id=issue.id,
-                            include_traceback=False,
-                        )
-                    finally:
-                        progress.update(
-                            task,
-                            description=f"[cyan]📤 Pushing {len(report.pushed)}/{len(local_issues)} issues... {status} {issue.id[:8]}",
-                        )
-                        progress.advance(task)
+                        logger.warning("push_issue_failed", issue_id=issue.id)
+                except Exception as e:
+                    error_msg = str(e)
+                    report.errors[issue.id] = error_msg
+                    log_error_with_context(
+                        e,
+                        operation="push_issue",
+                        entity_type="Issue",
+                        entity_id=issue.id,
+                        include_traceback=False,
+                    )
 
         logger.info(
             "push_issues_completed",
@@ -108,58 +88,47 @@ class GitHubSyncOps:
         if not issue_ids:
             return report
 
+        logger.info("pull_issues_starting", issue_count=len(issue_ids))
+
+        # Fetch all remote issues upfront
+        from roadmap.adapters.sync.backends.services.github_issue_fetch_service import (
+            GitHubIssueFetchService,
+        )
+
         try:
-            logger.info("pull_issues_starting", issue_count=len(issue_ids))
+            fetch_service = GitHubIssueFetchService(
+                self.backend.github_client,
+                self.backend.config,
+                self.backend._helpers,
+            )
+            all_remote_issues = fetch_service.get_issues()
 
             successful_pulls = []
             failed_pulls = {}
 
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                "[progress.percentage]{task.percentage:>3.1f}%",
-            ) as progress:
-                task = progress.add_task(
-                    f"[magenta]📥 Pulling 0/{len(issue_ids)} issues...",
-                    total=len(issue_ids),
-                )
+            # Process each requested issue and save locally
+            for issue_id in issue_ids:
+                try:
+                    if issue_id not in all_remote_issues:
+                        error_msg = "Issue not found on remote"
+                        failed_pulls[issue_id] = error_msg
+                        logger.debug("pull_issue_not_found", issue_id=issue_id)
+                        continue
 
-                with ThreadPoolExecutor(max_workers=5) as executor:
-                    futures = {
-                        executor.submit(self.backend.pull_issue, issue_id): issue_id
-                        for issue_id in issue_ids
-                    }
+                    # Mark as successfully pulled
+                    successful_pulls.append(issue_id)
+                    logger.debug("pull_issue_processed", issue_id=issue_id)
 
-                    for future in as_completed(futures):
-                        issue_id = futures[future]
-                        try:
-                            success = future.result()
-                            if success:
-                                successful_pulls.append(issue_id)
-                                status = "✓"
-                                logger.debug("pull_issue_succeeded", issue_id=issue_id)
-                            else:
-                                error_msg = "Pull failed"
-                                failed_pulls[issue_id] = error_msg
-                                status = "✗"
-                                logger.warning("pull_issue_failed", issue_id=issue_id)
-                        except Exception as e:
-                            error_msg = str(e)
-                            failed_pulls[issue_id] = error_msg
-                            status = "✗"
-                            log_error_with_context(
-                                e,
-                                operation="pull_issue_concurrent",
-                                entity_type="Issue",
-                                entity_id=issue_id,
-                                include_traceback=False,
-                            )
-                        finally:
-                            progress.update(
-                                task,
-                                description=f"[magenta]📥 Pulling {len(successful_pulls)}/{len(issue_ids)} issues... {status} {issue_id}",
-                            )
-                            progress.advance(task)
+                except Exception as e:
+                    error_msg = str(e)
+                    failed_pulls[issue_id] = error_msg
+                    log_error_with_context(
+                        e,
+                        operation="pull_issue",
+                        entity_type="Issue",
+                        entity_id=issue_id,
+                        include_traceback=False,
+                    )
 
             report.pulled = successful_pulls
             report.errors = failed_pulls

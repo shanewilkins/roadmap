@@ -41,7 +41,13 @@ def temp_db():
 @pytest.fixture
 def state_manager(temp_db):
     """Create a StateManager instance."""
-    return StateManager(db_path=temp_db)
+    manager = StateManager(db_path=temp_db)
+    yield manager
+    # Cleanup: close database connection
+    try:
+        manager.close()
+    except Exception:
+        pass
 
 
 class TestStateManagerInitialization:

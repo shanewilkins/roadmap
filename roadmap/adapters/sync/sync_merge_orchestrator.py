@@ -121,12 +121,6 @@ class SyncMergeOrchestrator:
             updates, resolved_issues, pulls, dry_run, push_only, pull_only, report
         )
 
-    def _push_updates(self, issues_to_push: list, report: SyncReport):
-        return self._engine._push_updates(issues_to_push, report)
-
-    def _pull_updates(self, pulls: list):
-        return self._engine._pull_updates(pulls)
-
     def _load_baseline_state(self):
         """Load baseline state from database with fallback to manager.
 
@@ -574,116 +568,5 @@ class SyncMergeOrchestrator:
                 error=str(e),
                 error_classification="sync_error",
                 suggested_action="check_logs_for_details",
-            )
-            return report
-
-    def _apply_changes(
-        self,
-        report: SyncReport,
-        updates: list,
-        resolved_issues: list,
-        pulls: list,
-        dry_run: bool = False,
-        push_only: bool = False,
-        pull_only: bool = False,
-    ) -> SyncReport:
-        """Apply detected changes using the backend.
-
-        Args:
-            report: SyncReport to update
-            updates: Issues to push (local updates)
-            resolved_issues: Issues resolved from conflicts
-            pulls: Issues to pull (remote updates)
-            dry_run: If True, perform dry run without making changes
-            push_only: If True, only push changes (skip pulls)
-            pull_only: If True, only pull changes (skip pushes)
-
-        Returns:
-            Updated SyncReport with applied changes
-        """
-        from roadmap.common.logging import get_stack_trace
-
-        logger.info(
-            "applying_changes_starting",
-            updates=len(updates),
-            resolved=len(resolved_issues),
-            pulls=len(pulls),
-            push_only=push_only,
-            pull_only=pull_only,
-        )
-        logger.debug(
-            "apply_changes_triggered_from",
-            stack=get_stack_trace(depth=3),
-        )
-
-        pushed_count = 0
-        pulled_count = 0
-        push_errors = []
-        pull_errors = []
-
-        try:
-            # Push local updates and resolved conflicts (skip if pull_only)
-            if not pull_only and not dry_run:
-                issues_to_push = updates + resolved_issues
-                if issues_to_push:
-                    pushed_count, push_errors = self._push_updates(
-                        issues_to_push, report
-                    )
-
-            # Pull remote updates (skip if push_only or dry_run)
-            if not push_only and not dry_run and pulls:
-                pulled_count, pull_errors = self._pull_updates(pulls)
-
-            report.issues_pushed = pushed_count
-            report.issues_pulled = pulled_count
-
-            logger.info(
-                "changes_applied_complete",
-                pushed=pushed_count,
-                pulled=pulled_count,
-                push_errors=len(push_errors),
-                pull_errors=len(pull_errors),
-            )
-
-            # After applying changes, update report to reflect what was applied
-            if (pushed_count > 0 or pulled_count > 0) and not dry_run:
-                try:
-                    if pushed_count > 0:
-                        report.issues_needs_push = max(
-                            0, report.issues_needs_push - pushed_count
-                        )
-                        report.issues_up_to_date = (
-                            report.issues_up_to_date + pushed_count
-                        )
-
-                    if pulled_count > 0:
-                        report.issues_needs_pull = max(
-                            0, report.issues_needs_pull - pulled_count
-                        )
-                        report.issues_up_to_date = (
-                            report.issues_up_to_date + pulled_count
-                        )
-
-                    logger.info(
-                        "report_updated_after_apply",
-                        up_to_date=report.issues_up_to_date,
-                        needs_push=report.issues_needs_push,
-                        needs_pull=report.issues_needs_pull,
-                    )
-                except Exception as e:
-                    logger.warning(
-                        "report_update_after_apply_failed",
-                        error=str(e),
-                        error_type=type(e).__name__,
-                    )
-
-            return report
-
-        except Exception as e:
-            report.error = f"Error applying changes: {str(e)}"
-            logger.exception(
-                "apply_changes_unexpected_error",
-                error=str(e),
-                error_type=type(e).__name__,
             )
             return report

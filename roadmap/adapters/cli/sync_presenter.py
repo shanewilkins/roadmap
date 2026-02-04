@@ -7,7 +7,6 @@ the sync command can remain focused on orchestration.
 
 from typing import Any
 
-import click
 
 from roadmap.common.console import get_console
 
@@ -58,13 +57,3 @@ def present_analysis(analysis_report: Any, verbose: bool = False) -> None:
                         action="present_change",
                     )
                     continue
-
-
-def confirm_apply() -> bool:
-    """Ask the user to confirm applying the sync plan.
-
-    Returns True when the user confirms; False otherwise.
-    """
-    console = get_console()
-    console.print()
-    return click.confirm("Apply the planned changes now?")

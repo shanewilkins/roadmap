@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 
 from roadmap.common.logging import get_logger
 
-from ..conflict_resolver import ConflictResolver
 from ..database_manager import DatabaseManager
 from ..file_synchronizer import FileSynchronizer
 from ..repositories import (
@@ -17,7 +16,6 @@ from ..repositories import (
     RemoteLinkRepository,
     SyncStateRepository,
 )
-from ..sync_state_tracker import SyncStateTracker
 from .connection_manager import ConnectionManager
 from .issue_storage import IssueStorage
 from .milestone_storage import MilestoneStorage
@@ -65,10 +63,6 @@ class StateManager:
         self._file_synchronizer = FileSynchronizer(
             self._db_manager._get_connection, self._db_manager.transaction
         )
-        self._sync_state_tracker = SyncStateTracker(self._db_manager._get_connection)
-        self._conflict_resolver = ConflictResolver(
-            self.db_path.parent
-        )  # data_dir is parent of db file
 
         # Initialize repositories
         self._project_repo = ProjectRepository(

@@ -35,7 +35,13 @@ class TestDatabaseManager:
     @pytest.fixture
     def db_manager(self, temp_db):
         """Create a DatabaseManager instance with temp database."""
-        return DatabaseManager(db_path=temp_db)
+        manager = DatabaseManager(db_path=temp_db)
+        yield manager
+        # Cleanup: close database connection
+        try:
+            manager.close()
+        except Exception:
+            pass
 
     def test_initialization_creates_database_file(self, temp_db):
         """DatabaseManager should create database file on init."""
@@ -193,7 +199,7 @@ class TestDatabaseManager:
         with open(db_manager.db_path, "w") as f:
             f.write("corrupted")
 
-        safe, msg = db_manager.is_safe_for_writes()
+        safe, _msg = db_manager.is_safe_for_writes()
         # After corruption, safety check should fail
         assert not safe
 

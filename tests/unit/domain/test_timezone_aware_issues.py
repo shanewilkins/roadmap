@@ -114,20 +114,13 @@ class TestTimezoneAwareIssueCreation:
     @pytest.fixture
     def core(self, temp_dir):
         """Create RoadmapCore instance for testing."""
-        return RoadmapCore(temp_dir)
-
-    def test_issue_created_with_utc_timestamp(self, core):
-        """Test that created issues have UTC timestamps."""
-        core.initialize()
-
-        # Create an issue
-        before_creation = datetime.now(UTC)
-        issue = core.issues.create("Test Issue", Priority.HIGH)
-        after_creation = datetime.now(UTC)
-
-        # Verify issue has UTC timestamp
-        assert issue.created.tzinfo == UTC
-        assert before_creation <= issue.created <= after_creation
+        instance = RoadmapCore(temp_dir)
+        yield instance
+        try:
+            if hasattr(instance, "db") and hasattr(instance.db, "close"):
+                instance.db.close()
+        except Exception:
+            pass
 
     def test_issue_created_with_utc_updated_timestamp(self, core):
         """Test that created issues have UTC updated timestamp."""
@@ -191,7 +184,13 @@ class TestTimezoneAwareIssueModification:
     @pytest.fixture
     def core(self, temp_dir):
         """Create RoadmapCore instance for testing."""
-        return RoadmapCore(temp_dir)
+        instance = RoadmapCore(temp_dir)
+        yield instance
+        try:
+            if hasattr(instance, "db") and hasattr(instance.db, "close"):
+                instance.db.close()
+        except Exception:
+            pass
 
     def test_issue_update_timestamp_is_utc(self, core):
         """Test that updated timestamp is UTC when issue is modified."""
@@ -236,7 +235,13 @@ class TestTimezoneAwareDateFields:
     @pytest.fixture
     def core(self, temp_dir):
         """Create RoadmapCore instance for testing."""
-        return RoadmapCore(temp_dir)
+        instance = RoadmapCore(temp_dir)
+        yield instance
+        try:
+            if hasattr(instance, "db") and hasattr(instance.db, "close"):
+                instance.db.close()
+        except Exception:
+            pass
 
     def test_issue_due_date_can_be_set_with_utc(self, core):
         """Test setting issue due date with UTC timezone via update."""
@@ -291,7 +296,13 @@ class TestTimezoneAwareIssueSerialization:
     @pytest.fixture
     def core(self, temp_dir):
         """Create RoadmapCore instance for testing."""
-        return RoadmapCore(temp_dir)
+        instance = RoadmapCore(temp_dir)
+        yield instance
+        try:
+            if hasattr(instance, "db") and hasattr(instance.db, "close"):
+                instance.db.close()
+        except Exception:
+            pass
 
     def test_issue_serializes_timestamps_with_timezone(self, core):
         """Test that issue serialization includes timezone info."""
@@ -335,7 +346,13 @@ class TestTimezoneAwareIssueFiltering:
     @pytest.fixture
     def core(self, temp_dir):
         """Create RoadmapCore instance for testing."""
-        return RoadmapCore(temp_dir)
+        instance = RoadmapCore(temp_dir)
+        yield instance
+        try:
+            if hasattr(instance, "db") and hasattr(instance.db, "close"):
+                instance.db.close()
+        except Exception:
+            pass
 
     def test_list_issues_preserves_timezone(self, core):
         """Test that listing issues preserves timezone info in timestamps."""

@@ -1,18 +1,148 @@
 # Vulture ignore list for false positives and intentional patterns
 
+# ============================================================================
 # TYPE_CHECKING imports (only used in type hints, not at runtime)
+# ============================================================================
 Core
 RoadmapCore
 Application
 
-# CLI decorators and entry points
+# ============================================================================
+# CLI Framework Integration (Phase 1)
+# ============================================================================
+# Entry points and decorator-registered handlers - called by Click framework
+# Static analysis can't see decorator-based registration
+
+# CLI Entry points
 main
 cli
 
+# Click command handlers (registered via @click.command decorator)
+# Pattern: Any function that's a Click command is actually called
+setup_git
+hooks_status
+sync_git
+git_status
+git_link
+sync
+validate_links
+view
+get_cmd
+set_cmd
+generate_report
+edit_comment
+delete_comment
+add_dependency
+handle_archive_parse_error
+handle_restore_parse_error
+confirm_action
+check_entity_exists
+
+# CLI helper functions (called internally by commands)
+_detect_project_context
+_validate_branch_environment
+_get_and_validate_issue
+_show_baseline
+_reset_baseline
+_capture_and_save_post_sync_baseline
+_perform_apply_phase
+_clear_baseline
+_show_conflicts
+_handle_link_unlink
+
+# CLI decorator factories (applied to commands)
+add_output_flags
+health_check_options
+
+# Exception/error handlers (registered as decorators)
+with_exception_handler
+setup_cli_exception_handling
+handle_exception
+
+# ============================================================================
+# Protocol/Interface Method Definitions (Phase 1)
+# ============================================================================
+# These are abstract method definitions in Protocol/Interface classes.
+# Not called within their own files - called polymorphically on implementations.
+# Static analysis sees them as unused because it's a single-dispatch pattern.
+
+# SyncBackendInterface protocol methods
+SyncBackendInterface
+authenticate
+get_backend_name
+get_issues
+push_issues
+push_issue
+pull_issues
+pull_issue
+get_conflict_resolution_options
+resolve_conflict
+get_milestones
+get_projects
+
+# Other interface method contracts
+create_backend
+list_supported_backends
+get_default_backend
+validate_credentials
+parse_issue_content
+parse_milestone_content
+parse_project_content
+list_files_in_directory
+bulk_update
+find_by_milestone
+find_by_status
+get_current
+get_status
+save_sync_state
+clear_sync_state
+get_last_sync_time
+update_last_sync_time
+link_issues
+unlink_issue
+get_linked_remote_id
+get_linked_local_id
+cache_remote_issue
+get_cached_remote_issue
+invalidate_cache
+is_cache_fresh
+delete_token
+is_available
+
+# Interface attributes (part of protocol contract)
+conflicts
+error
+local_issues
+issue_ids
+conflict
+resolution
+
+# Backend implementations (called polymorphically)
+GitHubSyncBackend
+VanillaGitSyncBackend
+
+# ============================================================================
+# Provider/Factory Functions (Phase 1)
+# ============================================================================
+# These are provider functions that are imported and used dynamically,
+# or are utility functions for future features.
+
+get_settings
+get_database_path
+get_log_directory
+is_github_enabled
+get_export_settings
+switch_environment
+create_output_manager
+
+# ============================================================================
 # Common test patterns
+# ============================================================================
 Test
 
+# ============================================================================
 # Function parameters that are part of the public API but not always used internally
+# ============================================================================
 include_traceback
 filters
 log_level

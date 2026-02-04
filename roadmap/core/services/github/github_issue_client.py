@@ -252,3 +252,95 @@ class GitHubIssueClient:
             "issue_diff_computed", has_changes=has_changes, fields_changed=len(changes)
         )
         return result
+
+    @traced("get_issues")
+    def get_issues(
+        self,
+        owner: str,
+        repo: str,
+        state: str = "all",
+        labels: list[str] | None = None,
+        milestone: str | None = None,
+        assignee: str | None = None,
+        per_page: int = 100,
+    ) -> list[dict[str, Any]]:
+        """Get issues from a GitHub repository.
+
+        Args:
+            owner: Repository owner (username or organization)
+            repo: Repository name
+            state: Issue state filter ('open', 'closed', 'all')
+            labels: Optional list of label names to filter by
+            milestone: Optional milestone title to filter by
+            assignee: Optional assignee username to filter by
+            per_page: Number of issues per page (max 100)
+
+        Returns:
+            List of issue dictionaries from GitHub API
+
+        Raises:
+            GitHubAPIError: If API call fails
+        """
+        logger.info(
+            "fetching_github_issues",
+            owner=owner,
+            repo=repo,
+            state=state,
+            limit=per_page,
+        )
+
+        try:
+            # Use injected backend or create adapter on-demand
+            if self._github_backend is None:
+                client = GitHubGateway.get_github_client(
+                    {"token": self.token, "owner": owner, "repo": repo}
+                )
+                issues_data = client.get_issues(
+                    state, labels, milestone, assignee, per_page
+                )
+            else:
+                # If backend provided, use it - backend get_issues() takes no parameters
+                if hasattr(self._github_backend, "get_issues"):
+                    all_issues = self._github_backend.get_issues()
+                    # Filter results if needed (backend returns all issues)
+                    issues_data = (
+                        all_issues
+                        if isinstance(all_issues, list)
+                        else list(all_issues.values())
+                        if isinstance(all_issues, dict)
+                        else []
+                    )
+                else:
+                    issues_data = []
+
+            logger.debug(
+                "github_issues_fetched",
+                owner=owner,
+                repo=repo,
+                count=len(issues_data or []),
+            )
+            return issues_data if isinstance(issues_data, list) else []
+
+        except GitHubAPIError as e:
+            log_external_service_error(
+                e,
+                service_name="GitHub",
+                operation="get_issues",
+            )
+            logger.warning(
+                "github_issues_fetch_failed", error=str(e), severity="infrastructure"
+            )
+            raise
+        except Exception as e:
+            log_external_service_error(
+                e,
+                service_name="GitHub",
+                operation="get_issues",
+            )
+            logger.error(
+                "github_issues_fetch_error",
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="infrastructure",
+            )
+            raise GitHubAPIError(f"Failed to fetch issues: {str(e)}") from e

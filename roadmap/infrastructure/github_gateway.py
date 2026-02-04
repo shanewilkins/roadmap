@@ -22,14 +22,23 @@ class GitHubGateway:
         """Get a GitHub client instance.
 
         Args:
-            config: Configuration for the GitHub client
+            config: Configuration dict with optional keys: 'token', 'owner', 'repo'
+                   or a single token string for backwards compatibility
 
         Returns:
             GitHubClient instance
         """
         from roadmap.adapters.github.github import GitHubClient
 
-        return GitHubClient(config)
+        # Handle both dict config and legacy string token
+        if isinstance(config, dict):
+            token = config.get("token")
+            owner = config.get("owner")
+            repo = config.get("repo")
+            return GitHubClient(token=token, owner=owner, repo=repo)
+        else:
+            # Legacy: assume config is a token string
+            return GitHubClient(token=config)
 
     @staticmethod
     def get_github_api_error() -> type:

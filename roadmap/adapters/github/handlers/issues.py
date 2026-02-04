@@ -17,6 +17,11 @@ class IssueHandler(BaseGitHubHandler):
         per_page: int = 100,
     ) -> list[dict[str, Any]]:
         """Get issues from the repository."""
+        from structlog import get_logger
+
+        logger = get_logger()
+        logger.info("issue_handler_get_issues_called", state=state, per_page=per_page)
+
         self._check_repository()
 
         params = {
@@ -36,7 +41,9 @@ class IssueHandler(BaseGitHubHandler):
         response = self._make_request(
             "GET", f"/repos/{self.owner}/{self.repo}/issues", params=params
         )
-        return response.json()
+        result = response.json()
+
+        return result
 
     def get_issue(self, issue_number: int) -> dict[str, Any]:
         """Get a specific issue by number."""

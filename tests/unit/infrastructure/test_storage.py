@@ -35,7 +35,13 @@ class TestStateManager:
     @pytest.fixture
     def state_manager(self, temp_db):
         """Create a StateManager instance with temp database."""
-        return StateManager(db_path=temp_db)
+        manager = StateManager(db_path=temp_db)
+        yield manager
+        # Cleanup: close database connection
+        try:
+            manager.close()
+        except Exception:
+            pass
 
     def test_init_creates_database_file(self, temp_db):
         """__init__ should create database file."""
@@ -382,7 +388,13 @@ class TestStateManagerFileSync:
     @pytest.fixture
     def state_manager(self, temp_db):
         """Create a StateManager instance."""
-        return StateManager(db_path=temp_db)
+        manager = StateManager(db_path=temp_db)
+        yield manager
+        # Cleanup: close database connection
+        try:
+            manager.close()
+        except Exception:
+            pass
 
     def test_get_file_sync_status_returns_status(self, state_manager):
         """get_file_sync_status should return file sync information."""
