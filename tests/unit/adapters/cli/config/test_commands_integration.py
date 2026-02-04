@@ -183,8 +183,8 @@ class TestConfigSetIntegration:
     @pytest.mark.parametrize(
         "key,value",
         [
-            ("export", "/tmp/out"),
-            ("format", "json"),
+            ("export.directory", "/tmp/out"),
+            ("export.format", "json"),
         ],
     )
     def test_set_various_values(

@@ -162,7 +162,7 @@ min_confidence = 60  # Lowered from 80 to catch more dead code
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
-addopts = "--tb=short --strict-markers -n auto --maxfail=3 --strict-config --cov=roadmap --cov-report=term-missing --cov-report=html --disable-warnings -ra"
+addopts = "--tb=short --strict-markers -n auto --maxfail=3 --strict-config -ra"
 markers = [
     "unit: Unit tests (fast, no filesystem operations)",
     "integration: Integration tests (slower, with filesystem operations)",
@@ -173,9 +173,8 @@ markers = [
     "no_xdist: Tests that should not run in parallel (disables xdist parallelization)"
 ]
 filterwarnings = [
-    "ignore::DeprecationWarning:pydantic.*",
-    "ignore::UserWarning:pydantic.*",
-    "ignore::DeprecationWarning:dynaconf.*"
+    "ignore::DeprecationWarning:dynaconf.base",
+    "ignore::pytest_benchmark.logger.PytestBenchmarkWarning"
 ]
 
 # Coverage configuration moved to config/.coveragerc

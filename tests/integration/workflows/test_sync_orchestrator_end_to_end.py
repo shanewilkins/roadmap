@@ -4,7 +4,7 @@ Tests the full sync workflow using SyncMergeOrchestrator, SyncStateComparator,
 and SyncConflictResolver to verify they work together correctly.
 """
 
-import unittest
+import pytest
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
@@ -19,17 +19,38 @@ from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from tests.factories import IssueBuilder, SyncIssueFactory
 
 
-class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
+@pytest.fixture
+def sync_components():
+    """Provide standard sync components (core, backend, comparator, resolver)."""
+    core = MagicMock()
+    backend = MagicMock()
+    state_comparator = SyncStateComparator()
+    conflict_resolver = SyncConflictResolver()
+
+    return {
+        "core": core,
+        "backend": backend,
+        "state_comparator": state_comparator,
+        "conflict_resolver": conflict_resolver,
+    }
+
+
+@pytest.fixture
+def orchestrator(sync_components):
+    """Create a configured SyncMergeOrchestrator."""
+    return SyncMergeOrchestrator(
+        sync_components["core"],
+        sync_components["backend"],
+        state_comparator=sync_components["state_comparator"],
+        conflict_resolver=sync_components["conflict_resolver"],
+    )
+
+
+@pytest.mark.integration
+class TestSyncEnd2EndNewLocalIssues:
     """Test syncing when there are new local issues to push."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.core = MagicMock()
-        self.backend = MagicMock()
-        self.state_comparator = SyncStateComparator()
-        self.conflict_resolver = SyncConflictResolver()
-
-    def test_sync_new_local_issue_dry_run(self):
+    def test_sync_new_local_issue_dry_run(self, sync_components):
         """Test dry-run mode detects new local issues without applying changes."""
         # Setup: 1 local issue, no remote issues
         local_issue = (
@@ -43,15 +64,17 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
             .build()
         )
 
-        self.core.issues.list_all_including_archived.return_value = [local_issue]
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {}  # No remote issues
+        sync_components["core"].issues.list_all_including_archived.return_value = [
+            local_issue
+        ]
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {}  # No remote issues
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute
@@ -61,9 +84,11 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
         assert report.error is None
         assert report.issues_needs_push == 1  # 1 issue to push
         assert report.conflicts_detected == 0
-        self.backend.push_issue.assert_not_called()  # Dry run - no actual push
+        sync_components[
+            "backend"
+        ].push_issue.assert_not_called()  # Dry run - no actual push
 
-    def test_sync_new_local_issue_apply(self):
+    def test_sync_new_local_issue_apply(self, sync_components):
         """Test applying changes pushes new local issues."""
         # Setup: 1 local issue, no remote issues
         local_issue = (
@@ -77,17 +102,19 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
             .build()
         )
 
-        self.core.issues.list_all_including_archived.return_value = [local_issue]
-        self.core.issues.get.return_value = local_issue
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {}
-        self.backend.push_issue.return_value = True
+        sync_components["core"].issues.list_all_including_archived.return_value = [
+            local_issue
+        ]
+        sync_components["core"].issues.get.return_value = local_issue
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {}
+        sync_components["backend"].push_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute
@@ -100,20 +127,14 @@ class TestSyncEnd2EndNewLocalIssues(unittest.TestCase):
         assert report.issues_up_to_date == 1
         assert report.issues_needs_push == 0
         assert report.issues_pushed == 1
-        self.backend.push_issue.assert_called_once_with(local_issue)
+        sync_components["backend"].push_issue.assert_called_once_with(local_issue)
 
 
-class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
+@pytest.mark.integration
+class TestSyncEnd2EndNewRemoteIssues:
     """Test syncing when there are new remote issues to pull."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.core = MagicMock()
-        self.backend = MagicMock()
-        self.state_comparator = SyncStateComparator()
-        self.conflict_resolver = SyncConflictResolver()
-
-    def test_sync_new_remote_issue_dry_run(self):
+    def test_sync_new_remote_issue_dry_run(self, sync_components):
         """Test dry-run mode detects new remote issues without applying changes."""
         # Setup: no local issues, 1 remote issue
         remote_issue = SyncIssueFactory.create_github(
@@ -122,15 +143,15 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
             status="open",
         )
 
-        self.core.issues.list_all_including_archived.return_value = []
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {"remote-1": remote_issue}
+        sync_components["core"].issues.list_all_including_archived.return_value = []
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {"remote-1": remote_issue}
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute
@@ -139,9 +160,11 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
         # Verify
         assert report.error is None
         assert report.conflicts_detected == 0
-        self.backend.pull_issue.assert_not_called()  # Dry run - no actual pull
+        sync_components[
+            "backend"
+        ].pull_issue.assert_not_called()  # Dry run - no actual pull
 
-    def test_sync_new_remote_issue_apply(self):
+    def test_sync_new_remote_issue_apply(self, sync_components):
         """Test applying changes pulls new remote issues."""
         # Setup: no local issues, 1 remote issue
         remote_issue = SyncIssueFactory.create_github(
@@ -150,16 +173,16 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
             status="open",
         )
 
-        self.core.issues.list_all_including_archived.return_value = []
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {"remote-1": remote_issue}
-        self.backend.pull_issue.return_value = True
+        sync_components["core"].issues.list_all_including_archived.return_value = []
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {"remote-1": remote_issue}
+        sync_components["backend"].pull_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute
@@ -169,26 +192,20 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
         assert report.error is None
         assert report.conflicts_detected == 0
         # Pull should be called for remote issue with the pull list
-        self.backend.pull_issues.assert_called_once()
+        sync_components["backend"].pull_issues.assert_called_once()
         # Check that pull_issues was called with an issue ID
-        called_args = self.backend.pull_issues.call_args
+        called_args = sync_components["backend"].pull_issues.call_args
         assert isinstance(
             called_args[0][0], list
         )  # First positional arg should be a list
         assert len(called_args[0][0]) > 0  # List should not be empty
 
 
-class TestSyncEnd2EndConflicts(unittest.TestCase):
+@pytest.mark.integration
+class TestSyncEnd2EndConflicts:
     """Test syncing when there are conflicts between local and remote."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.core = MagicMock()
-        self.backend = MagicMock()
-        self.state_comparator = SyncStateComparator()
-        self.conflict_resolver = SyncConflictResolver()
-
-    def test_sync_conflict_auto_merge_remote_newer(self):
+    def test_sync_conflict_auto_merge_remote_newer(self, sync_components):
         """Test auto-merge chooses remote when it's newer."""
         # Setup: conflicting issue, remote is newer
         now = datetime.now(UTC)
@@ -213,17 +230,21 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
             updated_at=later,  # Newer
         )
 
-        self.core.issues.list_all_including_archived.return_value = [local_issue]
-        self.core.issues.get.return_value = local_issue
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {"conflict-1": remote_issue}
-        self.backend.push_issue.return_value = True
+        sync_components["core"].issues.list_all_including_archived.return_value = [
+            local_issue
+        ]
+        sync_components["core"].issues.get.return_value = local_issue
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {
+            "conflict-1": remote_issue
+        }
+        sync_components["backend"].push_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute - auto merge should prefer remote (newer)
@@ -233,7 +254,7 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
         assert report.error is None
         assert report.conflicts_detected == 1
 
-    def test_sync_conflict_force_local(self):
+    def test_sync_conflict_force_local(self, sync_components):
         """Test force_local resolution keeps local changes."""
         # Setup: conflicting issue
         now = datetime.now(UTC)
@@ -257,17 +278,21 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
             updated_at=now,
         )
 
-        self.core.issues.list_all_including_archived.return_value = [local_issue]
-        self.core.issues.get.return_value = local_issue
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {"conflict-1": remote_issue}
-        self.backend.push_issue.return_value = True
+        sync_components["core"].issues.list_all_including_archived.return_value = [
+            local_issue
+        ]
+        sync_components["core"].issues.get.return_value = local_issue
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {
+            "conflict-1": remote_issue
+        }
+        sync_components["backend"].push_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute with force_local
@@ -279,9 +304,9 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
         assert report.error is None
         assert report.conflicts_detected == 1
         # With force_local, should push the local version
-        self.backend.push_issue.assert_called_once_with(local_issue)
+        sync_components["backend"].push_issue.assert_called_once_with(local_issue)
 
-    def test_sync_conflict_force_remote(self):
+    def test_sync_conflict_force_remote(self, sync_components):
         """Test force_remote resolution keeps remote changes."""
         # Setup: conflicting issue
         now = datetime.now(UTC)
@@ -305,16 +330,20 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
             updated_at=now,
         )
 
-        self.core.issues.list_all_including_archived.return_value = [local_issue]
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {"conflict-1": remote_issue}
-        self.backend.pull_issue.return_value = True
+        sync_components["core"].issues.list_all_including_archived.return_value = [
+            local_issue
+        ]
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {
+            "conflict-1": remote_issue
+        }
+        sync_components["backend"].pull_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute with force_remote
@@ -327,17 +356,11 @@ class TestSyncEnd2EndConflicts(unittest.TestCase):
         assert report.conflicts_detected == 1
 
 
-class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
+@pytest.mark.integration
+class TestSyncEnd2EndMixedScenarios:
     """Test syncing with mixed scenarios (new, updates, conflicts)."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.core = MagicMock()
-        self.backend = MagicMock()
-        self.state_comparator = SyncStateComparator()
-        self.conflict_resolver = SyncConflictResolver()
-
-    def test_sync_mixed_scenario_dry_run(self):
+    def test_sync_mixed_scenario_dry_run(self, sync_components):
         """Test dry-run with multiple issue types."""
         now = datetime.now(UTC)
         older = now - timedelta(hours=2)
@@ -375,12 +398,12 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
             .build()
         )
 
-        self.core.issues.list_all_including_archived.return_value = [
+        sync_components["core"].issues.list_all_including_archived.return_value = [
             new_local,
             updated_local,
             conflicted_local,
         ]
-        self.backend.authenticate.return_value = True
+        sync_components["backend"].authenticate.return_value = True
 
         # Remote: 2 issues
         # 1. Updated local issue (older version)
@@ -400,13 +423,13 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
             ),
         }
 
-        self.backend.get_issues.return_value = remote_issues
+        sync_components["backend"].get_issues.return_value = remote_issues
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute
@@ -418,10 +441,10 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
             report.conflicts_detected == 2
         )  # Both "updated" and "conflict" have conflicts
         assert report.issues_needs_push >= 1  # At least the new local issue
-        assert not self.backend.push_issue.called
-        assert not self.backend.pull_issue.called
+        assert not sync_components["backend"].push_issue.called
+        assert not sync_components["backend"].pull_issue.called
 
-    def test_sync_mixed_scenario_apply(self):
+    def test_sync_mixed_scenario_apply(self, sync_components):
         """Test applying mixed scenario changes."""
         now = datetime.now(UTC)
         earlier = now - timedelta(hours=1)
@@ -446,11 +469,13 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
             updated=earlier,
         )
 
-        self.core.issues.list_all_including_archived.return_value = [
+        sync_components["core"].issues.list_all_including_archived.return_value = [
             new_local,
             conflicted_local,
         ]
-        self.core.issues.get.return_value = None  # Will be called but we'll set it up
+        sync_components[
+            "core"
+        ].issues.get.return_value = None  # Will be called but we'll set it up
 
         def get_side_effect(issue_id):
             if issue_id == "local-new":
@@ -459,8 +484,8 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
                 return conflicted_local
             return None
 
-        self.core.issues.get.side_effect = get_side_effect
-        self.backend.authenticate.return_value = True
+        sync_components["core"].issues.get.side_effect = get_side_effect
+        sync_components["backend"].authenticate.return_value = True
 
         # Remote: 1 issue (conflicting)
         remote_issues = {
@@ -472,20 +497,20 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
             )
         }
 
-        self.backend.get_issues.return_value = remote_issues
+        sync_components["backend"].get_issues.return_value = remote_issues
 
         # Create a proper SyncReport mock for push_issues
         push_report = SyncReport()
         push_report.pushed = ["local-new", "conflict"]
         push_report.errors = {}
-        self.backend.push_issues.return_value = push_report
-        self.backend.pull_issue.return_value = True
+        sync_components["backend"].push_issues.return_value = push_report
+        sync_components["backend"].pull_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute with force_remote to resolve conflict
@@ -498,26 +523,20 @@ class TestSyncEnd2EndMixedScenarios(unittest.TestCase):
         assert report.conflicts_detected == 1
 
 
-class TestSyncEnd2EndAuthenticationFailure(unittest.TestCase):
+@pytest.mark.integration
+class TestSyncEnd2EndAuthenticationFailure:
     """Test sync behavior when authentication fails."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.core = MagicMock()
-        self.backend = MagicMock()
-        self.state_comparator = SyncStateComparator()
-        self.conflict_resolver = SyncConflictResolver()
-
-    def test_sync_authentication_failure_returns_error(self):
+    def test_sync_authentication_failure_returns_error(self, sync_components):
         """Test that auth failure is reported without raising exceptions."""
-        self.core.issues.list_all_including_archived.return_value = []
-        self.backend.authenticate.return_value = False
+        sync_components["core"].issues.list_all_including_archived.return_value = []
+        sync_components["backend"].authenticate.return_value = False
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute
@@ -526,30 +545,24 @@ class TestSyncEnd2EndAuthenticationFailure(unittest.TestCase):
         # Verify
         assert report.error == "Backend authentication failed"
         assert report.conflicts_detected == 0
-        self.backend.get_issues.assert_not_called()
+        sync_components["backend"].get_issues.assert_not_called()
 
 
-class TestSyncEnd2EndRemoteFailure(unittest.TestCase):
+@pytest.mark.integration
+class TestSyncEnd2EndRemoteFailure:
     """Test sync behavior when fetching remote issues fails."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.core = MagicMock()
-        self.backend = MagicMock()
-        self.state_comparator = SyncStateComparator()
-        self.conflict_resolver = SyncConflictResolver()
-
-    def test_sync_remote_fetch_failure_returns_error(self):
+    def test_sync_remote_fetch_failure_returns_error(self, sync_components):
         """Test that remote fetch failure is reported."""
-        self.core.issues.list_all_including_archived.return_value = []
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = None  # Failure
+        sync_components["core"].issues.list_all_including_archived.return_value = []
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = None  # Failure
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute
@@ -560,17 +573,11 @@ class TestSyncEnd2EndRemoteFailure(unittest.TestCase):
         assert report.conflicts_detected == 0
 
 
-class TestSyncEnd2EndUpToDate(unittest.TestCase):
+@pytest.mark.integration
+class TestSyncEnd2EndUpToDate:
     """Test sync when everything is already up-to-date."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.core = MagicMock()
-        self.backend = MagicMock()
-        self.state_comparator = SyncStateComparator()
-        self.conflict_resolver = SyncConflictResolver()
-
-    def test_sync_everything_up_to_date(self):
+    def test_sync_everything_up_to_date(self, sync_components):
         """Test sync with no changes needed."""
         now = datetime.now(UTC)
 
@@ -591,15 +598,17 @@ class TestSyncEnd2EndUpToDate(unittest.TestCase):
             updated_at=now,
         )
 
-        self.core.issues.list_all_including_archived.return_value = [issue]
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {"same-1": remote_issue}
+        sync_components["core"].issues.list_all_including_archived.return_value = [
+            issue
+        ]
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {"same-1": remote_issue}
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute
@@ -612,17 +621,11 @@ class TestSyncEnd2EndUpToDate(unittest.TestCase):
         assert report.issues_needs_push == 0 and report.issues_needs_pull == 0
 
 
-class TestFullBidirectionalSync(unittest.TestCase):
+@pytest.mark.integration
+class TestFullBidirectionalSync:
     """Test full bidirectional sync with local and remote changes."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.core = MagicMock()
-        self.backend = MagicMock()
-        self.state_comparator = SyncStateComparator()
-        self.conflict_resolver = SyncConflictResolver()
-
-    def test_full_bidirectional_sync_dry_run(self):
+    def test_full_bidirectional_sync_dry_run(self, sync_components):
         """Test dry-run bidirectional sync detects all changes without applying."""
         # Setup: Mixed scenario
         # Local: 1 new issue, 1 updated issue, 1 up-to-date
@@ -685,23 +688,23 @@ class TestFullBidirectionalSync(unittest.TestCase):
             updated_at=past,
         )
 
-        self.core.issues.list_all_including_archived.return_value = [
+        sync_components["core"].issues.list_all_including_archived.return_value = [
             local_new,
             local_updated,
             local_unchanged,
         ]
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {
             "remote-new": remote_new,
             "shared-1": remote_updated,
             "shared-2": remote_unchanged,
         }
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute: Full bidirectional sync (push_only=False, pull_only=False)
@@ -716,10 +719,10 @@ class TestFullBidirectionalSync(unittest.TestCase):
         assert report.issues_needs_pull >= 1  # remote-new and/or shared-1 need pull
         assert report.issues_up_to_date >= 1  # shared-2 should be up to date
         # In dry-run mode, no actual push/pull happens
-        self.backend.push_issues.assert_not_called()
-        self.backend.pull_issues.assert_not_called()
+        sync_components["backend"].push_issues.assert_not_called()
+        sync_components["backend"].pull_issues.assert_not_called()
 
-    def test_full_bidirectional_sync_apply(self):
+    def test_full_bidirectional_sync_apply(self, sync_components):
         """Test applying full bidirectional sync pushes and pulls changes."""
         now = datetime.now(UTC)
         past = now - timedelta(hours=2)
@@ -755,15 +758,15 @@ class TestFullBidirectionalSync(unittest.TestCase):
             status="open",
         )
 
-        self.core.issues.list_all_including_archived.return_value = [
+        sync_components["core"].issues.list_all_including_archived.return_value = [
             local_issue,
             shared_local,
         ]
-        self.core.issues.get.side_effect = lambda issue_id: (
+        sync_components["core"].issues.get.side_effect = lambda issue_id: (
             local_issue if issue_id == "local-new" else shared_local
         )
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {
             "remote-new": remote_issue,
             "shared-1": SyncIssueFactory.create(
                 id="shared-1",
@@ -773,21 +776,21 @@ class TestFullBidirectionalSync(unittest.TestCase):
                 updated_at=now,
             ),
         }
-        self.backend.push_issue.return_value = True
+        sync_components["backend"].push_issue.return_value = True
         # Setup push_issues mock to return successful SyncReport
         push_report = SyncReport()
         push_report.pushed = ["local-new", "shared-1"]
-        self.backend.push_issues.return_value = push_report
+        sync_components["backend"].push_issues.return_value = push_report
         # Setup pull_issues mock
         pull_report = SyncReport()
         pull_report.pulled = ["remote-new"]
-        self.backend.pull_issues.return_value = pull_report
+        sync_components["backend"].pull_issues.return_value = pull_report
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute: Full bidirectional sync in apply mode
@@ -796,13 +799,13 @@ class TestFullBidirectionalSync(unittest.TestCase):
         # Verify sync happened
         assert report.error is None
         # Verify push_issues was called for local changes
-        assert self.backend.push_issues.called
+        assert sync_components["backend"].push_issues.called
         # Verify pull_issues was called for remote changes
-        assert self.backend.pull_issues.called
+        assert sync_components["backend"].pull_issues.called
         # Verify applied changes tracked
         assert report.issues_pushed > 0 or report.issues_pulled > 0
 
-    def test_full_bidirectional_sync_with_conflict_force_remote(self):
+    def test_full_bidirectional_sync_with_conflict_force_remote(self, sync_components):
         """Test bidirectional sync with conflict resolution (force remote)."""
         now = datetime.now(UTC)
         past = now - timedelta(hours=2)
@@ -827,22 +830,26 @@ class TestFullBidirectionalSync(unittest.TestCase):
             updated_at=now,
         )
 
-        self.core.issues.list_all_including_archived.return_value = [local_conflict]
-        self.core.issues.get.return_value = local_conflict
-        self.backend.authenticate.return_value = True
-        self.backend.get_issues.return_value = {"conflict-1": remote_conflict}
+        sync_components["core"].issues.list_all_including_archived.return_value = [
+            local_conflict
+        ]
+        sync_components["core"].issues.get.return_value = local_conflict
+        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].get_issues.return_value = {
+            "conflict-1": remote_conflict
+        }
         # Setup pull_issues mock
         pull_report = SyncReport()
-        self.backend.pull_issues.return_value = pull_report
+        sync_components["backend"].pull_issues.return_value = pull_report
         # Setup push_issues mock
         push_report = SyncReport()
-        self.backend.push_issues.return_value = push_report
+        sync_components["backend"].push_issues.return_value = push_report
 
         orchestrator = SyncMergeOrchestrator(
-            self.core,
-            self.backend,
-            state_comparator=self.state_comparator,
-            conflict_resolver=self.conflict_resolver,
+            sync_components["core"],
+            sync_components["backend"],
+            state_comparator=sync_components["state_comparator"],
+            conflict_resolver=sync_components["conflict_resolver"],
         )
 
         # Execute: Resolve by keeping remote
@@ -854,8 +861,3 @@ class TestFullBidirectionalSync(unittest.TestCase):
         assert report.error is None
         assert report.conflicts_detected == 1
         # When force_remote, the remote version should be kept
-        # (implementation may vary based on conflict resolution strategy)
-
-
-if __name__ == "__main__":
-    unittest.main()

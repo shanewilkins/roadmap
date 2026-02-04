@@ -138,3 +138,23 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: trailing-whitespace
+
+  # Fast pytest on every commit (no coverage overhead)
+  - repo: local
+    hooks:
+      - id: pytest-fast
+        name: pytest (fast, no coverage)
+        entry: uv run pytest -q
+        language: system
+        pass_filenames: false
+        stages: [commit]
+
+  # Coverage gate only on push (mirrors CI gate with 77% threshold)
+  - repo: local
+    hooks:
+      - id: pytest-coverage-gate
+        name: pytest (coverage gate - push only)
+        entry: uv run pytest -q --cov=roadmap --cov-report=term-missing --cov-report=html --cov-fail-under=77
+        language: system
+        pass_filenames: false
+        stages: [push]
