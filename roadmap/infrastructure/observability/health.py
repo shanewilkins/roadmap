@@ -165,7 +165,9 @@ class HealthCheck:
         return checks
 
     @staticmethod
-    def get_overall_status(checks: Mapping[str, tuple[HealthStatus, str]]) -> HealthStatus:
+    def get_overall_status(
+        checks: Mapping[str, tuple[HealthStatus, str]],
+    ) -> HealthStatus:
         """Get overall health status from check results.
 
         Args:

@@ -11,6 +11,23 @@ from roadmap.core.domain import Comment
 from tests.unit.common.formatters.test_assertion_helpers import create_mock_comment
 
 
+def create_paginated_mock_response(json_data, has_next=False):
+    """Create a mock response with proper pagination headers.
+    
+    Args:
+        json_data: The JSON data to return
+        has_next: Whether to include a rel="next" link
+    
+    Returns:
+        Mock response object
+    """
+    mock_response = Mock()
+    mock_response.json.return_value = json_data
+    link_header = '<https://api.github.com/next>; rel="next"' if has_next else ""
+    mock_response.headers = {"Link": link_header}
+    return mock_response
+
+
 # Local fixture for real CommentsHandler with mocked session
 @pytest.fixture
 def comments_handler_with_session():
@@ -108,23 +125,8 @@ class TestCommentsHandler:
 
             assert len(comments) == 2
 
-    def test_get_issue_comments_first_comment_data(self, comments_handler_with_session):
-        """Test that first comment data is correctly populated."""
-        # Create mock comments using factory
-        comment1 = create_mock_comment(
-            id=123456,
-            author="user1",
-            body="This is the first comment",
-        )
-        comment2 = create_mock_comment(
-            id=123457,
-            author="user2",
-            body="This is the second comment",
-        )
-
         # Mock API response
-        mock_response = Mock()
-        mock_response.json.return_value = [
+        mock_response = create_paginated_mock_response([
             {
                 "id": comment1.id,
                 "body": comment1.body,
@@ -141,7 +143,7 @@ class TestCommentsHandler:
                 "updated_at": "2023-01-01T13:30:00Z",
                 "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
             },
-        ]
+        ])
 
         # Mock the _make_request method
         with patch.object(
@@ -153,25 +155,8 @@ class TestCommentsHandler:
             assert comments[0].author == comment1.author
             assert comments[0].body == comment1.body
 
-    def test_get_issue_comments_second_comment_data(
-        self, comments_handler_with_session
-    ):
-        """Test that second comment data is correctly populated."""
-        # Create mock comments using factory
-        comment1 = create_mock_comment(
-            id=123456,
-            author="user1",
-            body="This is the first comment",
-        )
-        comment2 = create_mock_comment(
-            id=123457,
-            author="user2",
-            body="This is the second comment",
-        )
-
         # Mock API response
-        mock_response = Mock()
-        mock_response.json.return_value = [
+        mock_response = create_paginated_mock_response([
             {
                 "id": comment1.id,
                 "body": comment1.body,
@@ -188,7 +173,7 @@ class TestCommentsHandler:
                 "updated_at": "2023-01-01T13:30:00Z",
                 "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
             },
-        ]
+        ])
 
         # Mock the _make_request method
         with patch.object(
@@ -200,25 +185,8 @@ class TestCommentsHandler:
             assert comments[1].author == comment2.author
             assert comments[1].body == comment2.body
 
-    def test_get_issue_comments_makes_correct_api_call(
-        self, comments_handler_with_session
-    ):
-        """Test that get_issue_comments makes the correct API call."""
-        # Create mock comments using factory
-        comment1 = create_mock_comment(
-            id=123456,
-            author="user1",
-            body="This is the first comment",
-        )
-        comment2 = create_mock_comment(
-            id=123457,
-            author="user2",
-            body="This is the second comment",
-        )
-
         # Mock API response
-        mock_response = Mock()
-        mock_response.json.return_value = [
+        mock_response = create_paginated_mock_response([
             {
                 "id": comment1.id,
                 "body": comment1.body,
@@ -235,7 +203,7 @@ class TestCommentsHandler:
                 "updated_at": "2023-01-01T13:30:00Z",
                 "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
             },
-        ]
+        ])
 
         # Mock the _make_request method
         with patch.object(
@@ -352,8 +320,7 @@ class TestCommentsHandler:
     def test_get_issue_comments_empty(self, comments_handler_with_session):
         """Test getting comments when there are none."""
         # Mock empty API response
-        mock_response = Mock()
-        mock_response.json.return_value = []
+        mock_response = create_paginated_mock_response([])
 
         # Mock the _make_request method
         with patch.object(
