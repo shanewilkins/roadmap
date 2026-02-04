@@ -210,7 +210,7 @@ class TestGitHubClientErrorHandling:
         mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError()
         mock_session.request.return_value = mock_response
 
-        with pytest.raises(GitHubAPIError, match="GitHub API error \\(500\\)"):
+        with pytest.raises(GitHubAPIError, match="GitHub API server error \\(500\\)"):
             client.test_authentication()
 
     def test_network_error_handling(self, client, mock_session):

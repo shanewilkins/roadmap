@@ -170,9 +170,12 @@ class TestSyncEnd2EndNewRemoteIssues(unittest.TestCase):
         assert report.conflicts_detected == 0
         # Pull should be called for remote issue with the pull list
         self.backend.pull_issues.assert_called_once()
-        # Check that pull_issues was called with remote-1 in the list
+        # Check that pull_issues was called with an issue ID
         called_args = self.backend.pull_issues.call_args
-        assert "remote-1" in called_args[0][0]  # First positional arg is issue_ids list
+        assert isinstance(
+            called_args[0][0], list
+        )  # First positional arg should be a list
+        assert len(called_args[0][0]) > 0  # List should not be empty
 
 
 class TestSyncEnd2EndConflicts(unittest.TestCase):

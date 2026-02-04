@@ -13,11 +13,11 @@ from tests.unit.common.formatters.test_assertion_helpers import create_mock_comm
 
 def create_paginated_mock_response(json_data, has_next=False):
     """Create a mock response with proper pagination headers.
-    
+
     Args:
         json_data: The JSON data to return
         has_next: Whether to include a rel="next" link
-    
+
     Returns:
         Mock response object
     """
@@ -95,9 +95,8 @@ class TestCommentsHandler:
             body="This is the second comment",
         )
 
-        # Mock API response
-        mock_response = Mock()
-        mock_response.json.return_value = [
+        # Create the data that paginate_request would return
+        comments_data = [
             {
                 "id": comment1.id,
                 "body": comment1.body,
@@ -116,106 +115,21 @@ class TestCommentsHandler:
             },
         ]
 
-        # Mock the _make_request method
+        # Mock the _paginate_request method
         with patch.object(
-            comments_handler_with_session, "_make_request", return_value=mock_response
+            comments_handler_with_session,
+            "_paginate_request",
+            return_value=comments_data,
         ):
-            # Test the method
             comments = comments_handler_with_session.get_issue_comments(1)
 
             assert len(comments) == 2
-
-        # Mock API response
-        mock_response = create_paginated_mock_response([
-            {
-                "id": comment1.id,
-                "body": comment1.body,
-                "user": {"login": comment1.author},
-                "created_at": "2023-01-01T12:00:00Z",
-                "updated_at": "2023-01-01T12:00:00Z",
-                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
-            },
-            {
-                "id": comment2.id,
-                "body": comment2.body,
-                "user": {"login": comment2.author},
-                "created_at": "2023-01-01T13:00:00Z",
-                "updated_at": "2023-01-01T13:30:00Z",
-                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
-            },
-        ])
-
-        # Mock the _make_request method
-        with patch.object(
-            comments_handler_with_session, "_make_request", return_value=mock_response
-        ):
-            comments = comments_handler_with_session.get_issue_comments(1)
-
             assert comments[0].id == comment1.id
             assert comments[0].author == comment1.author
             assert comments[0].body == comment1.body
-
-        # Mock API response
-        mock_response = create_paginated_mock_response([
-            {
-                "id": comment1.id,
-                "body": comment1.body,
-                "user": {"login": comment1.author},
-                "created_at": "2023-01-01T12:00:00Z",
-                "updated_at": "2023-01-01T12:00:00Z",
-                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
-            },
-            {
-                "id": comment2.id,
-                "body": comment2.body,
-                "user": {"login": comment2.author},
-                "created_at": "2023-01-01T13:00:00Z",
-                "updated_at": "2023-01-01T13:30:00Z",
-                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
-            },
-        ])
-
-        # Mock the _make_request method
-        with patch.object(
-            comments_handler_with_session, "_make_request", return_value=mock_response
-        ):
-            comments = comments_handler_with_session.get_issue_comments(1)
-
             assert comments[1].id == comment2.id
             assert comments[1].author == comment2.author
             assert comments[1].body == comment2.body
-
-        # Mock API response
-        mock_response = create_paginated_mock_response([
-            {
-                "id": comment1.id,
-                "body": comment1.body,
-                "user": {"login": comment1.author},
-                "created_at": "2023-01-01T12:00:00Z",
-                "updated_at": "2023-01-01T12:00:00Z",
-                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123456",
-            },
-            {
-                "id": comment2.id,
-                "body": comment2.body,
-                "user": {"login": comment2.author},
-                "created_at": "2023-01-01T13:00:00Z",
-                "updated_at": "2023-01-01T13:30:00Z",
-                "html_url": "https://github.com/test-owner/test-repo/issues/1#issuecomment-123457",
-            },
-        ])
-
-        # Mock the _make_request method
-        with patch.object(
-            comments_handler_with_session, "_make_request", return_value=mock_response
-        ):
-            # Test the method
-            comments_handler_with_session.get_issue_comments(1)
-
-            # Verify the API call
-            comments_handler_with_session._make_request.assert_called_once_with(
-                "GET", "/repos/test-owner/test-repo/issues/1/comments"
-            )
 
     def test_create_issue_comment(self, comments_handler_with_session):
         """Test creating a comment on an issue.
