@@ -196,6 +196,12 @@ class SyncMergeEngine:
 
         pushed_count = getattr(exec_report, "issues_pushed", 0)
         pulled_count = getattr(exec_report, "issues_pulled", 0)
+        logger.info(
+            "executor_report_counts",
+            issues_pushed=pushed_count,
+            issues_pulled=pulled_count,
+            exec_report_type=type(exec_report).__name__,
+        )
         report.issues_pushed = pushed_count
         report.issues_pulled = pulled_count
         if getattr(exec_report, "error", None):

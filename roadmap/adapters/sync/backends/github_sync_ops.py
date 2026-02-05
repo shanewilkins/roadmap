@@ -6,6 +6,7 @@ from typing import Any
 from structlog import get_logger
 
 from roadmap.common.logging import log_error_with_context
+from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.interfaces import SyncReport
 
 logger = get_logger()
@@ -457,7 +458,12 @@ class GitHubSyncOps:
             return self._handle_pull_error(sync_issue, error_msg)
 
     def pull_issues(self, issue_ids: list[str]) -> SyncReport:
-        """Pull issues from GitHub backend by IDs.
+        """Pull issues from GitHub backend by IDs with dependency resolution.
+
+        This method now handles dependencies by:
+        1. Fetching all milestones referenced by the requested issues
+        2. Pulling those milestones first
+        3. Then pulling the issues with proper milestone references
 
         Args:
             issue_ids: List of issue IDs to pull.
@@ -470,51 +476,262 @@ class GitHubSyncOps:
         if not issue_ids:
             return report
 
-        logger.info("pull_issues_starting", issue_count=len(issue_ids))
+        logger.info(
+            "pull_issues_with_dependencies_starting", issue_count=len(issue_ids)
+        )
 
-        # Fetch all remote issues upfront
+        # Fetch all remote data
+        all_remote_issues, all_remote_milestones = self._fetch_remote_data()
+
+        # Analyze dependencies and build pull list
+        issues_to_pull, milestones_needed, report = self._analyze_issue_dependencies(
+            issue_ids, all_remote_issues, all_remote_milestones, report
+        )
+
+        # Phase 1: Pull milestones
+        milestone_pull_report = self._pull_milestone_dependencies(milestones_needed)
+
+        # Phase 2: Pull issues
+        return self._pull_issues_phase(
+            issues_to_pull,
+            all_remote_milestones,
+            milestone_pull_report,
+            report,
+        )
+
+    def _fetch_remote_data(self) -> tuple[dict, dict]:
+        """Fetch issues and milestones from GitHub."""
         from roadmap.adapters.sync.backends.services.github_issue_fetch_service import (
             GitHubIssueFetchService,
         )
+        from roadmap.adapters.sync.backends.services.github_milestone_fetch_service import (
+            GitHubMilestoneFetchService,
+        )
+
+        issue_fetch_service = GitHubIssueFetchService(
+            self.backend.github_client,
+            self.backend.config,
+            self.backend._helpers,
+        )
+        all_remote_issues = issue_fetch_service.get_issues()
+
+        milestone_fetch_service = GitHubMilestoneFetchService(
+            self.backend.github_client,
+            self.backend.config,
+        )
+        all_remote_milestones = milestone_fetch_service.get_milestones()
+
+        return all_remote_issues, all_remote_milestones
+
+    def _analyze_issue_dependencies(
+        self,
+        issue_ids: list[str],
+        all_remote_issues: dict,
+        all_remote_milestones: dict,
+        report: SyncReport,
+    ) -> tuple[list, set, SyncReport]:
+        """Build list of issues to pull and their milestone dependencies."""
+        issues_to_pull = []
+        milestones_needed = set()
+
+        for issue_id in issue_ids:
+            # Strip _remote_ prefix if present
+            lookup_id = issue_id[8:] if issue_id.startswith("_remote_") else issue_id
+
+            if lookup_id not in all_remote_issues:
+                report.errors[issue_id] = "Issue not found on remote"
+                continue
+
+            sync_issue = all_remote_issues[lookup_id]
+            issues_to_pull.append((issue_id, lookup_id, sync_issue))
+
+            # Check if issue references a milestone
+            if sync_issue.milestone:
+                for milestone_num, sync_milestone in all_remote_milestones.items():
+                    if sync_milestone.name == sync_issue.milestone:
+                        milestones_needed.add(milestone_num)
+                        break
+
+        logger.info(
+            "dependency_analysis_complete",
+            issues_requested=len(issue_ids),
+            issues_found=len(issues_to_pull),
+            milestones_needed=len(milestones_needed),
+        )
+
+        return issues_to_pull, milestones_needed, report
+
+    def _pull_milestone_dependencies(self, milestones_needed: set) -> SyncReport:
+        """Pull milestone dependencies first."""
+        milestone_pull_report = SyncReport()
+        if milestones_needed:
+            logger.info("pulling_dependencies_milestones", count=len(milestones_needed))
+            milestone_ids = list(milestones_needed)
+            milestone_pull_report = self.pull_milestones(milestone_ids)
+
+            if milestone_pull_report.errors:
+                logger.warning(
+                    "milestone_pull_failures",
+                    failed_count=len(milestone_pull_report.errors),
+                    errors=list(milestone_pull_report.errors.keys())[:5],
+                )
+
+        return milestone_pull_report
+
+    def _pull_issues_phase(
+        self,
+        issues_to_pull: list,
+        all_remote_milestones: dict,
+        milestone_pull_report: SyncReport,
+        report: SyncReport,
+    ) -> SyncReport:
+        """Pull issues after their dependencies are satisfied."""
+        successful_pulls = []
+        failed_pulls = {}
+
+        logger.info("pulling_issues_phase", issue_count=len(issues_to_pull))
+
+        for issue_id, lookup_id, sync_issue in issues_to_pull:
+            try:
+                # Check if issue's milestone was successfully pulled
+                if sync_issue.milestone:
+                    milestone_num = self._find_milestone_number(
+                        sync_issue.milestone, all_remote_milestones
+                    )
+
+                    if milestone_num and milestone_num in milestone_pull_report.errors:
+                        failed_pulls[issue_id] = (
+                            f"Milestone '{sync_issue.milestone}' pull failed: "
+                            f"{milestone_pull_report.errors[milestone_num]}"
+                        )
+                        logger.debug(
+                            "issue_skipped_milestone_failed",
+                            issue_id=issue_id,
+                            milestone=sync_issue.milestone,
+                        )
+                        continue
+
+                # Pull the issue and create/update locally
+                success, error = self._pull_single_issue(sync_issue)
+
+                if success:
+                    successful_pulls.append(issue_id)
+                    logger.debug("pull_issue_processed", issue_id=issue_id)
+                else:
+                    failed_pulls[issue_id] = error or "Unknown error"
+
+            except Exception as e:
+                failed_pulls[issue_id] = str(e)
+                log_error_with_context(
+                    e,
+                    operation="pull_issue",
+                    entity_type="Issue",
+                    entity_id=issue_id,
+                    include_traceback=False,
+                )
+
+        report.pulled = successful_pulls
+        report.errors = failed_pulls
+
+        logger.info(
+            "pull_issues_complete",
+            milestones_pulled=len(milestone_pull_report.pulled)
+            if hasattr(milestone_pull_report, "pulled")
+            else 0,
+            issues_successful=len(successful_pulls),
+            issues_failed=len(failed_pulls),
+        )
+
+        return report
+
+    def _find_milestone_number(
+        self, milestone_name: str, all_remote_milestones: dict
+    ) -> int | None:
+        """Find milestone number by name."""
+        for milestone_num, sync_milestone in all_remote_milestones.items():
+            if sync_milestone.name == milestone_name:
+                return milestone_num
+        return None
+
+    def pull_milestones(self, milestone_ids: list[str]) -> SyncReport:
+        """Pull milestones from GitHub backend by IDs.
+
+        Args:
+            milestone_ids: List of milestone IDs to pull (GitHub milestone numbers as strings).
+
+        Returns:
+            Sync report with pull results and errors.
+        """
+        report = SyncReport()
+
+        if not milestone_ids:
+            return report
+
+        logger.info("pull_milestones_starting", milestone_count=len(milestone_ids))
+
+        # Fetch all remote milestones upfront
+        from roadmap.adapters.sync.backends.services.github_milestone_fetch_service import (
+            GitHubMilestoneFetchService,
+        )
 
         try:
-            fetch_service = GitHubIssueFetchService(
+            fetch_service = GitHubMilestoneFetchService(
                 self.backend.github_client,
                 self.backend.config,
-                self.backend._helpers,
             )
-            all_remote_issues = fetch_service.get_issues()
+            all_remote_milestones = fetch_service.get_milestones()
 
             successful_pulls = []
             failed_pulls = {}
 
-            # Process each requested issue and save locally
-            for issue_id in issue_ids:
+            logger.info(
+                "pull_milestones_keys_analysis",
+                requested_sample=milestone_ids[:3] if milestone_ids else [],
+                remote_keys_sample=list(all_remote_milestones.keys())[:3]
+                if all_remote_milestones
+                else [],
+                requested_count=len(milestone_ids),
+                remote_count=len(all_remote_milestones),
+            )
+
+            # Process each requested milestone and save locally
+            for milestone_id in milestone_ids:
                 try:
-                    if issue_id not in all_remote_issues:
-                        error_msg = "Issue not found on remote"
-                        failed_pulls[issue_id] = error_msg
-                        logger.debug("pull_issue_not_found", issue_id=issue_id)
+                    # Strip any prefix if present
+                    lookup_id = milestone_id
+                    if milestone_id.startswith("_remote_milestone_"):
+                        lookup_id = milestone_id[18:]  # Remove prefix
+
+                    if lookup_id not in all_remote_milestones:
+                        error_msg = "Milestone not found on remote"
+                        failed_pulls[milestone_id] = error_msg
+                        logger.debug(
+                            "pull_milestone_not_found",
+                            milestone_id=milestone_id,
+                            lookup_id=lookup_id,
+                        )
                         continue
 
-                    # Pull the issue and create/update locally
-                    sync_issue = all_remote_issues[issue_id]
-                    success, error = self._pull_single_issue(sync_issue)
+                    # Pull the milestone and create/update locally
+                    sync_milestone = all_remote_milestones[lookup_id]
+                    success, error = self._pull_single_milestone(sync_milestone)
 
                     if success:
-                        successful_pulls.append(issue_id)
-                        logger.debug("pull_issue_processed", issue_id=issue_id)
+                        successful_pulls.append(milestone_id)
+                        logger.debug(
+                            "pull_milestone_processed", milestone_id=milestone_id
+                        )
                     else:
-                        failed_pulls[issue_id] = error or "Unknown error"
+                        failed_pulls[milestone_id] = error or "Unknown error"
 
                 except Exception as e:
                     error_msg = str(e)
-                    failed_pulls[issue_id] = error_msg
+                    failed_pulls[milestone_id] = error_msg
                     log_error_with_context(
                         e,
-                        operation="pull_issue",
-                        entity_type="Issue",
-                        entity_id=issue_id,
+                        operation="pull_milestone",
+                        entity_type="Milestone",
+                        entity_id=milestone_id,
                         include_traceback=False,
                     )
 
@@ -522,7 +739,7 @@ class GitHubSyncOps:
             report.errors = failed_pulls
 
             logger.info(
-                "pull_issues_complete",
+                "pull_milestones_complete",
                 successful=len(successful_pulls),
                 failed=len(failed_pulls),
             )
@@ -531,7 +748,177 @@ class GitHubSyncOps:
 
         except Exception as e:
             logger.error(
-                "pull_issues_failed", error=str(e), error_type=type(e).__name__
+                "pull_milestones_failed", error=str(e), error_type=type(e).__name__
             )
-            report.error = f"Failed to pull issues: {str(e)}"
+            report.error = f"Failed to pull milestones: {str(e)}"
             return report
+
+    def _pull_single_milestone(self, sync_milestone) -> tuple[bool, str | None]:
+        """Pull a single milestone and persist it locally.
+
+        Args:
+            sync_milestone: SyncMilestone object from GitHub
+
+        Returns:
+            Tuple of (success: bool, error_message: str | None)
+        """
+        try:
+            # Create or update milestone locally
+            if not hasattr(self.backend, "core") or not self.backend.core:
+                return False, "Core not available"
+
+            core = self.backend.core
+
+            # Check if milestone already exists by GitHub milestone number
+            github_milestone_num = sync_milestone.backend_id
+            existing_milestone = None
+
+            # Try to find existing milestone by name (GitHub milestone title)
+            all_milestones = core.milestones.list()
+            for ms in all_milestones:
+                if ms.name == sync_milestone.name:
+                    existing_milestone = ms
+                    break
+
+            if existing_milestone:
+                # Update existing milestone
+                logger.debug(
+                    "milestone_exists_updating",
+                    milestone_name=sync_milestone.name,
+                    github_number=github_milestone_num,
+                )
+
+                # Update fields
+                updates = {
+                    "status": sync_milestone.status,
+                    "due_date": sync_milestone.due_date,
+                }
+
+                if sync_milestone.headline:
+                    updates["headline"] = sync_milestone.headline
+
+                success = core.milestones.update(existing_milestone.name, **updates)
+
+                if not success:
+                    return False, "Failed to update milestone"
+
+                # Store GitHub milestone number in database metadata
+                self._link_milestone_to_github(
+                    existing_milestone.name, github_milestone_num
+                )
+
+            else:
+                # Create new milestone
+                logger.debug(
+                    "milestone_creating_new",
+                    milestone_name=sync_milestone.name,
+                    github_number=github_milestone_num,
+                )
+
+                milestone = core.milestones.create(
+                    name=sync_milestone.name,
+                    headline=sync_milestone.headline or "",
+                    due_date=sync_milestone.due_date,
+                    status=sync_milestone.status,
+                )
+
+                # Store GitHub milestone number in database metadata
+                self._link_milestone_to_github(milestone.name, github_milestone_num)
+
+            logger.info(
+                "milestone_pulled_successfully",
+                milestone_name=sync_milestone.name,
+                github_number=github_milestone_num,
+            )
+
+            return True, None
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(
+                "pull_single_milestone_failed",
+                milestone_name=sync_milestone.name,
+                error=error_msg,
+                error_type=type(e).__name__,
+            )
+            return False, error_msg
+
+    def _link_milestone_to_github(
+        self, milestone_name: str, github_milestone_number: int
+    ) -> bool:
+        """Link milestone to GitHub milestone number by updating the milestone.
+
+        Args:
+            milestone_name: Local milestone name
+            github_milestone_number: GitHub milestone number
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not hasattr(self.backend, "core") or not self.backend.core:
+                return False
+
+            # Get the milestone using the service layer
+            milestone = self.backend.core.milestone_service.get_milestone(
+                milestone_name
+            )
+            if not milestone:
+                logger.debug(
+                    "milestone_not_found_for_linking",
+                    milestone_name=milestone_name,
+                )
+                return False
+
+            # Update the milestone's github_milestone field directly
+            milestone.github_milestone = github_milestone_number
+            milestone.updated = now_utc()
+
+            # Save the updated milestone using the repository
+            self.backend.core.milestone_service.repository.save(milestone)
+
+            logger.debug(
+                "milestone_linked_to_github",
+                milestone_name=milestone_name,
+                github_number=github_milestone_number,
+            )
+            return True
+
+        except Exception as e:
+            logger.warning(
+                "failed_to_link_milestone",
+                milestone_name=milestone_name,
+                github_number=github_milestone_number,
+                error=str(e),
+            )
+            return False
+
+    def push_milestones(self, local_milestones: list) -> SyncReport:
+        """Push multiple local milestones to GitHub.
+
+        Args:
+            local_milestones: List of Milestone objects to push
+
+        Returns:
+            SyncReport with pushed, conflicts, and errors.
+        """
+        report = SyncReport()
+
+        if not local_milestones:
+            return report
+
+        logger.info("push_milestones_starting", milestone_count=len(local_milestones))
+
+        # For now, milestone pushing is not implemented
+        # GitHub milestones would need to be created via the API
+        # This is a placeholder for future implementation
+
+        for milestone in local_milestones:
+            report.errors[milestone.name] = "Milestone pushing not yet implemented"
+
+        logger.warning(
+            "push_milestones_not_implemented",
+            milestone_count=len(local_milestones),
+        )
+
+        return report

@@ -20,3 +20,9 @@ github:
 display:
   default_milestone: null
   table_width: 100
+behavior:
+  auto_branch_on_start: false
+  confirm_destructive: true
+  show_tips: true
+  include_closed_in_critical_path: false
+  default_project_id: null

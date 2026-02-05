@@ -1,7 +1,7 @@
 ---
 id: "{{ project_id }}"
 name: "{{ project_name }}"
-headline: "{{ project_description }}"
+description: "{{ project_description }}"
 status: "planning"
 priority: "medium"
 owner: "{{ project_owner }}"

@@ -1,6 +1,6 @@
 ---
 name: "{{ milestone_name }}"
-headline: "{{ description }}"
+description: "{{ description }}"
 due_date: "{{ due_date }}"
 status: "open"
 github_milestone: null

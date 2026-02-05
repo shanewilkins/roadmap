@@ -84,9 +84,17 @@ class SyncPlanExecutor:
                 # Triage basic results into the SyncReport when possible
                 if not dry_run and result:
                     if action.action_type == "push":
-                        report.issues_pushed += 1
+                        # result is either bool (single item) or int (batch count)
+                        push_count = (
+                            result if isinstance(result, int) else (1 if result else 0)
+                        )
+                        report.issues_pushed += push_count
                     elif action.action_type == "pull":
-                        report.issues_pulled += 1
+                        # result is either bool (single item) or int (batch count)
+                        pull_count = (
+                            result if isinstance(result, int) else (1 if result else 0)
+                        )
+                        report.issues_pulled += pull_count
             except Exception as e:
                 logger.error(
                     "sync_action_execution_failed",
@@ -153,7 +161,9 @@ class SyncPlanExecutor:
                     if not hasattr(self, "_accumulated_errors"):
                         self._accumulated_errors = {}
                     self._accumulated_errors.update(r.errors)
-                return bool(getattr(r, "pushed", None))
+                # Return count of successfully pushed items
+                pushed_list = getattr(r, "pushed", [])
+                return bool(len(pushed_list)) if pushed_list else False
             except Exception as e:
                 logger.debug(
                     "batch_push_failed",
@@ -200,7 +210,9 @@ class SyncPlanExecutor:
                     if not hasattr(self, "_accumulated_errors"):
                         self._accumulated_errors = {}
                     self._accumulated_errors.update(r.errors)
-                return bool(getattr(r, "pulled", None))
+                # Return count of successfully pulled items
+                pulled_list = getattr(r, "pulled", [])
+                return bool(len(pulled_list)) if pulled_list else False
             except Exception as e:
                 logger.debug(
                     "batch_pull_failed",

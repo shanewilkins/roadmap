@@ -331,7 +331,7 @@ class TestSyncPlanExecutor:
     def test_handle_push_batch_issues(self, executor):
         """Test _handle_push with batch issues."""
         batch_result = MagicMock()
-        batch_result.pushed = True
+        batch_result.pushed = [{"id": 1}, {"id": 2}]  # Return list of pushed items
         executor.transport_adapter.push_issues.return_value = batch_result
 
         action = MagicMock()
@@ -340,7 +340,7 @@ class TestSyncPlanExecutor:
         result = executor._handle_push(action, dry_run=False)
 
         executor.transport_adapter.push_issues.assert_called_once()
-        assert result is True
+        assert result is True  # Should return True if items were pushed
 
     def test_handle_push_batch_fallback_to_single(self, executor):
         """Test _handle_push falls back to single push on batch failure."""

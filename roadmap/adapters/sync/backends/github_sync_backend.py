@@ -255,6 +255,37 @@ class GitHubSyncBackend:
         ops = GitHubSyncOps(self)
         return ops.pull_issues(issue_ids)
 
+    def pull_milestones(self, milestone_ids: list[str]) -> SyncReport:
+        """Pull specified remote GitHub milestones to local.
+
+        Args:
+            milestone_ids: List of remote milestone IDs to pull (GitHub milestone numbers)
+
+        Returns:
+            SyncReport with pulled, conflicts, and errors.
+        """
+        from roadmap.adapters.sync.backends.github_sync_ops import GitHubSyncOps
+
+        ops = GitHubSyncOps(self)
+        return ops.pull_milestones(milestone_ids)
+
+    def push_milestones(self, local_milestones: list) -> SyncReport:
+        """Push multiple local milestones to GitHub.
+
+        Args:
+            local_milestones: List of Milestone objects to push
+
+        Returns:
+            SyncReport with pushed, conflicts, and errors.
+
+        Note:
+            Currently not implemented - milestones must be created on GitHub first.
+        """
+        from roadmap.adapters.sync.backends.github_sync_ops import GitHubSyncOps
+
+        ops = GitHubSyncOps(self)
+        return ops.push_milestones(local_milestones)
+
     def pull_issue(self, issue_id: str) -> bool:
         """Pull a single remote GitHub issue to local.
 
@@ -397,9 +428,42 @@ class GitHubSyncBackend:
             return False
 
     def get_milestones(self) -> dict[str, SyncMilestone]:
-        """Fetch all milestones from GitHub."""
-        # TODO: Implement full milestone fetching from GitHub API
-        return {}
+        """Fetch all milestones from GitHub.
+
+        Returns:
+            Dictionary mapping milestone_number -> SyncMilestone objects.
+            Returns empty dict if unable to fetch.
+        """
+        from roadmap.adapters.sync.backends.services.github_milestone_fetch_service import (
+            GitHubMilestoneFetchService,
+        )
+
+        if not self.github_client:
+            logger.warning("github_milestone_fetch_no_client")
+            return {}
+
+        try:
+            fetch_service = GitHubMilestoneFetchService(self.github_client, self.config)
+            milestones = fetch_service.get_milestones(state="all")
+
+            logger.info(
+                "github_milestones_retrieved",
+                count=len(milestones),
+                owner=self.config.get("owner"),
+                repo=self.config.get("repo"),
+            )
+
+            return milestones
+
+        except Exception as e:
+            logger.error(
+                "github_get_milestones_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+                owner=self.config.get("owner"),
+                repo=self.config.get("repo"),
+            )
+            return {}
 
     # --- Helper methods for pull/create matching and persistence ---
     def _find_matching_local_issue(

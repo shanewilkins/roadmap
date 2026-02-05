@@ -493,22 +493,6 @@ class YAMLMilestoneRepository(MilestoneRepository):
         milestone_path = self.milestones_dir / milestone.filename
         MilestoneParser.save_milestone_file(milestone, milestone_path)
 
-        # Persist metadata to database (non-blocking)
-        try:
-            self.db.create_milestone(
-                {
-                    "title": milestone.name,
-                    "description": milestone.content,
-                    "status": milestone.status.value,
-                }
-            )
-        except Exception as e:
-            logger.debug(
-                "failed_to_persist_milestone_to_database",
-                error=str(e),
-                severity="operational",
-            )
-
     def update(self, milestone_id: str, updates: dict) -> Milestone | None:
         """Update specific fields of a milestone.
 

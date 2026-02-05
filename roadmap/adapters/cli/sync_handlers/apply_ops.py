@@ -139,8 +139,8 @@ def perform_apply_phase(
 
     console_inst.print("[bold cyan]✅ Sync Results[/bold cyan]")
 
-    pushed = analysis_report.issues_needs_push
-    pulled = analysis_report.issues_needs_pull
+    pushed = report.issues_pushed
+    pulled = report.issues_pulled
 
     if pushed > 0:
         console_inst.print(f"   📤 Pushed: {pushed}")
