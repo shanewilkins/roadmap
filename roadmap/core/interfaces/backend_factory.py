@@ -2,12 +2,17 @@
 
 Defines contract for backend instantiation without importing adapter implementations.
 Allows dynamic backend selection without layer violations.
+
+Updated to use Result<T, SyncError> pattern for explicit error handling.
 """
 
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from roadmap.common.result import Result
+    from roadmap.core.services.sync.sync_errors import SyncError
+
     from .sync_backend import SyncReport
 
 
@@ -54,14 +59,18 @@ class SyncBackendFactoryInterface(ABC):
 
 
 class SyncBackendInterface(ABC):
-    """Contract for sync backend implementations."""
+    """Contract for sync backend implementations.
+
+    Updated to use Result<T, SyncError> for explicit error handling.
+    """
 
     @abstractmethod
-    def authenticate(self) -> bool:
+    def authenticate(self) -> "Result[bool, SyncError]":
         """Authenticate with the backend service.
 
         Returns:
-            True if authentication successful
+            Ok(True) if authentication successful
+            Err(SyncError) with error details
         """
         pass
 
@@ -75,28 +84,30 @@ class SyncBackendInterface(ABC):
         pass
 
     @abstractmethod
-    def get_issues(self) -> dict[str, Any]:
+    def get_issues(self) -> "Result[dict[str, Any], SyncError]":
         """Get issues from backend.
 
         Returns:
-            Dictionary of issues
+            Ok(dict) of issues on success
+            Err(SyncError) with error details
         """
         pass
 
     @abstractmethod
-    def push_issues(self, issues: dict[str, Any]) -> "SyncReport":  # noqa: F841
+    def push_issues(self, issues: dict[str, Any]) -> "Result[SyncReport, SyncError]":  # noqa: F841
         """Push issues to backend.
 
         Args:
             issues: Dictionary of issues to push
 
         Returns:
-            SyncReport with results
+            Ok(SyncReport) with results on success
+            Err(SyncError) with fatal error details
         """
         pass
 
     @abstractmethod
-    def push_issue(self, local_issue: Any) -> bool:  # noqa: F841
+    def push_issue(self, local_issue: Any) -> "Result[bool, SyncError]":  # noqa: F841
         """Push a single issue to backend.
 
         Delegates to push_issues by default but can be overridden.
@@ -105,24 +116,26 @@ class SyncBackendInterface(ABC):
             local_issue: Issue object to push
 
         Returns:
-            True if successful
+            Ok(True) if successful
+            Err(SyncError) with error details
         """
         pass
 
     @abstractmethod
-    def pull_issues(self, issue_ids: list[str]) -> "SyncReport":
+    def pull_issues(self, issue_ids: list[str]) -> "Result[SyncReport, SyncError]":
         """Pull issues from backend.
 
         Args:
             issue_ids: List of issue IDs to pull
 
         Returns:
-            SyncReport with results
+            Ok(SyncReport) with results on success
+            Err(SyncError) with fatal error details
         """
         pass
 
     @abstractmethod
-    def pull_issue(self, issue_id: str) -> bool:
+    def pull_issue(self, issue_id: str) -> "Result[bool, SyncError]":
         """Pull a single issue from backend.
 
         Delegates to pull_issues by default but can be overridden.
@@ -131,7 +144,8 @@ class SyncBackendInterface(ABC):
             issue_id: Issue ID to pull
 
         Returns:
-            True if successful
+            Ok(True) if successful
+            Err(SyncError) with error details
         """
         pass
 

@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from roadmap.adapters.sync.services.sync_data_fetch_service import SyncDataFetchService
+from roadmap.common.result import Err, Ok
+from roadmap.core.services.sync.sync_errors import SyncError, SyncErrorType
 from roadmap.core.services.sync.sync_report import SyncReport
 
 
@@ -22,7 +24,8 @@ class TestSyncDataFetchService:
     def mock_backend(self):
         """Create mock SyncBackendInterface."""
         backend = MagicMock()
-        backend.get_issues.return_value = {}
+        # Return Result type by default
+        backend.get_issues.return_value = Ok({})
         return backend
 
     @pytest.fixture
@@ -38,7 +41,7 @@ class TestSyncDataFetchService:
     def test_fetch_remote_issues_success(self, service, mock_backend):
         """Test successful remote issues fetch."""
         remote_issues = {"123": {"title": "Issue 1"}, "456": {"title": "Issue 2"}}
-        mock_backend.get_issues.return_value = remote_issues
+        mock_backend.get_issues.return_value = Ok(remote_issues)
         report = SyncReport()
 
         result = service.fetch_remote_issues(report)
@@ -47,8 +50,12 @@ class TestSyncDataFetchService:
         assert report.error is None
 
     def test_fetch_remote_issues_returns_none(self, service, mock_backend):
-        """Test when backend returns None."""
-        mock_backend.get_issues.return_value = None
+        """Test when backend returns error."""
+        error = SyncError(
+            error_type=SyncErrorType.NETWORK_ERROR,
+            message="Failed to fetch remote issues",
+        )
+        mock_backend.get_issues.return_value = Err(error)
         report = SyncReport()
 
         result = service.fetch_remote_issues(report)
@@ -59,45 +66,49 @@ class TestSyncDataFetchService:
         )
 
     def test_fetch_remote_issues_connection_error(self, service, mock_backend):
-        """Test handling of ConnectionError."""
-        mock_backend.get_issues.side_effect = ConnectionError("Network failed")
+        """Test handling of ConnectionError wrapped in Result."""
+        error = SyncError(
+            error_type=SyncErrorType.NETWORK_ERROR,
+            message="Network failed",
+        )
+        mock_backend.get_issues.return_value = Err(error)
         report = SyncReport()
 
         result = service.fetch_remote_issues(report)
 
         assert result is None
-        assert (
-            report.error is not None and "Failed to fetch remote issues" in report.error
-        )
+        assert report.error is not None and "Network failed" in report.error
 
     def test_fetch_remote_issues_timeout_error(self, service, mock_backend):
-        """Test handling of TimeoutError."""
-        mock_backend.get_issues.side_effect = TimeoutError("Request timeout")
+        """Test handling of TimeoutError wrapped in Result."""
+        error = SyncError(
+            error_type=SyncErrorType.TIMEOUT,
+            message="Request timeout",
+        )
+        mock_backend.get_issues.return_value = Err(error)
         report = SyncReport()
 
         result = service.fetch_remote_issues(report)
 
         assert result is None
-        assert (
-            report.error is not None and "Failed to fetch remote issues" in report.error
-        )
+        assert report.error is not None and "timeout" in report.error.lower()
 
     def test_fetch_remote_issues_generic_exception(self, service, mock_backend):
         """Test handling of generic exceptions."""
-        mock_backend.get_issues.side_effect = RuntimeError("Unexpected error")
+        mock_backend.get_issues.return_value = Err(
+            SyncError.from_exception(RuntimeError("Unexpected error"))
+        )
         report = SyncReport()
 
         result = service.fetch_remote_issues(report)
 
         assert result is None
-        assert (
-            report.error is not None and "Failed to fetch remote issues" in report.error
-        )
+        assert report.error is not None
 
     @patch("roadmap.adapters.sync.services.sync_data_fetch_service.logger")
     def test_fetch_remote_issues_logs_success(self, mock_logger, service, mock_backend):
         """Test logging on successful fetch."""
-        mock_backend.get_issues.return_value = {"123": {}}
+        mock_backend.get_issues.return_value = Ok({"123": {}})
         report = SyncReport()
 
         service.fetch_remote_issues(report)
@@ -111,7 +122,9 @@ class TestSyncDataFetchService:
         self, mock_logger, service, mock_backend
     ):
         """Test logging on connection error."""
-        mock_backend.get_issues.side_effect = ConnectionError("Network")
+        mock_backend.get_issues.return_value = Err(
+            SyncError.from_exception(ConnectionError("Network"))
+        )
         report = SyncReport()
 
         service.fetch_remote_issues(report)
@@ -219,7 +232,7 @@ class TestSyncDataFetchService:
         self, service, mock_backend, mock_core
     ):
         """Test that remote and local fetch reports are independent."""
-        mock_backend.get_issues.return_value = {"123": {}}
+        mock_backend.get_issues.return_value = Ok({"123": {}})
         mock_core.issues.list_all_including_archived.return_value = []
 
         report1 = SyncReport()
@@ -233,7 +246,7 @@ class TestSyncDataFetchService:
 
     def test_fetch_remote_issues_empty_dict(self, service, mock_backend):
         """Test fetching empty remote dict."""
-        mock_backend.get_issues.return_value = {}
+        mock_backend.get_issues.return_value = Ok({})
         report = SyncReport()
 
         result = service.fetch_remote_issues(report)
@@ -246,7 +259,7 @@ class TestSyncDataFetchService:
         batch1 = {"123": {"title": "Issue 1"}}
         batch2 = {"456": {"title": "Issue 2"}}
 
-        mock_backend.get_issues.side_effect = [batch1, batch2]
+        mock_backend.get_issues.side_effect = [Ok(batch1), Ok(batch2)]
 
         report1 = SyncReport()
         result1 = service.fetch_remote_issues(report1)
@@ -282,7 +295,7 @@ class TestSyncDataFetchService:
             "labels": ["bug", "urgent"],
             "custom_field": "value",
         }
-        mock_backend.get_issues.return_value = {"123": issue}
+        mock_backend.get_issues.return_value = Ok({"123": issue})
         report = SyncReport()
 
         result = service.fetch_remote_issues(report)
@@ -292,7 +305,7 @@ class TestSyncDataFetchService:
     @patch("roadmap.adapters.sync.services.sync_data_fetch_service.logger")
     def test_fetch_remote_issues_logs_debug(self, mock_logger, service, mock_backend):
         """Test debug logging is called."""
-        mock_backend.get_issues.return_value = {}
+        mock_backend.get_issues.return_value = Ok({})
         report = SyncReport()
 
         service.fetch_remote_issues(report)
@@ -322,7 +335,7 @@ class TestSyncDataFetchServiceIntegration:
             MagicMock(),
             MagicMock(),
         ]
-        mock_backend.get_issues.return_value = {"123": {"title": "Remote"}}
+        mock_backend.get_issues.return_value = Ok({"123": {"title": "Remote"}})
 
         service = SyncDataFetchService(mock_core, mock_backend)
 
@@ -339,7 +352,9 @@ class TestSyncDataFetchServiceIntegration:
         mock_backend = MagicMock()
 
         # First remote call fails
-        mock_backend.get_issues.side_effect = ConnectionError("Network")
+        mock_backend.get_issues.return_value = Err(
+            SyncError.from_exception(ConnectionError("Network"))
+        )
         # Local call succeeds
         mock_core.issues.list_all_including_archived.return_value = []
 

@@ -153,19 +153,21 @@ class SyncMergeOrchestrator:
         try:
             # Helper: authenticate and fetch remote issues
             def _auth_and_fetch_remote():
-                try:
-                    if not self.backend.authenticate():
-                        report.error = "Backend authentication failed"
-                        return None
-                except Exception as e:
-                    report.error = f"Backend authentication error: {str(e)}"
+                # Handle Result type from backend.authenticate()
+                auth_result = self.backend.authenticate()
+                if auth_result.is_err():
+                    error = auth_result.unwrap_err()
+                    report.error = str(error)
                     return None
 
-                try:
-                    return self.backend.get_issues() or {}
-                except Exception as e:
-                    report.error = f"Failed to fetch remote issues: {str(e)}"
+                # Handle Result type from backend.get_issues()
+                issues_result = self.backend.get_issues()
+                if issues_result.is_err():
+                    error = issues_result.unwrap_err()
+                    report.error = str(error)
                     return None
+
+                return issues_result.unwrap()
 
             # Helper: fetch local issues safely
             def _fetch_local_safe():

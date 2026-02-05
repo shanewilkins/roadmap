@@ -3,12 +3,16 @@
 This module defines the SyncBackendInterface that all sync backends must implement,
 enabling support for multiple sync targets (GitHub, vanilla Git, GitLab, etc.)
 without coupling the core sync logic to specific implementations.
+
+Updated to use Result<T, SyncError> pattern for explicit error handling.
 """
 
 from typing import Any, Protocol
 
+from roadmap.common.result import Result
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue, SyncMilestone, SyncProject
+from roadmap.core.services.sync.sync_errors import SyncError
 
 
 class SyncConflict:
@@ -59,15 +63,17 @@ class SyncBackendInterface(Protocol):
     workflows.
     """
 
-    def authenticate(self) -> bool:
+    def authenticate(self) -> Result[bool, SyncError]:
         """Verify credentials and remote connectivity.
 
         Returns:
-            True if authentication succeeds, False otherwise.
-            Should not raise exceptions; return False on auth failure.
+            Ok(True) if authentication succeeds
+            Err(SyncError) with authentication error details
 
-        Raises:
-            No exceptions should be raised. Return False for any auth failure.
+        Notes:
+            - No longer raises exceptions
+            - Returns Err with AUTHENTICATION_FAILED error type on failure
+            - May return TOKEN_EXPIRED or PERMISSION_DENIED error types
         """
         ...
 
@@ -80,93 +86,134 @@ class SyncBackendInterface(Protocol):
         """
         ...
 
-    def get_issues(self) -> dict[str, SyncIssue]:
+    def get_issues(self) -> Result[dict[str, SyncIssue], SyncError]:
         """Fetch all issues from remote.
 
         Returns:
-            Dictionary mapping issue_id -> SyncIssue.
-            Empty dict if no issues exist or remote is not available.
+            Ok(dict) mapping issue_id -> SyncIssue on success
+            Err(SyncError) with error details on failure
 
         Notes:
-            - Should return local/cached copy if remote unavailable
             - Backends normalize their API responses to SyncIssue format
             - All fields are populated from backend data, including raw_response
+            - May return NETWORK_ERROR, API_RATE_LIMIT, or other error types
         """
         ...
 
-    def push_issues(self, local_issues: list[Issue]) -> SyncReport:
+    def push_issues(self, local_issues: list[Issue]) -> Result[SyncReport, SyncError]:
         """Push multiple local issues to remote.
 
         Args:
             local_issues: List of Issue objects to push
 
         Returns:
-            SyncReport with pushed, conflicts, and errors.
+            Ok(SyncReport) with pushed, conflicts, and errors on success
+            Err(SyncError) with fatal error details if operation cannot proceed
 
         Notes:
             - Should not stop on first error; attempt all issues
+            - Individual issue errors go in report.errors dict
+            - Fatal errors (auth, network) return Err
             - Populate report.pushed with successful issue IDs
             - Populate report.conflicts with conflicting issues
-            - Populate report.errors with issue_id -> error_message
-            - Single issues should be handled via push_issue(issue)
         """
         ...
 
-    def push_issue(self, local_issue: Issue) -> bool:
+    def push_issue(self, local_issue: Issue) -> Result[bool, SyncError]:
         """Push a single local issue to remote.
 
         Args:
             local_issue: The Issue object to push to remote
 
         Returns:
-            True if push succeeds, False if conflict or error.
+            Ok(True) if push succeeds
+            Err(SyncError) with error details if push fails
 
         Notes:
             - Default implementation: delegates to push_issues()
             - Backends may override for optimization
-            - Should handle conflicts gracefully (return False, not raise)
-            - May update local_issue fields
             - Idempotent: pushing same issue twice should be safe
         """
-        report = self.push_issues([local_issue])
-        return len(report.pushed) > 0 and len(report.errors) == 0
+        report_result = self.push_issues([local_issue])
+        if report_result.is_err():
+            return report_result  # type: ignore[return-value]
 
-    def pull_issues(self, issue_ids: list[str]) -> SyncReport:
+        report = report_result.unwrap()
+        if len(report.pushed) > 0 and len(report.errors) == 0:
+            from roadmap.common.result import Ok
+
+            return Ok(True)
+        else:
+            from roadmap.common.result import Err
+            from roadmap.core.services.sync.sync_errors import SyncError, SyncErrorType
+
+            error_msg = report.errors.get(str(local_issue.id), "Push failed")
+            return Err(
+                SyncError(
+                    error_type=SyncErrorType.UNKNOWN_ERROR,
+                    message=error_msg,
+                    entity_type="Issue",
+                    entity_id=str(local_issue.id),
+                )
+            )
+
+    def pull_issues(self, issue_ids: list[str]) -> Result[SyncReport, SyncError]:
         """Pull specified remote issues to local.
 
         Args:
             issue_ids: List of remote issue IDs to pull. Empty list means pull nothing.
 
         Returns:
-            SyncReport with pulled, conflicts, and errors.
+            Ok(SyncReport) with pulled, conflicts, and errors on success
+            Err(SyncError) with fatal error details if operation cannot proceed
 
         Notes:
             - Should detect conflicts with existing local issues
+            - Individual issue errors go in report.errors dict
+            - Fatal errors (auth, network) return Err
             - Populate report.pulled with issue IDs successfully integrated
             - Populate report.conflicts with conflicting issues
-            - Populate report.errors with issue_id -> error_message
             - Backend can optimize this (batch API calls, parallel processing, etc.)
-            - Single issues should be handled via pull_issue(issue_id)
         """
         ...
 
-    def pull_issue(self, issue_id: str) -> bool:
+    def pull_issue(self, issue_id: str) -> Result[bool, SyncError]:
         """Pull a single remote issue to local.
 
         Args:
             issue_id: The remote issue ID to pull
 
         Returns:
-            True if pull succeeds, False if error.
+            Ok(True) if pull succeeds
+            Err(SyncError) with error details if pull fails
 
         Notes:
             - Default implementation: delegates to pull_issues()
             - Backends may override for optimization
             - Fetches the remote issue and updates local
-            - Should not raise exceptions; return False on failure
         """
-        report = self.pull_issues([issue_id])
-        return len(report.pulled) > 0 and len(report.errors) == 0
+        report_result = self.pull_issues([issue_id])
+        if report_result.is_err():
+            return report_result  # type: ignore[return-value]
+
+        report = report_result.unwrap()
+        if len(report.pulled) > 0 and len(report.errors) == 0:
+            from roadmap.common.result import Ok
+
+            return Ok(True)
+        else:
+            from roadmap.common.result import Err
+            from roadmap.core.services.sync.sync_errors import SyncError, SyncErrorType
+
+            error_msg = report.errors.get(issue_id, "Pull failed")
+            return Err(
+                SyncError(
+                    error_type=SyncErrorType.UNKNOWN_ERROR,
+                    message=error_msg,
+                    entity_type="Issue",
+                    entity_id=issue_id,
+                )
+            )
 
     def get_conflict_resolution_options(self, conflict: SyncConflict) -> list[str]:
         """Get available resolution strategies for a conflict.
@@ -201,20 +248,28 @@ class SyncBackendInterface(Protocol):
         """
         ...
 
-    def get_milestones(self) -> dict[str, SyncMilestone]:
+    def get_milestones(self) -> Result[dict[str, SyncMilestone], SyncError]:
         """Fetch all milestones from remote.
 
         Returns:
-            Dictionary mapping milestone_id -> SyncMilestone.
-            Empty dict if no milestones exist or remote is not available.
+            Ok(dict) mapping milestone_id -> SyncMilestone on success
+            Err(SyncError) with error details on failure
+
+        Notes:
+            - Empty dict in Ok indicates no milestones exist
+            - Network errors return Err
         """
         ...
 
-    def get_projects(self) -> dict[str, SyncProject]:
+    def get_projects(self) -> Result[dict[str, SyncProject], SyncError]:
         """Fetch all projects from remote.
 
         Returns:
-            Dictionary mapping project_id -> SyncProject.
-            Empty dict if no projects exist or remote is not available.
+            Ok(dict) mapping project_id -> SyncProject on success
+            Err(SyncError) with error details on failure
+
+        Notes:
+            - Empty dict in Ok indicates no projects exist
+            - Network errors return Err
         """
         ...

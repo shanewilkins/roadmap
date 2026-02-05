@@ -1,4 +1,7 @@
-"""Service for fetching and counting sync data from local and remote sources."""
+"""Service for fetching and counting sync data from local and remote sources.
+
+Updated to use Result<T, SyncError> pattern for explicit error handling.
+"""
 
 from structlog import get_logger
 
@@ -30,42 +33,33 @@ class SyncDataFetchService:
 
         Returns:
             Dict of remote issues or None if fetch failed
+
+        Notes:
+            Handles Result<dict, SyncError> from backend.get_issues()
         """
-        try:
-            logger.debug("fetching_remote_issues")
-            remote_issues_data = self.backend.get_issues()
-            if remote_issues_data is None:
-                report.error = "Failed to fetch remote issues"
-                logger.error(
-                    "remote_issues_fetch_returned_none",
-                    operation="fetch_remote_issues",
-                    suggested_action="check_backend_connectivity",
-                )
-                return None
+        logger.debug("fetching_remote_issues")
+
+        result = self.backend.get_issues()
+
+        if result.is_ok():
+            remote_issues_data = result.unwrap()
             logger.info("remote_issues_fetched", remote_count=len(remote_issues_data))
             return remote_issues_data
-        except (ConnectionError, TimeoutError) as e:
-            report.error = f"Failed to fetch remote issues: {str(e)}"
-            logger.error(
-                "remote_issues_fetch_error",
-                operation="fetch_remote_issues",
-                error_type=type(e).__name__,
-                error=str(e),
-                is_recoverable=True,
-                suggested_action="retry_after_delay",
-            )
-            return None
-        except Exception as e:
-            report.error = f"Failed to fetch remote issues: {str(e)}"
-            logger.error(
-                "remote_issues_fetch_error",
-                operation="fetch_remote_issues",
-                error_type=type(e).__name__,
-                error=str(e),
-                is_recoverable=False,
-                suggested_action="check_backend_configuration",
-            )
-            return None
+
+        # Handle fetch error
+        error = result.unwrap_err()
+        report.error = str(error)
+
+        logger.error(
+            "remote_issues_fetch_error",
+            operation="fetch_remote_issues",
+            error_type=error.error_type.value,
+            error_message=error.message,
+            is_recoverable=error.is_recoverable,
+            suggested_action=error.suggested_fix or "check_backend_connectivity",
+        )
+
+        return None
 
     def fetch_local_issues(self, report: SyncReport):
         """Fetch local issues from roadmap.
@@ -167,8 +161,10 @@ class SyncDataFetchService:
                 else:
                     remote_open_count += 1
 
-            remote_milestones = self.backend.get_milestones()
-            remote_milestones_count = len(remote_milestones) if remote_milestones else 0
+            milestones_result = self.backend.get_milestones()
+            remote_milestones_count = (
+                len(milestones_result.unwrap()) if milestones_result.is_ok() else 0
+            )
             logger.debug(
                 "remote_items_counted",
                 remote_issues=remote_issues_count,

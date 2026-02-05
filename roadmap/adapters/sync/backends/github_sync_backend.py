@@ -2,6 +2,8 @@
 
 This module provides the GitHub API backend for syncing roadmap issues
 with GitHub repositories. It implements the SyncBackendInterface protocol.
+
+Updated to use Result<T, SyncError> pattern for explicit error handling.
 """
 
 from collections.abc import Callable
@@ -18,6 +20,7 @@ from roadmap.adapters.sync.backends.services.github_authentication_service impor
 from roadmap.adapters.sync.backends.services.github_issue_fetch_service import (
     GitHubIssueFetchService,
 )
+from roadmap.common.result import Err, Ok, Result
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces import (
     SyncConflict,
@@ -27,6 +30,11 @@ from roadmap.core.models.sync_models import (
     SyncIssue,
     SyncMilestone,
     SyncProject,
+)
+from roadmap.core.services.sync.sync_errors import (
+    SyncError,
+    SyncErrorType,
+    authentication_error,
 )
 from roadmap.core.services.sync.sync_metadata_service import SyncMetadataService
 from roadmap.infrastructure.coordination.core import RoadmapCore
@@ -140,18 +148,35 @@ class GitHubSyncBackend:
         """
         return "github"
 
-    def authenticate(self) -> bool:
+    def authenticate(self) -> Result[bool, SyncError]:
         """Verify credentials and remote connectivity.
 
         Returns:
-            True if authentication succeeds (token valid and repo accessible),
-            False otherwise (no exceptions raised).
+            Ok(True) if authentication succeeds (token valid and repo accessible)
+            Err(SyncError) with authentication error details
         """
-        result = self._auth_service.authenticate()
-        if result and self.github_client is None:
-            # Update our client reference after successful auth
-            self.github_client = self._auth_service.github_client
-        return result
+        try:
+            result = self._auth_service.authenticate()
+            if result and self.github_client is None:
+                # Update our client reference after successful auth
+                self.github_client = self._auth_service.github_client
+
+            if result:
+                return Ok(True)
+            else:
+                return Err(authentication_error("GitHub authentication failed"))
+        except Exception as e:
+            logger.error(
+                "github_authenticate_exception",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return Err(
+                SyncError.from_exception(
+                    e,
+                    error_type=SyncErrorType.AUTHENTICATION_FAILED,
+                )
+            )
 
     def get_api_client(self) -> Any:
         """Get the GitHub API client with handler methods for push/pull operations.
@@ -186,74 +211,144 @@ class GitHubSyncBackend:
             repo=self.config.get("repo"),
         )
 
-    def get_issues(self) -> dict[str, SyncIssue]:
+    def get_issues(self) -> Result[dict[str, SyncIssue], SyncError]:
         """Fetch all issues from GitHub remote.
 
         Returns:
-            Dictionary mapping issue_id -> SyncIssue objects.
-            Returns empty dict if unable to fetch.
+            Ok(dict) mapping issue_id -> SyncIssue objects on success
+            Err(SyncError) with error details on failure
         """
-        # Lazily initialize fetch service after first auth
-        if self._fetch_service is None and self.github_client:
-            self._fetch_service = GitHubIssueFetchService(
-                self.github_client, self.config, self._helpers
+        try:
+            # Lazily initialize fetch service after first auth
+            if self._fetch_service is None and self.github_client:
+                self._fetch_service = GitHubIssueFetchService(
+                    self.github_client, self.config, self._helpers
+                )
+
+            if self._fetch_service is None:
+                logger.warning("github_fetch_service_not_initialized")
+                return Err(
+                    SyncError(
+                        error_type=SyncErrorType.AUTHENTICATION_FAILED,
+                        message="GitHub fetch service not initialized - authenticate first",
+                        suggested_fix="Call authenticate() before get_issues()",
+                    )
+                )
+
+            issues = self._fetch_service.get_issues()
+            return Ok(issues)
+        except Exception as e:
+            logger.error(
+                "github_get_issues_exception",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return Err(
+                SyncError.from_exception(
+                    e,
+                    error_type=SyncErrorType.NETWORK_ERROR,
+                )
             )
 
-        if self._fetch_service is None:
-            logger.warning("github_fetch_service_not_initialized")
-            return {}
-
-        return self._fetch_service.get_issues()
-
-    def push_issues(self, local_issues: list[Issue]) -> SyncReport:
+    def push_issues(self, local_issues: list[Issue]) -> Result[SyncReport, SyncError]:
         """Push multiple local issues to GitHub.
 
         Args:
             local_issues: List of Issue objects to push
 
         Returns:
-            SyncReport with pushed, conflicts, and errors.
+            Ok(SyncReport) with pushed, conflicts, and errors on success
+            Err(SyncError) with fatal error details if operation cannot proceed
         """
-        # Delegate orchestration to helper class
-        from roadmap.adapters.sync.backends.github_sync_ops import GitHubSyncOps
+        try:
+            # Delegate orchestration to helper class
+            from roadmap.adapters.sync.backends.github_sync_ops import GitHubSyncOps
 
-        ops = GitHubSyncOps(self)
-        return ops.push_issues(local_issues)
+            ops = GitHubSyncOps(self)
+            report = ops.push_issues(local_issues)
+            return Ok(report)
+        except Exception as e:
+            logger.error(
+                "github_push_issues_exception",
+                error=str(e),
+                error_type=type(e).__name__,
+                issue_count=len(local_issues),
+            )
+            return Err(
+                SyncError.from_exception(
+                    e,
+                    error_type=SyncErrorType.UNKNOWN_ERROR,
+                    entity_type="Issue",
+                )
+            )
 
-    def push_issue(self, local_issue: Issue) -> bool:
+    def push_issue(self, local_issue: Issue) -> Result[bool, SyncError]:
         """Push a single local issue to GitHub.
 
         Args:
             local_issue: The Issue object to push
 
         Returns:
-            True if push succeeds, False if error.
+            Ok(True) if push succeeds
+            Err(SyncError) with error details if push fails
 
         Deprecated:
             Use push_issues([issue]) instead. This method exists for backward
             compatibility but is not used by the sync orchestrator.
         """
-        report = self.push_issues([local_issue])
-        return len(report.pushed) > 0 and len(report.errors) == 0
+        report_result = self.push_issues([local_issue])
+        if report_result.is_err():
+            return report_result  # type: ignore[return-value]
 
-    def pull_issues(self, issue_ids: list[str]) -> SyncReport:
+        report = report_result.unwrap()
+        if len(report.pushed) > 0 and len(report.errors) == 0:
+            return Ok(True)
+        else:
+            error_msg = report.errors.get(str(local_issue.id), "Push failed")
+            return Err(
+                SyncError(
+                    error_type=SyncErrorType.UNKNOWN_ERROR,
+                    message=error_msg,
+                    entity_type="Issue",
+                    entity_id=str(local_issue.id),
+                )
+            )
+
+    def pull_issues(self, issue_ids: list[str]) -> Result[SyncReport, SyncError]:
         """Pull specified remote GitHub issues to local.
 
         Args:
             issue_ids: List of remote issue IDs to pull
 
         Returns:
-            SyncReport with pulled, conflicts, and errors.
+            Ok(SyncReport) with pulled, conflicts, and errors on success
+            Err(SyncError) with fatal error details if operation cannot proceed
 
         Notes:
             - Each ID should correspond to a remote issue
             - Updates or creates local files as needed
             - Uses parallel execution with thread pool for performance
         """
-        from roadmap.adapters.sync.backends.github_sync_ops import GitHubSyncOps
+        try:
+            from roadmap.adapters.sync.backends.github_sync_ops import GitHubSyncOps
 
-        ops = GitHubSyncOps(self)
-        return ops.pull_issues(issue_ids)
+            ops = GitHubSyncOps(self)
+            report = ops.pull_issues(issue_ids)
+            return Ok(report)
+        except Exception as e:
+            logger.error(
+                "github_pull_issues_exception",
+                error=str(e),
+                error_type=type(e).__name__,
+                issue_count=len(issue_ids),
+            )
+            return Err(
+                SyncError.from_exception(
+                    e,
+                    error_type=SyncErrorType.UNKNOWN_ERROR,
+                    entity_type="Issue",
+                )
+            )
 
     def pull_milestones(self, milestone_ids: list[str]) -> SyncReport:
         """Pull specified remote GitHub milestones to local.
@@ -427,12 +522,12 @@ class GitHubSyncBackend:
             )
             return False
 
-    def get_milestones(self) -> dict[str, SyncMilestone]:
+    def get_milestones(self) -> Result[dict[str, SyncMilestone], SyncError]:
         """Fetch all milestones from GitHub.
 
         Returns:
-            Dictionary mapping milestone_number -> SyncMilestone objects.
-            Returns empty dict if unable to fetch.
+            Ok(dict) mapping milestone_number -> SyncMilestone objects on success
+            Err(SyncError) with error details on failure
         """
         from roadmap.adapters.sync.backends.services.github_milestone_fetch_service import (
             GitHubMilestoneFetchService,
@@ -440,7 +535,14 @@ class GitHubSyncBackend:
 
         if not self.github_client:
             logger.warning("github_milestone_fetch_no_client")
-            return {}
+            return Err(
+                SyncError(
+                    error_type=SyncErrorType.AUTHENTICATION_FAILED,
+                    message="GitHub client not initialized - authenticate first",
+                    entity_type="Milestone",
+                    suggested_fix="Call authenticate() before get_milestones()",
+                )
+            )
 
         try:
             fetch_service = GitHubMilestoneFetchService(self.github_client, self.config)
@@ -453,7 +555,7 @@ class GitHubSyncBackend:
                 repo=self.config.get("repo"),
             )
 
-            return milestones
+            return Ok(milestones)
 
         except Exception as e:
             logger.error(
@@ -463,7 +565,13 @@ class GitHubSyncBackend:
                 owner=self.config.get("owner"),
                 repo=self.config.get("repo"),
             )
-            return {}
+            return Err(
+                SyncError.from_exception(
+                    e,
+                    error_type=SyncErrorType.NETWORK_ERROR,
+                    entity_type="Milestone",
+                )
+            )
 
     # --- Helper methods for pull/create matching and persistence ---
     def _find_matching_local_issue(
@@ -497,14 +605,14 @@ class GitHubSyncBackend:
             issue_id, matching_local_issue, updates, github_issue_number, remote_issue
         )
 
-    def get_projects(self) -> dict[str, SyncProject]:
+    def get_projects(self) -> Result[dict[str, SyncProject], SyncError]:
         """Fetch all projects from GitHub.
 
         Currently returns empty dict as project fetching is not yet implemented.
         GitHub uses classic Project Boards and newer Projects (beta).
         """
         # TODO: Implement GitHub Projects API integration
-        return {}
+        return Ok({})
 
     @staticmethod
     def _dict_to_sync_issue(issue_dict: dict[str, Any]) -> SyncIssue:

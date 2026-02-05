@@ -10,7 +10,9 @@ from unittest.mock import MagicMock
 
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
 from roadmap.common.constants import Priority, Status
+from roadmap.common.result import Err, Ok
 from roadmap.core.domain.issue import Issue
+from roadmap.core.services.sync import sync_errors
 from roadmap.core.interfaces.sync_backend import SyncReport
 from roadmap.core.services.sync.sync_conflict_resolver import (
     SyncConflictResolver,
@@ -67,8 +69,8 @@ class TestSyncEnd2EndNewLocalIssues:
         sync_components["core"].issues.list_all_including_archived.return_value = [
             local_issue
         ]
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {}  # No remote issues
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok({})  # No remote issues
 
         orchestrator = SyncMergeOrchestrator(
             sync_components["core"],
@@ -106,8 +108,8 @@ class TestSyncEnd2EndNewLocalIssues:
             local_issue
         ]
         sync_components["core"].issues.get.return_value = local_issue
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {}
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok({})
         sync_components["backend"].push_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
@@ -144,8 +146,10 @@ class TestSyncEnd2EndNewRemoteIssues:
         )
 
         sync_components["core"].issues.list_all_including_archived.return_value = []
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {"remote-1": remote_issue}
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok(
+            {"remote-1": remote_issue}
+        )
 
         orchestrator = SyncMergeOrchestrator(
             sync_components["core"],
@@ -174,8 +178,10 @@ class TestSyncEnd2EndNewRemoteIssues:
         )
 
         sync_components["core"].issues.list_all_including_archived.return_value = []
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {"remote-1": remote_issue}
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok(
+            {"remote-1": remote_issue}
+        )
         sync_components["backend"].pull_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
@@ -234,10 +240,10 @@ class TestSyncEnd2EndConflicts:
             local_issue
         ]
         sync_components["core"].issues.get.return_value = local_issue
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {
-            "conflict-1": remote_issue
-        }
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok(
+            {"conflict-1": remote_issue}
+        )
         sync_components["backend"].push_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
@@ -282,10 +288,10 @@ class TestSyncEnd2EndConflicts:
             local_issue
         ]
         sync_components["core"].issues.get.return_value = local_issue
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {
-            "conflict-1": remote_issue
-        }
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok(
+            {"conflict-1": remote_issue}
+        )
         sync_components["backend"].push_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
@@ -333,10 +339,10 @@ class TestSyncEnd2EndConflicts:
         sync_components["core"].issues.list_all_including_archived.return_value = [
             local_issue
         ]
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {
-            "conflict-1": remote_issue
-        }
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok(
+            {"conflict-1": remote_issue}
+        )
         sync_components["backend"].pull_issue.return_value = True
 
         orchestrator = SyncMergeOrchestrator(
@@ -403,7 +409,7 @@ class TestSyncEnd2EndMixedScenarios:
             updated_local,
             conflicted_local,
         ]
-        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].authenticate.return_value = Ok(True)
 
         # Remote: 2 issues
         # 1. Updated local issue (older version)
@@ -423,7 +429,7 @@ class TestSyncEnd2EndMixedScenarios:
             ),
         }
 
-        sync_components["backend"].get_issues.return_value = remote_issues
+        sync_components["backend"].get_issues.return_value = Ok(remote_issues)
 
         orchestrator = SyncMergeOrchestrator(
             sync_components["core"],
@@ -485,7 +491,7 @@ class TestSyncEnd2EndMixedScenarios:
             return None
 
         sync_components["core"].issues.get.side_effect = get_side_effect
-        sync_components["backend"].authenticate.return_value = True
+        sync_components["backend"].authenticate.return_value = Ok(True)
 
         # Remote: 1 issue (conflicting)
         remote_issues = {
@@ -497,7 +503,7 @@ class TestSyncEnd2EndMixedScenarios:
             )
         }
 
-        sync_components["backend"].get_issues.return_value = remote_issues
+        sync_components["backend"].get_issues.return_value = Ok(remote_issues)
 
         # Create a proper SyncReport mock for push_issues
         push_report = SyncReport()
@@ -530,7 +536,9 @@ class TestSyncEnd2EndAuthenticationFailure:
     def test_sync_authentication_failure_returns_error(self, sync_components):
         """Test that auth failure is reported without raising exceptions."""
         sync_components["core"].issues.list_all_including_archived.return_value = []
-        sync_components["backend"].authenticate.return_value = False
+        sync_components["backend"].authenticate.return_value = Err(
+            sync_errors.authentication_error()
+        )
 
         orchestrator = SyncMergeOrchestrator(
             sync_components["core"],
@@ -543,7 +551,8 @@ class TestSyncEnd2EndAuthenticationFailure:
         report = orchestrator.sync_all_issues(dry_run=True)
 
         # Verify
-        assert report.error == "Backend authentication failed"
+        assert report.error is not None
+        assert "authentication_failed" in report.error.lower()
         assert report.conflicts_detected == 0
         sync_components["backend"].get_issues.assert_not_called()
 
@@ -555,8 +564,10 @@ class TestSyncEnd2EndRemoteFailure:
     def test_sync_remote_fetch_failure_returns_error(self, sync_components):
         """Test that remote fetch failure is reported."""
         sync_components["core"].issues.list_all_including_archived.return_value = []
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = None  # Failure
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Err(
+            sync_errors.network_error("Failed to fetch remote issues")
+        )
 
         orchestrator = SyncMergeOrchestrator(
             sync_components["core"],
@@ -569,7 +580,9 @@ class TestSyncEnd2EndRemoteFailure:
         report = orchestrator.sync_all_issues(dry_run=True)
 
         # Verify
-        assert report.error == "Failed to fetch remote issues"
+        assert report.error is not None
+        assert "network_error" in report.error.lower()
+        assert "failed to fetch remote issues" in report.error.lower()
         assert report.conflicts_detected == 0
 
 
@@ -601,8 +614,10 @@ class TestSyncEnd2EndUpToDate:
         sync_components["core"].issues.list_all_including_archived.return_value = [
             issue
         ]
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {"same-1": remote_issue}
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok(
+            {"same-1": remote_issue}
+        )
 
         orchestrator = SyncMergeOrchestrator(
             sync_components["core"],
@@ -693,12 +708,14 @@ class TestFullBidirectionalSync:
             local_updated,
             local_unchanged,
         ]
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {
-            "remote-new": remote_new,
-            "shared-1": remote_updated,
-            "shared-2": remote_unchanged,
-        }
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok(
+            {
+                "remote-new": remote_new,
+                "shared-1": remote_updated,
+                "shared-2": remote_unchanged,
+            }
+        )
 
         orchestrator = SyncMergeOrchestrator(
             sync_components["core"],
@@ -765,17 +782,19 @@ class TestFullBidirectionalSync:
         sync_components["core"].issues.get.side_effect = lambda issue_id: (
             local_issue if issue_id == "local-new" else shared_local
         )
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {
-            "remote-new": remote_issue,
-            "shared-1": SyncIssueFactory.create(
-                id="shared-1",
-                title="Shared Issue",
-                status="closed",
-                created_at=past,
-                updated_at=now,
-            ),
-        }
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok(
+            {
+                "remote-new": remote_issue,
+                "shared-1": SyncIssueFactory.create(
+                    id="shared-1",
+                    title="Shared Issue",
+                    status="closed",
+                    created_at=past,
+                    updated_at=now,
+                ),
+            }
+        )
         sync_components["backend"].push_issue.return_value = True
         # Setup push_issues mock to return successful SyncReport
         push_report = SyncReport()
@@ -834,10 +853,10 @@ class TestFullBidirectionalSync:
             local_conflict
         ]
         sync_components["core"].issues.get.return_value = local_conflict
-        sync_components["backend"].authenticate.return_value = True
-        sync_components["backend"].get_issues.return_value = {
-            "conflict-1": remote_conflict
-        }
+        sync_components["backend"].authenticate.return_value = Ok(True)
+        sync_components["backend"].get_issues.return_value = Ok(
+            {"conflict-1": remote_conflict}
+        )
         # Setup pull_issues mock
         pull_report = SyncReport()
         sync_components["backend"].pull_issues.return_value = pull_report
