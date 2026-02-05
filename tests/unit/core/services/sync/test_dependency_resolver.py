@@ -1,6 +1,5 @@
 """Unit tests for DependencyResolver service."""
 
-from unittest.mock import Mock
 
 import pytest
 
@@ -46,6 +45,48 @@ class TestDependencyResolver:
         assert result.ordered_entities[2][0] == EntityType.ISSUE
         assert result.ordered_entities[2][1] == "i1"
 
+    def test_milestone_dependency_chain(self):
+        """Test chain of milestone dependencies (m1 -> m2 -> m3)."""
+        resolver = DependencyResolver()
+        entities = {
+            "projects": [{"id": "p1", "name": "Project 1"}],
+            "milestones": [
+                {
+                    "id": "m3",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m2",
+                    "title": "M3",
+                },
+                {
+                    "id": "m1",
+                    "project_id": "p1",
+                    "title": "M1",
+                },
+                {
+                    "id": "m2",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m1",
+                    "title": "M2",
+                },
+            ],
+            "issues": [],
+        }
+
+        result = resolver.resolve(entities)
+
+        assert not result.has_errors
+        assert len(result.ordered_entities) == 4
+
+        # Find positions
+        positions = {}
+        for i, (_, eid, _) in enumerate(result.ordered_entities):
+            positions[eid] = i
+
+        # Verify chain order: p1 < m1 < m2 < m3
+        assert positions["p1"] < positions["m1"]
+        assert positions["m1"] < positions["m2"]
+        assert positions["m2"] < positions["m3"]
+
     def test_multiple_projects_and_milestones(self):
         """Test multiple projects each with their own milestones."""
         resolver = DependencyResolver()
@@ -82,19 +123,60 @@ class TestDependencyResolver:
         assert max(project_positions) < min(milestone_positions)
 
     def test_milestone_depends_on_milestone(self):
-        """Test milestone dependencies between milestones (not yet implemented)."""
-        # NOTE: Milestone-to-milestone dependencies are not yet implemented
-        # This test is a placeholder for when that feature is added (Task 12)
-        pytest.skip(
-            "Milestone-to-milestone dependencies not yet implemented in DependencyResolver"
-        )
+        """Test simple milestone-to-milestone dependency."""
+        resolver = DependencyResolver()
+        entities = {
+            "projects": [{"id": "p1", "name": "Project 1"}],
+            "milestones": [
+                {
+                    "id": "m1",
+                    "project_id": "p1",
+                    "title": "M1",
+                },
+                {
+                    "id": "m2",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m1",
+                    "title": "M2",
+                },
+            ],
+            "issues": [],
+        }
+
+        result = resolver.resolve(entities)
+
+        assert not result.has_errors
+        assert len(result.ordered_entities) == 3
+
+        # Find positions
+        positions = {}
+        for i, (_, eid, _) in enumerate(result.ordered_entities):
+            positions[eid] = i
+
+        # m2 should come after m1
+        assert positions["m1"] < positions["m2"]
 
     def test_missing_milestone_dependency(self):
-        """Test detection of missing milestone dependency (not yet implemented)."""
-        # NOTE: Milestone-to-milestone dependencies are not yet implemented
-        pytest.skip(
-            "Milestone-to-milestone dependencies not yet implemented in DependencyResolver"
-        )
+        """Test detection of missing milestone dependency."""
+        resolver = DependencyResolver()
+        entities = {
+            "projects": [{"id": "p1", "name": "Project 1"}],
+            "milestones": [
+                {
+                    "id": "m1",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m_missing",
+                    "title": "M1",
+                }
+            ],
+            "issues": [],
+        }
+
+        result = resolver.resolve(entities)
+
+        assert result.has_errors
+        assert "m1" in result.missing_dependencies
+        assert "m_missing" in result.missing_dependencies["m1"]
 
     def test_missing_project_dependency(self):
         """Test detection of missing project dependency."""
@@ -140,25 +222,96 @@ class TestDependencyResolver:
         assert len(result.ordered_entities) > 0
 
     def test_circular_dependency_detection_two_milestones(self):
-        """Test detection of circular dependency between two milestones (not yet implemented)."""
-        # NOTE: Milestone-to-milestone dependencies are not yet implemented
-        pytest.skip(
-            "Milestone-to-milestone dependencies not yet implemented in DependencyResolver"
-        )
+        """Test detection of circular dependency between two milestones."""
+        resolver = DependencyResolver()
+        entities = {
+            "projects": [{"id": "p1", "name": "Project 1"}],
+            "milestones": [
+                {
+                    "id": "m1",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m2",
+                    "title": "M1",
+                },
+                {
+                    "id": "m2",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m1",
+                    "title": "M2",
+                },
+            ],
+            "issues": [],
+        }
+
+        result = resolver.resolve(entities)
+
+        assert result.has_errors
+        assert len(result.circular_dependencies) == 1
+        # The cycle should contain both m1 and m2
+        cycle = result.circular_dependencies[0]
+        assert "m1" in cycle
+        assert "m2" in cycle
 
     def test_circular_dependency_detection_three_milestones(self):
-        """Test detection of circular dependency chain (not yet implemented)."""
-        # NOTE: Milestone-to-milestone dependencies are not yet implemented
-        pytest.skip(
-            "Milestone-to-milestone dependencies not yet implemented in DependencyResolver"
-        )
+        """Test detection of circular dependency chain."""
+        resolver = DependencyResolver()
+        entities = {
+            "projects": [{"id": "p1", "name": "Project 1"}],
+            "milestones": [
+                {
+                    "id": "m1",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m2",
+                    "title": "M1",
+                },
+                {
+                    "id": "m2",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m3",
+                    "title": "M2",
+                },
+                {
+                    "id": "m3",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m1",
+                    "title": "M3",
+                },
+            ],
+            "issues": [],
+        }
+
+        result = resolver.resolve(entities)
+
+        assert result.has_errors
+        assert len(result.circular_dependencies) == 1
+        # The cycle should contain m1, m2, and m3
+        cycle = result.circular_dependencies[0]
+        assert "m1" in cycle
+        assert "m2" in cycle
+        assert "m3" in cycle
 
     def test_self_referencing_milestone(self):
-        """Test detection of milestone depending on itself (not yet implemented)."""
-        # NOTE: Milestone-to-milestone dependencies are not yet implemented
-        pytest.skip(
-            "Milestone-to-milestone dependencies not yet implemented in DependencyResolver"
-        )
+        """Test detection of milestone depending on itself."""
+        resolver = DependencyResolver()
+        entities = {
+            "projects": [{"id": "p1", "name": "Project 1"}],
+            "milestones": [
+                {
+                    "id": "m1",
+                    "project_id": "p1",
+                    "depends_on_milestone_id": "m1",  # Self-reference
+                    "title": "M1",
+                }
+            ],
+            "issues": [],
+        }
+
+        result = resolver.resolve(entities)
+
+        assert result.has_errors
+        assert len(result.circular_dependencies) == 1
+        cycle = result.circular_dependencies[0]
+        assert "m1" in cycle
 
     def test_complex_dependency_graph(self):
         """Test complex dependency graph with multiple branches."""
