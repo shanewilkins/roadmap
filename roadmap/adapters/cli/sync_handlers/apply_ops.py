@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from structlog import get_logger
 
 from roadmap.core.services.sync.error_classification import ErrorClassifier
@@ -96,16 +96,22 @@ def perform_apply_phase(
     verbose: bool,
 ) -> Any:
     """Run the actual apply phase: perform sync and display summary."""
-    console_inst.print(
-        "[bold cyan]Syncing with remote...[/bold cyan]", style="bold cyan"
-    )
-    report = orchestrator.sync_all_issues(
-        dry_run=False,
-        force_local=force_local,
-        force_remote=force_remote,
-        push_only=push,
-        pull_only=pull,
-    )
+    # Create progress spinner for sync operation
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[bold blue]{task.description}"),
+        TimeElapsedColumn(),
+        console=console_inst,
+    ) as progress:
+        progress.add_task("Syncing with remote...", total=None)
+
+        report = orchestrator.sync_all_issues(
+            dry_run=False,
+            force_local=force_local,
+            force_remote=force_remote,
+            push_only=push,
+            pull_only=pull,
+        )
 
     if report.error:
         console_inst.print(f"\n❌ Sync error: {report.error}", style="bold red")
