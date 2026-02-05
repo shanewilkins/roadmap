@@ -329,3 +329,142 @@ class ErrorClassifier:
         """Clear all collected errors."""
         self._errors.clear()
         self._category_counts.clear()
+
+    def add_errors(self, errors: dict[str, str]) -> None:
+        """Bulk add errors from a dictionary of issue_id -> error_message.
+
+        Args:
+            errors: Dictionary mapping issue IDs to error messages
+        """
+        for issue_id, error_msg in errors.items():
+            self.classify_error(
+                error_message=error_msg,
+                error_type="SyncError",
+                entity_type="Issue",
+                entity_id=issue_id,
+            )
+
+    def get_summary_dict(self) -> dict[str, int]:
+        """Get summary as a dictionary of category group -> count.
+
+        Returns:
+            Dict with keys like "dependency_errors", "api_errors", etc.
+        """
+        # Group categories into high-level groups
+        category_groups = {
+            "dependency_errors": [
+                ErrorCategory.MILESTONE_NOT_FOUND,
+                ErrorCategory.PROJECT_NOT_FOUND,
+                ErrorCategory.DEPENDENCY_MISSING,
+                ErrorCategory.FOREIGN_KEY_CONSTRAINT,
+            ],
+            "api_errors": [
+                ErrorCategory.API_RATE_LIMIT,
+                ErrorCategory.NETWORK_ERROR,
+                ErrorCategory.TIMEOUT,
+                ErrorCategory.SERVICE_UNAVAILABLE,
+            ],
+            "auth_errors": [
+                ErrorCategory.AUTHENTICATION_FAILED,
+                ErrorCategory.PERMISSION_DENIED,
+                ErrorCategory.TOKEN_EXPIRED,
+            ],
+            "data_errors": [
+                ErrorCategory.INVALID_DATA,
+                ErrorCategory.SCHEMA_MISMATCH,
+                ErrorCategory.DUPLICATE_ENTITY,
+                ErrorCategory.DATABASE_ERROR,
+            ],
+            "resource_errors": [
+                ErrorCategory.RESOURCE_DELETED,
+                ErrorCategory.RESOURCE_NOT_FOUND,
+            ],
+            "file_system_errors": [
+                ErrorCategory.FILE_SYSTEM_ERROR,
+            ],
+            "unknown_errors": [
+                ErrorCategory.UNKNOWN_ERROR,
+            ],
+        }
+
+        # Aggregate counts by group
+        result = {}
+        for group_name, categories in category_groups.items():
+            total = sum(self._category_counts.get(cat, 0) for cat in categories)
+            result[group_name] = total
+
+        return result
+
+    def get_recommendation(self, category_group: str) -> str:
+        """Get recommendation for a category group.
+
+        Args:
+            category_group: High-level category group (e.g., "dependency_errors")
+
+        Returns:
+            Recommendation string
+        """
+        recommendations = {
+            "dependency_errors": "Ensure all dependencies (milestones, projects) are synced first. Run 'roadmap sync' again.",
+            "api_errors": "Check GitHub service status at https://githubstatus.com. Retry after a short wait.",
+            "auth_errors": "Verify GitHub token with 'roadmap config github'. Ensure token has required permissions (repo, read:org).",
+            "data_errors": "Run 'roadmap health' to check database integrity. May need to run 'roadmap health fix'.",
+            "resource_errors": "These resources may have been deleted on GitHub. This is expected after cleanup.",
+            "file_system_errors": "Check file permissions and disk space. Ensure .roadmap/ directory is writable.",
+            "unknown_errors": "Run with --verbose for detailed error messages. Consider reporting as a bug if persistent.",
+        }
+        return recommendations.get(category_group, "Check logs for more details")
+
+    def get_issues_by_category(self, category_group: str) -> list[str]:
+        """Get list of issue IDs affected by a category group.
+
+        Args:
+            category_group: High-level category group (e.g., "dependency_errors")
+
+        Returns:
+            List of issue IDs
+        """
+        # Map group to categories
+        category_groups = {
+            "dependency_errors": [
+                ErrorCategory.MILESTONE_NOT_FOUND,
+                ErrorCategory.PROJECT_NOT_FOUND,
+                ErrorCategory.DEPENDENCY_MISSING,
+                ErrorCategory.FOREIGN_KEY_CONSTRAINT,
+            ],
+            "api_errors": [
+                ErrorCategory.API_RATE_LIMIT,
+                ErrorCategory.NETWORK_ERROR,
+                ErrorCategory.TIMEOUT,
+                ErrorCategory.SERVICE_UNAVAILABLE,
+            ],
+            "auth_errors": [
+                ErrorCategory.AUTHENTICATION_FAILED,
+                ErrorCategory.PERMISSION_DENIED,
+                ErrorCategory.TOKEN_EXPIRED,
+            ],
+            "data_errors": [
+                ErrorCategory.INVALID_DATA,
+                ErrorCategory.SCHEMA_MISMATCH,
+                ErrorCategory.DUPLICATE_ENTITY,
+                ErrorCategory.DATABASE_ERROR,
+            ],
+            "resource_errors": [
+                ErrorCategory.RESOURCE_DELETED,
+                ErrorCategory.RESOURCE_NOT_FOUND,
+            ],
+            "file_system_errors": [
+                ErrorCategory.FILE_SYSTEM_ERROR,
+            ],
+            "unknown_errors": [
+                ErrorCategory.UNKNOWN_ERROR,
+            ],
+        }
+
+        categories = category_groups.get(category_group, [])
+        issue_ids = [
+            e.entity_id
+            for e in self._errors
+            if e.category in categories and e.entity_id
+        ]
+        return issue_ids
