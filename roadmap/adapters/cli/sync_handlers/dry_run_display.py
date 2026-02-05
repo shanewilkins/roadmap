@@ -5,6 +5,38 @@ from rich.table import Table
 from roadmap.common.console import get_console
 
 
+def _display_active_filters(
+    console,
+    milestone_filter: tuple[str, ...] | None,
+    milestone_state: str | None,
+    since: str | None,
+    until: str | None,
+) -> None:
+    """Display active filters for the sync operation."""
+    if not (milestone_filter or milestone_state != "all" or since or until):
+        return
+
+    console.print("[bold yellow]Active Filters:[/bold yellow]")
+    if milestone_filter:
+        console.print(f"  • Milestones: {', '.join(milestone_filter)}", style="yellow")
+    if milestone_state and milestone_state != "all":
+        console.print(f"  • State: {milestone_state}", style="yellow")
+    if since:
+        console.print(f"  • Since: {since}", style="yellow")
+    if until:
+        console.print(f"  • Until: {until}", style="yellow")
+    console.print()
+
+
+def _display_summary_statistics(console, push_changes, pull_changes, conflicts) -> None:
+    """Display summary statistics of changes."""
+    console.print("[bold]Summary:[/bold]")
+    console.print(f"  • Issues to push: [cyan]{len(push_changes)}[/cyan]")
+    console.print(f"  • Issues to pull: [green]{len(pull_changes)}[/green]")
+    console.print(f"  • Conflicts detected: [red]{len(conflicts)}[/red]")
+    console.print()
+
+
 def display_detailed_dry_run_preview(
     analysis_report,
     milestone_filter: tuple[str, ...] | None = None,
@@ -32,19 +64,7 @@ def display_detailed_dry_run_preview(
     )
 
     # Show active filters
-    if milestone_filter or milestone_state != "all" or since or until:
-        console.print("[bold yellow]Active Filters:[/bold yellow]")
-        if milestone_filter:
-            console.print(
-                f"  • Milestones: {', '.join(milestone_filter)}", style="yellow"
-            )
-        if milestone_state and milestone_state != "all":
-            console.print(f"  • State: {milestone_state}", style="yellow")
-        if since:
-            console.print(f"  • Since: {since}", style="yellow")
-        if until:
-            console.print(f"  • Until: {until}", style="yellow")
-        console.print()
+    _display_active_filters(console, milestone_filter, milestone_state, since, until)
 
     # Get changes by type
     if not hasattr(analysis_report, "changes") or not analysis_report.changes:
@@ -57,11 +77,7 @@ def display_detailed_dry_run_preview(
     conflicts = [c for c in changes if c.has_conflict()]
 
     # Summary statistics
-    console.print("[bold]Summary:[/bold]")
-    console.print(f"  • Issues to push: [cyan]{len(push_changes)}[/cyan]")
-    console.print(f"  • Issues to pull: [green]{len(pull_changes)}[/green]")
-    console.print(f"  • Conflicts detected: [red]{len(conflicts)}[/red]")
-    console.print()
+    _display_summary_statistics(console, push_changes, pull_changes, conflicts)
 
     # Issues to push
     if push_changes:

@@ -9,7 +9,7 @@ from structlog import get_logger
 logger = get_logger()
 
 
-def parse_github_remote(remote_url: str) -> tuple[str | None, str | None]:
+def parse_github_remote(remote_url: str | None) -> tuple[str | None, str | None]:
     """Parse GitHub owner and repo from a git remote URL.
 
     Supports both SSH and HTTPS formats:
@@ -18,7 +18,7 @@ def parse_github_remote(remote_url: str) -> tuple[str | None, str | None]:
     - https://github.com/owner/repo
 
     Args:
-        remote_url: Git remote URL string
+        remote_url: Git remote URL string or None
 
     Returns:
         Tuple of (owner, repo) or (None, None) if not a valid GitHub URL
