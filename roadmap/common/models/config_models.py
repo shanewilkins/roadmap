@@ -124,6 +124,19 @@ class GitHubConfig(BaseModel):
             "auto_close": True,
             "sync_labels": True,
             "sync_milestones": True,
+            "auto_detect_from_git": True,  # Auto-detect owner/repo from git remote
+            "retry_attempts": 5,  # Number of retry attempts for API failures
+            "retry_delay": 1.0,  # Initial delay between retries (seconds)
+            "retry_backoff": 2.0,  # Exponential backoff multiplier
+            "batch_size": 50,  # Number of issues to process in parallel
+            "conflict_resolution": "prompt",  # Default: prompt, local, remote
+            "milestone_filter": {
+                "enabled": False,  # Enable milestone filtering
+                "states": ["open", "closed"],  # Filter by state
+                "names": [],  # Filter by milestone name patterns
+                "since": None,  # Filter by date (ISO format)
+                "until": None,  # Filter by date (ISO format)
+            },
         },
         description="Sync settings",
     )

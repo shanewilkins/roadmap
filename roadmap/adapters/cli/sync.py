@@ -464,6 +464,28 @@ def _handle_pre_sync_actions(
     is_flag=True,
     help="Show issues that exist remotely but not locally",
 )
+@click.option(
+    "--milestone",
+    "-m",
+    multiple=True,
+    help="Filter sync to specific milestones (can specify multiple)",
+)
+@click.option(
+    "--milestone-state",
+    type=click.Choice(["open", "closed", "all"], case_sensitive=False),
+    default="all",
+    help="Filter milestones by state (default: all)",
+)
+@click.option(
+    "--since",
+    type=str,
+    help="Only sync milestones updated since date (ISO format: YYYY-MM-DD)",
+)
+@click.option(
+    "--until",
+    type=str,
+    help="Only sync milestones updated until date (ISO format: YYYY-MM-DD)",
+)
 @click.pass_context
 @require_initialized
 def sync(
@@ -485,6 +507,10 @@ def sync(
     baseline: str | None,
     local_only: bool,
     remote_only: bool,
+    milestone: tuple[str, ...],
+    milestone_state: str,
+    since: str | None,
+    until: str | None,
 ) -> None:
     """Sync roadmap with remote repository.
 
@@ -495,7 +521,8 @@ def sync(
     - **git**: Sync with Git repository (works with any Git hosting)
 
     If no backend is specified, the command auto-detects from your config
-    (set during `roadmap init`).
+    (set during `roadmap init`). GitHub owner/repo can be auto-detected from
+    your git remote origin URL.
 
     **Sync Process:**
     1. Pull remote changes → merge with local using three-way merge
@@ -509,12 +536,27 @@ def sync(
     - Non-critical fields (labels, description) → automatically merged
     - Metadata (timestamps) → remote wins (remote is authoritative)
 
+    **Milestone Filtering:**
+    - Filter sync to specific milestones by name: --milestone "v1.0"
+    - Filter by state: --milestone-state open|closed|all
+    - Filter by date range: --since 2024-01-01 --until 2024-12-31
+    - Combine filters: --milestone "v1.0" --milestone "v2.0" --milestone-state open
+
     **Examples:**
         # Sync with GitHub API
         roadmap sync
 
-        # Preview changes (dry-run, no modifications)
-        roadmap sync --dry-run
+        # Preview changes (dry-run, detailed preview)
+        roadmap sync --dry-run --verbose
+
+        # Sync specific milestones only
+        roadmap sync --milestone "v1.0" --milestone "v2.0"
+
+        # Sync only open milestones
+        roadmap sync --milestone-state open
+
+        # Sync milestones updated since a date
+        roadmap sync --since 2024-01-01
 
         # Sync with verbose output (shows all pulls and pushes)
         roadmap sync --verbose
@@ -585,8 +627,17 @@ def sync(
 
         # If dry-run, stop here and show what would be applied
         if dry_run:
-            console_inst.print(
-                "\n[bold yellow]⚠️  Dry-run mode - Preview only[/bold yellow]"
+            from roadmap.adapters.cli.sync_handlers.dry_run_display import (
+                display_detailed_dry_run_preview,
+            )
+
+            display_detailed_dry_run_preview(
+                analysis_report,
+                milestone_filter=milestone,
+                milestone_state=milestone_state,
+                since=since,
+                until=until,
+                verbose=verbose,
             )
             return
 
