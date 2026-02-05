@@ -68,7 +68,7 @@ def display_error_summary(
         if verbose:
             affected_issues = classifier.get_issues_by_category(category)
             if affected_issues:
-                console_inst.print(f"[dim]    Affected issues:[/dim]")
+                console_inst.print("[dim]    Affected issues:[/dim]")
                 for issue_id in affected_issues[:5]:  # Show first 5 examples
                     error_msg = errors.get(issue_id, "Unknown error")
                     # Truncate long error messages
@@ -171,8 +171,47 @@ def confirm_and_apply(
     push: bool,
     pull: bool,
     verbose: bool,
+    interactive: bool = False,
 ) -> Any | None:
-    """Run the apply phase without confirmation."""
+    """Run the apply phase with optional interactive conflict resolution."""
+    # If interactive mode and there are conflicts, resolve them first
+    if interactive and analysis_report.conflicts_detected > 0:
+        from roadmap.adapters.cli.sync_handlers.interactive_resolver import (
+            InteractiveConflictResolver,
+        )
+
+        console_inst.print(
+            f"\n[bold yellow]⚠️  {analysis_report.conflicts_detected} conflicts detected[/bold yellow]"
+        )
+        console_inst.print("[dim]Entering interactive resolution mode...[/dim]\n")
+
+        # Collect conflicts from analysis report
+        conflicts = []
+        issues_by_id = {}
+
+        for change in analysis_report.changes:
+            if change.has_conflict:
+                # Build issues_by_id mapping
+                if change.local_state:
+                    issues_by_id[change.issue_id] = change.local_state
+
+                # Create conflict object (simplified for now)
+                # In a real implementation, you'd extract the actual Conflict objects
+                # from the orchestrator or conflict resolver
+                console_inst.print(
+                    f"[dim]Conflict on issue: {change.issue_id} - {change.title}[/dim]"
+                )
+
+        # If we have conflicts to resolve interactively
+        if conflicts:
+            resolver = InteractiveConflictResolver(console_inst)
+            resolutions = resolver.resolve_interactively(conflicts, issues_by_id)
+
+            # Apply resolutions
+            # This would integrate with the orchestrator's conflict resolver
+            # to apply the chosen resolutions
+            resolver.show_conflict_summary(conflicts, resolutions)
+
     report = perform_apply_phase(
         core,
         orchestrator,

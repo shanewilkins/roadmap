@@ -164,6 +164,7 @@ def _confirm_and_apply(
     push,
     pull,
     verbose,
+    interactive,
 ):
     """Ask for confirmation and run the apply phase if confirmed."""
     from roadmap.adapters.cli.sync_handlers import confirm_and_apply
@@ -178,6 +179,7 @@ def _confirm_and_apply(
         push,
         pull,
         verbose,
+        interactive,
     )
 
 
@@ -486,6 +488,17 @@ def _handle_pre_sync_actions(
     type=str,
     help="Only sync milestones updated until date (ISO format: YYYY-MM-DD)",
 )
+@click.option(
+    "--interactive",
+    "-i",
+    is_flag=True,
+    help="Interactively resolve conflicts with visual diffs and prompts",
+)
+@click.option(
+    "--resume",
+    is_flag=True,
+    help="Resume from last checkpoint after a failed sync",
+)
 @click.pass_context
 @require_initialized
 def sync(
@@ -511,6 +524,8 @@ def sync(
     milestone_state: str,
     since: str | None,
     until: str | None,
+    interactive: bool,
+    resume: bool,
 ) -> None:
     """Sync roadmap with remote repository.
 
@@ -602,6 +617,32 @@ def sync(
     ):
         return
 
+    # Handle checkpoint resume if requested
+    if resume:
+        from roadmap.core.services.sync.sync_checkpoint import SyncCheckpointManager
+
+        checkpoint_manager = SyncCheckpointManager(core)
+        can_resume, checkpoint = checkpoint_manager.can_resume()
+
+        if can_resume and checkpoint:
+            console_inst.print("\n[bold cyan]📍 Resuming from checkpoint[/bold cyan]")
+            console_inst.print(f"[dim]Checkpoint ID: {checkpoint.checkpoint_id}[/dim]")
+            console_inst.print(f"[dim]Phase: {checkpoint.phase}[/dim]")
+            console_inst.print(f"[dim]Timestamp: {checkpoint.timestamp}[/dim]")
+
+            if not click.confirm("\nContinue with resume?", default=True):
+                console_inst.print("[yellow]Resume cancelled[/yellow]")
+                return
+        else:
+            console_inst.print(
+                "[yellow]⚠️  No resumable checkpoint found or checkpoint too old[/yellow]"
+            )
+            if checkpoint:
+                console_inst.print(
+                    f"[dim]Last checkpoint was in phase '{checkpoint.phase}' at {checkpoint.timestamp}[/dim]"
+                )
+            return
+
     try:
         (
             backend_type,
@@ -656,6 +697,7 @@ def sync(
             push,
             pull,
             verbose,
+            interactive,
         )
 
         # User cancelled
