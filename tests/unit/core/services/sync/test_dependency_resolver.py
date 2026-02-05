@@ -1,8 +1,5 @@
 """Unit tests for DependencyResolver service."""
 
-
-import pytest
-
 from roadmap.core.services.sync.dependency_resolver import (
     DependencyResolver,
     EntityType,

@@ -21,6 +21,8 @@ class SyncRecord:
     github_changes: dict[str, Any] | None = None
     conflict_resolution: str | None = None  # "local", "github", or None
     error_message: str | None = None
+    milestone_dependencies: list[str] = field(default_factory=list)  # Milestone IDs this sync depended on
+    dependency_resolution_time: float | None = None  # Time spent resolving dependencies in seconds
 
 
 @dataclass
@@ -34,6 +36,9 @@ class SyncMetadata:
     successful_syncs: int = 0
     last_sync_status: str = "never"  # "success", "conflict", "error", "never"
     sync_history: list[SyncRecord] = field(default_factory=list)
+    milestone_sync_count: int = 0  # Number of syncs involving milestones
+    last_milestone_resolution_time: float | None = None  # Last dependency resolution time
+    circular_dependencies_detected: int = 0  # Count of circular dependency detections
 
     def add_sync_record(self, record: SyncRecord) -> None:
         """Add a sync record to history."""
@@ -48,6 +53,12 @@ class SyncMetadata:
             self.last_sync_status = "conflict"
         else:
             self.last_sync_status = "error"
+
+        # Track milestone-specific metrics
+        if record.milestone_dependencies:
+            self.milestone_sync_count += 1
+        if record.dependency_resolution_time is not None:
+            self.last_milestone_resolution_time = record.dependency_resolution_time
 
     def get_success_rate(self) -> float:
         """Calculate sync success rate."""
@@ -64,6 +75,9 @@ class SyncMetadata:
             "sync_count": self.sync_count,
             "successful_syncs": self.successful_syncs,
             "last_sync_status": self.last_sync_status,
+            "milestone_sync_count": self.milestone_sync_count,
+            "last_milestone_resolution_time": self.last_milestone_resolution_time,
+            "circular_dependencies_detected": self.circular_dependencies_detected,
             "sync_history": [
                 {
                     "sync_timestamp": r.sync_timestamp,
@@ -72,6 +86,8 @@ class SyncMetadata:
                     "github_changes": r.github_changes,
                     "conflict_resolution": r.conflict_resolution,
                     "error_message": r.error_message,
+                    "milestone_dependencies": r.milestone_dependencies,
+                    "dependency_resolution_time": r.dependency_resolution_time,
                 }
                 for r in self.sync_history
             ],
@@ -88,6 +104,8 @@ class SyncMetadata:
                 github_changes=r.get("github_changes"),
                 conflict_resolution=r.get("conflict_resolution"),
                 error_message=r.get("error_message"),
+                milestone_dependencies=r.get("milestone_dependencies", []),
+                dependency_resolution_time=r.get("dependency_resolution_time"),
             )
             for r in data.get("sync_history", [])
         ]
@@ -98,6 +116,9 @@ class SyncMetadata:
             sync_count=data.get("sync_count", 0),
             successful_syncs=data.get("successful_syncs", 0),
             last_sync_status=data.get("last_sync_status", "never"),
+            milestone_sync_count=data.get("milestone_sync_count", 0),
+            last_milestone_resolution_time=data.get("last_milestone_resolution_time"),
+            circular_dependencies_detected=data.get("circular_dependencies_detected", 0),
             sync_history=history,
         )
 

@@ -202,6 +202,7 @@ roadmap today --filter priority=critical
 | **[Quick Start](docs/user_guide/QUICK_START.md)** | New users | 5 min |
 | **[Workflows](docs/user_guide/WORKFLOWS.md)** | Real-world patterns | 10 min |
 | **[GitHub Sync Setup](docs/user_guide/GITHUB_SYNC_SETUP.md)** | GitHub integration | 10 min |
+| **[Milestone Syncing](docs/user_guide/MILESTONE_SYNC.md)** | Milestone dependencies & sync | 15 min |
 | **[FAQ](docs/user_guide/FAQ.md)** | Questions & comparisons | 15 min |
 | **[Architecture](docs/developer_notes/ARCHITECTURE.md)** | Technical details | 20 min |
 | **[Installation](docs/user_guide/INSTALLATION.md)** | Setup & troubleshooting | varies |

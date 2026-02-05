@@ -175,7 +175,7 @@ class DependencyResolver:
             project_id = entity_data.get("project_id")
             if project_id:
                 depends_on.add(project_id)
-            
+
             # Support milestone-to-milestone dependencies
             depends_on_milestone_id = entity_data.get("depends_on_milestone_id")
             if depends_on_milestone_id:

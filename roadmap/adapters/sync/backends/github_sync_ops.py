@@ -6,6 +6,7 @@ from typing import Any
 from structlog import get_logger
 
 from roadmap.common.logging import log_error_with_context
+from roadmap.common.services.retry import API_RETRY
 from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.interfaces import SyncReport
 
@@ -171,7 +172,7 @@ class GitHubSyncOps:
             return False, error_msg
 
     def _push_single_issue(self, issue: Any) -> tuple[bool, str | None]:
-        """Push a single issue to GitHub API.
+        """Push a single issue to GitHub API with retry logic.
 
         Args:
             issue: The Issue domain object to push
@@ -179,7 +180,10 @@ class GitHubSyncOps:
         Returns:
             Tuple of (success: bool, error_message: str | None)
         """
-        try:
+
+        @API_RETRY
+        def _push_with_retry():
+            """Inner function with retry decorator for API calls."""
             from roadmap.adapters.sync.backends.converters import (
                 IssueToGitHubPayloadConverter,
             )
@@ -215,6 +219,8 @@ class GitHubSyncOps:
 
             return True, None
 
+        try:
+            return _push_with_retry()
         except Exception as e:
             error_msg = str(e)
             return self._handle_push_error(issue, error_msg)
