@@ -147,7 +147,7 @@ When a milestone depends on a non-existent milestone:
 Total errors: 1 across 1 issues
 
 🔗 Dependency Errors (1)
-  Fix: Ensure all dependencies (milestones, projects) are synced first. 
+  Fix: Ensure all dependencies (milestones, projects) are synced first.
        Run 'roadmap sync' again.
 ```
 
@@ -165,9 +165,9 @@ When milestones have circular dependencies:
 Total errors: 3 issues
 
 🔗 Dependency Errors (3)
-  Fix: Circular dependency chain detected. 
+  Fix: Circular dependency chain detected.
        Break the cycle by removing one dependency.
-  
+
 Circular chain: M1 → M2 → M3 → M1
 ```
 
@@ -183,7 +183,7 @@ Circular chain: M1 → M2 → M3 → M1
 Total errors: 5 across 5 issues
 
 🌐 API Errors (5)
-  Fix: Check GitHub service status at https://githubstatus.com. 
+  Fix: Check GitHub service status at https://githubstatus.com.
        Retry after a short wait.
 ```
 
@@ -199,7 +199,7 @@ Total errors: 5 across 5 issues
 Total errors: 1 across 1 issues
 
 🔒 Authentication Errors (1)
-  Fix: Verify GitHub token with 'roadmap config github'. 
+  Fix: Verify GitHub token with 'roadmap config github'.
        Ensure token has required permissions (repo, read:org).
 ```
 

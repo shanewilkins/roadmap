@@ -19,6 +19,8 @@ from roadmap.adapters.sync.sync_merge_engine import SyncMergeEngine
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.models.sync_models import SyncIssue
+from roadmap.core.services.sync.duplicate_detector import DuplicateDetector
+from roadmap.core.services.sync.duplicate_resolver import DuplicateResolver
 from roadmap.core.services.sync.sync_conflict_resolver import (
     Conflict,
     SyncConflictResolver,
@@ -46,6 +48,10 @@ class SyncMergeOrchestrator:
         backend: SyncBackendInterface,
         state_comparator: SyncStateComparator | None = None,
         conflict_resolver: SyncConflictResolver | None = None,
+        enable_duplicate_detection: bool = True,
+        duplicate_title_threshold: float = 0.90,
+        duplicate_content_threshold: float = 0.85,
+        duplicate_auto_resolve_threshold: float = 0.95,
     ):
         """Initialize orchestrator with core services and backend.
 
@@ -54,6 +60,10 @@ class SyncMergeOrchestrator:
             backend: SyncBackendInterface implementation (GitHub, vanilla Git, etc.)
             state_comparator: SyncStateComparator for detecting changes (optional, creates default)
             conflict_resolver: SyncConflictResolver for resolving conflicts (optional, creates default)
+            enable_duplicate_detection: Whether to enable duplicate detection (default: True)
+            duplicate_title_threshold: Minimum similarity for title duplicates (0.0-1.0, default: 0.90)
+            duplicate_content_threshold: Minimum similarity for content duplicates (0.0-1.0, default: 0.85)
+            duplicate_auto_resolve_threshold: Minimum confidence for auto-resolution (0.0-1.0, default: 0.95)
         """
         self.core = core
         self.backend = backend
@@ -61,12 +71,23 @@ class SyncMergeOrchestrator:
         self.state_comparator = state_comparator or SyncStateComparator(backend=backend)
         self.conflict_resolver = conflict_resolver or SyncConflictResolver()
         self.state_manager = SyncStateManager(core.roadmap_dir)
+        self.enable_duplicate_detection = enable_duplicate_detection
 
         # Initialize delegated services
         self._auth_service = SyncAuthenticationService(backend)
         self._fetch_service = SyncDataFetchService(core, backend)
         self._analysis_service = SyncAnalysisService(
             self.state_comparator, self.state_manager
+        )
+
+        # Initialize duplicate detection services with configurable thresholds
+        self._duplicate_detector = DuplicateDetector(
+            title_similarity_threshold=duplicate_title_threshold,
+            content_similarity_threshold=duplicate_content_threshold,
+            auto_resolve_threshold=duplicate_auto_resolve_threshold,
+        )
+        self._duplicate_resolver = DuplicateResolver(
+            auto_resolve_threshold=duplicate_auto_resolve_threshold
         )
 
         # Extraction: delegate helper implementations to a dedicated engine
@@ -129,6 +150,90 @@ class SyncMergeOrchestrator:
         """
         return self._engine._load_baseline_state()
 
+    def _detect_and_resolve_duplicates(
+        self,
+        local_issues: list[Issue],
+        remote_issues: dict[str, SyncIssue],
+        interactive: bool = False,
+    ) -> tuple[int, int]:
+        """Detect and resolve duplicate issues.
+
+        Args:
+            local_issues: List of local issues
+            remote_issues: Dictionary of remote issues
+            interactive: Whether to use interactive resolution for manual review cases
+
+        Returns:
+            Tuple of (auto_resolved_count, manual_review_count)
+        """
+        if not self.enable_duplicate_detection:
+            logger.debug("duplicate_detection_disabled")
+            return 0, 0
+
+        logger.info(
+            "detecting_duplicates",
+            local_count=len(local_issues),
+            remote_count=len(remote_issues),
+        )
+
+        # Detect all duplicates
+        matches = self._duplicate_detector.detect_all(local_issues, remote_issues)
+
+        if not matches:
+            logger.info("no_duplicates_detected")
+            return 0, 0
+
+        logger.info(
+            "duplicates_detected",
+            total_matches=len(matches),
+            high_confidence=[m for m in matches if m.confidence >= 0.95],
+        )
+
+        # Separate high-confidence and manual review matches
+        auto_matches = [
+            m
+            for m in matches
+            if m.confidence >= self._duplicate_resolver.auto_resolve_threshold
+        ]
+        manual_matches = [
+            m
+            for m in matches
+            if m.confidence < self._duplicate_resolver.auto_resolve_threshold
+        ]
+
+        auto_resolved_count = 0
+        manual_review_count = len(manual_matches)
+
+        # Auto-resolve high-confidence matches
+        auto_results = self._duplicate_resolver.resolve_automatic(auto_matches)
+        for result in auto_results:
+            if not result.skipped:
+                auto_resolved_count += 1
+                logger.info(
+                    "auto_resolved_duplicate",
+                    local_id=result.match.local_issue.id,
+                    remote_id=result.match.remote_issue.id,
+                    confidence=result.match.confidence,
+                )
+
+        # Handle manual review matches
+        if manual_matches:
+            if interactive:
+                logger.info(
+                    "starting_interactive_duplicate_resolution",
+                    match_count=len(manual_matches),
+                )
+                results = self._duplicate_resolver.resolve_interactive(manual_matches)
+                manual_review_count = len([r for r in results if not r.skipped])
+            else:
+                logger.warning(
+                    "manual_review_duplicates_detected",
+                    count=len(manual_matches),
+                    message="Use --interactive-duplicates flag to resolve these manually",
+                )
+
+        return auto_resolved_count, manual_review_count
+
     def _process_fetched_pull_result(self, fetched):
         return self._engine._process_fetched_pull_result(fetched)
 
@@ -139,13 +244,22 @@ class SyncMergeOrchestrator:
         self,
         push_only: bool = False,
         pull_only: bool = False,
+        interactive_duplicates: bool = False,
     ) -> tuple[SyncPlan, SyncReport]:
         """Pure analysis pass that returns a SyncPlan and SyncReport without side-effects.
 
         This method performs authentication and data retrieval (reads only),
-        runs the three-way analysis, and converts the result into a list of
-        `Action`s bundled into a `SyncPlan`. No database or file writes are
+        runs duplicate detection, runs the three-way analysis, and converts the result
+        into a list of `Action`s bundled into a `SyncPlan`. No database or file writes are
         performed here — actions are merely declared for an Executor to apply.
+
+        Args:
+            push_only: Only push local changes, skip pulling remote
+            pull_only: Only pull remote changes, skip pushing local
+            interactive_duplicates: Use interactive resolution for duplicate matches
+
+        Returns:
+            Tuple of (SyncPlan, SyncReport)
         """
         report = SyncReport()
         plan = SyncPlan()
@@ -184,6 +298,17 @@ class SyncMergeOrchestrator:
             local_issues = _fetch_local_safe()
             if local_issues is None:
                 return plan, report
+
+            # Run duplicate detection before main analysis
+            if self.enable_duplicate_detection:
+                auto_resolved, manual_review = self._detect_and_resolve_duplicates(
+                    local_issues, remote_issues_data, interactive=interactive_duplicates
+                )
+                logger.info(
+                    "duplicate_detection_complete",
+                    auto_resolved=auto_resolved,
+                    manual_review=manual_review,
+                )
 
             local_issues_dict = {issue.id: issue for issue in local_issues}
 
@@ -408,6 +533,7 @@ class SyncMergeOrchestrator:
         force_remote: bool = False,
         push_only: bool = False,
         pull_only: bool = False,
+        interactive_duplicates: bool = False,
     ) -> SyncReport:
         """Sync all issues using the configured backend.
 
@@ -417,6 +543,7 @@ class SyncMergeOrchestrator:
             force_remote: Resolve conflicts by keeping remote changes
             push_only: If True, only push local changes (skip pulling remote)
             pull_only: If True, only pull remote changes (skip pushing local)
+            interactive_duplicates: If True, use interactive resolution for duplicate matches
 
         Returns:
             SyncReport with detected changes and conflicts
@@ -450,6 +577,17 @@ class SyncMergeOrchestrator:
             local_issues = self._fetch_local_issues(report)
             if local_issues is None:
                 return report
+
+            # Run duplicate detection before main analysis
+            if self.enable_duplicate_detection:
+                auto_resolved, manual_review = self._detect_and_resolve_duplicates(
+                    local_issues, remote_issues_data, interactive=interactive_duplicates
+                )
+                logger.info(
+                    "duplicate_detection_complete",
+                    auto_resolved=auto_resolved,
+                    manual_review=manual_review,
+                )
 
             local_issues_dict = {issue.id: issue for issue in local_issues}
 

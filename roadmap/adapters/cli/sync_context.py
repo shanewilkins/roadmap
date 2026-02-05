@@ -198,7 +198,18 @@ def _create_and_save_baseline(
         return False
 
 
-def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console_inst):
+def _init_sync_context(
+    core,
+    backend,
+    baseline_option,
+    dry_run,
+    verbose,
+    console_inst,
+    enable_duplicate_detection=True,
+    title_threshold=0.90,
+    content_threshold=0.85,
+    auto_resolve_threshold=0.95,
+):
     """Initialize backend, orchestrator, and required services for sync command.
 
     Returns tuple: (backend_type, sync_backend, orchestrator, pre_sync_baseline, pre_sync_issue_count, state_comparator, conflict_resolver)
@@ -220,7 +231,14 @@ def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console
     console_inst.print(
         f"🔄 Syncing with {backend_type.upper()} backend", style="bold cyan"
     )
-    orchestrator = SyncRetrievalOrchestrator(core, sync_backend)
+    orchestrator = SyncRetrievalOrchestrator(
+        core,
+        sync_backend,
+        enable_duplicate_detection=enable_duplicate_detection,
+        duplicate_title_threshold=title_threshold,
+        duplicate_content_threshold=content_threshold,
+        duplicate_auto_resolve_threshold=auto_resolve_threshold,
+    )
 
     # Pre-sync baseline for comparison
     pre_sync_baseline = (

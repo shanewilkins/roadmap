@@ -66,14 +66,36 @@ def _reset_baseline(core, backend, verbose, console_inst) -> bool:
     return True
 
 
-def _init_sync_context(core, backend, baseline_option, dry_run, verbose, console_inst):
+def _init_sync_context(
+    core,
+    backend,
+    baseline_option,
+    dry_run,
+    verbose,
+    console_inst,
+    enable_duplicate_detection=True,
+    title_threshold=0.90,
+    content_threshold=0.85,
+    auto_resolve_threshold=0.95,
+):
     """Initialize backend, orchestrator, and required services for sync command.
 
     Returns tuple: (backend_type, sync_backend, orchestrator, pre_sync_baseline, pre_sync_issue_count, state_comparator, conflict_resolver)
     """
     from roadmap.adapters.cli.sync_context import _init_sync_context as _ctx
 
-    return _ctx(core, backend, baseline_option, dry_run, verbose, console_inst)
+    return _ctx(
+        core,
+        backend,
+        baseline_option,
+        dry_run,
+        verbose,
+        console_inst,
+        enable_duplicate_detection,
+        title_threshold,
+        content_threshold,
+        auto_resolve_threshold,
+    )
 
 
 def _resolve_backend_and_init(core, backend, get_sync_backend_callable):
@@ -190,14 +212,24 @@ def _finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose):
     finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose)
 
 
-def _run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst):
+def _run_analysis_phase(
+    orchestrator,
+    push,
+    pull,
+    dry_run,
+    verbose,
+    console_inst,
+    interactive_duplicates=False,
+):
     """Run analysis phase using orchestrator and present results.
 
     Returns: tuple(plan, analysis_report)
     """
     from roadmap.adapters.cli.sync_handlers import run_analysis_phase
 
-    return run_analysis_phase(orchestrator, push, pull, dry_run, verbose, console_inst)
+    return run_analysis_phase(
+        orchestrator, push, pull, dry_run, verbose, console_inst, interactive_duplicates
+    )
 
 
 def _build_local_status_breakdown(local_only_issues):
@@ -499,6 +531,34 @@ def _handle_pre_sync_actions(
     is_flag=True,
     help="Resume from last checkpoint after a failed sync",
 )
+@click.option(
+    "--detect-duplicates/--no-detect-duplicates",
+    default=True,
+    help="Enable/disable duplicate detection during sync (default: enabled)",
+)
+@click.option(
+    "--interactive-duplicates",
+    is_flag=True,
+    help="Interactively resolve detected duplicate issues with prompts",
+)
+@click.option(
+    "--duplicate-title-threshold",
+    type=float,
+    default=None,
+    help="Minimum similarity for title duplicates (0.0-1.0, default from config)",
+)
+@click.option(
+    "--duplicate-content-threshold",
+    type=float,
+    default=None,
+    help="Minimum similarity for content duplicates (0.0-1.0, default from config)",
+)
+@click.option(
+    "--duplicate-auto-resolve-threshold",
+    type=float,
+    default=None,
+    help="Minimum confidence for auto-resolving duplicates (0.0-1.0, default from config)",
+)
 @click.pass_context
 @require_initialized
 def sync(
@@ -526,6 +586,11 @@ def sync(
     until: str | None,
     interactive: bool,
     resume: bool,
+    detect_duplicates: bool,
+    interactive_duplicates: bool,
+    duplicate_title_threshold: float | None,
+    duplicate_content_threshold: float | None,
+    duplicate_auto_resolve_threshold: float | None,
 ) -> None:
     """Sync roadmap with remote repository.
 
@@ -619,111 +684,33 @@ def sync(
 
     # Handle checkpoint resume if requested
     if resume:
-        from roadmap.core.services.sync.sync_checkpoint import SyncCheckpointManager
-
-        checkpoint_manager = SyncCheckpointManager(core)
-        can_resume, checkpoint = checkpoint_manager.can_resume()
-
-        if can_resume and checkpoint:
-            console_inst.print("\n[bold cyan]📍 Resuming from checkpoint[/bold cyan]")
-            console_inst.print(f"[dim]Checkpoint ID: {checkpoint.checkpoint_id}[/dim]")
-            console_inst.print(f"[dim]Phase: {checkpoint.phase}[/dim]")
-            console_inst.print(f"[dim]Timestamp: {checkpoint.timestamp}[/dim]")
-
-            if not click.confirm("\nContinue with resume?", default=True):
-                console_inst.print("[yellow]Resume cancelled[/yellow]")
-                return
-        else:
-            console_inst.print(
-                "[yellow]⚠️  No resumable checkpoint found or checkpoint too old[/yellow]"
-            )
-            if checkpoint:
-                console_inst.print(
-                    f"[dim]Last checkpoint was in phase '{checkpoint.phase}' at {checkpoint.timestamp}[/dim]"
-                )
+        if not _handle_resume(console_inst, core):
             return
 
     try:
-        (
-            backend_type,
-            sync_backend,
-            orchestrator,
-            pre_sync_baseline,
-            pre_sync_issue_count,
-            state_comparator,
-            conflict_resolver,
-        ) = _init_sync_context(core, backend, baseline, dry_run, verbose, console_inst)
-
-        # ANALYSIS PHASE: Run sync analyzer and present results
-
-        plan, analysis_report = _run_analysis_phase(
-            orchestrator, push, pull, dry_run, verbose, console_inst
-        )
-
-        # Display local-only or remote-only lists if requested
-        if local_only or remote_only:
-            _display_issue_lists(
-                core, analysis_report, local_only, remote_only, console_inst
-            )
-
-        # If dry-run, stop here and show what would be applied
-        if dry_run:
-            from roadmap.adapters.cli.sync_handlers.dry_run_display import (
-                display_detailed_dry_run_preview,
-            )
-
-            display_detailed_dry_run_preview(
-                analysis_report,
-                milestone_filter=milestone,
-                milestone_state=milestone_state,
-                since=since,
-                until=until,
-                verbose=verbose,
-            )
-            return
-
-        # Determine whether there is anything to apply
-        if not _present_apply_intent(analysis_report, console_inst):
-            return
-
-        # Confirm and run apply phase
-        report = _confirm_and_apply(
+        _execute_sync_workflow(
             core,
-            orchestrator,
             console_inst,
-            analysis_report,
-            force_local,
-            force_remote,
+            backend,
+            baseline,
+            dry_run,
+            verbose,
+            detect_duplicates,
+            duplicate_title_threshold,
+            duplicate_content_threshold,
+            duplicate_auto_resolve_threshold,
             push,
             pull,
-            verbose,
+            force_local,
+            force_remote,
+            local_only,
+            remote_only,
+            milestone,
+            milestone_state,
+            since,
+            until,
             interactive,
         )
-
-        # User cancelled
-        if report is None:
-            return
-
-        # If dry-run flag, note that no changes were applied
-        if dry_run:
-            console_inst.print(
-                "[bold yellow]⚠️  Dry-run mode: No changes applied[/bold yellow]"
-            )
-            # Show BEFORE state for dry-run
-            if verbose and pre_sync_baseline:
-                console_inst.print(
-                    "\n[bold]BEFORE STATE (for reference):[/bold]",
-                    style="dim",
-                )
-                console_inst.print(
-                    f"   Baseline issues: {pre_sync_issue_count}",
-                    style="dim",
-                )
-            return
-
-        # Finalize the real sync
-        _finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose)
-
     except Exception as exc:
         logger.error(
             "sync_command_failed",
@@ -741,3 +728,157 @@ def sync(
         if verbose:
             raise
         sys.exit(1)
+
+
+def _handle_resume(console_inst, core) -> bool:
+    """Handle checkpoint resume logic.
+
+    Returns True to continue, False to exit.
+    """
+    from roadmap.core.services.sync.sync_checkpoint import SyncCheckpointManager
+
+    checkpoint_manager = SyncCheckpointManager(core)
+    can_resume, checkpoint = checkpoint_manager.can_resume()
+
+    if can_resume and checkpoint:
+        console_inst.print("\n[bold cyan]📍 Resuming from checkpoint[/bold cyan]")
+        console_inst.print(f"[dim]Checkpoint ID: {checkpoint.checkpoint_id}[/dim]")
+        console_inst.print(f"[dim]Phase: {checkpoint.phase}[/dim]")
+        console_inst.print(f"[dim]Timestamp: {checkpoint.timestamp}[/dim]")
+
+        if not click.confirm("\nContinue with resume?", default=True):
+            console_inst.print("[yellow]Resume cancelled[/yellow]")
+            return False
+        return True
+    else:
+        console_inst.print(
+            "[yellow]⚠️  No resumable checkpoint found or checkpoint too old[/yellow]"
+        )
+        if checkpoint:
+            console_inst.print(
+                f"[dim]Last checkpoint was in phase '{checkpoint.phase}' at {checkpoint.timestamp}[/dim]"
+            )
+        return False
+
+
+def _execute_sync_workflow(
+    core,
+    console_inst,
+    backend,
+    baseline,
+    dry_run,
+    verbose,
+    detect_duplicates,
+    duplicate_title_threshold,
+    duplicate_content_threshold,
+    duplicate_auto_resolve_threshold,
+    push,
+    pull,
+    force_local,
+    force_remote,
+    local_only,
+    remote_only,
+    milestone,
+    milestone_state,
+    since,
+    until,
+    interactive,
+) -> None:
+    """Execute main sync workflow."""
+    # Get thresholds from config
+    sync_config = core.configuration.get_sync_config()
+    title_threshold = (
+        duplicate_title_threshold
+        if duplicate_title_threshold is not None
+        else sync_config["duplicate_title_threshold"]
+    )
+    content_threshold = (
+        duplicate_content_threshold
+        if duplicate_content_threshold is not None
+        else sync_config["duplicate_content_threshold"]
+    )
+    auto_resolve_threshold = (
+        duplicate_auto_resolve_threshold
+        if duplicate_auto_resolve_threshold is not None
+        else sync_config["duplicate_auto_resolve_threshold"]
+    )
+
+    # Initialize sync context
+    (
+        backend_type,
+        sync_backend,
+        orchestrator,
+        pre_sync_baseline,
+        pre_sync_issue_count,
+        state_comparator,
+        conflict_resolver,
+    ) = _init_sync_context(
+        core,
+        backend,
+        baseline,
+        dry_run,
+        verbose,
+        console_inst,
+        detect_duplicates,
+        title_threshold,
+        content_threshold,
+        auto_resolve_threshold,
+    )
+
+    # Run analysis phase
+    plan, analysis_report = _run_analysis_phase(
+        orchestrator,
+        push,
+        pull,
+        dry_run,
+        verbose,
+        console_inst,
+        interactive_duplicates=False,
+    )
+
+    # Display local-only or remote-only lists if requested
+    if local_only or remote_only:
+        _display_issue_lists(
+            core, analysis_report, local_only, remote_only, console_inst
+        )
+
+    # Handle dry-run
+    if dry_run:
+        from roadmap.adapters.cli.sync_handlers.dry_run_display import (
+            display_detailed_dry_run_preview,
+        )
+
+        display_detailed_dry_run_preview(
+            analysis_report,
+            milestone_filter=milestone,
+            milestone_state=milestone_state,
+            since=since,
+            until=until,
+            verbose=verbose,
+        )
+        return
+
+    # Check if there's anything to apply
+    if not _present_apply_intent(analysis_report, console_inst):
+        return
+
+    # Confirm and apply changes
+    report = _confirm_and_apply(
+        core,
+        orchestrator,
+        console_inst,
+        analysis_report,
+        force_local,
+        force_remote,
+        push,
+        pull,
+        verbose,
+        interactive,
+    )
+
+    # User cancelled
+    if report is None:
+        return
+
+    # Finalize real sync
+    _finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose)

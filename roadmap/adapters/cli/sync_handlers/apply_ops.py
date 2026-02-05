@@ -259,6 +259,7 @@ def run_analysis_phase(
     dry_run: bool,
     verbose: bool,
     console_inst: Any,
+    interactive_duplicates: bool = False,
 ):
     """Run analysis phase using orchestrator and present results."""
     from roadmap.adapters.cli.sync_presenter import present_analysis
@@ -275,7 +276,9 @@ def run_analysis_phase(
         task = progress.add_task("Comparing local, remote, and baseline...", total=None)
 
         plan, analysis_report = orchestrator.analyze_all_issues(
-            push_only=push, pull_only=pull
+            push_only=push,
+            pull_only=pull,
+            interactive_duplicates=interactive_duplicates,
         )
 
         progress.update(task, description="Analysis complete")

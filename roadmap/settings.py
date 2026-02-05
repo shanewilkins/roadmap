@@ -76,6 +76,11 @@ _validators = [
     ),
     Validator("export.include_metadata", default=False, is_type_of=bool),
     Validator("export.date_format", default="%Y-%m-%d"),
+    # Sync settings - duplicate detection
+    Validator("sync.enable_duplicate_detection", default=True, is_type_of=bool),
+    Validator("sync.duplicate_title_threshold", default=0.90, gte=0.0, lte=1.0),
+    Validator("sync.duplicate_content_threshold", default=0.85, gte=0.0, lte=1.0),
+    Validator("sync.duplicate_auto_resolve_threshold", default=0.95, gte=0.0, lte=1.0),
 ]
 
 # Initialize dynaconf with our configuration

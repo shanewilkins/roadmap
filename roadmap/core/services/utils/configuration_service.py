@@ -69,6 +69,27 @@ class ConfigurationService:
             "sync_labels": self.get_setting("github.sync_labels", True),
         }
 
+    def get_sync_config(self) -> dict[str, Any]:
+        """Get sync operation configuration.
+
+        Returns:
+            Sync configuration dictionary including duplicate detection thresholds
+        """
+        return {
+            "enable_duplicate_detection": self.get_setting(
+                "sync.enable_duplicate_detection", True
+            ),
+            "duplicate_title_threshold": self.get_setting(
+                "sync.duplicate_title_threshold", 0.90
+            ),
+            "duplicate_content_threshold": self.get_setting(
+                "sync.duplicate_content_threshold", 0.85
+            ),
+            "duplicate_auto_resolve_threshold": self.get_setting(
+                "sync.duplicate_auto_resolve_threshold", 0.95
+            ),
+        }
+
     # ==================== Credential Management ====================
 
     def get_github_token(self) -> str | None:

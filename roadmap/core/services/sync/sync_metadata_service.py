@@ -21,8 +21,12 @@ class SyncRecord:
     github_changes: dict[str, Any] | None = None
     conflict_resolution: str | None = None  # "local", "github", or None
     error_message: str | None = None
-    milestone_dependencies: list[str] = field(default_factory=list)  # Milestone IDs this sync depended on
-    dependency_resolution_time: float | None = None  # Time spent resolving dependencies in seconds
+    milestone_dependencies: list[str] = field(
+        default_factory=list
+    )  # Milestone IDs this sync depended on
+    dependency_resolution_time: float | None = (
+        None  # Time spent resolving dependencies in seconds
+    )
 
 
 @dataclass
@@ -37,7 +41,9 @@ class SyncMetadata:
     last_sync_status: str = "never"  # "success", "conflict", "error", "never"
     sync_history: list[SyncRecord] = field(default_factory=list)
     milestone_sync_count: int = 0  # Number of syncs involving milestones
-    last_milestone_resolution_time: float | None = None  # Last dependency resolution time
+    last_milestone_resolution_time: float | None = (
+        None  # Last dependency resolution time
+    )
     circular_dependencies_detected: int = 0  # Count of circular dependency detections
 
     def add_sync_record(self, record: SyncRecord) -> None:
@@ -118,7 +124,9 @@ class SyncMetadata:
             last_sync_status=data.get("last_sync_status", "never"),
             milestone_sync_count=data.get("milestone_sync_count", 0),
             last_milestone_resolution_time=data.get("last_milestone_resolution_time"),
-            circular_dependencies_detected=data.get("circular_dependencies_detected", 0),
+            circular_dependencies_detected=data.get(
+                "circular_dependencies_detected", 0
+            ),
             sync_history=history,
         )
 
