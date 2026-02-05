@@ -72,9 +72,9 @@ def display_detailed_dry_run_preview(
         return
 
     changes = analysis_report.changes
-    push_changes = [c for c in changes if c.requires_push()]
-    pull_changes = [c for c in changes if c.requires_pull()]
-    conflicts = [c for c in changes if c.has_conflict()]
+    push_changes = [c for c in changes if c.is_local_only_change()]
+    pull_changes = [c for c in changes if c.is_remote_only_change()]
+    conflicts = [c for c in changes if c.has_conflict]
 
     # Summary statistics
     _display_summary_statistics(console, push_changes, pull_changes, conflicts)
