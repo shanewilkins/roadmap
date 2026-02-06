@@ -176,8 +176,16 @@ class SyncMergeOrchestrator:
             remote_count=len(remote_issues),
         )
 
-        # Detect all duplicates
-        matches = self._duplicate_detector.detect_all(local_issues, remote_issues)
+        # Stage 1: Deduplicate local issues to reduce comparison space
+        dedup_local_issues = self._duplicate_detector.local_self_dedup(local_issues)
+
+        # Stage 2: Deduplicate remote issues to reduce comparison space
+        dedup_remote_issues = self._duplicate_detector.remote_self_dedup(remote_issues)
+
+        # Detect all duplicates using deduplicated sets
+        matches = self._duplicate_detector.detect_all(
+            dedup_local_issues, dedup_remote_issues
+        )
 
         if not matches:
             logger.info("no_duplicates_detected")
@@ -299,6 +307,14 @@ class SyncMergeOrchestrator:
             if local_issues is None:
                 return plan, report
 
+            logger.info(
+                "DEBUG: Fetched issues",
+                local_count=len(local_issues),
+                remote_count=len(remote_issues_data)
+                if isinstance(remote_issues_data, dict)
+                else "not_a_dict",
+            )
+
             # Run duplicate detection before main analysis
             if self.enable_duplicate_detection:
                 auto_resolved, manual_review = self._detect_and_resolve_duplicates(
@@ -320,15 +336,31 @@ class SyncMergeOrchestrator:
 
             # Helper: run comparator and classify changes
             def _run_analysis(local_dict, remote_data, base_state):
+                logger.info(
+                    "DEBUG: Starting three-way analysis",
+                    local_count=len(local_dict),
+                    remote_count=len(remote_data),
+                    base_count=len(base_state.base_issues) if base_state else 0,
+                )
                 changes = self.state_comparator.analyze_three_way(
                     local_dict,
                     remote_data,
                     base_state.base_issues if base_state else None,
                 )
+                logger.info(
+                    "DEBUG: Three-way analysis complete", changes_count=len(changes)
+                )
                 conflicts = [c for c in changes if c.has_conflict]
                 local_only_changes = [c for c in changes if c.is_local_only_change()]
                 remote_only_changes = [c for c in changes if c.is_remote_only_change()]
                 no_changes = [c for c in changes if c.conflict_type == "no_change"]
+                logger.info(
+                    "DEBUG: Classified changes",
+                    conflicts=len(conflicts),
+                    local_only=len(local_only_changes),
+                    remote_only=len(remote_only_changes),
+                    no_changes=len(no_changes),
+                )
                 return (
                     changes,
                     conflicts,

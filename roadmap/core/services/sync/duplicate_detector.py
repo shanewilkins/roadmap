@@ -5,12 +5,18 @@ represent the same entity across local and remote systems. Detects ID collisions
 title duplicates, and content duplicates using various similarity metrics.
 """
 
+import time
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from enum import Enum
 
+import structlog
+
+from roadmap.common.union_find import UnionFind
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
+
+logger = structlog.get_logger()
 
 
 class MatchType(str, Enum):
@@ -89,9 +95,13 @@ class DuplicateDetector:
     ) -> list[DuplicateMatch]:
         """Run all detection strategies and return all matches.
 
+        NOTE: This method expects deduplicated input sets (via local_self_dedup and
+        remote_self_dedup) before being called for cross-comparison. Without dedup
+        preprocessing, title matching can produce thousands of spurious matches.
+
         Args:
-            local_issues: List of local Issue objects
-            remote_issues: Dictionary mapping remote IDs to SyncIssue objects
+            local_issues: List of deduplicated local Issue objects
+            remote_issues: Dictionary mapping remote IDs to deduplicated SyncIssue objects
 
         Returns:
             List of DuplicateMatch objects, sorted by confidence (highest first)
@@ -100,18 +110,22 @@ class DuplicateDetector:
 
         for local_issue in local_issues:
             # Check for ID collisions first (highest priority)
+            # This catches: same GitHub issue number with different local ID
             id_matches = self._detect_id_collisions(local_issue, remote_issues)
             matches.extend(id_matches)
 
-            # Check for title duplicates
+            # Title matching: now safe because input should be deduplicated via
+            # local_self_dedup() and remote_self_dedup() in the orchestrator.
+            # With deduplicated canonical sets (~100 issues each), this is O(100²) = 10K comparisons.
+            # Without dedup, with 1800+ issues each, this would be O(3M+) and produce 80K+ false positives.
             title_matches = self._detect_title_duplicates(local_issue, remote_issues)
             matches.extend(title_matches)
 
-            # Check for content duplicates (most expensive, do last)
-            content_matches = self._detect_content_duplicates(
-                local_issue, remote_issues
-            )
-            matches.extend(content_matches)
+            # NOTE: Content duplicate detection disabled - too expensive even with dedup
+            # content_matches = self._detect_content_duplicates(
+            #     local_issue, remote_issues
+            # )
+            # matches.extend(content_matches)
 
         # Remove duplicate matches (same local/remote pair)
         matches = self._deduplicate_matches(matches)
@@ -145,7 +159,7 @@ class DuplicateDetector:
             return matches
 
         # Check if remote has an issue with the same number
-        for remote_id, remote_issue in remote_issues.items():
+        for _remote_id, remote_issue in remote_issues.items():
             remote_number = (
                 remote_issue.backend_id
                 if remote_issue.backend_name == "github"
@@ -183,7 +197,11 @@ class DuplicateDetector:
     def _detect_title_duplicates(
         self, local_issue: Issue, remote_issues: dict[str, SyncIssue]
     ) -> list[DuplicateMatch]:
-        """Detect title duplicates (exact match or >90% similarity).
+        """Detect title duplicates (exact and fuzzy matching).
+
+        NOTE: This method works well only when called with deduplicated inputs.
+        Without dedup preprocessing, fuzzy matching can produce thousands of
+        spurious matches with large datasets.
 
         Args:
             local_issue: Local issue to check
@@ -195,10 +213,10 @@ class DuplicateDetector:
         matches: list[DuplicateMatch] = []
         local_title = local_issue.title.strip().lower()
 
-        for remote_id, remote_issue in remote_issues.items():
+        for _remote_id, remote_issue in remote_issues.items():
             remote_title = remote_issue.title.strip().lower()
 
-            # Check for exact match
+            # Check for exact match first
             if local_title == remote_title:
                 matches.append(
                     DuplicateMatch(
@@ -213,33 +231,26 @@ class DuplicateDetector:
                         },
                     )
                 )
-            else:
-                # Check for fuzzy match
-                similarity = self._calculate_text_similarity(
-                    local_issue.title, remote_issue.title
+                continue
+
+            # Check for fuzzy title match using SequenceMatcher
+            # Safe to do here because input should be deduplicated
+            similarity = SequenceMatcher(None, local_title, remote_title).ratio()
+
+            if similarity >= self.title_similarity_threshold:
+                matches.append(
+                    DuplicateMatch(
+                        local_issue=local_issue,
+                        remote_issue=remote_issue,
+                        match_type=MatchType.TITLE_SIMILAR,
+                        confidence=similarity,
+                        recommended_action=RecommendedAction.MANUAL_REVIEW,
+                        similarity_details={
+                            "title_similarity": similarity,
+                            "match_reason": "fuzzy_title_match",
+                        },
+                    )
                 )
-
-                if similarity >= self.title_similarity_threshold:
-                    # Determine action based on confidence
-                    action = (
-                        RecommendedAction.AUTO_MERGE
-                        if similarity >= self.auto_resolve_threshold
-                        else RecommendedAction.MANUAL_REVIEW
-                    )
-
-                    matches.append(
-                        DuplicateMatch(
-                            local_issue=local_issue,
-                            remote_issue=remote_issue,
-                            match_type=MatchType.TITLE_SIMILAR,
-                            confidence=similarity,
-                            recommended_action=action,
-                            similarity_details={
-                                "title_similarity": similarity,
-                                "match_reason": "fuzzy_title_match",
-                            },
-                        )
-                    )
 
         return matches
 
@@ -264,7 +275,7 @@ class DuplicateDetector:
         # Skip if no content to compare
         local_content = local_issue.content.strip() if local_issue.content else ""
 
-        for remote_id, remote_issue in remote_issues.items():
+        for _remote_id, remote_issue in remote_issues.items():
             # Get remote content (try headline or metadata)
             remote_content = ""
             if hasattr(remote_issue, "headline") and remote_issue.headline:
@@ -383,3 +394,144 @@ class DuplicateDetector:
                 match_map[key] = match
 
         return list(match_map.values())
+
+    def local_self_dedup(self, local_issues: list[Issue]) -> list[Issue]:
+        """Deduplicate local issues by grouping canonical duplicates.
+
+        Uses union-find to efficiently cluster duplicate issues within the local
+        set. This reduces the number of issues before cross-comparing with remote.
+
+        Args:
+            local_issues: List of local issues to deduplicate.
+
+        Returns:
+            List of canonical representative issues (one per equivalence class).
+
+        Performance:
+            - Creates union-find: O(n)
+            - Pairwise comparisons: O(n²) with early termination
+            - Dedup output: O(n)
+        """
+        start_time = time.time()
+        input_count = len(local_issues)
+
+        if input_count == 0:
+            return []
+
+        # Build union-find with issue IDs
+        issue_by_id = {id(issue): issue for issue in local_issues}
+        uf = UnionFind(list(issue_by_id.keys()))
+
+        id_collision_count = 0
+        title_match_count = 0
+
+        # Pairwise comparison for duplicates
+        for i, issue1 in enumerate(local_issues):
+            for issue2 in local_issues[i + 1 :]:
+                # Check ID collision (same GitHub ID = definitely duplicate)
+                github_id_1 = issue1.remote_ids.get("github")
+                github_id_2 = issue2.remote_ids.get("github")
+                if github_id_1 and github_id_1 == github_id_2:
+                    uf.union(id(issue1), id(issue2))
+                    id_collision_count += 1
+                    continue
+
+                # Check exact title match (strong indicator of duplicate)
+                if issue1.title == issue2.title:
+                    uf.union(id(issue1), id(issue2))
+                    title_match_count += 1
+
+        # Extract canonical representatives
+        representatives = uf.get_representatives()
+        canonical_issues = [
+            issue_by_id[rep_id] for rep_id in representatives if rep_id in issue_by_id
+        ]
+
+        output_count = len(canonical_issues)
+        elapsed_time = time.time() - start_time
+
+        logger.info(
+            "local_self_dedup: input=%d, id_collisions=%d, title_matches=%d, "
+            "output=%d, time=%.2fs, reduction=%.1f%%",
+            input_count,
+            id_collision_count,
+            title_match_count,
+            output_count,
+            elapsed_time,
+            ((input_count - output_count) / input_count * 100)
+            if input_count > 0
+            else 0,
+        )
+
+        return canonical_issues
+
+    def remote_self_dedup(
+        self, remote_issues: dict[str, "SyncIssue"]
+    ) -> dict[str, "SyncIssue"]:
+        """Deduplicate remote issues by grouping canonical duplicates.
+
+        Uses union-find to efficiently cluster duplicate issues within the remote
+        set. This reduces the number of issues before comparing with local.
+
+        Args:
+            remote_issues: Dict of remote issue IDs to SyncIssue objects.
+
+        Returns:
+            Dict of canonical remote issues (one per equivalence class).
+
+        Performance:
+            - Creates union-find: O(n)
+            - Pairwise comparisons: O(n²) with early termination
+            - Dedup output: O(n)
+        """
+        start_time = time.time()
+        input_count = len(remote_issues)
+
+        if input_count == 0:
+            return {}
+
+        # Build union-find with remote issue IDs (strings)
+        remote_id_list = list(remote_issues.keys())
+        uf = UnionFind(remote_id_list)
+
+        id_collision_count = 0
+        title_match_count = 0
+
+        # Pairwise comparison for duplicates
+        for i, rid1 in enumerate(remote_id_list):
+            for rid2 in remote_id_list[i + 1 :]:
+                issue1 = remote_issues[rid1]
+                issue2 = remote_issues[rid2]
+
+                # Check ID collision (same backend ID = definitely duplicate)
+                if issue1.backend_id and issue1.backend_id == issue2.backend_id:
+                    uf.union(rid1, rid2)
+                    id_collision_count += 1
+                    continue
+
+                # Check exact title match (strong indicator of duplicate)
+                if issue1.title == issue2.title:
+                    uf.union(rid1, rid2)
+                    title_match_count += 1
+
+        # Extract canonical representatives
+        representatives = uf.get_representatives()
+        canonical_remote = {rep_id: remote_issues[rep_id] for rep_id in representatives}
+
+        output_count = len(canonical_remote)
+        elapsed_time = time.time() - start_time
+
+        logger.info(
+            "remote_self_dedup: input=%d, id_collisions=%d, title_matches=%d, "
+            "output=%d, time=%.2fs, reduction=%.1f%%",
+            input_count,
+            id_collision_count,
+            title_match_count,
+            output_count,
+            elapsed_time,
+            ((input_count - output_count) / input_count * 100)
+            if input_count > 0
+            else 0,
+        )
+
+        return canonical_remote

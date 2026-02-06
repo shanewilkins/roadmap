@@ -786,7 +786,7 @@ def _execute_sync_workflow(
 ) -> None:
     """Execute main sync workflow."""
     # Get thresholds from config
-    sync_config = core.configuration.get_sync_config()
+    sync_config = core.config_service.get_sync_config()
     title_threshold = (
         duplicate_title_threshold
         if duplicate_title_threshold is not None
