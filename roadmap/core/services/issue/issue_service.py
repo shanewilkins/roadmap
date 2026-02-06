@@ -20,6 +20,7 @@ from roadmap.common.logging.error_logging import (
     log_error_with_context,
 )
 from roadmap.common.observability.instrumentation import traced
+from roadmap.common.result import Ok, Err
 from roadmap.common.services import log_entry, log_event, log_exit, log_metric
 from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue
@@ -530,3 +531,184 @@ class IssueService:
         """
         params = IssueUpdateServiceParams(issue_id=issue_id, status="closed")
         return self.update_issue(params)
+
+    @traced("merge_issues")
+    def merge_issues(self, canonical_id: str, duplicate_id: str) -> Ok[Issue] | Err[str]:
+        """Merge duplicate issue into canonical issue.
+
+        Transfers all data from duplicate to canonical:
+        - Comments and discussion threads
+        - Labels (union of both)
+        - Remote IDs (merge both backends)
+        - Updated timestamp (take latest)
+        - Keep canonical: created date, ID, content (local priority)
+
+        Args:
+            canonical_id: ID of issue to keep
+            duplicate_id: ID of issue to merge away
+
+        Returns:
+            Ok(merged_issue) on success, Err(message) on failure
+        """
+        log_entry("merge_issues", canonical_id=canonical_id, duplicate_id=duplicate_id)
+
+        # Get both issues
+        canonical = self.get_issue(canonical_id)
+        if not canonical:
+            msg = f"Canonical issue {canonical_id} not found"
+            logger.warning("merge_issues_canonical_not_found", issue_id=canonical_id)
+            log_exit("merge_issues", success=False)
+            return Err(msg)
+
+        duplicate = self.get_issue(duplicate_id)
+        if not duplicate:
+            msg = f"Duplicate issue {duplicate_id} not found"
+            logger.warning("merge_issues_duplicate_not_found", issue_id=duplicate_id)
+            log_exit("merge_issues", success=False)
+            return Err(msg)
+
+        try:
+            # Merge data: union labels, merge remote_ids, combine comments
+            merged = Issue(
+                id=canonical.id,
+                title=canonical.title,  # Keep canonical title
+                headline=canonical.headline,
+                content=canonical.content,  # Keep canonical content (local priority)
+                status=canonical.status,  # Keep canonical status
+                priority=canonical.priority,
+                issue_type=canonical.issue_type,
+                milestone=canonical.milestone,
+                labels=list(set(canonical.labels + duplicate.labels)),  # Union labels
+                assignee=canonical.assignee,  # Keep canonical assignee
+                estimated_hours=canonical.estimated_hours,
+                due_date=canonical.due_date,
+                depends_on=list(set(canonical.depends_on + duplicate.depends_on)),
+                blocks=list(set(canonical.blocks + duplicate.blocks)),
+                actual_start_date=canonical.actual_start_date,
+                actual_end_date=canonical.actual_end_date,
+                progress_percentage=canonical.progress_percentage,
+                handoff_notes=canonical.handoff_notes,
+                previous_assignee=canonical.previous_assignee,
+                handoff_date=canonical.handoff_date,
+                git_branches=list(set(canonical.git_branches + duplicate.git_branches)),
+                git_commits=canonical.git_commits
+                + duplicate.git_commits,  # Append commits
+                completed_date=canonical.completed_date or duplicate.completed_date,
+                comments=canonical.comments
+                + duplicate.comments,  # Append comments
+                created=canonical.created,  # Keep canonical's earliest created
+                updated=max(canonical.updated, duplicate.updated),  # Take latest updated
+                remote_ids={
+                    **canonical.remote_ids,
+                    **duplicate.remote_ids,  # Merge remote IDs
+                },
+            )
+
+            # Persist merged issue
+            self.repository.save(merged)
+            self._list_issues_cache.clear()
+
+            logger.info(
+                "issues_merged",
+                canonical_id=canonical_id,
+                duplicate_id=duplicate_id,
+                merged_title=merged.title,
+            )
+            log_event("issues_merged", canonical_id=canonical_id, duplicate_id=duplicate_id)
+            log_exit("merge_issues", success=True)
+            return Ok(merged)
+
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="merge",
+                entity_type="Issue",
+                entity_id=canonical_id,
+            )
+            logger.error(
+                "merge_issues_failed",
+                canonical_id=canonical_id,
+                duplicate_id=duplicate_id,
+                error=str(e),
+            )
+            log_exit("merge_issues", success=False)
+            return Err(f"Failed to merge issues: {str(e)}")
+
+    @traced("archive_issue")
+    def archive_issue(
+        self,
+        issue_id: str,
+        duplicate_of_id: str | None = None,
+        resolution_type: str = "duplicate",
+    ) -> Ok[Issue] | Err[str]:
+        """Archive an issue (soft delete) with metadata.
+
+        Sets status to ARCHIVED and adds metadata about why it was archived.
+        Uses repository.mark_archived() for proper database handling.
+
+        Args:
+            issue_id: ID of issue to archive
+            duplicate_of_id: ID of the canonical issue this is a duplicate of
+            resolution_type: Type of resolution (default: "duplicate")
+
+        Returns:
+            Ok(archived_issue) on success, Err(message) on failure
+        """
+        log_entry(
+            "archive_issue",
+            issue_id=issue_id,
+            duplicate_of_id=duplicate_of_id,
+            resolution_type=resolution_type,
+        )
+
+        issue = self.get_issue(issue_id)
+        if not issue:
+            msg = f"Issue {issue_id} not found"
+            logger.warning("archive_issue_not_found", issue_id=issue_id)
+            log_exit("archive_issue", success=False)
+            return Err(msg)
+
+        try:
+            # Update domain model status
+            issue.status = Status.ARCHIVED
+
+            # Store resolution metadata
+            if not issue.github_sync_metadata:
+                issue.github_sync_metadata = {}
+            issue.github_sync_metadata["archived_at"] = now_utc().isoformat()
+            issue.github_sync_metadata["resolution_type"] = resolution_type
+            if duplicate_of_id:
+                issue.github_sync_metadata["duplicate_of_id"] = duplicate_of_id
+
+            issue.updated = now_utc()
+
+            # Persist updated metadata and status
+            self.repository.save(issue)
+            self._list_issues_cache.clear()
+
+            logger.info(
+                "issue_archived",
+                issue_id=issue_id,
+                duplicate_of_id=duplicate_of_id,
+                resolution_type=resolution_type,
+            )
+            log_event("issue_archived", issue_id=issue_id, duplicate_of_id=duplicate_of_id)
+            log_exit("archive_issue", success=True)
+            return Ok(issue)
+
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="archive",
+                entity_type="Issue",
+                entity_id=issue_id,
+            )
+            logger.error(
+                "archive_issue_failed",
+                issue_id=issue_id,
+                duplicate_of_id=duplicate_of_id,
+                error=str(e),
+            )
+            log_exit("archive_issue", success=False)
+            return Err(f"Failed to archive issue: {str(e)}")
+

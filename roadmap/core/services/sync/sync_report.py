@@ -126,6 +126,12 @@ class SyncReport:
     issues_pushed: int = 0  # Issues successfully pushed to remote
     issues_pulled: int = 0  # Issues successfully pulled from remote
 
+    # Duplicate detection and resolution statistics
+    duplicates_detected: int = 0  # Total duplicates found in local+remote issues
+    duplicates_auto_resolved: int = 0  # Duplicates automatically resolved (merged)
+    issues_deleted: int = 0  # Issues hard deleted (high-confidence ID collisions)
+    issues_archived: int = 0  # Issues soft archived (fuzzy matches, kept for history)
+
     changes: list[IssueChange] = field(default_factory=list)
     errors: dict[str, str] = field(default_factory=dict)  # Issue ID -> error message
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))

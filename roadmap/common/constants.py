@@ -20,6 +20,7 @@ class Status(str, Enum):
     BLOCKED = "blocked"
     REVIEW = "review"
     CLOSED = "closed"
+    ARCHIVED = "archived"  # Soft-deleted (duplicate or obsolete)
 
 
 class MilestoneStatus(str, Enum):

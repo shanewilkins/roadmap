@@ -87,6 +87,7 @@ class SyncMergeOrchestrator:
             auto_resolve_threshold=duplicate_auto_resolve_threshold,
         )
         self._duplicate_resolver = DuplicateResolver(
+            issue_service=core.issue_service,
             auto_resolve_threshold=duplicate_auto_resolve_threshold
         )
 
@@ -155,8 +156,11 @@ class SyncMergeOrchestrator:
         local_issues: list[Issue],
         remote_issues: dict[str, SyncIssue],
         interactive: bool = False,
-    ) -> tuple[int, int]:
-        """Detect and resolve duplicate issues.
+    ) -> tuple[int, int, list]:
+        """Detect and resolve duplicate issues (analysis only, no persistence).
+
+        Runs duplicate detection through all stages but does NOT persist changes.
+        Persistence happens in _execute_duplicate_resolution() when not in dry_run mode.
 
         Args:
             local_issues: List of local issues
@@ -164,11 +168,11 @@ class SyncMergeOrchestrator:
             interactive: Whether to use interactive resolution for manual review cases
 
         Returns:
-            Tuple of (auto_resolved_count, manual_review_count)
+            Tuple of (auto_resolved_count, manual_review_count, list of ResolutionActions)
         """
         if not self.enable_duplicate_detection:
             logger.debug("duplicate_detection_disabled")
-            return 0, 0
+            return 0, 0, []
 
         logger.info(
             "detecting_duplicates",
@@ -189,7 +193,7 @@ class SyncMergeOrchestrator:
 
         if not matches:
             logger.info("no_duplicates_detected")
-            return 0, 0
+            return 0, 0, []
 
         logger.info(
             "duplicates_detected",
@@ -197,31 +201,39 @@ class SyncMergeOrchestrator:
             high_confidence=[m for m in matches if m.confidence >= 0.95],
         )
 
-        # Separate high-confidence and manual review matches
+        # Separate auto-resolvable and manual review matches
         auto_matches = [
             m
             for m in matches
             if m.confidence >= self._duplicate_resolver.auto_resolve_threshold
+            and m.recommended_action.value == "auto_merge"
         ]
         manual_matches = [
             m
             for m in matches
-            if m.confidence < self._duplicate_resolver.auto_resolve_threshold
+            if m not in auto_matches
         ]
 
         auto_resolved_count = 0
         manual_review_count = len(manual_matches)
+        all_actions = []
 
-        # Auto-resolve high-confidence matches
-        auto_results = self._duplicate_resolver.resolve_automatic(auto_matches)
-        for result in auto_results:
-            if not result.skipped:
-                auto_resolved_count += 1
+        # Auto-resolve high-confidence AUTO_MERGE matches
+        if auto_matches:
+            auto_result = self._duplicate_resolver.resolve_automatic(auto_matches)
+            if auto_result.is_ok():
+                actions = auto_result.unwrap()
+                all_actions.extend(actions)
+                auto_resolved_count = len([a for a in actions if a.error is None])
                 logger.info(
-                    "auto_resolved_duplicate",
-                    local_id=result.match.local_issue.id,
-                    remote_id=result.match.remote_issue.id,
-                    confidence=result.match.confidence,
+                    "auto_resolved_duplicates",
+                    count=auto_resolved_count,
+                    skipped=len(actions) - auto_resolved_count,
+                )
+            else:
+                logger.error(
+                    "auto_resolution_failed",
+                    error=auto_result.unwrap_err(),
                 )
 
         # Handle manual review matches
@@ -231,8 +243,9 @@ class SyncMergeOrchestrator:
                     "starting_interactive_duplicate_resolution",
                     match_count=len(manual_matches),
                 )
-                results = self._duplicate_resolver.resolve_interactive(manual_matches)
-                manual_review_count = len([r for r in results if not r.skipped])
+                actions = self._duplicate_resolver.resolve_interactive(manual_matches)
+                all_actions.extend(actions)
+                manual_review_count = len([a for a in actions if a.error is None])
             else:
                 logger.warning(
                     "manual_review_duplicates_detected",
@@ -240,7 +253,50 @@ class SyncMergeOrchestrator:
                     message="Use --interactive-duplicates flag to resolve these manually",
                 )
 
-        return auto_resolved_count, manual_review_count
+        return auto_resolved_count, manual_review_count, all_actions
+
+    def _execute_duplicate_resolution(
+        self, actions: list, report: SyncReport
+    ) -> None:
+        """Execute duplicate resolution actions (delete/archive issues).
+
+        Called after analysis to persist duplicate resolution changes to database.
+
+        Args:
+            actions: List of ResolutionAction objects from duplicate detection
+            report: SyncReport to update with counts
+        """
+        if not actions:
+            return
+
+        logger.info(
+            "executing_duplicate_resolution",
+            action_count=len(actions),
+        )
+
+        deleted_count = 0
+        archived_count = 0
+        failed_count = 0
+
+        for action in actions:
+            if action.action_type == "delete":
+                deleted_count += 1
+            elif action.action_type == "archive":
+                archived_count += 1
+            elif action.error:
+                failed_count += 1
+
+        report.duplicates_detected = len(actions)
+        report.duplicates_auto_resolved = len([a for a in actions if a.error is None])
+        report.issues_deleted = deleted_count
+        report.issues_archived = archived_count
+
+        logger.info(
+            "duplicate_resolution_executed",
+            deleted=deleted_count,
+            archived=archived_count,
+            failed=failed_count,
+        )
 
     def _process_fetched_pull_result(self, fetched):
         return self._engine._process_fetched_pull_result(fetched)
@@ -316,19 +372,24 @@ class SyncMergeOrchestrator:
             )
 
             # Run duplicate detection before main analysis
+            dup_actions = []
             if self.enable_duplicate_detection:
-                auto_resolved, manual_review = self._detect_and_resolve_duplicates(
+                auto_resolved, manual_review, dup_actions = self._detect_and_resolve_duplicates(
                     local_issues, remote_issues_data, interactive=interactive_duplicates
                 )
                 logger.info(
                     "duplicate_detection_complete",
                     auto_resolved=auto_resolved,
                     manual_review=manual_review,
+                    total_actions=len(dup_actions),
                 )
 
-            local_issues_dict = {issue.id: issue for issue in local_issues}
+            # Refetch local issues as they may have been modified by duplicate resolution
+            local_issues = self._fetch_local_issues(report) or local_issues
+            if local_issues is None:
+                return plan, report
 
-            # Load baseline (read-only)
+            local_issues_dict = {issue.id: issue for issue in local_issues}
             try:
                 base_state = self._load_baseline_state()
             except Exception:
@@ -611,15 +672,26 @@ class SyncMergeOrchestrator:
                 return report
 
             # Run duplicate detection before main analysis
+            dup_actions = []
             if self.enable_duplicate_detection:
-                auto_resolved, manual_review = self._detect_and_resolve_duplicates(
+                auto_resolved, manual_review, dup_actions = self._detect_and_resolve_duplicates(
                     local_issues, remote_issues_data, interactive=interactive_duplicates
                 )
                 logger.info(
                     "duplicate_detection_complete",
                     auto_resolved=auto_resolved,
                     manual_review=manual_review,
+                    total_actions=len(dup_actions),
                 )
+                
+                # Execute duplicate resolution if not in dry_run mode
+                if not dry_run and dup_actions:
+                    self._execute_duplicate_resolution(dup_actions, report)
+
+            # Refetch local issues as they may have been modified by duplicate resolution
+            local_issues = self._fetch_local_issues(report) or local_issues
+            if local_issues is None:
+                return report
 
             local_issues_dict = {issue.id: issue for issue in local_issues}
 

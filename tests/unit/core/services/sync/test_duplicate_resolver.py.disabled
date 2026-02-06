@@ -5,10 +5,12 @@ related duplicate resolution functionality.
 """
 
 from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 import pytest
 
 from roadmap.common.constants import Priority, Status
+from roadmap.common.result import Ok
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
 from roadmap.core.services.sync.duplicate_detector import (
@@ -18,14 +20,28 @@ from roadmap.core.services.sync.duplicate_detector import (
 )
 from roadmap.core.services.sync.duplicate_resolver import (
     DuplicateResolver,
-    ResolutionResult,
+    ResolutionAction,
 )
 
 
 @pytest.fixture
-def resolver():
+def mock_issue_service():
+    """Create a mock issue service."""
+    service = MagicMock()
+    service.merge_issues.return_value = Ok(
+        Issue(id="merged", title="Merged Issue", status=Status.TODO)
+    )
+    service.delete_issue.return_value = True
+    service.archive_issue.return_value = Ok(
+        Issue(id="archived", title="Archived Issue", status=Status.ARCHIVED)
+    )
+    return service
+
+
+@pytest.fixture
+def resolver(mock_issue_service):
     """Create a DuplicateResolver with default threshold."""
-    return DuplicateResolver()
+    return DuplicateResolver(issue_service=mock_issue_service)
 
 
 @pytest.fixture

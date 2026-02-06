@@ -6,33 +6,38 @@ duplicate issues detected during sync operations.
 
 from dataclasses import dataclass
 
-from roadmap.common.constants import Status
 from roadmap.common.logging import get_logger
+from roadmap.common.result import Ok, Err, Result
 from roadmap.core.domain.issue import Issue
-from roadmap.core.models.sync_models import SyncIssue
 from roadmap.core.services.sync.duplicate_detector import (
     DuplicateMatch,
     RecommendedAction,
 )
+from roadmap.core.services.issue.issue_service import IssueService
 
 logger = get_logger(__name__)
 
 
 @dataclass
-class ResolutionResult:
-    """Result of resolving a duplicate match.
+class ResolutionAction:
+    """Action taken to resolve a duplicate match.
 
     Attributes:
         match: The duplicate match that was resolved
-        action_taken: Action that was taken ("merge_remote", "keep_local", "skip", "manual")
-        merged_issue: The resulting merged issue if applicable
-        skipped: Whether the match was skipped
+        action_type: Type of action ("merge", "delete", "archive", "skip")
+        canonical_issue: The resulting canonical issue
+        duplicate_issue_id: ID of the duplicate that was handled
+        confidence: Confidence level of the resolution
+        error: Error message if resolution failed
     """
 
     match: DuplicateMatch
-    action_taken: str
-    merged_issue: Issue | None = None
-    skipped: bool = False
+    action_type: str  # "merge", "delete", "archive", "skip"
+    canonical_issue: Issue | None = None
+    duplicate_issue_id: str | None = None
+    confidence: float = 0.0
+    error: str | None = None
+
 
 
 class DuplicateResolver:
@@ -42,29 +47,37 @@ class DuplicateResolver:
     interactive CLI prompts for manual review cases.
     """
 
-    def __init__(self, auto_resolve_threshold: float = 0.95) -> None:
+    def __init__(
+        self, issue_service: IssueService, auto_resolve_threshold: float = 0.95
+    ) -> None:
         """Initialize duplicate resolver.
 
         Args:
+            issue_service: IssueService for persisting resolution
             auto_resolve_threshold: Minimum confidence for automatic resolution (default: 0.95)
         """
+        self.issue_service = issue_service
         self.auto_resolve_threshold = auto_resolve_threshold
 
     def resolve_automatic(
         self, matches: list[DuplicateMatch]
-    ) -> list[ResolutionResult]:
+    ) -> Result[list[ResolutionAction], str]:
         """Automatically resolve high-confidence duplicate matches.
 
-        Only resolves matches with confidence >= auto_resolve_threshold and
-        recommended_action == AUTO_MERGE.
+        For each match:
+        - If confidence == 1.0 (ID collision): delete duplicate (hard delete)
+        - If confidence < 1.0 (fuzzy match): archive duplicate with metadata
+        - Merge duplicate data into canonical issue
+        - Only processes matches >= auto_resolve_threshold with recommended_action == AUTO_MERGE
 
         Args:
             matches: List of duplicate matches to resolve
 
         Returns:
-            List of ResolutionResult objects for resolved and skipped matches
+            Ok(list of ResolutionAction) on success
+            Err(message) if any resolution fails
         """
-        results: list[ResolutionResult] = []
+        actions: list[ResolutionAction] = []
 
         for match in matches:
             # Only auto-resolve if confidence is high enough and action is AUTO_MERGE
@@ -79,6 +92,14 @@ class DuplicateResolver:
                     confidence=match.confidence,
                     recommended_action=match.recommended_action.value,
                 )
+                actions.append(
+                    ResolutionAction(
+                        match=match,
+                        action_type="skip",
+                        duplicate_issue_id=match.remote_issue.id,
+                        confidence=match.confidence,
+                    )
+                )
                 continue
 
             logger.info(
@@ -89,23 +110,115 @@ class DuplicateResolver:
                 confidence=match.confidence,
             )
 
-            # Merge remote issue into local issue
-            merged_issue = self._merge_issues(match.local_issue, match.remote_issue)
-
-            results.append(
-                ResolutionResult(
-                    match=match,
-                    action_taken="merged",
-                    merged_issue=merged_issue,
-                    skipped=False,
-                )
+            # Step 1: Merge duplicate data into canonical
+            merge_result = self.issue_service.merge_issues(
+                match.local_issue.id, match.remote_issue.id
             )
+            if isinstance(merge_result, Err):
+                logger.error(
+                    "merge_failed_during_resolution",
+                    local_id=match.local_issue.id,
+                    remote_id=match.remote_issue.id,
+                    error=merge_result.unwrap_err(),
+                )
+                actions.append(
+                    ResolutionAction(
+                        match=match,
+                        action_type="skip",
+                        duplicate_issue_id=match.remote_issue.id,
+                        confidence=match.confidence,
+                        error=f"Merge failed: {merge_result.unwrap_err()}",
+                    )
+                )
+                continue
 
-        return results
+            canonical = merge_result.unwrap()
+
+            # Step 2: Decide action based on confidence
+            # ID collision (confidence=1.0) → hard delete
+            # Fuzzy match (confidence<1.0) → archive with metadata
+            if match.confidence == 1.0:
+                # ID collision: high confidence, delete remote duplicate
+                delete_result = self.issue_service.delete_issue(match.remote_issue.id)
+                if not delete_result:
+                    logger.warning(
+                        "delete_failed_during_resolution",
+                        remote_id=match.remote_issue.id,
+                    )
+                    actions.append(
+                        ResolutionAction(
+                            match=match,
+                            action_type="skip",
+                            canonical_issue=canonical,
+                            duplicate_issue_id=match.remote_issue.id,
+                            confidence=match.confidence,
+                            error="Failed to delete duplicate",
+                        )
+                    )
+                    continue
+
+                logger.info(
+                    "duplicate_deleted",
+                    canonical_id=match.local_issue.id,
+                    deleted_id=match.remote_issue.id,
+                    match_type=match.match_type.value,
+                )
+                actions.append(
+                    ResolutionAction(
+                        match=match,
+                        action_type="delete",
+                        canonical_issue=canonical,
+                        duplicate_issue_id=match.remote_issue.id,
+                        confidence=match.confidence,
+                    )
+                )
+            else:
+                # Fuzzy match: archive with metadata linking to canonical
+                archive_result = self.issue_service.archive_issue(
+                    issue_id=match.remote_issue.id,
+                    duplicate_of_id=match.local_issue.id,
+                    resolution_type=match.match_type.value,
+                )
+                if isinstance(archive_result, Err):
+                    logger.warning(
+                        "archive_failed_during_resolution",
+                        remote_id=match.remote_issue.id,
+                        error=archive_result.unwrap_err(),
+                    )
+                    actions.append(
+                        ResolutionAction(
+                            match=match,
+                            action_type="skip",
+                            canonical_issue=canonical,
+                            duplicate_issue_id=match.remote_issue.id,
+                            confidence=match.confidence,
+                            error=f"Archive failed: {archive_result.unwrap_err()}",
+                        )
+                    )
+                    continue
+
+                logger.info(
+                    "duplicate_archived",
+                    canonical_id=match.local_issue.id,
+                    archived_id=match.remote_issue.id,
+                    match_type=match.match_type.value,
+                    confidence=match.confidence,
+                )
+                actions.append(
+                    ResolutionAction(
+                        match=match,
+                        action_type="archive",
+                        canonical_issue=canonical,
+                        duplicate_issue_id=match.remote_issue.id,
+                        confidence=match.confidence,
+                    )
+                )
+
+        return Ok(actions)
 
     def resolve_interactive(
         self, matches: list[DuplicateMatch]
-    ) -> list[ResolutionResult]:
+    ) -> list[ResolutionAction]:
         """Interactively resolve duplicate matches with CLI prompts.
 
         Presents each match to the user with detailed information and
@@ -115,12 +228,12 @@ class DuplicateResolver:
             matches: List of duplicate matches requiring manual review
 
         Returns:
-            List of ResolutionResult objects for all matches
+            List of ResolutionAction objects for all matches
         """
-        results: list[ResolutionResult] = []
+        actions: list[ResolutionAction] = []
 
         if not matches:
-            return results
+            return actions
 
         logger.info(
             "starting_interactive_resolution",
@@ -140,15 +253,15 @@ class DuplicateResolver:
             )
             # Fallback: skip all matches
             for match in matches:
-                results.append(
-                    ResolutionResult(
+                actions.append(
+                    ResolutionAction(
                         match=match,
-                        action_taken="skip",
-                        merged_issue=None,
-                        skipped=True,
+                        action_type="skip",
+                        duplicate_issue_id=match.remote_issue.id,
+                        confidence=match.confidence,
                     )
                 )
-            return results
+            return actions
 
         for i, match in enumerate(matches, 1):
             console.print(
@@ -164,21 +277,42 @@ class DuplicateResolver:
             )
 
             if action == "merge":
-                # Merge remote into local
-                merged_issue = self._merge_issues(match.local_issue, match.remote_issue)
-                logger.info(
-                    "user_merged_duplicate",
-                    local_id=match.local_issue.id,
-                    remote_id=match.remote_issue.id,
+                # Merge remote into local using issue service
+                merge_result = self.issue_service.merge_issues(
+                    match.local_issue.id, match.remote_issue.id
                 )
-                results.append(
-                    ResolutionResult(
-                        match=match,
-                        action_taken="merge_remote",
-                        merged_issue=merged_issue,
-                        skipped=False,
+                if isinstance(merge_result, Ok):
+                    canonical = merge_result.unwrap()
+                    logger.info(
+                        "user_merged_duplicate",
+                        local_id=match.local_issue.id,
+                        remote_id=match.remote_issue.id,
                     )
-                )
+                    actions.append(
+                        ResolutionAction(
+                            match=match,
+                            action_type="merge",
+                            canonical_issue=canonical,
+                            duplicate_issue_id=match.remote_issue.id,
+                            confidence=match.confidence,
+                        )
+                    )
+                else:
+                    logger.warning(
+                        "user_merge_failed",
+                        local_id=match.local_issue.id,
+                        remote_id=match.remote_issue.id,
+                        error=merge_result.unwrap_err(),
+                    )
+                    actions.append(
+                        ResolutionAction(
+                            match=match,
+                            action_type="skip",
+                            duplicate_issue_id=match.remote_issue.id,
+                            confidence=match.confidence,
+                            error=f"Merge failed: {merge_result.unwrap_err()}",
+                        )
+                    )
             elif action == "keep":
                 # Keep both issues separate
                 logger.info(
@@ -186,12 +320,12 @@ class DuplicateResolver:
                     local_id=match.local_issue.id,
                     remote_id=match.remote_issue.id,
                 )
-                results.append(
-                    ResolutionResult(
+                actions.append(
+                    ResolutionAction(
                         match=match,
-                        action_taken="keep_local",
-                        merged_issue=None,
-                        skipped=False,
+                        action_type="keep",
+                        duplicate_issue_id=match.remote_issue.id,
+                        confidence=match.confidence,
                     )
                 )
             else:  # skip
@@ -200,58 +334,16 @@ class DuplicateResolver:
                     local_id=match.local_issue.id,
                     remote_id=match.remote_issue.id,
                 )
-                results.append(
-                    ResolutionResult(
+                actions.append(
+                    ResolutionAction(
                         match=match,
-                        action_taken="skip",
-                        merged_issue=None,
-                        skipped=True,
+                        action_type="skip",
+                        duplicate_issue_id=match.remote_issue.id,
+                        confidence=match.confidence,
                     )
                 )
 
-        return results
-
-    def _merge_issues(self, local: Issue, remote: SyncIssue) -> Issue:
-        """Merge remote issue data into local issue.
-
-        Creates a new Issue with merged data, preferring remote data
-        for fields that are more up-to-date.
-
-        Args:
-            local: Local Issue object
-            remote: Remote SyncIssue object
-
-        Returns:
-            Merged Issue object with combined data
-        """
-        # Create merged issue, preferring remote for updated fields
-        # but keeping local metadata (id, created, etc.)
-        merged = Issue(
-            id=local.id,
-            title=remote.title if remote.title else local.title,
-            headline=remote.headline if remote.headline else local.headline,
-            content=local.content,  # Keep local content by default
-            status=Status(remote.status) if remote.status else local.status,
-            priority=local.priority,  # Keep local priority
-            issue_type=local.issue_type,
-            labels=list(set(local.labels + (remote.labels or []))),  # Merge labels
-            assignee=remote.assignee if remote.assignee else local.assignee,
-            milestone=remote.milestone if remote.milestone else local.milestone,
-            created=local.created,
-            updated=remote.updated_at if remote.updated_at else local.updated,
-            remote_ids={**local.remote_ids, remote.backend_name: remote.backend_id}
-            if remote.backend_id
-            else local.remote_ids,
-        )
-
-        logger.debug(
-            "merged_issue_created",
-            local_id=local.id,
-            remote_id=remote.id,
-            merged_title=merged.title,
-        )
-
-        return merged
+        return actions
 
     def _format_match_details(self, match: DuplicateMatch):
         """Format match details as a Rich panel for display.
