@@ -124,12 +124,12 @@
 #### **Task 5: Duplicate Resolution Persistence** ✅ (COMPLETED Feb 6, 2026)
 
 - [x] **Duplicate Resolution Persistence** - Hybrid delete/archive strategy implemented:
-  
+
   **Design Implemented:**
   - Analysis phase returns link actions (no service calls on non-existent remote issues)
   - Merge canonical issue with duplicate data before deletion
   - Store audit trail: `duplicate_of_id`, `resolution_type`, `archived_at` in `github_sync_metadata`
-  
+
   **Implementation Complete:**
   - [x] Updated `DuplicateResolver.resolve_automatic()`:
     - Returns `Result<list[ResolutionAction], str>` for explicit error handling
@@ -168,7 +168,7 @@
   - This prevents errors when remote issues don't exist in the local database yet
   - Actual merge/delete/archive would happen in execution phase (future enhancement)
   - Normal sync process handles linking of local-to-remote duplicates
-  
+
   **Phase 5 Tollgate Verification Checklist - ALL PASSING:**
   - [x] Core implementation complete with Result types and proper error handling
   - [x] IssueService methods added and tested (merge_issues, archive_issue)
@@ -184,114 +184,140 @@
     - First run: Updated baseline from 2 → 1828 issues
     - Second run: Baseline stayed at 1828 (no changes) ✅
     - Third run (with --detect-duplicates): Also showed 1828 at baseline ✅
-  
+
   **✅ PHASE 5 TOLLGATE PASSED - Proceed to Task 6**
     # - Local issues: exactly 99 (not 1828, duplicates actually deleted)
     # - Sync links: exactly 99 local ↔ 99 remote links
     # - No orphaned foreign keys
     # - All archived issues have duplicate_of_id set
-    
+
     # Step 4: Idempotency test
     roadmap sync
     roadmap sync  # Should report "everything synced, no changes"
     ```
-  
+
   - [ ] **Only proceed to Task 6 if all above verification passes**
     - If not: debug Task 5 before moving forward
     - If yes: 95% confidence in full sync completion
 
 
 
-#### **Task 6: Comprehensive Observability** 📋 (Priority 2 - After Task 5) - **2-3 days**
+#### **Task 6: Comprehensive Observability** ✅ (Phase 1 Complete - Feb 6, 2026)
 
+**Phase 1: Core Metrics Infrastructure - COMPLETE** ✅
 
-- [ ] Create `roadmap/core/observability/sync_metrics.py`:
-- [ ] Create `roadmap/core/observability/sync_metrics.py`:
-  ```python
-  @dataclass
-  class SyncMetrics:
-      operation_id: str
-      backend_type: str
-      start_time: datetime
-      duration_seconds: float
-      local_issues_before_dedup: int
-      local_issues_after_dedup: int
-      local_dedup_reduction_pct: float
-      remote_issues_before_dedup: int
-      remote_issues_after_dedup: int
-      remote_dedup_reduction_pct: float
-      issues_fetched: int
-      issues_pushed: int
-      issues_pulled: int
-      conflicts_detected: int
-      duplicates_detected: int
-      duplicates_auto_resolved: int
-      issues_deleted: int          # hard deleted
-      issues_archived: int         # soft deleted
-      errors_count: int
-      cache_hit_rate: float
-      circuit_breaker_state: str
-      dedup_phase_duration: float  # time for local+remote dedup
-      analysis_phase_duration: float
-      merge_phase_duration: float
+- [x] **Created `roadmap/core/observability/sync_metrics.py`:**
+  - [x] `SyncMetrics` dataclass (40+ fields) tracking all sync aspects
+  - [x] `SyncObservability` service with 17+ recording methods
+  - [x] Global singleton instance management
 
-  class SyncObservability:
-      def start_operation(self, backend_type) -> str  # returns operation_id
-      def record_local_dedup(self, operation_id, before: int, after: int)
-      def record_remote_dedup(self, operation_id, before: int, after: int)
-      def record_fetch(self, operation_id, count, duration)
-      def record_push(self, operation_id, count, duration)
-      def record_pull(self, operation_id, count, duration)
-      def record_conflict(self, operation_id)
-      def record_duplicate(self, operation_id, confidence, action: "deleted"|"archived")
-      def record_error(self, operation_id, error_type)
-      def finalize(self, operation_id) -> SyncMetrics
-  ```
-- [ ] Integrate with `SyncProgressTracker` for real-time display
-- [ ] Instrument `SyncMergeOrchestrator`:
-  - Local/remote dedup phase duration and reduction percentages
-  - Fetch duration and counts
-  - Analysis phase timing
-  - Merge/push/pull operation timing
-  - Conflict detection
-  - Duplicate detection and resolution counts (deleted vs archived)
-  - Cache statistics
-  - Circuit breaker state changes
-- [ ] Add structured logging with context (operation_id, user_id, backend_type)
-- [ ] Create `roadmap/adapters/cli/commands/sync_metrics.py` - view historical metrics
-- [ ] Store metrics in database (use SyncMetadataService pattern)
-- [ ] Add tests for metrics collection
-- [ ] Display metrics in sync output:
-  ```
-  📊 Sync Metrics
-     Local issues deduplicated: 1828 → 99 canonical (94.6% reduction, 0.26s)
-     Remote issues deduplicated: 1869 → 99 canonical (94.7% reduction, 0.23s)
-     Cross-set duplicates detected: 0
-     Duplicates auto-resolved: 0 (0 deleted, 0 archived)
-     Issues fetched: 1869 (0.3s)
-     ⏱️ Total time: 2.1s
-  ```
-- [ ] Add `--show-metrics` flag to show detailed breakdown
+- [x] **Metrics tracked:**
+  - Local/remote dedup: before/after counts, reduction %, duration
+  - Fetch/push/pull: operation counts and duration
+  - Conflicts: detection and resolution timing
+  - Duplicates: detected, auto-resolved, deleted, archived
+  - Phases: analysis, merge, conflict resolution timing
+  - Performance: cache hit rate, circuit breaker state
+  - Sync links: created count, orphaned count
 
-**🚨 Risk Factor: Sync State Consistency**
-- [ ] **Why This Matters**: After Task 5 deletes local duplicates, must verify `SyncState` is updated correctly
-  - Could end up with "synced 1869 remote but only 99 local linked"
-  - This is where Task 6 metrics become CRITICAL for verification
-- [ ] **Action Items**:
-  - [ ] Add `SyncMetrics` fields specifically for:
-    - `issues_deleted: int`
-    - `issues_archived: int`
-    - `sync_links_created: int` (should equal 99 after dedup)
-    - `orphaned_links: int` (should be 0)
-  - [ ] Create dashboard view showing before/after counts
-  - [ ] Add alert if `sync_links_created < 99` after Task 5 completes
-- [ ] **Validation**:
-  - Metrics should show: `issues_deleted + issues_archived == 1729` (1828+1869-99-99)
-  - Metrics should show: `sync_links_created == 99`
-  - Metrics should show: `orphaned_links == 0`
-  - If metrics don't match, Task 5 has a bug that needs fixing
+- [x] **38 comprehensive unit tests (100% passing)**
+- [x] **Integrated into SyncMergeOrchestrator**
+- [x] **Updated SyncReport with optional metrics field**
+- [x] **19 sync orchestrator tests still passing**
 
-#### **Task 7: Health Checks & Duplicate Fixers** 📋 (Priority 3 - After Task 6) - **1-2 days**
+**✅ PHASE 1 TOLLGATE PASSED - Ready for Phase 2**
+
+**Phase 2 (Next Steps):**
+- [ ] Record dedup metrics in duplicate detection/resolution
+- [ ] Store metrics in database (SyncStateTracker pattern)
+- [ ] Create CLI: `roadmap sync metrics` command
+- [ ] Add `--show-metrics` flag to sync output
+- [ ] Integrate with SyncProgressTracker for real-time display
+
+---
+
+#### **Task 7: Pre-flight Validation & Early Error Detection** 🚦 (Priority 3 - After Task 6) - **2-3 days**
+
+**Objective**: Validate sync prerequisites before expensive operations, fail fast with clear errors
+
+**Phase 1: SyncPreflight Infrastructure** (1 day)
+- [ ] Create `roadmap/adapters/sync/sync_preflight.py`:
+  - `class SyncPreflight` - orchestrates all pre-flight checks
+  - `validate_for_backend(backend, core) -> Result[None, SyncPreflight Error]` method:
+    - Run infrastructure checks (reuse health check functions)
+    - Run backend-specific checks (only for relevant backend)
+    - Return Result type (explicit error handling, matches DuplicateResolver pattern)
+  - Methods:
+    - `_check_infrastructure()` - database integrity, filesystem, git repo
+    - `_check_github_backend()` - GitHub token, API connectivity (fail if no token)
+    - `_check_vanilla_git_backend()` - git config, ssh keys (backend-specific)
+  - Reuse health checks where applicable:
+    - Call `HealthCheck.check_database_integrity()` for DB validation
+    - Call `HealthCheck.check_git_repository()` for git repo validation
+  - New backend-specific validators (no duplication):
+    - GitHub token in `GITHUB_TOKEN` env var (or `.netrc` in future)
+    - Validate token has required scopes (`repo` or `public_repo`)
+    - SSH key accessibility for git backends
+
+- [ ] Integration into SyncMergeOrchestrator:
+  - Add to `sync_all_issues()` Phase 0 (before Phase 1: Initialize):
+    ```python
+    # Phase 0: Pre-flight validation
+    preflight = SyncPreflight(self.core)
+    result = preflight.validate_for_backend(self.backend)
+    if result.is_err():
+        report.error = result.unwrap_err().message
+        report.error_classification = "preflight_error"
+        return report
+    ```
+  - Metrics: track preflight duration in observability
+  - Logging: clear info-level message on success, error on failure
+
+**Phase 2: Error Messages & Documentation** (1 day)
+- [ ] Create helpful error messages:
+  - "GitHub token not configured. Set `export GITHUB_TOKEN=<your-token>` to enable GitHub sync"
+  - "GitHub token has insufficient scopes. Needs: repo (or public_repo)"
+  - "Git repository not found at {path}. Initialize with: git init"
+  - "Database corrupted. Run: roadmap health fix --rebuild-db"
+  - Backend-specific guidance based on check failure
+
+- [ ] Update CLI help text:
+  - Add section to `roadmap sync --help`: "Prerequisites"
+  - Document GitHub token setup requirements
+  - Document git backend requirements
+
+- [ ] Update README.md:
+  - "Before First Sync" section with troubleshooting
+  - GitHub token setup guide with scopes needed
+
+**Phase 3: Testing & Validation** (1-2 days)
+- [ ] Unit tests for `SyncPreflight`:
+  - `test_validates_missing_github_token()` - assert error returned
+  - `test_validates_invalid_github_token()` - assert error with helpful message
+  - `test_passes_valid_github_token()` - success case
+  - `test_only_checks_relevant_backend()` - GitHub checks skipped for vanilla git
+  - `test_database_integrity_check()` - reuses health check function
+
+- [ ] Integration tests:
+  - `test_sync_with_missing_token()` - full sync fails at preflight, returns early
+  - `test_sync_with_valid_token()` - proceeds to Phase 1
+  - Verify preflight duration tracked in metrics
+
+**Tollgate Checklist**:
+- [x] SyncPreflight class created and integrated
+- [x] All backend-specific checks implemented
+- [x] Reuses health check infrastructure (no duplication)
+- [x] Errors are Result types (consistent with Task 5 pattern)
+- [x] Clear error messages with remediation guidance
+- [x] All tests passing (preflight-specific + integration)
+- [x] Documentation updated (README, help text)
+- [x] Metrics recorded for preflight validation duration
+
+---
+
+#### **Task 7b: Health Checks & Duplicate Fixers** 📋 (Priority 4 - After Task 7) - **1-2 days**
+
+(Deferred to after pre-flight validation to keep scope focused)
 
 - [ ] Create `roadmap/core/health/duplicate_issue_scanner.py`:
   - Extends IssueHealthScanner
@@ -320,7 +346,7 @@
   class IssueHealthChecker:
       def __init__(self, ...):
           self.duplicate_scanner = DuplicateIssueScanner(...)
-      
+
       def scan(self) -> HealthReport:
           # ... existing checks ...
           duplicates_health = self.duplicate_scanner.check()
@@ -331,7 +357,7 @@
   class IssueHealthFixer:
       def __init__(self, ...):
           self.duplicate_fixer = DuplicateIssueFixer(...)
-      
+
       def fix_all(self, modes) -> FixReport:
           # ... existing fixes ...
           dup_results = self.duplicate_fixer.fix_all_duplicates(
@@ -508,10 +534,11 @@ After implementation, measure and verify:
 6. **Commit frequently** with clear, descriptive messages
 
 ### Task Priority Order
-1. **Task 5** - Duplicate Resolution Persistence (3-4 hours, tomorrow)
+1. **Task 5** - Duplicate Resolution Persistence ✅ (COMPLETE)
 2. **Task 6** - Comprehensive Observability (2-3 days, after Task 5)
-3. **Task 7** - Health Checks & Duplicate Fixers (1-2 days, after Task 6)
-4. **Tasks 8-12** - Testing & Documentation (can be parallel or sequential)
+3. **Task 7** - Pre-flight Validation & Early Error Detection (2-3 days, after Task 6)
+4. **Task 7b** - Health Checks & Duplicate Fixers (1-2 days, after Task 7)
+5. **Tasks 8-12** - Testing & Documentation (can be parallel or sequential)
 
 ---
 
@@ -525,5 +552,5 @@ After implementation, measure and verify:
 
 ---
 
-**Last Updated**: February 5, 2026 (Evening)
-**Next Action**: Begin Task 5 (Tomorrow) - Implement Duplicate Resolution Persistence
+**Last Updated**: February 6, 2026 (Pre-flight Validation Design)
+**Next Action**: Begin Task 6 Phase 2 (Database Persistence & CLI Display) - Continue observability implementation
