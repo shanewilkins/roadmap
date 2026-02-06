@@ -20,7 +20,7 @@ from roadmap.adapters.sync.sync_merge_engine import SyncMergeEngine
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.models.sync_models import SyncIssue
-from roadmap.core.observability.sync_metrics import SyncObservability, get_observability
+from roadmap.core.observability.sync_metrics import get_observability
 from roadmap.core.services.sync.duplicate_detector import DuplicateDetector
 from roadmap.core.services.sync.duplicate_resolver import DuplicateResolver
 from roadmap.core.services.sync.sync_conflict_resolver import (
@@ -78,6 +78,10 @@ class SyncMergeOrchestrator:
         # Initialize observability tracker
         self._observability = get_observability()
         self._current_operation_id: str | None = None
+
+        # Initialize deduplicated issue cache
+        self._deduplicated_local: list[Issue] = []
+        self._deduplicated_remote: dict[str, SyncIssue] = {}
 
         # Initialize delegated services
         self._auth_service = SyncAuthenticationService(backend)
@@ -184,29 +188,96 @@ class SyncMergeOrchestrator:
             "detecting_duplicates",
             local_count=len(local_issues),
             remote_count=len(remote_issues),
+            operation_id=self._current_operation_id,
         )
 
-        # Stage 1: Deduplicate local issues to reduce comparison space
-        dedup_local_issues = self._duplicate_detector.local_self_dedup(local_issues)
-
-        # Stage 2: Deduplicate remote issues to reduce comparison space
-        dedup_remote_issues = self._duplicate_detector.remote_self_dedup(remote_issues)
+        # Record deduplication metrics
+        self._record_dedup_metrics(local_issues, remote_issues)
 
         # Detect all duplicates using deduplicated sets
         matches = self._duplicate_detector.detect_all(
-            dedup_local_issues, dedup_remote_issues
+            self._deduplicated_local, self._deduplicated_remote
         )
 
         if not matches:
             logger.info("no_duplicates_detected")
+            if self._current_operation_id:
+                self._observability.record_duplicate_detected(
+                    self._current_operation_id, count=0
+                )
             return 0, 0, []
 
         logger.info(
             "duplicates_detected",
             total_matches=len(matches),
             high_confidence=[m for m in matches if m.confidence >= 0.95],
+            operation_id=self._current_operation_id,
         )
 
+        # Resolve and record metrics
+        auto_resolved_count, manual_review_count, all_actions = (
+            self._resolve_duplicates(matches, interactive)
+        )
+
+        # Record duplicate detection metrics
+        self._record_duplicate_resolution_metrics(
+            matches, auto_resolved_count, all_actions
+        )
+
+        return auto_resolved_count, manual_review_count, all_actions
+
+    def _record_dedup_metrics(
+        self, local_issues: list[Issue], remote_issues: dict[str, SyncIssue]
+    ) -> None:
+        """Record deduplication metrics for local and remote issues.
+
+        Args:
+            local_issues: List of local issues
+            remote_issues: Dictionary of remote issues
+        """
+        dedup_start = time.time()
+
+        # Stage 1: Deduplicate local issues
+        self._deduplicated_local = self._duplicate_detector.local_self_dedup(
+            local_issues
+        )
+        local_dedup_duration = time.time() - dedup_start
+
+        if self._current_operation_id:
+            self._observability.record_local_dedup(
+                self._current_operation_id,
+                before=len(local_issues),
+                after=len(self._deduplicated_local),
+                duration=local_dedup_duration,
+            )
+
+        # Stage 2: Deduplicate remote issues
+        remote_dedup_start = time.time()
+        self._deduplicated_remote = self._duplicate_detector.remote_self_dedup(
+            remote_issues
+        )
+        remote_dedup_duration = time.time() - remote_dedup_start
+
+        if self._current_operation_id:
+            self._observability.record_remote_dedup(
+                self._current_operation_id,
+                before=len(remote_issues),
+                after=len(self._deduplicated_remote),
+                duration=remote_dedup_duration,
+            )
+
+    def _resolve_duplicates(
+        self, matches: list, interactive: bool
+    ) -> tuple[int, int, list]:
+        """Resolve duplicate matches into actions.
+
+        Args:
+            matches: List of DuplicateMatch objects
+            interactive: Whether to use interactive resolution
+
+        Returns:
+            Tuple of (auto_resolved_count, manual_review_count, all_actions)
+        """
         # Separate auto-resolvable and manual review matches
         auto_matches = [
             m
@@ -235,7 +306,8 @@ class SyncMergeOrchestrator:
             else:
                 logger.error(
                     "auto_resolution_failed",
-                    error=auto_result.unwrap_err(),
+                    error=str(auto_result.unwrap_err()),
+                    severity="operational",
                 )
 
         # Handle manual review matches
@@ -253,9 +325,32 @@ class SyncMergeOrchestrator:
                     "manual_review_duplicates_detected",
                     count=len(manual_matches),
                     message="Use --interactive-duplicates flag to resolve these manually",
+                    severity="operational",
                 )
 
         return auto_resolved_count, manual_review_count, all_actions
+
+    def _record_duplicate_resolution_metrics(
+        self, matches: list, auto_resolved_count: int, all_actions: list
+    ) -> None:
+        """Record duplicate resolution metrics.
+
+        Args:
+            matches: List of matched duplicates
+            auto_resolved_count: Number of auto-resolved issues
+            all_actions: List of resolution actions
+        """
+        if self._current_operation_id:
+            self._observability.record_duplicate_detected(
+                self._current_operation_id, count=len(matches)
+            )
+            self._observability.record_duplicate_resolved(
+                self._current_operation_id,
+                count=len(matches),
+                auto_resolved=auto_resolved_count,
+                deleted=len([a for a in all_actions if a.action_type == "delete"]),
+                archived=len([a for a in all_actions if a.action_type == "archive"]),
+            )
 
     def _execute_duplicate_resolution(self, actions: list, report: SyncReport) -> None:
         """Execute duplicate resolution actions (delete/archive issues).
@@ -669,86 +764,14 @@ class SyncMergeOrchestrator:
                 stack=get_stack_trace(depth=4),
             )
 
-            # 1. Authenticate
-            if not self._ensure_authenticated(report):
+            # Phase 1: Initialize
+            remote_issues_data, local_issues_dict = self._sync_initialize(
+                dry_run, interactive_duplicates, report
+            )
+            if remote_issues_data is None or local_issues_dict is None:
                 return report
 
-            # 2. Remote + local fetch
-            fetch_start = time.time()
-            remote_issues_data = self._fetch_remote_issues(report)
-            if remote_issues_data is None:
-                return report
-
-            local_issues = self._fetch_local_issues(report)
-            if local_issues is None:
-                return report
-            fetch_duration = time.time() - fetch_start
-            self._observability.record_fetch(
-                self._current_operation_id,
-                count=len(remote_issues_data),
-                duration=fetch_duration,
-            )
-
-            # Run duplicate detection before main analysis
-            dup_actions = []
-            if self.enable_duplicate_detection:
-                auto_resolved, manual_review, dup_actions = (
-                    self._detect_and_resolve_duplicates(
-                        local_issues,
-                        remote_issues_data,
-                        interactive=interactive_duplicates,
-                    )
-                )
-                logger.info(
-                    "duplicate_detection_complete",
-                    auto_resolved=auto_resolved,
-                    manual_review=manual_review,
-                    total_actions=len(dup_actions),
-                )
-
-                # Execute duplicate resolution if not in dry_run mode
-                if not dry_run and dup_actions:
-                    self._execute_duplicate_resolution(dup_actions, report)
-
-            # Refetch local issues as they may have been modified by duplicate resolution
-            local_issues = self._fetch_local_issues(report) or local_issues
-            if local_issues is None:
-                return report
-
-            local_issues_dict = {issue.id: issue for issue in local_issues}
-
-            logger.info(
-                "sync_state_detected",
-                local_count=len(local_issues_dict),
-                remote_count=len(remote_issues_data),
-            )
-
-            active_issues_count, archived_issues_count = self._count_active_archived(
-                local_issues
-            )
-
-            all_milestones, active_milestones_count, archived_milestones_count = (
-                self._count_milestones()
-            )
-
-            # Count remote open/closed and milestones
-            (
-                remote_issues_count,
-                remote_open_count,
-                remote_closed_count,
-                remote_milestones_count,
-            ) = self._count_remote_stats(remote_issues_data)
-
-            # 3. Baseline state
-            base_state = self._load_baseline_safe()
-
-            # 4. Pre-match links when pulling
-            if not push_only:
-                _ = self._match_and_link_remote_issues(
-                    local_issues_dict, remote_issues_data, dry_run=dry_run
-                )
-
-            # 5. Analyze changes via comparator and classify
+            # Phase 2: Analyze changes
             (
                 changes,
                 conflicts,
@@ -758,91 +781,28 @@ class SyncMergeOrchestrator:
                 updates,
                 pulls,
                 up_to_date,
-            ) = self._analyze_and_classify(
-                local_issues_dict, remote_issues_data, base_state
-            )
+            ) = self._sync_analyze(local_issues_dict, remote_issues_data, report)
 
-            logger.debug(
-                "sync_analysis_complete",
-                conflicts=len(conflicts),
-                updates=len(updates),
-                pulls=len(pulls),
-                up_to_date=len(up_to_date),
-            )
-
-            # 6. Reporting
-            self._populate_report_fields(
-                report,
-                local_issues,
-                active_issues_count,
-                archived_issues_count,
-                all_milestones,
-                active_milestones_count,
-                archived_milestones_count,
-                remote_issues_count,
-                remote_open_count,
-                remote_closed_count,
-                remote_milestones_count,
+            # Phase 3: Resolve and apply
+            report = self._sync_resolve_and_apply(
                 conflicts,
-                up_to_date,
-                local_only_changes,
-                remote_only_changes,
-                changes,
+                updates,
+                pulls,
+                dry_run,
+                force_local,
+                force_remote,
+                push_only,
+                pull_only,
+                report,
             )
 
-            # 7. Resolve conflicts
-            resolved_issues = self._resolve_conflicts_if_needed(
-                conflicts, force_local, force_remote
+            # Phase 4: Record metrics
+            self._sync_record_metrics(
+                sync_start_time,
+                conflicts,
+                local_issues_dict,
+                report,
             )
-
-            # 8. Apply changes (if not dry_run)
-            updates_count = len(updates)
-            resolved_count = len(resolved_issues)
-            pulls_count = len(pulls)
-            should_apply = not dry_run and bool(updates or resolved_issues or pulls)
-
-            logger.info(
-                "applying_changes_check",
-                dry_run=dry_run,
-                updates_count=updates_count,
-                resolved_count=resolved_count,
-                pulls_count=pulls_count,
-                condition_result=should_apply,
-            )
-
-            if should_apply:
-                report = self._apply_plan(
-                    updates,
-                    resolved_issues,
-                    pulls,
-                    dry_run,
-                    push_only,
-                    pull_only,
-                    report,
-                )
-            elif dry_run:
-                logger.info("sync_dry_run_mode", skip_apply=True)
-
-            # Record sync metrics
-            if self._current_operation_id:
-                sync_duration = time.time() - sync_start_time
-                self._observability.record_conflict(
-                    self._current_operation_id, count=len(conflicts)
-                )
-                self._observability.record_phase_timing(
-                    self._current_operation_id, "analysis", sync_duration
-                )
-                self._observability.record_sync_links(
-                    self._current_operation_id, created=len(local_issues_dict)
-                )
-                if report.error:
-                    self._observability.record_error(
-                        self._current_operation_id,
-                        "sync_error",
-                        report.error,
-                    )
-                final_metrics = self._observability.finalize(self._current_operation_id)
-                report.metrics = final_metrics
 
             logger.info("sync_all_issues_completed", error=report.error)
             return report
@@ -855,12 +815,261 @@ class SyncMergeOrchestrator:
                     type(e).__name__,
                     str(e),
                 )
-                self._observability.finalize(self._current_operation_id)
-            logger.error(
-                "sync_all_issues_failed",
-                error_type=type(e).__name__,
-                error=str(e),
-                error_classification="sync_error",
-                suggested_action="check_logs_for_details",
-            )
+            logger.exception("sync_all_issues_failed")
             return report
+
+    def _sync_initialize(
+        self,
+        dry_run: bool,
+        interactive_duplicates: bool,
+        report: SyncReport,
+    ) -> tuple[dict[str, SyncIssue] | None, dict[str, Issue] | None]:
+        """Initialize sync by fetching and deduplicating issues.
+
+        Returns:
+            Tuple of (remote_issues_data, local_issues_dict) or (None, None) on error
+        """
+        # Authenticate
+        if not self._ensure_authenticated(report):
+            return None, None
+
+        # Fetch remote + local
+        fetch_start = time.time()
+        remote_issues_data = self._fetch_remote_issues(report)
+        if remote_issues_data is None:
+            return None, None
+
+        local_issues = self._fetch_local_issues(report)
+        if local_issues is None:
+            return None, None
+        fetch_duration = time.time() - fetch_start
+
+        if self._current_operation_id:
+            self._observability.record_fetch(
+                self._current_operation_id,
+                count=len(remote_issues_data),
+                duration=fetch_duration,
+            )
+
+        # Run duplicate detection
+        dup_actions = []
+        if self.enable_duplicate_detection:
+            auto_resolved, manual_review, dup_actions = (
+                self._detect_and_resolve_duplicates(
+                    local_issues,
+                    remote_issues_data,
+                    interactive=interactive_duplicates,
+                )
+            )
+            logger.info(
+                "duplicate_detection_complete",
+                auto_resolved=auto_resolved,
+                manual_review=manual_review,
+                total_actions=len(dup_actions),
+            )
+
+            # Execute duplicate resolution if not in dry_run mode
+            if not dry_run and dup_actions:
+                self._execute_duplicate_resolution(dup_actions, report)
+
+        # Refetch local issues as they may have been modified
+        local_issues = self._fetch_local_issues(report) or local_issues
+        if local_issues is None:
+            return None, None
+
+        local_issues_dict = {issue.id: issue for issue in local_issues}
+
+        logger.info(
+            "sync_state_detected",
+            local_count=len(local_issues_dict),
+            remote_count=len(remote_issues_data),
+        )
+
+        return remote_issues_data, local_issues_dict
+
+    def _sync_analyze(
+        self,
+        local_issues_dict: dict[str, Issue],
+        remote_issues_data: dict[str, SyncIssue],
+        report: SyncReport,
+    ) -> tuple[list, list, list, list, list, list, list, list]:
+        """Analyze changes between local and remote issues.
+
+        Returns:
+            Tuple of (changes, conflicts, local_only, remote_only, no_changes, updates, pulls, up_to_date)
+        """
+        # Update report with counts
+        local_issues = list(local_issues_dict.values())
+        active_issues_count, archived_issues_count = self._count_active_archived(
+            local_issues
+        )
+        all_milestones, active_milestones_count, archived_milestones_count = (
+            self._count_milestones()
+        )
+        (
+            remote_issues_count,
+            remote_open_count,
+            remote_closed_count,
+            remote_milestones_count,
+        ) = self._count_remote_stats(remote_issues_data)
+
+        # Load baseline state
+        base_state = self._load_baseline_safe()
+
+        # Match and link remote issues
+        _ = self._match_and_link_remote_issues(
+            local_issues_dict, remote_issues_data, dry_run=True
+        )
+
+        # Analyze changes
+        (
+            changes,
+            conflicts,
+            local_only_changes,
+            remote_only_changes,
+            no_changes,
+            updates,
+            pulls,
+            up_to_date,
+        ) = self._analyze_and_classify(
+            local_issues_dict, remote_issues_data, base_state
+        )
+
+        logger.debug(
+            "sync_analysis_complete",
+            conflicts=len(conflicts),
+            updates=len(updates),
+            pulls=len(pulls),
+            up_to_date=len(up_to_date),
+        )
+
+        # Populate report
+        self._populate_report_fields(
+            report,
+            local_issues,
+            active_issues_count,
+            archived_issues_count,
+            all_milestones,
+            active_milestones_count,
+            archived_milestones_count,
+            remote_issues_count,
+            remote_open_count,
+            remote_closed_count,
+            remote_milestones_count,
+            conflicts,
+            up_to_date,
+            local_only_changes,
+            remote_only_changes,
+            changes,
+        )
+
+        return (
+            changes,
+            conflicts,
+            local_only_changes,
+            remote_only_changes,
+            no_changes,
+            updates,
+            pulls,
+            up_to_date,
+        )
+
+    def _sync_resolve_and_apply(
+        self,
+        conflicts: list,
+        updates: list,
+        pulls: list,
+        dry_run: bool,
+        force_local: bool,
+        force_remote: bool,
+        push_only: bool,
+        pull_only: bool,
+        report: SyncReport,
+    ) -> SyncReport:
+        """Resolve conflicts and apply changes.
+
+        Args:
+            conflicts: List of conflicted issues
+            updates: List of issues to update
+            pulls: List of issues to pull
+            dry_run: Whether in dry_run mode
+            force_local: Force local resolution
+            force_remote: Force remote resolution
+            push_only: Only push changes
+            pull_only: Only pull changes
+            report: SyncReport to update
+
+        Returns:
+            Updated SyncReport
+        """
+        # Resolve conflicts
+        resolved_issues = self._resolve_conflicts_if_needed(
+            conflicts, force_local, force_remote
+        )
+
+        # Apply changes
+        updates_count = len(updates)
+        resolved_count = len(resolved_issues)
+        pulls_count = len(pulls)
+        should_apply = not dry_run and bool(updates or resolved_issues or pulls)
+
+        logger.info(
+            "applying_changes_check",
+            dry_run=dry_run,
+            updates_count=updates_count,
+            resolved_count=resolved_count,
+            pulls_count=pulls_count,
+            condition_result=should_apply,
+        )
+
+        if should_apply:
+            report = self._apply_plan(
+                updates,
+                resolved_issues,
+                pulls,
+                dry_run,
+                push_only,
+                pull_only,
+                report,
+            )
+        elif dry_run:
+            logger.info("sync_dry_run_mode", skip_apply=True)
+
+        return report
+
+    def _sync_record_metrics(
+        self,
+        sync_start_time: float,
+        conflicts: list,
+        local_issues_dict: dict[str, Issue],
+        report: SyncReport,
+    ) -> None:
+        """Record sync operation metrics.
+
+        Args:
+            sync_start_time: Timestamp when sync started
+            conflicts: List of conflicts encountered
+            local_issues_dict: Dictionary of local issues
+            report: SyncReport to attach metrics to
+        """
+        if not self._current_operation_id:
+            return
+
+        sync_duration = time.time() - sync_start_time
+        self._observability.record_conflict(
+            self._current_operation_id, count=len(conflicts)
+        )
+        self._observability.record_phase_timing(
+            self._current_operation_id, "analysis", sync_duration
+        )
+        self._observability.record_sync_links(
+            self._current_operation_id, created=len(local_issues_dict)
+        )
+        if report.error:
+            self._observability.record_error(
+                self._current_operation_id,
+                "sync_error",
+                report.error,
+            )
+        final_metrics = self._observability.finalize(self._current_operation_id)
+        report.metrics = final_metrics
