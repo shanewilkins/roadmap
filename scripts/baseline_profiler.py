@@ -4,8 +4,8 @@ This script measures current CLI performance using the official profiling system
 Results are stored for comparison against future optimizations.
 
 Usage:
-    poetry run python scripts/baseline_profiler.py
-    poetry run python scripts/baseline_profiler.py --profile-file baseline.json
+    uv run python scripts/baseline_profiler.py
+    uv run python scripts/baseline_profiler.py --profile-file baseline.json
 """
 
 import json

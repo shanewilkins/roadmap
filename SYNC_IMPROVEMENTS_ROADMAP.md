@@ -499,6 +499,7 @@ After implementation, measure and verify:
 - ❌ Do NOT decide that a failing test is acceptable without approval
 - ❌ Do NOT merge pull requests without approval
 - ✅ Use CLI git, not MCP
+- Use uv, not poetry.
 
 ### Development Guidelines
 - Use `uv` for Python environment management

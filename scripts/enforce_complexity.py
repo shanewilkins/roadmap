@@ -108,14 +108,14 @@ def main():
     # Run radon (show all grades to see violations)
     try:
         result = subprocess.run(
-            ["poetry", "run", "radon", "cc", "roadmap", "--exclude=tests"],
+            ["uv", "run", "radon", "cc", "roadmap", "--exclude=tests"],
             capture_output=True,
             text=True,
             check=False,
         )
     except FileNotFoundError:
         print(
-            "Error: poetry not found. Please ensure Poetry is installed.",
+            "Error: uv not found. Please ensure uv is installed.",
             file=sys.stderr,
         )
         sys.exit(1)

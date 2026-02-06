@@ -269,3 +269,75 @@ class SyncMetadataService:
                 (total_conflicts / total_syncs * 100) if total_syncs > 0 else 0
             ),
         }
+
+    def store_sync_metrics(
+        self, core, operation_id: str, metrics: dict[str, Any]
+    ) -> None:
+        """Store sync metrics to database.
+
+        Stores metrics as JSON in sync_metrics table for historical tracking
+        and analysis.
+
+        Args:
+            core: RoadmapCore instance
+            operation_id: ID of the sync operation
+            metrics: SyncMetrics.to_dict() result with all metrics
+        """
+        try:
+            # Store to first issue's metadata as a global sync record
+            issues = core.issue_service.get_all_issues()
+            if issues:
+                first_issue = issues[0]
+                if not first_issue.github_sync_metadata:
+                    first_issue.github_sync_metadata = {}
+
+                # Store metrics under special _sync_metrics key
+                first_issue.github_sync_metadata["_sync_metrics"] = {
+                    "operation_id": operation_id,
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "metrics": metrics,
+                }
+
+                # Persist back to database
+                core.issue_service.update_issue(first_issue)
+
+                logger.info(
+                    "sync_metrics_stored",
+                    operation_id=operation_id,
+                    timestamp=first_issue.github_sync_metadata["_sync_metrics"][
+                        "timestamp"
+                    ],
+                )
+        except Exception as e:
+            logger.error(
+                "sync_metrics_storage_failed",
+                operation_id=operation_id,
+                error=str(e),
+                severity="operational",
+            )
+
+    def get_last_sync_metrics(self, core) -> dict[str, Any] | None:
+        """Retrieve last sync metrics from database.
+
+        Returns:
+            Dictionary with metrics or None if no metrics stored
+        """
+        try:
+            issues = core.issue_service.get_all_issues()
+            if issues:
+                first_issue = issues[0]
+                if (
+                    first_issue.github_sync_metadata
+                    and "_sync_metrics" in first_issue.github_sync_metadata
+                ):
+                    return first_issue.github_sync_metadata["_sync_metrics"].get(
+                        "metrics"
+                    )
+            return None
+        except Exception as e:
+            logger.error(
+                "sync_metrics_retrieval_failed",
+                error=str(e),
+                severity="operational",
+            )
+            return None

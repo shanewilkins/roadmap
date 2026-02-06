@@ -120,7 +120,7 @@ def main():
     try:
         result = subprocess.run(
             [
-                "poetry",
+                "uv",
                 "run",
                 "radon",
                 "cc",
@@ -135,7 +135,7 @@ def main():
         )
     except FileNotFoundError:
         print(
-            "Error: poetry not found. Please ensure Poetry is installed.",
+            "Error: uv not found. Please ensure uv is installed.",
             file=sys.stderr,
         )
         sys.exit(1)

@@ -13,7 +13,7 @@
 set -e
 
 # Run import-linter and capture output
-OUTPUT=$(poetry run lint-imports 2>&1 || true)
+OUTPUT=$(uv run lint-imports 2>&1 || true)
 
 # Check if there are any broken contracts
 if echo "$OUTPUT" | grep -q "Contracts: .* broken"; then

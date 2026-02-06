@@ -1073,3 +1073,13 @@ class SyncMergeOrchestrator:
             )
         final_metrics = self._observability.finalize(self._current_operation_id)
         report.metrics = final_metrics
+
+        # Store metrics to database for historical tracking
+        from roadmap.core.services.sync.sync_metadata_service import (
+            SyncMetadataService,
+        )
+
+        metadata_service = SyncMetadataService(self.core)
+        metadata_service.store_sync_metrics(
+            self.core, self._current_operation_id, final_metrics.to_dict()
+        )

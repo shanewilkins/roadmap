@@ -2,10 +2,10 @@
 
 ## Roadmap CLI Tool Project
 
-This is a Python command line tool called 'roadmap' built with Poetry for package management and designed for PyPI publishing.
+This is a Python command line tool called 'roadmap' built with uv for package management and designed for PyPI publishing.
 
 ### Project Structure
-- Uses Poetry for dependency management and packaging
+- Uses uv for dependency management and packaging
 - CLI entry point defined in pyproject.toml
 - Follows Python packaging best practices
 - Includes testing with pytest
@@ -13,7 +13,7 @@ This is a Python command line tool called 'roadmap' built with Poetry for packag
 - Ready for PyPI publishing
 
 ### Development Guidelines
-- Use Poetry commands for dependency management
+- Use uv commands for dependency and test execution
 - Follow semantic versioning
 - Include comprehensive tests
 - Update changelog for releases

@@ -56,7 +56,7 @@ def get_layer(module: str) -> str:
 def parse_linter_output() -> list[Violation]:
     """Parse import-linter output to extract violations."""
     result = subprocess.run(
-        ["poetry", "run", "lint-imports"],
+        ["uv", "run", "lint-imports"],
         capture_output=True,
         text=True,
     )

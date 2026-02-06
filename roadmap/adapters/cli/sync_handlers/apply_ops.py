@@ -233,6 +233,132 @@ def confirm_and_apply(
     return report
 
 
+def _display_sync_metrics(console_inst: Any, metrics: dict[str, Any]) -> None:
+    """Display formatted sync metrics summary.
+
+    Args:
+        console_inst: Rich console instance
+        metrics: Dictionary of metrics from SyncMetrics.to_dict()
+    """
+    from rich.table import Table
+
+    console_inst.print("\n[bold cyan]📊 Sync Metrics[/bold cyan]")
+
+    # Create main metrics table
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="green")
+
+    # Extract and format key metrics
+    def format_time(seconds: float | int) -> str:
+        """Format seconds into readable time string."""
+        if isinstance(seconds, (int, float)) and seconds > 0:
+            if seconds < 1:
+                return f"{seconds * 1000:.0f}ms"
+            return f"{seconds:.2f}s"
+        return "N/A"
+
+    def format_count(count: int | None) -> str:
+        """Format count or return N/A."""
+        return str(count) if count is not None else "N/A"
+
+    # Deduplication metrics
+    if metrics.get("duplicates_detected"):
+        table.add_row(
+            "Duplicates Detected",
+            format_count(metrics.get("duplicates_detected")),
+        )
+    if metrics.get("duplicates_resolved"):
+        table.add_row(
+            "Duplicates Resolved",
+            format_count(metrics.get("duplicates_resolved")),
+        )
+
+    # Local dedup metrics
+    if metrics.get("local_dedup_count"):
+        reduction_pct = (
+            (
+                metrics.get("local_dedup_count", 0)
+                / (
+                    metrics.get("local_dedup_count", 0)
+                    + metrics.get("local_final_count", 1)
+                )
+            )
+            * 100
+            if (
+                metrics.get("local_dedup_count", 0)
+                + metrics.get("local_final_count", 1)
+            )
+            > 0
+            else 0
+        )
+        table.add_row(
+            "Local Dedup Reduction",
+            f"{metrics.get('local_dedup_count')} duplicates "
+            f"({reduction_pct:.1f}% reduction)",
+        )
+
+    # Remote dedup metrics
+    if metrics.get("remote_dedup_count"):
+        reduction_pct = (
+            (
+                metrics.get("remote_dedup_count", 0)
+                / (
+                    metrics.get("remote_dedup_count", 0)
+                    + metrics.get("remote_final_count", 1)
+                )
+            )
+            * 100
+            if (
+                metrics.get("remote_dedup_count", 0)
+                + metrics.get("remote_final_count", 1)
+            )
+            > 0
+            else 0
+        )
+        table.add_row(
+            "Remote Dedup Reduction",
+            f"{metrics.get('remote_dedup_count')} duplicates "
+            f"({reduction_pct:.1f}% reduction)",
+        )
+
+    # Timing metrics
+    if metrics.get("total_duration_seconds"):
+        table.add_row(
+            "Total Duration",
+            format_time(metrics.get("total_duration_seconds")),
+        )
+
+    # Fetch metrics
+    if metrics.get("total_fetch_time_seconds"):
+        table.add_row(
+            "Fetch Time",
+            format_time(metrics.get("total_fetch_time_seconds")),
+        )
+
+    # Conflict metrics
+    if metrics.get("merge_conflicts_found"):
+        table.add_row(
+            "Merge Conflicts",
+            format_count(metrics.get("merge_conflicts_found")),
+        )
+
+    # API call metrics
+    if metrics.get("api_calls_made"):
+        table.add_row(
+            "API Calls",
+            format_count(metrics.get("api_calls_made")),
+        )
+
+    if metrics.get("api_rate_limit_remaining") is not None:
+        table.add_row(
+            "API Rate Limit Remaining",
+            format_count(metrics.get("api_rate_limit_remaining")),
+        )
+
+    console_inst.print(table)
+
+
 def finalize_sync(
     core: Any, console_inst: Any, report: Any, pre_sync_issue_count: int, verbose: bool
 ) -> None:
@@ -240,6 +366,7 @@ def finalize_sync(
     from roadmap.adapters.cli.sync_handlers.baseline_ops import (
         capture_and_save_post_sync_baseline,
     )
+    from roadmap.core.services.sync.sync_metadata_service import SyncMetadataService
 
     console_inst.print("[bold]BASELINE CHANGES:[/bold]")
     console_inst.print(f"   Before: {pre_sync_issue_count} issues in baseline")
@@ -247,6 +374,13 @@ def finalize_sync(
     capture_and_save_post_sync_baseline(
         core, console_inst, pre_sync_issue_count, verbose
     )
+
+    # Display sync metrics if available
+    metadata_service = SyncMetadataService(core)
+    metrics = metadata_service.get_last_sync_metrics(core)
+
+    if metrics:
+        _display_sync_metrics(console_inst, metrics)
 
     console_inst.print()
     console_inst.print("✅ Sync completed successfully", style="bold green")

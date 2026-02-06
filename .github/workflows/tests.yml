@@ -106,4 +106,4 @@ jobs:
       run: bash scripts/lint-imports-wrapper.sh
 
     - name: Run Pyright Type Checking
-      run: poetry run pyright
+      run: uv run pyright
