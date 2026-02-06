@@ -5,6 +5,7 @@ reporting conflicts, etc.) and delegates backend-specific operations
 to SyncBackendInterface implementations.
 """
 
+import time
 from typing import Any
 
 from structlog import get_logger
@@ -19,6 +20,7 @@ from roadmap.adapters.sync.sync_merge_engine import SyncMergeEngine
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.models.sync_models import SyncIssue
+from roadmap.core.observability.sync_metrics import SyncObservability, get_observability
 from roadmap.core.services.sync.duplicate_detector import DuplicateDetector
 from roadmap.core.services.sync.duplicate_resolver import DuplicateResolver
 from roadmap.core.services.sync.sync_conflict_resolver import (
@@ -72,6 +74,10 @@ class SyncMergeOrchestrator:
         self.conflict_resolver = conflict_resolver or SyncConflictResolver()
         self.state_manager = SyncStateManager(core.roadmap_dir)
         self.enable_duplicate_detection = enable_duplicate_detection
+
+        # Initialize observability tracker
+        self._observability = get_observability()
+        self._current_operation_id: str | None = None
 
         # Initialize delegated services
         self._auth_service = SyncAuthenticationService(backend)
@@ -641,6 +647,12 @@ class SyncMergeOrchestrator:
         """
         from roadmap.common.logging import get_stack_trace
 
+        # Start metrics tracking
+        self._current_operation_id = self._observability.start_operation(
+            self.backend.__class__.__name__
+        )
+        sync_start_time = time.time()
+
         report = SyncReport()
 
         try:
@@ -650,6 +662,7 @@ class SyncMergeOrchestrator:
                 force_local=force_local,
                 force_remote=force_remote,
                 sync_mode="analysis" if dry_run else "apply",
+                operation_id=self._current_operation_id,
             )
             logger.debug(
                 "sync_triggered_from",
@@ -661,6 +674,7 @@ class SyncMergeOrchestrator:
                 return report
 
             # 2. Remote + local fetch
+            fetch_start = time.time()
             remote_issues_data = self._fetch_remote_issues(report)
             if remote_issues_data is None:
                 return report
@@ -668,6 +682,12 @@ class SyncMergeOrchestrator:
             local_issues = self._fetch_local_issues(report)
             if local_issues is None:
                 return report
+            fetch_duration = time.time() - fetch_start
+            self._observability.record_fetch(
+                self._current_operation_id,
+                count=len(remote_issues_data),
+                duration=fetch_duration,
+            )
 
             # Run duplicate detection before main analysis
             dup_actions = []
@@ -803,11 +823,39 @@ class SyncMergeOrchestrator:
             elif dry_run:
                 logger.info("sync_dry_run_mode", skip_apply=True)
 
+            # Record sync metrics
+            if self._current_operation_id:
+                sync_duration = time.time() - sync_start_time
+                self._observability.record_conflict(
+                    self._current_operation_id, count=len(conflicts)
+                )
+                self._observability.record_phase_timing(
+                    self._current_operation_id, "analysis", sync_duration
+                )
+                self._observability.record_sync_links(
+                    self._current_operation_id, created=len(local_issues_dict)
+                )
+                if report.error:
+                    self._observability.record_error(
+                        self._current_operation_id,
+                        "sync_error",
+                        report.error,
+                    )
+                final_metrics = self._observability.finalize(self._current_operation_id)
+                report.metrics = final_metrics
+
             logger.info("sync_all_issues_completed", error=report.error)
             return report
 
         except Exception as e:
             report.error = str(e)
+            if self._current_operation_id:
+                self._observability.record_error(
+                    self._current_operation_id,
+                    type(e).__name__,
+                    str(e),
+                )
+                self._observability.finalize(self._current_operation_id)
             logger.error(
                 "sync_all_issues_failed",
                 error_type=type(e).__name__,

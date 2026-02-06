@@ -136,6 +136,7 @@ class SyncReport:
     errors: dict[str, str] = field(default_factory=dict)  # Issue ID -> error message
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     error: str | None = None
+    metrics: Any | None = None  # SyncMetrics object if available
 
     def display_brief(self) -> None:
         """Display brief sync summary with local and remote item breakdown tables."""
