@@ -151,7 +151,9 @@ class TestDuplicateResolverBasic:
         assert len(actions) == 1
         assert actions[0].action_type == "skip"
 
-    def test_resolve_automatic_filters_non_auto_merge(self, resolver, local_issue, remote_issue):
+    def test_resolve_automatic_filters_non_auto_merge(
+        self, resolver, local_issue, remote_issue
+    ):
         """Test that non-AUTO_MERGE recommendations return skip action."""
         match = DuplicateMatch(
             local_issue=local_issue,

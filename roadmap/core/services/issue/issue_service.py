@@ -533,7 +533,9 @@ class IssueService:
         return self.update_issue(params)
 
     @traced("merge_issues")
-    def merge_issues(self, canonical_id: str, duplicate_id: str) -> Ok[Issue] | Err[str]:
+    def merge_issues(
+        self, canonical_id: str, duplicate_id: str
+    ) -> Ok[Issue] | Err[str]:
         """Merge duplicate issue into canonical issue.
 
         Transfers all data from duplicate to canonical:
@@ -594,10 +596,11 @@ class IssueService:
                 git_commits=canonical.git_commits
                 + duplicate.git_commits,  # Append commits
                 completed_date=canonical.completed_date or duplicate.completed_date,
-                comments=canonical.comments
-                + duplicate.comments,  # Append comments
+                comments=canonical.comments + duplicate.comments,  # Append comments
                 created=canonical.created,  # Keep canonical's earliest created
-                updated=max(canonical.updated, duplicate.updated),  # Take latest updated
+                updated=max(
+                    canonical.updated, duplicate.updated
+                ),  # Take latest updated
                 remote_ids={
                     **canonical.remote_ids,
                     **duplicate.remote_ids,  # Merge remote IDs
@@ -614,7 +617,9 @@ class IssueService:
                 duplicate_id=duplicate_id,
                 merged_title=merged.title,
             )
-            log_event("issues_merged", canonical_id=canonical_id, duplicate_id=duplicate_id)
+            log_event(
+                "issues_merged", canonical_id=canonical_id, duplicate_id=duplicate_id
+            )
             log_exit("merge_issues", success=True)
             return Ok(merged)
 
@@ -692,7 +697,9 @@ class IssueService:
                 duplicate_of_id=duplicate_of_id,
                 resolution_type=resolution_type,
             )
-            log_event("issue_archived", issue_id=issue_id, duplicate_of_id=duplicate_of_id)
+            log_event(
+                "issue_archived", issue_id=issue_id, duplicate_of_id=duplicate_of_id
+            )
             log_exit("archive_issue", success=True)
             return Ok(issue)
 
@@ -711,4 +718,3 @@ class IssueService:
             )
             log_exit("archive_issue", success=False)
             return Err(f"Failed to archive issue: {str(e)}")
-

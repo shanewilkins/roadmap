@@ -39,7 +39,6 @@ class ResolutionAction:
     error: str | None = None
 
 
-
 class DuplicateResolver:
     """Resolves duplicate issues automatically or interactively.
 
@@ -110,109 +109,20 @@ class DuplicateResolver:
                 confidence=match.confidence,
             )
 
-            # Step 1: Merge duplicate data into canonical
-            merge_result = self.issue_service.merge_issues(
-                match.local_issue.id, match.remote_issue.id
-            )
-            if isinstance(merge_result, Err):
-                logger.error(
-                    "merge_failed_during_resolution",
-                    local_id=match.local_issue.id,
-                    remote_id=match.remote_issue.id,
-                    error=merge_result.unwrap_err(),
-                )
-                actions.append(
-                    ResolutionAction(
-                        match=match,
-                        action_type="skip",
-                        duplicate_issue_id=match.remote_issue.id,
-                        confidence=match.confidence,
-                        error=f"Merge failed: {merge_result.unwrap_err()}",
-                    )
-                )
-                continue
-
-            canonical = merge_result.unwrap()
-
-            # Step 2: Decide action based on confidence
-            # ID collision (confidence=1.0) → hard delete
-            # Fuzzy match (confidence<1.0) → archive with metadata
-            if match.confidence == 1.0:
-                # ID collision: high confidence, delete remote duplicate
-                delete_result = self.issue_service.delete_issue(match.remote_issue.id)
-                if not delete_result:
-                    logger.warning(
-                        "delete_failed_during_resolution",
-                        remote_id=match.remote_issue.id,
-                    )
-                    actions.append(
-                        ResolutionAction(
-                            match=match,
-                            action_type="skip",
-                            canonical_issue=canonical,
-                            duplicate_issue_id=match.remote_issue.id,
-                            confidence=match.confidence,
-                            error="Failed to delete duplicate",
-                        )
-                    )
-                    continue
-
-                logger.info(
-                    "duplicate_deleted",
-                    canonical_id=match.local_issue.id,
-                    deleted_id=match.remote_issue.id,
-                    match_type=match.match_type.value,
-                )
-                actions.append(
-                    ResolutionAction(
-                        match=match,
-                        action_type="delete",
-                        canonical_issue=canonical,
-                        duplicate_issue_id=match.remote_issue.id,
-                        confidence=match.confidence,
-                    )
-                )
-            else:
-                # Fuzzy match: archive with metadata linking to canonical
-                archive_result = self.issue_service.archive_issue(
-                    issue_id=match.remote_issue.id,
-                    duplicate_of_id=match.local_issue.id,
-                    resolution_type=match.match_type.value,
-                )
-                if isinstance(archive_result, Err):
-                    logger.warning(
-                        "archive_failed_during_resolution",
-                        remote_id=match.remote_issue.id,
-                        error=archive_result.unwrap_err(),
-                    )
-                    actions.append(
-                        ResolutionAction(
-                            match=match,
-                            action_type="skip",
-                            canonical_issue=canonical,
-                            duplicate_issue_id=match.remote_issue.id,
-                            confidence=match.confidence,
-                            error=f"Archive failed: {archive_result.unwrap_err()}",
-                        )
-                    )
-                    continue
-
-                logger.info(
-                    "duplicate_archived",
-                    canonical_id=match.local_issue.id,
-                    archived_id=match.remote_issue.id,
-                    match_type=match.match_type.value,
+            # Note: We just return the action without merging here, because during sync analysis
+            # the remote issue may not exist in the local database yet. Merging happens later
+            # in _execute_duplicate_resolution() after both issues are available locally.
+            # For cross-repo duplicates, the normal sync process will link them.
+            actions.append(
+                ResolutionAction(
+                    match=match,
+                    action_type="link",  # Mark for linking local to remote
+                    canonical_issue=match.local_issue,
+                    duplicate_issue_id=match.remote_issue.id,
                     confidence=match.confidence,
                 )
-                actions.append(
-                    ResolutionAction(
-                        match=match,
-                        action_type="archive",
-                        canonical_issue=canonical,
-                        duplicate_issue_id=match.remote_issue.id,
-                        confidence=match.confidence,
-                    )
-                )
+            )
+            continue
 
         return Ok(actions)
 

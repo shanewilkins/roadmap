@@ -88,7 +88,7 @@ class SyncMergeOrchestrator:
         )
         self._duplicate_resolver = DuplicateResolver(
             issue_service=core.issue_service,
-            auto_resolve_threshold=duplicate_auto_resolve_threshold
+            auto_resolve_threshold=duplicate_auto_resolve_threshold,
         )
 
         # Extraction: delegate helper implementations to a dedicated engine
@@ -208,11 +208,7 @@ class SyncMergeOrchestrator:
             if m.confidence >= self._duplicate_resolver.auto_resolve_threshold
             and m.recommended_action.value == "auto_merge"
         ]
-        manual_matches = [
-            m
-            for m in matches
-            if m not in auto_matches
-        ]
+        manual_matches = [m for m in matches if m not in auto_matches]
 
         auto_resolved_count = 0
         manual_review_count = len(manual_matches)
@@ -255,9 +251,7 @@ class SyncMergeOrchestrator:
 
         return auto_resolved_count, manual_review_count, all_actions
 
-    def _execute_duplicate_resolution(
-        self, actions: list, report: SyncReport
-    ) -> None:
+    def _execute_duplicate_resolution(self, actions: list, report: SyncReport) -> None:
         """Execute duplicate resolution actions (delete/archive issues).
 
         Called after analysis to persist duplicate resolution changes to database.
@@ -374,8 +368,12 @@ class SyncMergeOrchestrator:
             # Run duplicate detection before main analysis
             dup_actions = []
             if self.enable_duplicate_detection:
-                auto_resolved, manual_review, dup_actions = self._detect_and_resolve_duplicates(
-                    local_issues, remote_issues_data, interactive=interactive_duplicates
+                auto_resolved, manual_review, dup_actions = (
+                    self._detect_and_resolve_duplicates(
+                        local_issues,
+                        remote_issues_data,
+                        interactive=interactive_duplicates,
+                    )
                 )
                 logger.info(
                     "duplicate_detection_complete",
@@ -674,8 +672,12 @@ class SyncMergeOrchestrator:
             # Run duplicate detection before main analysis
             dup_actions = []
             if self.enable_duplicate_detection:
-                auto_resolved, manual_review, dup_actions = self._detect_and_resolve_duplicates(
-                    local_issues, remote_issues_data, interactive=interactive_duplicates
+                auto_resolved, manual_review, dup_actions = (
+                    self._detect_and_resolve_duplicates(
+                        local_issues,
+                        remote_issues_data,
+                        interactive=interactive_duplicates,
+                    )
                 )
                 logger.info(
                     "duplicate_detection_complete",
@@ -683,7 +685,7 @@ class SyncMergeOrchestrator:
                     manual_review=manual_review,
                     total_actions=len(dup_actions),
                 )
-                
+
                 # Execute duplicate resolution if not in dry_run mode
                 if not dry_run and dup_actions:
                     self._execute_duplicate_resolution(dup_actions, report)
