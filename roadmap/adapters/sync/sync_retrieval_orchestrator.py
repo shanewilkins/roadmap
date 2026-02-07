@@ -252,7 +252,16 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
                 return False
 
             # Get remote issues
-            remote_issues = self.backend.get_issues()
+            remote_issues_result = self.backend.get_issues()
+            if remote_issues_result.is_err():
+                logger.warning(
+                    "backend_get_issues_failed",
+                    error=remote_issues_result.unwrap_err().message,
+                    severity="operational",
+                )
+                return False
+
+            remote_issues = remote_issues_result.unwrap()
             if not remote_issues:
                 logger.warning("no_remote_issues_for_baseline", severity="operational")
                 return False

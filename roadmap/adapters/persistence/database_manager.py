@@ -329,6 +329,25 @@ class DatabaseManager:
                 ALTER TABLE sync_base_state ADD COLUMN content TEXT DEFAULT '';
             """)
 
+        # Migration 6: Create sync_metrics table for storing sync operation metrics
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_metrics'"
+        )
+        if not cursor.fetchone():
+            migrations.append("""
+                CREATE TABLE sync_metrics (
+                    id TEXT PRIMARY KEY,
+                    operation_id TEXT NOT NULL UNIQUE,
+                    backend_type TEXT NOT NULL,
+                    duration_seconds REAL NOT NULL DEFAULT 0.0,
+                    metrics_json TEXT NOT NULL,  -- Full SyncMetrics.to_dict() as JSON
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE INDEX IF NOT EXISTS idx_sync_metrics_backend_type ON sync_metrics (backend_type);
+                CREATE INDEX IF NOT EXISTS idx_sync_metrics_created_at ON sync_metrics (created_at);
+                CREATE INDEX IF NOT EXISTS idx_sync_metrics_operation_id ON sync_metrics (operation_id);
+            """)
+
         # Execute migrations
         for migration_sql in migrations:
             try:

@@ -381,19 +381,20 @@ class GitHubSyncBackend:
         ops = GitHubSyncOps(self)
         return ops.push_milestones(local_milestones)
 
-    def pull_issue(self, issue_id: str) -> bool:
+    def pull_issue(self, issue_id: str) -> Result[bool, SyncError]:
         """Pull a single remote GitHub issue to local.
 
         Args:
             issue_id: The remote issue ID (GitHub issue number like "_remote_123" or "123")
 
         Returns:
-            True if issue is valid and can be pulled, False if error.
+            Ok(True) if issue is valid and can be pulled
+            Err(SyncError) if error during validation
 
         Notes:
             - Validates the issue_id can be parsed
             - Actual fetching/saving is handled by pull_issues caller
-            - Returns True to indicate success to GitHubSyncOps
+            - Returns Ok(True) to indicate success to GitHubSyncOps
         """
         try:
             # Parse issue_id - extract numeric part from "_remote_123" format
@@ -411,11 +412,17 @@ class GitHubSyncBackend:
                     issue_id=issue_id,
                     reason="Cannot parse as integer",
                 )
-                return False
+                return Err(
+                    SyncError(
+                        error_type=SyncErrorType.VALIDATION_ERROR,
+                        message=f"Invalid issue ID format: {issue_id}",
+                        suggested_fix="Ensure issue_id is a valid number",
+                    )
+                )
 
             # If we got here, the issue_id is valid
             # The actual pull work happens elsewhere in the sync pipeline
-            return True
+            return Ok(True)
 
         except Exception as e:
             logger.debug(
@@ -424,7 +431,12 @@ class GitHubSyncBackend:
                 error=str(e),
                 error_type=type(e).__name__,
             )
-            return False
+            return Err(
+                SyncError.from_exception(
+                    e,
+                    error_type=SyncErrorType.VALIDATION_ERROR,
+                )
+            )
 
     def _convert_sync_to_issue(self, issue_id: str, sync_issue: SyncIssue) -> "Issue":
         """Convert SyncIssue to local Issue object.

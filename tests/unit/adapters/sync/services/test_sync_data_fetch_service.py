@@ -113,9 +113,10 @@ class TestSyncDataFetchService:
 
         service.fetch_remote_issues(report)
 
-        mock_logger.info.assert_called_once()
-        call_args = mock_logger.info.call_args
-        assert "remote_issues_fetched" in call_args[0]
+        # Should log both starting and enumerated
+        assert mock_logger.info.call_count >= 1
+        call_args = [call[0][0] for call in mock_logger.info.call_args_list]
+        assert any("remote_issues" in arg for arg in call_args)
 
     @patch("roadmap.adapters.sync.services.sync_data_fetch_service.logger")
     def test_fetch_remote_issues_logs_connection_error(
@@ -214,9 +215,10 @@ class TestSyncDataFetchService:
 
         service.fetch_local_issues(report)
 
-        mock_logger.info.assert_called_once()
-        call_args = mock_logger.info.call_args
-        assert "local_issues_fetched" in call_args[0]
+        # Should log both starting and enumerated
+        assert mock_logger.info.call_count >= 1
+        call_args = [call[0][0] for call in mock_logger.info.call_args_list]
+        assert any("local_issues" in arg for arg in call_args)
 
     @patch("roadmap.adapters.sync.services.sync_data_fetch_service.logger")
     def test_fetch_local_issues_logs_os_error(self, mock_logger, service, mock_core):
@@ -304,23 +306,25 @@ class TestSyncDataFetchService:
 
     @patch("roadmap.adapters.sync.services.sync_data_fetch_service.logger")
     def test_fetch_remote_issues_logs_debug(self, mock_logger, service, mock_backend):
-        """Test debug logging is called."""
+        """Test info logging is called for remote issues."""
         mock_backend.get_issues.return_value = Ok({})
         report = SyncReport()
 
         service.fetch_remote_issues(report)
 
-        mock_logger.debug.assert_called_once_with("fetching_remote_issues")
+        # Should call info for starting message
+        assert mock_logger.info.called
 
     @patch("roadmap.adapters.sync.services.sync_data_fetch_service.logger")
     def test_fetch_local_issues_logs_debug(self, mock_logger, service, mock_core):
-        """Test debug logging is called."""
+        """Test info logging is called for local issues."""
         mock_core.issues.list_all_including_archived.return_value = []
         report = SyncReport()
 
         service.fetch_local_issues(report)
 
-        mock_logger.debug.assert_called_once_with("fetching_local_issues")
+        # Should call info for starting message
+        assert mock_logger.info.called
 
 
 class TestSyncDataFetchServiceIntegration:

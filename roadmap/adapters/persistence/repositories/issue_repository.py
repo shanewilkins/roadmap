@@ -126,6 +126,39 @@ class IssueRepository:
 
         return deleted
 
+    @safe_operation(OperationType.DELETE, "Issue", include_traceback=True)
+    def delete_many(self, issue_ids: list[str]) -> int:
+        """Delete multiple issues in a single transaction.
+
+        Batch delete is much more efficient than deleting one-by-one
+        as it avoids repeated cache invalidations and enumeration.
+
+        Args:
+            issue_ids: List of issue identifiers to delete
+
+        Returns:
+            Number of issues successfully deleted
+        """
+        if not issue_ids:
+            return 0
+
+        with self._transaction() as conn:
+            placeholders = ",".join("?" * len(issue_ids))
+            cursor = conn.execute(
+                f"DELETE FROM issues WHERE id IN ({placeholders})",
+                issue_ids,
+            )
+
+        deleted_count = cursor.rowcount
+        if deleted_count > 0:
+            logger.info(
+                "Deleted multiple issues",
+                count=deleted_count,
+                issue_count=len(issue_ids),
+            )
+
+        return deleted_count
+
     @safe_operation(OperationType.UPDATE, "Issue")
     @safe_operation(OperationType.UPDATE, "Issue")
     def mark_archived(self, issue_id: str, archived: bool = True) -> bool:

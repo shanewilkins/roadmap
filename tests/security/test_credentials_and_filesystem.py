@@ -69,12 +69,13 @@ class TestCredentialSecurity:
         """Verify get_token() silently returns None on error (non-blocking)."""
         mgr = CredentialManager()
 
-        with patch.object(
-            mgr, "_get_token_keychain", side_effect=Exception("Keychain error")
-        ):
-            token = mgr.get_token()
-            # Should return None, not raise
-            assert token is None
+        with patch("os.getenv", return_value=None):
+            with patch.object(
+                mgr, "_get_token_keychain", side_effect=Exception("Keychain error")
+            ):
+                token = mgr.get_token()
+                # Should return None, not raise
+                assert token is None
 
     def test_credential_store_includes_repo_info(self):
         """Verify credential storage can include repository information."""

@@ -90,8 +90,11 @@ class TestCredentialManager:
         manager = CredentialManager()
         manager.system = "darwin"
 
-        with patch.object(manager, "_get_token_keychain", return_value="darwin-token"):
-            result = manager.get_token()
+        with patch("os.getenv", return_value=None):
+            with patch.object(
+                manager, "_get_token_keychain", return_value="darwin-token"
+            ):
+                result = manager.get_token()
 
         assert result == "darwin-token"
 
@@ -100,8 +103,11 @@ class TestCredentialManager:
         manager = CredentialManager()
         manager.system = "windows"
 
-        with patch.object(manager, "_get_token_wincred", return_value="windows-token"):
-            result = manager.get_token()
+        with patch("os.getenv", return_value=None):
+            with patch.object(
+                manager, "_get_token_wincred", return_value="windows-token"
+            ):
+                result = manager.get_token()
 
         assert result == "windows-token"
 
@@ -110,10 +116,11 @@ class TestCredentialManager:
         manager = CredentialManager()
         manager.system = "linux"
 
-        with patch.object(
-            manager, "_get_token_secretservice", return_value="linux-token"
-        ):
-            result = manager.get_token()
+        with patch("os.getenv", return_value=None):
+            with patch.object(
+                manager, "_get_token_secretservice", return_value="linux-token"
+            ):
+                result = manager.get_token()
 
         assert result == "linux-token"
 
@@ -130,10 +137,13 @@ class TestCredentialManager:
         """Test get_token returns None on error."""
         manager.system = "darwin"
 
-        with patch.object(
-            manager, "_get_token_keychain", side_effect=RuntimeError("Keychain error")
-        ):
-            result = manager.get_token()
+        with patch("os.getenv", return_value=None):
+            with patch.object(
+                manager,
+                "_get_token_keychain",
+                side_effect=RuntimeError("Keychain error"),
+            ):
+                result = manager.get_token()
 
         assert result is None
 

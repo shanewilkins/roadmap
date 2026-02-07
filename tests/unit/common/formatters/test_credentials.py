@@ -70,14 +70,15 @@ class TestCredentialManager:
 
     def test_get_token_exception_handling(self, credential_manager):
         """Test that exceptions in token retrieval are handled gracefully."""
-        with patch.object(
-            credential_manager,
-            "_get_token_keychain",
-            side_effect=Exception("Test error"),
-        ):
-            with patch.object(credential_manager, "system", "darwin"):
-                token = credential_manager.get_token()
-                assert token is None
+        with patch("os.getenv", return_value=None):
+            with patch.object(
+                credential_manager,
+                "_get_token_keychain",
+                side_effect=Exception("Test error"),
+            ):
+                with patch.object(credential_manager, "system", "darwin"):
+                    token = credential_manager.get_token()
+                    assert token is None
 
 
 class TestMacOSKeychain:

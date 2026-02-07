@@ -17,6 +17,7 @@ from roadmap.adapters.sync.services.sync_authentication_service import (
 from roadmap.adapters.sync.services.sync_data_fetch_service import SyncDataFetchService
 from roadmap.adapters.sync.services.sync_report_service import SyncReportService
 from roadmap.adapters.sync.sync_merge_engine import SyncMergeEngine
+from roadmap.application.services.deduplicate_service import DeduplicateService
 from roadmap.core.domain.issue import Issue
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
 from roadmap.core.models.sync_models import SyncIssue
@@ -78,10 +79,6 @@ class SyncMergeOrchestrator:
         # Initialize observability tracker
         self._observability = get_observability()
         self._current_operation_id: str | None = None
-
-        # Initialize deduplicated issue cache
-        self._deduplicated_local: list[Issue] = []
-        self._deduplicated_remote: dict[str, SyncIssue] = {}
 
         # Initialize delegated services
         self._auth_service = SyncAuthenticationService(backend)
@@ -161,238 +158,6 @@ class SyncMergeOrchestrator:
         """
         return self._engine._load_baseline_state()
 
-    def _detect_and_resolve_duplicates(
-        self,
-        local_issues: list[Issue],
-        remote_issues: dict[str, SyncIssue],
-        interactive: bool = False,
-    ) -> tuple[int, int, list]:
-        """Detect and resolve duplicate issues (analysis only, no persistence).
-
-        Runs duplicate detection through all stages but does NOT persist changes.
-        Persistence happens in _execute_duplicate_resolution() when not in dry_run mode.
-
-        Args:
-            local_issues: List of local issues
-            remote_issues: Dictionary of remote issues
-            interactive: Whether to use interactive resolution for manual review cases
-
-        Returns:
-            Tuple of (auto_resolved_count, manual_review_count, list of ResolutionActions)
-        """
-        if not self.enable_duplicate_detection:
-            logger.debug("duplicate_detection_disabled")
-            return 0, 0, []
-
-        logger.info(
-            "detecting_duplicates",
-            local_count=len(local_issues),
-            remote_count=len(remote_issues),
-            operation_id=self._current_operation_id,
-        )
-
-        # Record deduplication metrics
-        self._record_dedup_metrics(local_issues, remote_issues)
-
-        # Detect all duplicates using deduplicated sets
-        matches = self._duplicate_detector.detect_all(
-            self._deduplicated_local, self._deduplicated_remote
-        )
-
-        if not matches:
-            logger.info("no_duplicates_detected")
-            if self._current_operation_id:
-                self._observability.record_duplicate_detected(
-                    self._current_operation_id, count=0
-                )
-            return 0, 0, []
-
-        logger.info(
-            "duplicates_detected",
-            total_matches=len(matches),
-            high_confidence=[m for m in matches if m.confidence >= 0.95],
-            operation_id=self._current_operation_id,
-        )
-
-        # Resolve and record metrics
-        auto_resolved_count, manual_review_count, all_actions = (
-            self._resolve_duplicates(matches, interactive)
-        )
-
-        # Record duplicate detection metrics
-        self._record_duplicate_resolution_metrics(
-            matches, auto_resolved_count, all_actions
-        )
-
-        return auto_resolved_count, manual_review_count, all_actions
-
-    def _record_dedup_metrics(
-        self, local_issues: list[Issue], remote_issues: dict[str, SyncIssue]
-    ) -> None:
-        """Record deduplication metrics for local and remote issues.
-
-        Args:
-            local_issues: List of local issues
-            remote_issues: Dictionary of remote issues
-        """
-        dedup_start = time.time()
-
-        # Stage 1: Deduplicate local issues
-        self._deduplicated_local = self._duplicate_detector.local_self_dedup(
-            local_issues
-        )
-        local_dedup_duration = time.time() - dedup_start
-
-        if self._current_operation_id:
-            self._observability.record_local_dedup(
-                self._current_operation_id,
-                before=len(local_issues),
-                after=len(self._deduplicated_local),
-                duration=local_dedup_duration,
-            )
-
-        # Stage 2: Deduplicate remote issues
-        remote_dedup_start = time.time()
-        self._deduplicated_remote = self._duplicate_detector.remote_self_dedup(
-            remote_issues
-        )
-        remote_dedup_duration = time.time() - remote_dedup_start
-
-        if self._current_operation_id:
-            self._observability.record_remote_dedup(
-                self._current_operation_id,
-                before=len(remote_issues),
-                after=len(self._deduplicated_remote),
-                duration=remote_dedup_duration,
-            )
-
-    def _resolve_duplicates(
-        self, matches: list, interactive: bool
-    ) -> tuple[int, int, list]:
-        """Resolve duplicate matches into actions.
-
-        Args:
-            matches: List of DuplicateMatch objects
-            interactive: Whether to use interactive resolution
-
-        Returns:
-            Tuple of (auto_resolved_count, manual_review_count, all_actions)
-        """
-        # Separate auto-resolvable and manual review matches
-        auto_matches = [
-            m
-            for m in matches
-            if m.confidence >= self._duplicate_resolver.auto_resolve_threshold
-            and m.recommended_action.value == "auto_merge"
-        ]
-        manual_matches = [m for m in matches if m not in auto_matches]
-
-        auto_resolved_count = 0
-        manual_review_count = len(manual_matches)
-        all_actions = []
-
-        # Auto-resolve high-confidence AUTO_MERGE matches
-        if auto_matches:
-            auto_result = self._duplicate_resolver.resolve_automatic(auto_matches)
-            if auto_result.is_ok():
-                actions = auto_result.unwrap()
-                all_actions.extend(actions)
-                auto_resolved_count = len([a for a in actions if a.error is None])
-                logger.info(
-                    "auto_resolved_duplicates",
-                    count=auto_resolved_count,
-                    skipped=len(actions) - auto_resolved_count,
-                )
-            else:
-                logger.error(
-                    "auto_resolution_failed",
-                    error=str(auto_result.unwrap_err()),
-                    severity="operational",
-                )
-
-        # Handle manual review matches
-        if manual_matches:
-            if interactive:
-                logger.info(
-                    "starting_interactive_duplicate_resolution",
-                    match_count=len(manual_matches),
-                )
-                actions = self._duplicate_resolver.resolve_interactive(manual_matches)
-                all_actions.extend(actions)
-                manual_review_count = len([a for a in actions if a.error is None])
-            else:
-                logger.warning(
-                    "manual_review_duplicates_detected",
-                    count=len(manual_matches),
-                    message="Use --interactive-duplicates flag to resolve these manually",
-                    severity="operational",
-                )
-
-        return auto_resolved_count, manual_review_count, all_actions
-
-    def _record_duplicate_resolution_metrics(
-        self, matches: list, auto_resolved_count: int, all_actions: list
-    ) -> None:
-        """Record duplicate resolution metrics.
-
-        Args:
-            matches: List of matched duplicates
-            auto_resolved_count: Number of auto-resolved issues
-            all_actions: List of resolution actions
-        """
-        if self._current_operation_id:
-            self._observability.record_duplicate_detected(
-                self._current_operation_id, count=len(matches)
-            )
-            self._observability.record_duplicate_resolved(
-                self._current_operation_id,
-                count=len(matches),
-                auto_resolved=auto_resolved_count,
-                deleted=len([a for a in all_actions if a.action_type == "delete"]),
-                archived=len([a for a in all_actions if a.action_type == "archive"]),
-            )
-
-    def _execute_duplicate_resolution(self, actions: list, report: SyncReport) -> None:
-        """Execute duplicate resolution actions (delete/archive issues).
-
-        Called after analysis to persist duplicate resolution changes to database.
-
-        Args:
-            actions: List of ResolutionAction objects from duplicate detection
-            report: SyncReport to update with counts
-        """
-        if not actions:
-            return
-
-        logger.info(
-            "executing_duplicate_resolution",
-            action_count=len(actions),
-        )
-
-        deleted_count = 0
-        archived_count = 0
-        failed_count = 0
-
-        for action in actions:
-            if action.action_type == "delete":
-                deleted_count += 1
-            elif action.action_type == "archive":
-                archived_count += 1
-            elif action.error:
-                failed_count += 1
-
-        report.duplicates_detected = len(actions)
-        report.duplicates_auto_resolved = len([a for a in actions if a.error is None])
-        report.issues_deleted = deleted_count
-        report.issues_archived = archived_count
-
-        logger.info(
-            "duplicate_resolution_executed",
-            deleted=deleted_count,
-            archived=archived_count,
-            failed=failed_count,
-        )
-
     def _process_fetched_pull_result(self, fetched):
         return self._engine._process_fetched_pull_result(fetched)
 
@@ -465,28 +230,6 @@ class SyncMergeOrchestrator:
                 if isinstance(remote_issues_data, dict)
                 else "not_a_dict",
             )
-
-            # Run duplicate detection before main analysis
-            dup_actions = []
-            if self.enable_duplicate_detection:
-                auto_resolved, manual_review, dup_actions = (
-                    self._detect_and_resolve_duplicates(
-                        local_issues,
-                        remote_issues_data,
-                        interactive=interactive_duplicates,
-                    )
-                )
-                logger.info(
-                    "duplicate_detection_complete",
-                    auto_resolved=auto_resolved,
-                    manual_review=manual_review,
-                    total_actions=len(dup_actions),
-                )
-
-            # Refetch local issues as they may have been modified by duplicate resolution
-            local_issues = self._fetch_local_issues(report) or local_issues
-            if local_issues is None:
-                return plan, report
 
             local_issues_dict = {issue.id: issue for issue in local_issues}
             try:
@@ -771,7 +514,18 @@ class SyncMergeOrchestrator:
             if remote_issues_data is None or local_issues_dict is None:
                 return report
 
-            # Phase 2: Analyze changes
+            # Phase 2: Deduplicate (detect and remove duplicates from data structures)
+            remote_issues_data, local_issues_dict = self._sync_deduplicate(
+                remote_issues_data,
+                local_issues_dict,
+                interactive_duplicates,
+                dry_run,
+                report,
+            )
+            if remote_issues_data is None or local_issues_dict is None:
+                return report
+
+            # Phase 3: Analyze changes
             (
                 changes,
                 conflicts,
@@ -783,7 +537,7 @@ class SyncMergeOrchestrator:
                 up_to_date,
             ) = self._sync_analyze(local_issues_dict, remote_issues_data, report)
 
-            # Phase 3: Resolve and apply
+            # Phase 4: Resolve and apply
             report = self._sync_resolve_and_apply(
                 conflicts,
                 updates,
@@ -796,7 +550,16 @@ class SyncMergeOrchestrator:
                 report,
             )
 
-            # Phase 4: Record metrics
+            # Phase 5: Execute duplicate resolution (merge/archive)
+            local_issues_after_sync = list(local_issues_dict.values())
+            self._execute_duplicate_resolution(
+                local_issues_after_sync,
+                report=report,
+                dry_run=dry_run,
+                interactive_duplicates=interactive_duplicates,
+            )
+
+            # Phase 6: Record metrics
             self._sync_record_metrics(
                 sync_start_time,
                 conflicts,
@@ -824,7 +587,7 @@ class SyncMergeOrchestrator:
         interactive_duplicates: bool,
         report: SyncReport,
     ) -> tuple[dict[str, SyncIssue] | None, dict[str, Issue] | None]:
-        """Initialize sync by fetching and deduplicating issues.
+        """Initialize sync by fetching issues (deduplication is now a separate phase).
 
         Returns:
             Tuple of (remote_issues_data, local_issues_dict) or (None, None) on error
@@ -851,41 +614,154 @@ class SyncMergeOrchestrator:
                 duration=fetch_duration,
             )
 
-        # Run duplicate detection
-        dup_actions = []
-        if self.enable_duplicate_detection:
-            auto_resolved, manual_review, dup_actions = (
-                self._detect_and_resolve_duplicates(
-                    local_issues,
-                    remote_issues_data,
-                    interactive=interactive_duplicates,
-                )
-            )
-            logger.info(
-                "duplicate_detection_complete",
-                auto_resolved=auto_resolved,
-                manual_review=manual_review,
-                total_actions=len(dup_actions),
-            )
-
-            # Execute duplicate resolution if not in dry_run mode
-            if not dry_run and dup_actions:
-                self._execute_duplicate_resolution(dup_actions, report)
-
-        # Refetch local issues as they may have been modified
-        local_issues = self._fetch_local_issues(report) or local_issues
-        if local_issues is None:
-            return None, None
-
         local_issues_dict = {issue.id: issue for issue in local_issues}
 
         logger.info(
-            "sync_state_detected",
+            "sync_state_fetched",
             local_count=len(local_issues_dict),
             remote_count=len(remote_issues_data),
         )
 
         return remote_issues_data, local_issues_dict
+
+    def _sync_deduplicate(
+        self,
+        remote_issues_data: dict[str, SyncIssue],
+        local_issues_dict: dict[str, Issue],
+        interactive_duplicates: bool,
+        dry_run: bool,
+        report: SyncReport,
+    ) -> tuple[dict[str, SyncIssue] | None, dict[str, Issue] | None]:
+        """Deduplicate phase: Detect and remove duplicates from data structures.
+
+        This is a SEPARATE phase that runs BEFORE analysis. It:
+        1. Detects duplicates in local and remote issues
+        2. Executes resolution (delete/archive) actions immediately
+        3. REMOVES duplicates from the data structures
+        4. Returns only canonical issues for analysis
+
+        Returns:
+            Tuple of (deduplicated_remote_issues_data, deduplicated_local_issues_dict)
+            or (None, None) on error
+        """
+        if not self.enable_duplicate_detection:
+            logger.info("duplicate_detection_disabled")
+            return remote_issues_data, local_issues_dict
+
+        local_issues = list(local_issues_dict.values())
+
+        logger.info(
+            "deduplication_phase_starting",
+            local_issues_count=len(local_issues),
+            remote_issues_count=len(remote_issues_data),
+        )
+
+        # Create and execute deduplicate service
+        dedup_service = DeduplicateService(
+            issue_repo=self.core.issue_service.repository,
+            duplicate_detector=self._duplicate_detector,
+            backend=self.backend,  # Pass backend for remote duplicate closure
+        )
+
+        response = dedup_service.execute(
+            local_issues=local_issues,
+            remote_issues=remote_issues_data,
+            dry_run=dry_run,
+        )
+
+        logger.info(
+            "deduplication_phase_complete",
+            duplicates_removed=response.duplicates_removed,
+        )
+
+        # Update report with deduplication metrics
+        # duplicates_removed represents hard-deleted duplicates
+        report.issues_deleted = response.duplicates_removed
+
+        # Convert returned lists back to dict format for compatibility
+        deduplicated_local_dict = {issue.id: issue for issue in response.local_issues}
+        deduplicated_remote_dict = response.remote_issues
+
+        # Critical: Update baseline to remove deleted duplicates
+        # This ensures the invariant: after sync, local == remote == baseline
+        if response.duplicates_removed > 0 and not dry_run:
+            self._update_baseline_after_dedup(
+                deduplicated_local_dict,
+                deduplicated_remote_dict,
+            )
+
+        logger.info(
+            "deduplication_results",
+            local_before=len(local_issues_dict),
+            local_after=len(deduplicated_local_dict),
+            remote_before=len(remote_issues_data),
+            remote_after=len(deduplicated_remote_dict),
+        )
+
+        return deduplicated_remote_dict, deduplicated_local_dict
+
+    def _update_baseline_after_dedup(
+        self,
+        deduplicated_local_dict: dict[str, Issue],
+        deduplicated_remote_dict: dict[str, SyncIssue],
+    ) -> None:
+        """Update baseline to remove duplicates that were deleted.
+
+        After deduplication deletes issues from the database, we must also
+        update the baseline state to maintain the invariant:
+        baseline == local == remote
+
+        Args:
+            deduplicated_local_dict: Local issues dict after deduplication
+            deduplicated_remote_dict: Remote issues dict after deduplication
+        """
+        initial_count = 0
+        final_count = 0
+        try:
+            # Load current baseline
+            baseline_state = self.state_manager.load_sync_state()
+            if not baseline_state:
+                logger.info("baseline_not_found_after_dedup", skip_update=True)
+                return
+
+            initial_count = (
+                len(baseline_state.base_issues) if baseline_state.base_issues else 0
+            )
+
+            # Get remaining issue IDs from deduplicated dicts (no re-enumeration!)
+            remaining_ids = set(deduplicated_local_dict.keys()) | set(
+                deduplicated_remote_dict.keys()
+            )
+
+            # Filter baseline to only include issues that still exist
+            # base_issues is a dict[str, IssueBaseState]
+            if baseline_state.base_issues:
+                baseline_state.base_issues = {
+                    issue_id: base_state
+                    for issue_id, base_state in baseline_state.base_issues.items()
+                    if issue_id in remaining_ids
+                }
+
+            # Save updated baseline
+            success = self.state_manager.save_sync_state_to_db(baseline_state)
+            final_count = (
+                len(baseline_state.base_issues) if baseline_state.base_issues else 0
+            )
+
+            logger.info(
+                "baseline_updated_after_dedup",
+                deleted_count=initial_count - final_count,
+                baseline_before=initial_count,
+                baseline_after=final_count,
+                success=success,
+            )
+
+        except Exception as e:
+            logger.error(
+                "baseline_update_after_dedup_failed",
+                error=str(e),
+                deleted_count=initial_count - final_count,
+            )
 
     def _sync_analyze(
         self,
@@ -1036,6 +912,210 @@ class SyncMergeOrchestrator:
             logger.info("sync_dry_run_mode", skip_apply=True)
 
         return report
+
+    def _execute_duplicate_resolution(
+        self,
+        actions_or_issues: list | None = None,
+        report: SyncReport | None = None,
+        dry_run: bool = False,
+        interactive_duplicates: bool = False,
+    ) -> None:
+        """Execute duplicate resolution (flexible signature for compatibility).
+
+        Can be called two ways:
+        1. Legacy: _execute_duplicate_resolution(actions_list, report)
+           - Takes list of pre-made ResolutionAction objects
+           - Executes them directly
+        2. Full: _execute_duplicate_resolution(local_issues, report=..., dry_run=..., interactive_duplicates=...)
+           - Takes list of local issues
+           - Detects and resolves duplicates
+
+        Args:
+            actions_or_issues: List of actions OR list of issues (determines mode)
+            report: SyncReport to update (positional for legacy compatibility)
+            dry_run: If True, don't persist changes
+            interactive_duplicates: If True, use interactive resolution
+        """
+        # Ensure we have a report
+        if report is None:
+            from roadmap.core.services.sync.sync_report import SyncReport
+
+            report = SyncReport()
+
+        # Empty list? Just return
+        if not actions_or_issues:
+            return
+
+        # Check if we're in legacy mode by looking at the first item
+        first_item = actions_or_issues[0]
+
+        # Legacy mode indicators: Has 'action_type' attribute
+        # Modern Issue objects don't have action_type
+        is_legacy_action = hasattr(first_item, "action_type") and hasattr(
+            first_item, "issue_id"
+        )
+
+        if is_legacy_action:
+            # Legacy mode: execute pre-made actions
+            self._execute_resolution_actions(actions_or_issues, report, dry_run)
+            return
+
+        # Full mode: detect and resolve
+        if not self.enable_duplicate_detection:
+            return
+
+        local_issues = actions_or_issues
+
+        try:
+            logger.info(
+                "duplicate_resolution_phase_starting", issue_count=len(local_issues)
+            )
+
+            # Detect duplicates in local issues
+            detector_result = self._duplicate_detector.detect_all(local_issues, {})
+            if isinstance(detector_result, tuple):
+                local_duplicates, remote_duplicates = detector_result
+            else:
+                local_duplicates = detector_result
+                remote_duplicates = []
+
+            all_duplicates = local_duplicates + remote_duplicates
+            if not all_duplicates:
+                logger.info("duplicate_resolution_phase_complete", duplicates_found=0)
+                return
+
+            logger.info(
+                "duplicates_detected_for_resolution",
+                total_matches=len(all_duplicates),
+            )
+
+            # Resolve duplicates
+            if interactive_duplicates:
+                resolution_actions = self._duplicate_resolver.resolve_interactive(
+                    all_duplicates
+                )
+            else:
+                resolution_result = self._duplicate_resolver.resolve_automatic(
+                    all_duplicates
+                )
+                if resolution_result.is_err():
+                    logger.warning(
+                        "automatic_resolution_failed",
+                        error=resolution_result.unwrap_err(),
+                    )
+                    return
+
+                resolution_actions = resolution_result.unwrap()
+
+            if not resolution_actions:
+                logger.info("duplicate_resolution_phase_complete", actions_count=0)
+                return
+
+            # Execute the resolved actions
+            self._execute_resolution_actions(resolution_actions, report, dry_run)
+
+        except Exception as e:
+            logger.error(
+                "duplicate_resolution_phase_failed",
+                error=str(e),
+            )
+
+    def _execute_resolution_actions(
+        self,
+        actions: list,
+        report: SyncReport,
+        dry_run: bool = False,
+    ) -> None:
+        """Execute a list of resolution actions.
+
+        Args:
+            actions: List of ResolutionAction objects to execute
+            report: SyncReport to update with counts
+            dry_run: If True, don't persist changes
+        """
+        merged_count = 0
+        archived_count = 0
+        skipped_count = 0
+        errors = []
+
+        for action in actions:
+            # Handle both ResolutionAction and MockResolutionAction
+            action_type = getattr(action, "action_type", None)
+
+            # Skip actions that already have errors
+            if hasattr(action, "error") and action.error:
+                skipped_count += 1
+                logger.debug(
+                    "skipping_action_with_error",
+                    issue_id=getattr(action, "issue_id", None),
+                    error=action.error,
+                )
+                continue
+
+            if action_type == "delete" or action_type == "merge":
+                if dry_run:
+                    merged_count += 1
+                    continue
+
+                issue_id = getattr(action, "issue_id", None)
+                if issue_id:
+                    try:
+                        self.core.issue_service.delete_issue(issue_id)
+                        merged_count += 1
+                        logger.info("duplicate_deleted", issue_id=issue_id)
+                    except Exception as e:
+                        errors.append(str(e))
+                        logger.warning("delete_failed", issue_id=issue_id, error=str(e))
+
+            elif action_type == "archive":
+                if dry_run:
+                    archived_count += 1
+                    continue
+
+                issue_id = getattr(action, "issue_id", None)
+                if issue_id:
+                    try:
+                        issue = self.core.issue_service.get_issue(issue_id)
+                        if issue:
+                            from roadmap.common.constants import Status
+
+                            issue.status = Status.ARCHIVED
+                            self.core.issue_service.update_issue(issue)
+                            archived_count += 1
+                            logger.info("duplicate_archived", issue_id=issue_id)
+                        else:
+                            logger.warning("archive_issue_not_found", issue_id=issue_id)
+                    except Exception as e:
+                        errors.append(str(e))
+                        logger.warning(
+                            "archive_failed", issue_id=issue_id, error=str(e)
+                        )
+
+            else:
+                # skip or unknown action
+                skipped_count += 1
+
+        # Update report
+        total_actions = len(actions)
+        report.duplicates_detected = total_actions
+        report.duplicates_auto_resolved = merged_count + archived_count
+        report.issues_deleted = merged_count
+        report.issues_archived = archived_count
+
+        logger.info(
+            "resolution_actions_executed",
+            total=total_actions,
+            deleted=merged_count,
+            archived=archived_count,
+            skipped=skipped_count,
+            errors=len(errors),
+            dry_run=dry_run,
+        )
+
+        if errors:
+            logger.warning("resolution_errors", count=len(errors))
+            for error in errors:
+                logger.warning("resolution_error", detail=error)
 
     def _sync_record_metrics(
         self,

@@ -326,14 +326,14 @@ def _display_sync_metrics(console_inst: Any, metrics: dict[str, Any]) -> None:
     if metrics.get("total_duration_seconds"):
         table.add_row(
             "Total Duration",
-            format_time(metrics.get("total_duration_seconds")),
+            format_time(metrics.get("total_duration_seconds", 0)),
         )
 
     # Fetch metrics
     if metrics.get("total_fetch_time_seconds"):
         table.add_row(
             "Fetch Time",
-            format_time(metrics.get("total_fetch_time_seconds")),
+            format_time(metrics.get("total_fetch_time_seconds", 0)),
         )
 
     # Conflict metrics
@@ -366,7 +366,6 @@ def finalize_sync(
     from roadmap.adapters.cli.sync_handlers.baseline_ops import (
         capture_and_save_post_sync_baseline,
     )
-    from roadmap.core.services.sync.sync_metadata_service import SyncMetadataService
 
     console_inst.print("[bold]BASELINE CHANGES:[/bold]")
     console_inst.print(f"   Before: {pre_sync_issue_count} issues in baseline")
@@ -375,12 +374,33 @@ def finalize_sync(
         core, console_inst, pre_sync_issue_count, verbose
     )
 
-    # Display sync metrics if available
-    metadata_service = SyncMetadataService(core)
-    metrics = metadata_service.get_last_sync_metrics(core)
+    # Save and display sync metrics if available in report
+    if hasattr(report, "metrics") and report.metrics:
+        # Save metrics to database
+        try:
+            from roadmap.adapters.persistence.sync_metrics_repository import (
+                SyncMetricsRepository,
+            )
 
-    if metrics:
-        _display_sync_metrics(console_inst, metrics)
+            metrics_repo = SyncMetricsRepository(core.db_manager)
+            metrics_repo.save(report.metrics)
+        except Exception as e:
+            from roadmap.common.logging import get_logger
+
+            logger = get_logger(__name__)
+            logger.warning(
+                "failed_to_save_sync_metrics",
+                error=str(e),
+                severity="operational",
+            )
+
+        # Display metrics
+        metrics_dict = (
+            report.metrics.to_dict()
+            if hasattr(report.metrics, "to_dict")
+            else report.metrics
+        )
+        _display_sync_metrics(console_inst, metrics_dict)
 
     console_inst.print()
     console_inst.print("✅ Sync completed successfully", style="bold green")

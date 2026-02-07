@@ -420,6 +420,25 @@ class YAMLIssueRepository(IssueRepository):
 
         return True
 
+    def delete_many(self, issue_ids: list[str]) -> int:
+        """Delete multiple issues in a single batch operation.
+
+        Args:
+            issue_ids: List of issue identifiers to delete
+
+        Returns:
+            Number of issues successfully deleted
+        """
+        if not issue_ids:
+            return 0
+
+        deleted_count = 0
+        for issue_id in issue_ids:
+            if self.delete(issue_id):
+                deleted_count += 1
+
+        return deleted_count
+
 
 class YAMLMilestoneRepository(MilestoneRepository):
     """Milestone repository using YAML file storage.

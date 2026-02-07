@@ -11,6 +11,7 @@ import click
 from structlog import get_logger
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.cli.sync_metrics_command import sync_metrics
 from roadmap.common.console import get_console
 
 logger = get_logger(__name__)
@@ -409,7 +410,7 @@ def _handle_pre_sync_actions(
     )
 
 
-@click.command(name="sync")
+@click.group(invoke_without_command=True)
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -559,6 +560,21 @@ def _handle_pre_sync_actions(
     default=None,
     help="Minimum confidence for auto-resolving duplicates (0.0-1.0, default from config)",
 )
+@click.option(
+    "--show-metrics",
+    is_flag=True,
+    help="Display sync metrics after completion",
+)
+@click.option(
+    "--dedup-only",
+    is_flag=True,
+    help="Run only the deduplication phase (detect and delete duplicates, skip sync)",
+)
+@click.option(
+    "--fuzzy",
+    is_flag=True,
+    help="Enable fuzzy matching for duplicate detection (slower but more thorough)",
+)
 @click.pass_context
 @require_initialized
 def sync(
@@ -591,6 +607,9 @@ def sync(
     duplicate_title_threshold: float | None,
     duplicate_content_threshold: float | None,
     duplicate_auto_resolve_threshold: float | None,
+    show_metrics: bool,
+    dedup_only: bool,
+    fuzzy: bool,
 ) -> None:
     """Sync roadmap with remote repository.
 
@@ -659,6 +678,10 @@ def sync(
     core = ctx.obj["core"]
     console_inst = get_console()
 
+    # If a subcommand is being invoked, handle it
+    if ctx.invoked_subcommand is not None:
+        return
+
     # Validate mutually exclusive flags
     if push and pull:
         console_inst.print(
@@ -680,6 +703,22 @@ def sync(
         verbose,
         console_inst,
     ):
+        return
+
+    # Handle dedup-only mode
+    if dedup_only:
+        _execute_dedup_only(
+            core,
+            console_inst,
+            verbose,
+            detect_duplicates,
+            duplicate_title_threshold,
+            duplicate_content_threshold,
+            duplicate_auto_resolve_threshold,
+            interactive_duplicates,
+            fuzzy,
+            dry_run,
+        )
         return
 
     # Handle checkpoint resume if requested
@@ -710,6 +749,7 @@ def sync(
             since,
             until,
             interactive,
+            show_metrics,
         )
     except Exception as exc:
         logger.error(
@@ -761,6 +801,140 @@ def _handle_resume(console_inst, core) -> bool:
         return False
 
 
+def _execute_dedup_only(
+    core,
+    console_inst,
+    verbose,
+    detect_duplicates,
+    duplicate_title_threshold,
+    duplicate_content_threshold,
+    duplicate_auto_resolve_threshold,
+    interactive_duplicates,
+    fuzzy: bool = False,
+    dry_run: bool = False,
+) -> None:
+    """Execute deduplication phase only (no sync).
+
+    Fetches local and remote issues, detects duplicates in both,
+    and deletes duplicates (both local and remote via GraphQL).
+
+    Args:
+        fuzzy: If True, enable fuzzy matching (slower but catches more duplicates)
+        dry_run: If True, preview duplicates without actually deleting
+    """
+    import time
+
+    from roadmap.adapters.cli.services.sync_service import get_sync_backend
+    from roadmap.adapters.cli.sync_context import _resolve_backend_and_init
+    from roadmap.application.services.deduplicate_service import DeduplicateService
+    from roadmap.core.services.sync.duplicate_detector import DuplicateDetector
+
+    if not detect_duplicates:
+        console_inst.print(
+            "[yellow]⚠️  Duplicate detection is disabled (--no-detect-duplicates)[/yellow]"
+        )
+        return
+
+    console_inst.print("[bold cyan]🔍 Deduplication Only Mode[/bold cyan]")
+    if fuzzy:
+        console_inst.print("[yellow]⚠️  Fuzzy matching ENABLED (slower)[/yellow]")
+    console_inst.print("[dim]Fetching issues and detecting duplicates...[/dim]\n")
+
+    start_time = time.time()
+
+    # Fetch local issues
+    try:
+        local_issues = core.issue_service.list_all_including_archived() or []
+        console_inst.print(f"   📋 Loaded {len(local_issues)} local issues")
+    except Exception as e:
+        console_inst.print(f"❌ Failed to load local issues: {e}", style="bold red")
+        return
+
+    # Initialize backend for remote issue fetching
+    sync_backend = None
+    remote_issues = {}
+    try:
+        _, sync_backend = _resolve_backend_and_init(core, None, get_sync_backend)
+        if sync_backend:
+            # Authenticate with backend
+            auth_result = sync_backend.authenticate()
+            if not auth_result.is_ok():
+                console_inst.print(
+                    "[yellow]⚠️  Backend authentication failed, skipping remote deduplication[/yellow]"
+                )
+                sync_backend = None
+            else:
+                # Fetch remote issues
+                issues_result = sync_backend.get_issues()
+                if issues_result.is_ok():
+                    remote_issues = issues_result.unwrap() or {}
+                    console_inst.print(
+                        f"   📋 Loaded {len(remote_issues)} remote issues"
+                    )
+                    # Note: Remote deletion uses small batches (5 per call) with delays
+                    # to respect GitHub's rate limits (2,000 points/minute on GraphQL)
+                    if len(remote_issues) > 1000:
+                        console_inst.print(
+                            "[dim]ℹ️  Large dataset detected - remote deletion will be slow (respecting GitHub rate limits)[/dim]"
+                        )
+                else:
+                    console_inst.print(
+                        "[yellow]⚠️  Failed to fetch remote issues, skipping remote deduplication[/yellow]"
+                    )
+    except Exception as e:
+        console_inst.print(f"[yellow]⚠️  Could not initialize backend: {e}[/yellow]")
+        if verbose:
+            logger.exception("backend_init_failed")
+
+    # Create duplicate detector with configured thresholds
+    detector = DuplicateDetector(
+        title_similarity_threshold=duplicate_title_threshold or 0.90,
+        content_similarity_threshold=duplicate_content_threshold or 0.85,
+        auto_resolve_threshold=duplicate_auto_resolve_threshold or 0.95,
+        enable_fuzzy_matching=fuzzy,
+    )
+
+    # Run deduplication with backend for remote deletion
+    try:
+        dedup_service = DeduplicateService(
+            issue_repo=core.issue_service.repository,
+            duplicate_detector=detector,
+            backend=sync_backend,  # Include backend for remote deletion via GraphQL
+        )
+
+        response = dedup_service.execute(
+            local_issues=local_issues,
+            remote_issues=remote_issues,  # Include remote issues for deduplication
+            dry_run=dry_run,  # Use passed parameter
+        )
+
+        elapsed = time.time() - start_time
+
+        # Display results
+        console_inst.print()
+        console_inst.print("[bold cyan]✨ Deduplication Results[/bold cyan]")
+        console_inst.print(f"   🗑️  Deleted: {response.duplicates_removed} duplicates")
+        local_remaining = len(response.local_issues)
+        remote_remaining = len(response.remote_issues)
+        console_inst.print(
+            f"   📊 Remaining: {local_remaining} local + {remote_remaining} remote"
+        )
+        if len(local_issues) + len(remote_issues) > 0:
+            total_before = len(local_issues) + len(remote_issues)
+            total_after = local_remaining + remote_remaining
+            reduction_pct = ((total_before - total_after) / total_before) * 100
+            console_inst.print(f"   📉 Reduction: {reduction_pct:.1f}%")
+        console_inst.print(f"   ⏱️  Time: {elapsed:.2f}s")
+        console_inst.print()
+        console_inst.print("[green]✅ Deduplication complete[/green]")
+
+    except Exception as e:
+        console_inst.print(f"❌ Deduplication failed: {e}", style="bold red")
+        if verbose:
+            raise
+        sys.exit(1)
+
+
 def _execute_sync_workflow(
     core,
     console_inst,
@@ -783,6 +957,7 @@ def _execute_sync_workflow(
     since,
     until,
     interactive,
+    show_metrics,
 ) -> None:
     """Execute main sync workflow."""
     # Get thresholds from config
@@ -882,3 +1057,23 @@ def _execute_sync_workflow(
 
     # Finalize real sync
     _finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose)
+    # Display metrics if requested
+    if show_metrics and hasattr(report, "metrics") and report.metrics:
+        from roadmap.presentation.formatters.sync_metrics_formatter import (
+            create_metrics_summary_table,
+        )
+        from rich.panel import Panel
+
+        console_inst.print()
+        console_inst.print(
+            Panel(
+                create_metrics_summary_table(report.metrics, verbose),
+                title="[bold cyan]Sync Metrics[/bold cyan]",
+                border_style="cyan",
+            )
+        )
+        console_inst.print()
+
+
+# Register metrics subcommand
+sync.add_command(sync_metrics, name="metrics")

@@ -37,13 +37,27 @@ class SyncDataFetchService:
         Notes:
             Handles Result<dict, SyncError> from backend.get_issues()
         """
-        logger.debug("fetching_remote_issues")
+        logger.info("fetching_remote_issues_starting")
 
         result = self.backend.get_issues()
 
         if result.is_ok():
             remote_issues_data = result.unwrap()
-            logger.info("remote_issues_fetched", remote_count=len(remote_issues_data))
+
+            # Count by status
+            status_counts = {}
+            for issue in remote_issues_data.values():
+                status = getattr(issue, "state", None) or getattr(
+                    issue, "status", "unknown"
+                )
+                status = str(status)
+                status_counts[status] = status_counts.get(status, 0) + 1
+
+            logger.info(
+                "remote_issues_enumerated",
+                total_count=len(remote_issues_data),
+                status_breakdown=status_counts,
+            )
             return remote_issues_data
 
         # Handle fetch error
@@ -71,9 +85,22 @@ class SyncDataFetchService:
             List of local Issue objects or None if fetch failed
         """
         try:
-            logger.debug("fetching_local_issues")
+            logger.info(
+                "fetching_local_issues_starting",
+            )
             local_issues = self.core.issues.list_all_including_archived() or []
-            logger.info("local_issues_fetched", local_count=len(local_issues))
+
+            # Count by status
+            status_counts = {}
+            for issue in local_issues:
+                status = str(issue.status)
+                status_counts[status] = status_counts.get(status, 0) + 1
+
+            logger.info(
+                "local_issues_enumerated",
+                total_count=len(local_issues),
+                status_breakdown=status_counts,
+            )
             return local_issues
         except OSError as e:
             report.error = f"Failed to fetch local issues: {str(e)}"

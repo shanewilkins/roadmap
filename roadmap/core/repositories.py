@@ -72,6 +72,17 @@ class IssueRepository(Protocol):
         """
         ...
 
+    def delete_many(self, issue_ids: list[str]) -> int:
+        """Delete multiple issues in a single batch operation.
+
+        Args:
+            issue_ids: List of issue identifiers to delete
+
+        Returns:
+            Number of issues successfully deleted
+        """
+        ...
+
     def list_all_including_archived(self) -> list[Issue]:
         """List all issues including archived ones.
 

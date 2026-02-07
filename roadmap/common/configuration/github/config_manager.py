@@ -101,7 +101,8 @@ class GitHubConfigManager:
         if self.config_file.exists():
             try:
                 with open(self.config_file) as f:
-                    config = yaml.safe_load(f) or {}
+                    loaded = yaml.safe_load(f)
+                    config = loaded if isinstance(loaded, dict) else {}
                     github_config = config.get("github", {})
                     sync_settings = github_config.get("sync_settings", {})
 
@@ -131,7 +132,8 @@ class GitHubConfigManager:
                 # Update config with detected values
                 if self.config_file.exists():
                     with open(self.config_file) as f:
-                        config = yaml.safe_load(f) or {}
+                        loaded = yaml.safe_load(f)
+                        config = loaded if isinstance(loaded, dict) else {}
                 else:
                     config = {}
 

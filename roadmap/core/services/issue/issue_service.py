@@ -520,6 +520,48 @@ class IssueService:
             log_exit("delete_issue", success=False)
         return deleted
 
+    @safe_operation(OperationType.DELETE, "Issue", include_traceback=True)
+    @traced("delete_many_issues")
+    def delete_many_issues(self, issue_ids: list[str]) -> int:
+        """Delete multiple issues in a single batch operation.
+
+        Batch deletion is much more efficient than individual deletes
+        as it performs all deletes in one transaction and clears the
+        cache only once, avoiding repeated enumeration overhead.
+
+        Args:
+            issue_ids: List of issue identifiers to delete
+
+        Returns:
+            Number of issues successfully deleted
+        """
+        if not issue_ids:
+            return 0
+
+        log_entry("delete_many_issues", count=len(issue_ids))
+        logger.info("deleting_many_issues", count=len(issue_ids))
+
+        try:
+            deleted_count = self.repository.delete_many(issue_ids)
+        except Exception as e:
+            log_database_error(
+                e,
+                operation="delete_many",
+                entity_type="Issue",
+            )
+            raise
+
+        if deleted_count > 0:
+            log_event("issues_deleted", count=deleted_count, requested=len(issue_ids))
+            # Invalidate cache after successful bulk deletion
+            self._list_issues_cache.clear()
+            log_exit("delete_many_issues", success=True)
+        else:
+            log_event("no_issues_deleted", requested=len(issue_ids))
+            log_exit("delete_many_issues", success=False)
+
+        return deleted_count
+
     def close_issue(self, issue_id: str) -> Issue | None:
         """Close/mark issue as complete.
 

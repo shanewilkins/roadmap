@@ -7,7 +7,6 @@ from failures and rolling back partial syncs.
 from __future__ import annotations
 
 import hashlib
-import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -44,7 +43,7 @@ class SyncCheckpointManager:
             core: RoadmapCore instance for state management
         """
         self.core = core
-        self.state_manager = core._state_manager
+        self.state_manager = core.db
         self._current_checkpoint: SyncCheckpoint | None = None
 
     def create_checkpoint(
@@ -131,14 +130,11 @@ class SyncCheckpointManager:
         }
 
         # Store in sync_state table
-        self.core.repositories.sync_state.set(
-            checkpoint_key, json.dumps(checkpoint_data)
-        )
+        checkpoint_key = f"checkpoint_{checkpoint.checkpoint_id}"
+        self.state_manager.save_sync_checkpoint(checkpoint_key, checkpoint_data)
 
         # Also save as "latest_checkpoint" for easy recovery
-        self.core.repositories.sync_state.set(
-            "latest_checkpoint", json.dumps(checkpoint_data)
-        )
+        self.state_manager.save_sync_checkpoint("latest_checkpoint", checkpoint_data)
 
         logger.debug(
             "checkpoint_saved",
@@ -154,11 +150,12 @@ class SyncCheckpointManager:
             SyncCheckpoint if found, None otherwise
         """
         try:
-            checkpoint_json = self.core.repositories.sync_state.get("latest_checkpoint")
-            if not checkpoint_json:
+            checkpoint_data = self.state_manager.get_sync_checkpoint(
+                "latest_checkpoint"
+            )
+            if not checkpoint_data:
                 return None
 
-            checkpoint_data = json.loads(checkpoint_json)
             return SyncCheckpoint(**checkpoint_data)
 
         except Exception as e:
@@ -216,7 +213,10 @@ class SyncCheckpointManager:
                         setattr(issue, "_local_changes", None)
 
                     # Save restored issue
-                    self.core.issues.update(issue.id, issue)
+                    self.core.issues.update(
+                        issue.id,
+                        **{k: v for k, v in issue_data.items() if hasattr(issue, k)},
+                    )
 
                     logger.debug(
                         "checkpoint_issue_restored",
@@ -308,13 +308,12 @@ class SyncCheckpointManager:
         """
         checkpoint_key = f"sync_checkpoint_{checkpoint_id}"
         try:
-            self.core.repositories.sync_state.delete(checkpoint_key)
+            self.state_manager.delete_sync_checkpoint(checkpoint_key)
             # Also clear latest_checkpoint if it matches
-            latest = self.core.repositories.sync_state.get("latest_checkpoint")
-            if latest:
-                latest_data = json.loads(latest)
+            latest_data = self.state_manager.get_sync_checkpoint("latest_checkpoint")
+            if latest_data:
                 if latest_data.get("checkpoint_id") == checkpoint_id:
-                    self.core.repositories.sync_state.delete("latest_checkpoint")
+                    self.state_manager.delete_sync_checkpoint("latest_checkpoint")
 
             logger.debug(
                 "checkpoint_cleared",
@@ -334,7 +333,7 @@ class SyncCheckpointManager:
         try:
             # Note: This is a simplified approach - in production you'd want
             # proper enumeration of checkpoint keys
-            self.core.repositories.sync_state.delete("latest_checkpoint")
+            self.state_manager.delete_sync_checkpoint("latest_checkpoint")
             logger.info("all_checkpoints_cleared", action="clear_all_checkpoints")
         except Exception as e:
             logger.warning(

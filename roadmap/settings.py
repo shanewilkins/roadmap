@@ -81,6 +81,8 @@ _validators = [
     Validator("sync.duplicate_title_threshold", default=0.90, gte=0.0, lte=1.0),
     Validator("sync.duplicate_content_threshold", default=0.85, gte=0.0, lte=1.0),
     Validator("sync.duplicate_auto_resolve_threshold", default=0.95, gte=0.0, lte=1.0),
+    # GitHub API rate limiting
+    Validator("github.api_batch_delay_seconds", default=1.0, gte=0.1),
 ]
 
 # Initialize dynaconf with our configuration
