@@ -158,6 +158,77 @@ class TestGitHubSyncBackendOperations:
         assert backend.config["repo"] == "test-repo"
         assert backend.github_client.get_issues() is not None
 
+    def test_delete_issues_batches_and_counts(self, backend, mocker):
+        """Test delete_issues aggregates batch deletions."""
+        node_response = {
+            "data": {
+                "issue0": {
+                    "issueOrPullRequest": {
+                        "__typename": "Issue",
+                        "id": "n1",
+                        "number": 1,
+                    }
+                },
+                "issue1": {
+                    "issueOrPullRequest": {
+                        "__typename": "Issue",
+                        "id": "n2",
+                        "number": 2,
+                    }
+                },
+                "issue2": {
+                    "issueOrPullRequest": {
+                        "__typename": "Issue",
+                        "id": "n3",
+                        "number": 3,
+                    }
+                },
+            }
+        }
+        delete_response = {
+            "data": {
+                "delete0": {"clientMutationId": "d1"},
+                "delete1": {"clientMutationId": "d2"},
+                "delete2": {"clientMutationId": "d3"},
+            }
+        }
+        mocker.patch.object(
+            backend,
+            "_post_graphql",
+            side_effect=[node_response, delete_response],
+        )
+
+        deleted = backend.delete_issues([1, 2, 3])
+
+        assert deleted == 3
+        assert backend._post_graphql.call_count == 2
+
+    def test_resolve_issue_node_ids_parses_response(self, backend, mocker):
+        """Test node ID resolution from GraphQL response."""
+        response = {
+            "data": {
+                "issue0": {
+                    "issueOrPullRequest": {
+                        "__typename": "Issue",
+                        "id": "n1",
+                        "number": 1,
+                    }
+                },
+                "issue1": {
+                    "issueOrPullRequest": {
+                        "__typename": "Issue",
+                        "id": "n2",
+                        "number": 2,
+                    }
+                },
+            }
+        }
+        mocker.patch.object(backend, "_post_graphql", return_value=response)
+
+        node_ids = backend._resolve_issue_node_ids([1, 2], "o", "r", "t")
+
+        assert node_ids == {1: "n1", 2: "n2"}
+
 
 class TestGitHubSyncBackendErrorHandling:
     """Test GitHub sync backend error handling."""

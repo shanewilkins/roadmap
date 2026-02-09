@@ -1,7 +1,10 @@
 """Service for analyzing and classifying sync changes."""
 
+from datetime import UTC, datetime
+
 from structlog import get_logger
 
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from roadmap.core.services.sync.sync_state_manager import SyncStateManager
 
@@ -15,6 +18,7 @@ class SyncAnalysisService:
         self,
         state_comparator: SyncStateComparator,
         state_manager: SyncStateManager,
+        core=None,
     ):
         """Initialize analysis service.
 
@@ -24,6 +28,7 @@ class SyncAnalysisService:
         """
         self.state_comparator = state_comparator
         self.state_manager = state_manager
+        self.core = core
 
     def load_baseline_safe(self):
         """Load baseline state but swallow errors and return None on failure.
@@ -43,15 +48,48 @@ class SyncAnalysisService:
                     else None,
                 )
             else:
-                logger.info(
-                    "no_previous_sync_state_found",
-                    reason="first_sync_or_state_cleared",
-                )
+                base_state = self._load_baseline_from_core()
+                if base_state:
+                    logger.info(
+                        "previous_sync_state_loaded",
+                        base_issues_count=len(base_state.base_issues),
+                        last_sync=base_state.last_sync_time.isoformat()
+                        if base_state.last_sync_time
+                        else None,
+                        source="core_db",
+                    )
+                else:
+                    logger.info(
+                        "no_previous_sync_state_found",
+                        reason="first_sync_or_state_cleared",
+                    )
         except Exception:
             logger.warning("sync_state_load_warning", reason="will_treat_as_first_sync")
             base_state = None
 
         return base_state
+
+    def _load_baseline_from_core(self) -> SyncState | None:
+        if not self.core or not getattr(self.core, "db", None):
+            return None
+
+        db_baseline = self.core.db.get_sync_baseline()
+        if not db_baseline:
+            return None
+
+        base_issues: dict[str, IssueBaseState] = {}
+        for issue_id, data in db_baseline.items():
+            base_issues[issue_id] = IssueBaseState(
+                id=issue_id,
+                status=data.get("status", "todo"),
+                title=data.get("title", ""),
+                assignee=data.get("assignee"),
+                headline=data.get("headline", ""),
+                content=data.get("content", ""),
+                labels=data.get("labels", []),
+            )
+
+        return SyncState(last_sync_time=datetime.now(UTC), base_issues=base_issues)
 
     def analyze_and_classify(self, local_issues_dict, remote_issues_data, base_state):
         """Run comparator and classify changes into categories.

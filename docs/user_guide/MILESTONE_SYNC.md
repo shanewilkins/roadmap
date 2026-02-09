@@ -199,14 +199,15 @@ Total errors: 5 across 5 issues
 Total errors: 1 across 1 issues
 
 🔒 Authentication Errors (1)
-  Fix: Verify GitHub token with 'roadmap config github'.
+  Fix: Verify GitHub token with 'roadmap git setup --auth'.
        Ensure token has required permissions (repo, read:org).
 ```
 
 **Solution:**
 1. Generate new token: https://github.com/settings/tokens
 2. Ensure token has `repo` and `read:org` scopes
-3. Update with `roadmap config github`
+3. Store with `roadmap git setup --auth`
+4. Set repository with `roadmap config set github.repository "owner/repo"`
 
 ## Best Practices
 
@@ -373,7 +374,8 @@ curl -H "Authorization: token $GITHUB_TOKEN" \
 # Required: repo, read:org
 
 # Update configuration
-roadmap config github
+roadmap git setup --auth
+roadmap config set github.repository "owner/repo"
 
 # Verify connection
 roadmap sync --dry-run
@@ -423,7 +425,8 @@ jobs:
 - `roadmap milestone view <id>` - View milestone details
 - `roadmap issue sync-status <id>` - Check sync history
 - `roadmap sync --conflicts` - Analyze conflicts
-- `roadmap config github` - Update GitHub configuration
+- `roadmap git setup --auth` - Store GitHub token in keychain
+- `roadmap config set github.repository "owner/repo"` - Set GitHub repository
 
 ## Further Reading
 

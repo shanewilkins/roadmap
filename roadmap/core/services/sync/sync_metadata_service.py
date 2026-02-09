@@ -285,7 +285,11 @@ class SyncMetadataService:
         """
         try:
             # Store to first issue's metadata as a global sync record
-            issues = core.issue_service.get_all_issues()
+            issues = []
+            if hasattr(core, "issues"):
+                issues = core.issues.list_all_including_archived() or []
+            elif hasattr(core, "issue_service"):
+                issues = core.issue_service.list_all_including_archived() or []
             if issues:
                 first_issue = issues[0]
                 if not first_issue.github_sync_metadata:
@@ -298,8 +302,18 @@ class SyncMetadataService:
                     "metrics": metrics,
                 }
 
-                # Persist back to database
-                core.issue_service.update_issue(first_issue)
+                # Persist via repository to ensure metadata is written
+                from roadmap.adapters.sync.services import IssuePersistenceService
+
+                saved = IssuePersistenceService.save_issue(first_issue, core)
+                if not saved:
+                    logger.warning(
+                        "sync_metrics_persist_failed",
+                        operation_id=operation_id,
+                        issue_id=first_issue.id,
+                        severity="operational",
+                    )
+                    return
 
                 logger.info(
                     "sync_metrics_stored",
@@ -323,7 +337,11 @@ class SyncMetadataService:
             Dictionary with metrics or None if no metrics stored
         """
         try:
-            issues = core.issue_service.get_all_issues()
+            issues = []
+            if hasattr(core, "issues"):
+                issues = core.issues.list_all_including_archived() or []
+            elif hasattr(core, "issue_service"):
+                issues = core.issue_service.list_all_including_archived() or []
             if issues:
                 first_issue = issues[0]
                 if (

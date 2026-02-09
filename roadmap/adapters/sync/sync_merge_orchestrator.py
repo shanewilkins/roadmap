@@ -73,7 +73,7 @@ class SyncMergeOrchestrator:
         # Pass backend to comparator for key normalization
         self.state_comparator = state_comparator or SyncStateComparator(backend=backend)
         self.conflict_resolver = conflict_resolver or SyncConflictResolver()
-        self.state_manager = SyncStateManager(core.roadmap_dir)
+        self.state_manager = SyncStateManager(core.roadmap_dir, db_manager=core.db)
         self.enable_duplicate_detection = enable_duplicate_detection
 
         # Initialize observability tracker
@@ -84,7 +84,7 @@ class SyncMergeOrchestrator:
         self._auth_service = SyncAuthenticationService(backend)
         self._fetch_service = SyncDataFetchService(core, backend)
         self._analysis_service = SyncAnalysisService(
-            self.state_comparator, self.state_manager
+            self.state_comparator, self.state_manager, core=core
         )
 
         # Initialize duplicate detection services with configurable thresholds
@@ -669,6 +669,32 @@ class SyncMergeOrchestrator:
             dry_run=dry_run,
         )
 
+        if self._current_operation_id:
+            self._observability.record_local_dedup(
+                self._current_operation_id,
+                before=len(local_issues),
+                after=len(response.local_issues),
+                duration=response.local_dedup_duration,
+            )
+            self._observability.record_remote_dedup(
+                self._current_operation_id,
+                before=len(remote_issues_data),
+                after=len(response.remote_issues),
+                duration=response.remote_dedup_duration,
+            )
+            total_dups = response.local_duplicates + response.remote_duplicates
+            if total_dups:
+                self._observability.record_duplicate_detected(
+                    self._current_operation_id,
+                    count=total_dups,
+                )
+                self._observability.record_duplicate_resolved(
+                    self._current_operation_id,
+                    count=total_dups,
+                    deleted=response.duplicates_removed,
+                    archived=0,
+                )
+
         logger.info(
             "deduplication_phase_complete",
             duplicates_removed=response.duplicates_removed,
@@ -718,15 +744,13 @@ class SyncMergeOrchestrator:
         initial_count = 0
         final_count = 0
         try:
-            # Load current baseline
-            baseline_state = self.state_manager.load_sync_state()
+            # Load current baseline from the core DB storage
+            baseline_state = self.core.db.get_sync_baseline()
             if not baseline_state:
                 logger.info("baseline_not_found_after_dedup", skip_update=True)
                 return
 
-            initial_count = (
-                len(baseline_state.base_issues) if baseline_state.base_issues else 0
-            )
+            initial_count = len(baseline_state)
 
             # Get remaining issue IDs from deduplicated dicts (no re-enumeration!)
             remaining_ids = set(deduplicated_local_dict.keys()) | set(
@@ -734,19 +758,15 @@ class SyncMergeOrchestrator:
             )
 
             # Filter baseline to only include issues that still exist
-            # base_issues is a dict[str, IssueBaseState]
-            if baseline_state.base_issues:
-                baseline_state.base_issues = {
-                    issue_id: base_state
-                    for issue_id, base_state in baseline_state.base_issues.items()
-                    if issue_id in remaining_ids
-                }
+            filtered_baseline = {
+                issue_id: base_state
+                for issue_id, base_state in baseline_state.items()
+                if issue_id in remaining_ids
+            }
 
             # Save updated baseline
-            success = self.state_manager.save_sync_state_to_db(baseline_state)
-            final_count = (
-                len(baseline_state.base_issues) if baseline_state.base_issues else 0
-            )
+            success = self.core.db.save_sync_baseline(filtered_baseline)
+            final_count = len(filtered_baseline)
 
             logger.info(
                 "baseline_updated_after_dedup",
@@ -818,6 +838,12 @@ class SyncMergeOrchestrator:
             pulls=len(pulls),
             up_to_date=len(up_to_date),
         )
+        if remote_only_changes:
+            logger.info(
+                "sync_remote_only_detected",
+                count=len(remote_only_changes),
+                hint="remote issues appear missing or unlinked locally",
+            )
 
         # Populate report
         self._populate_report_fields(
@@ -899,6 +925,7 @@ class SyncMergeOrchestrator:
         )
 
         if should_apply:
+            apply_start = time.time()
             report = self._apply_plan(
                 updates,
                 resolved_issues,
@@ -908,6 +935,38 @@ class SyncMergeOrchestrator:
                 pull_only,
                 report,
             )
+            apply_duration = time.time() - apply_start
+            if self._current_operation_id:
+                total_applied = report.issues_pushed + report.issues_pulled
+                if total_applied > 0:
+                    push_duration = (
+                        apply_duration
+                        * (report.issues_pushed / total_applied)
+                        if report.issues_pushed
+                        else 0.0
+                    )
+                    pull_duration = (
+                        apply_duration
+                        * (report.issues_pulled / total_applied)
+                        if report.issues_pulled
+                        else 0.0
+                    )
+                else:
+                    push_duration = 0.0
+                    pull_duration = 0.0
+
+                if report.issues_pushed:
+                    self._observability.record_push(
+                        self._current_operation_id,
+                        count=report.issues_pushed,
+                        duration=push_duration,
+                    )
+                if report.issues_pulled:
+                    self._observability.record_pull(
+                        self._current_operation_id,
+                        count=report.issues_pulled,
+                        duration=pull_duration,
+                    )
         elif dry_run:
             logger.info("sync_dry_run_mode", skip_apply=True)
 
@@ -1143,7 +1202,7 @@ class SyncMergeOrchestrator:
             self._current_operation_id, "analysis", sync_duration
         )
         self._observability.record_sync_links(
-            self._current_operation_id, created=len(local_issues_dict)
+            self._current_operation_id, created_count=len(local_issues_dict)
         )
         if report.error:
             self._observability.record_error(
@@ -1151,6 +1210,13 @@ class SyncMergeOrchestrator:
                 "sync_error",
                 report.error,
             )
+        if report.errors:
+            for issue_id, message in report.errors.items():
+                self._observability.record_error(
+                    self._current_operation_id,
+                    "issue_error",
+                    f"{issue_id}: {message}",
+                )
         final_metrics = self._observability.finalize(self._current_operation_id)
         report.metrics = final_metrics
 

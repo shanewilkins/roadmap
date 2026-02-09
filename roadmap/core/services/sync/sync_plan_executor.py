@@ -140,7 +140,7 @@ class SyncPlanExecutor:
         # Unknown action: no-op
         return None
 
-    def _handle_push(self, action: Any, dry_run: bool = True) -> bool:
+    def _handle_push(self, action: Any, dry_run: bool = True) -> bool | int:
         # Support both single-issue ('issue') and batch ('issues') push actions
         issue = action.payload.get("issue")
         issues = action.payload.get("issues")
@@ -156,6 +156,9 @@ class SyncPlanExecutor:
         if issues and hasattr(adapter, "push_issues"):
             try:
                 r = adapter.push_issues(issues)
+                r = self._unwrap_result(r, operation="push_issues")
+                if r is None:
+                    return False
                 # Store errors from the push operation if available
                 if hasattr(r, "errors") and r.errors:
                     if not hasattr(self, "_accumulated_errors"):
@@ -163,7 +166,7 @@ class SyncPlanExecutor:
                     self._accumulated_errors.update(r.errors)
                 # Return count of successfully pushed items
                 pushed_list = getattr(r, "pushed", [])
-                return bool(len(pushed_list)) if pushed_list else False
+                return len(pushed_list) if pushed_list else False
             except Exception as e:
                 logger.debug(
                     "batch_push_failed",
@@ -177,7 +180,13 @@ class SyncPlanExecutor:
         # Fallback to single-issue push
         if issue and hasattr(adapter, "push_issue"):
             try:
-                return adapter.push_issue(issue)
+                result = adapter.push_issue(issue)
+                result = self._unwrap_result(
+                    result,
+                    operation="push_issue",
+                    issue_id=getattr(issue, "id", None),
+                )
+                return bool(result) if result is not None else False
             except Exception as e:
                 logger.debug(
                     "single_push_failed",
@@ -190,7 +199,7 @@ class SyncPlanExecutor:
 
         return False
 
-    def _handle_pull(self, action: Any, dry_run: bool = True) -> bool:
+    def _handle_pull(self, action: Any, dry_run: bool = True) -> bool | int:
         # Support both single-id ('issue_id') and batch ('issue_ids') pull actions
         issue_id = action.payload.get("issue_id")
         issue_ids = action.payload.get("issue_ids")
@@ -205,6 +214,9 @@ class SyncPlanExecutor:
         if issue_ids and hasattr(adapter, "pull_issues"):
             try:
                 r = adapter.pull_issues(issue_ids)
+                r = self._unwrap_result(r, operation="pull_issues")
+                if r is None:
+                    return False
                 # Store errors from the pull operation if available
                 if hasattr(r, "errors") and r.errors:
                     if not hasattr(self, "_accumulated_errors"):
@@ -212,7 +224,7 @@ class SyncPlanExecutor:
                     self._accumulated_errors.update(r.errors)
                 # Return count of successfully pulled items
                 pulled_list = getattr(r, "pulled", [])
-                return bool(len(pulled_list)) if pulled_list else False
+                return len(pulled_list) if pulled_list else False
             except Exception as e:
                 logger.debug(
                     "batch_pull_failed",
@@ -226,7 +238,13 @@ class SyncPlanExecutor:
         # Fallback to single-issue pull if available
         if issue_id and hasattr(adapter, "pull_issue"):
             try:
-                return adapter.pull_issue(issue_id)
+                result = adapter.pull_issue(issue_id)
+                result = self._unwrap_result(
+                    result,
+                    operation="pull_issue",
+                    issue_id=issue_id,
+                )
+                return bool(result) if result is not None else False
             except Exception as e:
                 logger.debug(
                     "single_pull_failed",
@@ -237,6 +255,50 @@ class SyncPlanExecutor:
                 )
 
         return False
+
+    def _unwrap_result(
+        self,
+        result: Any,
+        operation: str,
+        issue_id: str | None = None,
+    ) -> Any | None:
+        """Unwrap Result objects and record errors consistently.
+
+        Returns the unwrapped value for Ok results. For Err results, records
+        the error and returns None (or raises if stop_on_error is True).
+        """
+        if hasattr(result, "is_err") and callable(result.is_err):
+            if result.is_err():
+                error = result.unwrap_err()
+                self._record_result_error(operation, error, issue_id)
+                if self.stop_on_error:
+                    raise RuntimeError(str(error))
+                return None
+            return result.unwrap()
+
+        return result
+
+    def _record_result_error(
+        self,
+        operation: str,
+        error: Any,
+        issue_id: str | None = None,
+    ) -> None:
+        """Store a Result error in the accumulated error map."""
+        if not hasattr(self, "_accumulated_errors"):
+            self._accumulated_errors = {}
+
+        key = issue_id
+        if not key and hasattr(error, "entity_id"):
+            key = getattr(error, "entity_id")
+        if not key:
+            key = operation
+
+        message = str(error)
+        if key in self._accumulated_errors:
+            suffix = len(self._accumulated_errors) + 1
+            key = f"{key}:{suffix}"
+        self._accumulated_errors[key] = message
 
     def _handle_create_local(self, action: Any, dry_run: bool = True) -> str | None:
         remote_id = action.payload.get("remote_id")

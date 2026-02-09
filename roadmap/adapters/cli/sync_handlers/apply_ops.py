@@ -382,7 +382,12 @@ def finalize_sync(
                 SyncMetricsRepository,
             )
 
-            metrics_repo = SyncMetricsRepository(core.db_manager)
+            db_manager = getattr(core, "db_manager", None)
+            if db_manager is None and hasattr(core, "db"):
+                db_manager = getattr(core.db, "_db_manager", None)
+            if db_manager is None:
+                raise AttributeError("No database manager available")
+            metrics_repo = SyncMetricsRepository(db_manager)
             metrics_repo.save(report.metrics)
         except Exception as e:
             from roadmap.common.logging import get_logger

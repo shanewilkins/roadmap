@@ -58,11 +58,20 @@ class IssueHandler(BaseGitHubHandler):
             per_page=per_page,
         )
 
+        issues_only = [issue for issue in all_issues if "pull_request" not in issue]
+        pr_count = len(all_issues) - len(issues_only)
+        if pr_count:
+            logger.info(
+                "issue_handler_prs_skipped",
+                skipped_count=pr_count,
+                issues_count=len(issues_only),
+            )
+
         logger.info(
             "issue_handler_get_issues_complete",
-            total_issues=len(all_issues),
+            total_issues=len(issues_only),
         )
-        return all_issues
+        return issues_only
 
     def get_issue(self, issue_number: int) -> dict[str, Any]:
         """Get a specific issue by number."""

@@ -8,6 +8,7 @@ Updated to use Result<T, SyncError> pattern for explicit error handling.
 
 from collections.abc import Callable
 from datetime import datetime  # noqa: F401  # Used in type hints
+import time
 from typing import Any, TypeVar
 
 from structlog import get_logger
@@ -625,6 +626,350 @@ class GitHubSyncBackend:
         """
         # TODO: Implement GitHub Projects API integration
         return Ok({})
+
+    def delete_issues(self, issue_numbers: list[int]) -> int:
+        """Delete GitHub issues via GraphQL batch mutation.
+
+        Args:
+            issue_numbers: GitHub issue numbers to delete
+
+        Returns:
+            Count of successfully deleted issues
+        """
+        if not issue_numbers:
+            return 0
+
+        token = self.config.get("token")
+        owner = self.config.get("owner")
+        repo = self.config.get("repo")
+
+        if not token or not owner or not repo:
+            logger.warning(
+                "github_delete_issues_missing_config",
+                has_token=bool(token),
+                has_owner=bool(owner),
+                has_repo=bool(repo),
+            )
+            return 0
+
+        start_time = time.time()
+        logger.info(
+            "github_delete_issues_starting",
+            requested_count=len(issue_numbers),
+        )
+        deleted_count = 0
+        skipped_pr_numbers: list[int] = []
+        lookup_batch_size = 20
+        delete_batch_size = 5
+        inter_batch_delay_seconds = 0.2
+        rate_limit_delay_seconds = 1.0
+
+        for i in range(0, len(issue_numbers), lookup_batch_size):
+            batch = issue_numbers[i : i + lookup_batch_size]
+            node_ids, skipped_prs = self._resolve_issue_node_ids(
+                batch, owner, repo, token
+            )
+            if skipped_prs:
+                skipped_pr_numbers.extend(skipped_prs)
+            if not node_ids:
+                logger.warning(
+                    "github_delete_issues_batch_skipped",
+                    batch_size=len(batch),
+                    reason="node_ids_empty",
+                )
+                continue
+
+            node_items = list(node_ids.items())
+            for j in range(0, len(node_items), delete_batch_size):
+                delete_chunk = dict(node_items[j : j + delete_batch_size])
+                batch_deleted, rate_limited, failed_numbers = self._delete_issues_batch(
+                    delete_chunk,
+                    token,
+                )
+                deleted_count += batch_deleted
+                logger.info(
+                    "github_delete_issues_batch_complete",
+                    batch_size=len(delete_chunk),
+                    deleted_count=batch_deleted,
+                )
+
+                if failed_numbers and rate_limited:
+                    logger.warning(
+                        "github_delete_issues_retrying_failed",
+                        failed_count=len(failed_numbers),
+                        delay_seconds=rate_limit_delay_seconds,
+                    )
+                    time.sleep(rate_limit_delay_seconds)
+                    retry_items = {
+                        number: node_ids[number]
+                        for number in failed_numbers
+                        if number in node_ids
+                    }
+                    if retry_items:
+                        retry_deleted, _, _ = self._delete_issues_batch(
+                            retry_items,
+                            token,
+                        )
+                        deleted_count += retry_deleted
+
+                time.sleep(inter_batch_delay_seconds)
+                if rate_limited:
+                    logger.warning(
+                        "github_delete_issues_rate_limited",
+                        delay_seconds=rate_limit_delay_seconds,
+                    )
+                    time.sleep(rate_limit_delay_seconds)
+
+        duration = time.time() - start_time
+        failed_count = max(
+            0, len(issue_numbers) - deleted_count - len(skipped_pr_numbers)
+        )
+        if skipped_pr_numbers:
+            logger.info(
+                "github_delete_issues_prs_skipped",
+                skipped_count=len(skipped_pr_numbers),
+                skipped_numbers=skipped_pr_numbers[:20],
+            )
+
+        logger.info(
+            "github_delete_issues_completed",
+            requested_count=len(issue_numbers),
+            deleted_count=deleted_count,
+            failed_count=failed_count,
+            skipped_pr_count=len(skipped_pr_numbers),
+            duration_seconds=round(duration, 3),
+        )
+
+        return deleted_count
+
+    def _resolve_issue_node_ids(
+        self,
+        issue_numbers: list[int],
+        owner: str,
+        repo: str,
+        token: str,
+    ) -> tuple[dict[int, str], list[int]]:
+        """Resolve GitHub issue numbers to GraphQL node IDs.
+
+        Returns tuple of (node_ids, skipped_pr_numbers).
+        """
+        query_parts = []
+        for idx, number in enumerate(issue_numbers):
+            query_parts.append(
+                """
+                issue{idx}: repository(owner: \"{owner}\", name: \"{repo}\") {{
+                  issueOrPullRequest(number: {number}) {{
+                    __typename
+                    ... on Issue {{ id number }}
+                    ... on PullRequest {{ id number }}
+                  }}
+                }}
+                """.format(idx=idx, owner=owner, repo=repo, number=number)
+            )
+
+        query = "query {" + "\n".join(query_parts) + "\n}"
+        response = self._post_graphql_with_backoff(
+            query,
+            token,
+            operation="resolve_issue_node_ids",
+        )
+        if response is None:
+            return {}, []
+
+        data = response.get("data") or {}
+        node_ids: dict[int, str] = {}
+        skipped_pr_numbers: list[int] = []
+        for idx, number in enumerate(issue_numbers):
+            key = f"issue{idx}"
+            issue_data = data.get(key, {}).get("issueOrPullRequest")
+            if issue_data and issue_data.get("__typename") == "Issue":
+                if issue_data.get("id"):
+                    node_ids[number] = issue_data["id"]
+                else:
+                    logger.warning(
+                        "github_issue_node_id_missing",
+                        issue_number=number,
+                    )
+            elif issue_data and issue_data.get("__typename") == "PullRequest":
+                logger.warning(
+                    "github_issue_node_id_skipped_pull_request",
+                    issue_number=number,
+                )
+                skipped_pr_numbers.append(number)
+            else:
+                logger.warning(
+                    "github_issue_node_id_missing",
+                    issue_number=number,
+                )
+
+        logger.info(
+            "github_issue_node_ids_resolved",
+            requested_count=len(issue_numbers),
+            resolved_count=len(node_ids),
+        )
+
+        return node_ids, skipped_pr_numbers
+
+    def _delete_issues_batch(
+        self, node_ids: dict[int, str], token: str
+    ) -> tuple[int, bool, list[int]]:
+        """Delete issues by node ID via GraphQL mutation."""
+        mutation_parts = []
+        for idx, (number, node_id) in enumerate(node_ids.items()):
+            mutation_parts.append(
+                """
+                delete{idx}: deleteIssue(input: {{issueId: \"{node_id}\"}}) {{
+                  clientMutationId
+                }}
+                """.format(idx=idx, node_id=node_id)
+            )
+
+        mutation = "mutation {" + "\n".join(mutation_parts) + "\n}"
+        response = self._post_graphql_with_backoff(
+            mutation,
+            token,
+            operation="delete_issues_batch",
+        )
+        if response is None:
+            return 0, False, list(node_ids.keys())
+
+        error_types = self._extract_graphql_error_types(response)
+        error_details = self._extract_graphql_error_details(response)
+        rate_limited = "RESOURCE_LIMITS_EXCEEDED" in error_types
+
+        data = response.get("data") or {}
+        deleted = 0
+        failed_numbers: list[int] = []
+        for idx, number in enumerate(node_ids.keys()):
+            key = f"delete{idx}"
+            if data.get(key) is not None:
+                deleted += 1
+            else:
+                logger.warning(
+                    "github_issue_delete_failed",
+                    issue_number=number,
+                )
+                failed_numbers.append(number)
+
+        logger.info(
+            "github_delete_batch_summary",
+            attempted_count=len(node_ids),
+            deleted_count=deleted,
+        )
+
+        if error_details:
+            logger.warning(
+                "github_delete_batch_errors",
+                error_types=sorted(error_types),
+                error_count=len(error_details),
+                error_samples=error_details[:5],
+                failed_numbers=failed_numbers[:10],
+            )
+
+        return deleted, rate_limited, failed_numbers
+
+    def _extract_graphql_error_types(self, payload: dict[str, Any]) -> set[str]:
+        """Extract error types from a GraphQL payload."""
+        errors = payload.get("errors") or []
+        return {
+            error_type
+            for error in errors
+            if isinstance(error, dict)
+            and isinstance((error_type := error.get("type")), str)
+        }
+
+    def _extract_graphql_error_details(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
+        """Extract error details from a GraphQL payload."""
+        errors = payload.get("errors") or []
+        details: list[dict[str, Any]] = []
+        for error in errors:
+            if not isinstance(error, dict):
+                continue
+            details.append(
+                {
+                    "type": error.get("type"),
+                    "path": error.get("path"),
+                    "message": error.get("message"),
+                }
+            )
+        return details
+
+    def _post_graphql_with_backoff(
+        self,
+        query: str,
+        token: str,
+        operation: str,
+        max_attempts: int = 3,
+        delay: float = 2.0,
+        backoff: float = 2.0,
+    ) -> dict[str, Any] | None:
+        """Post GraphQL with backoff when resource limits are hit."""
+        attempt = 0
+        current_delay = delay
+        payload: dict[str, Any] | None = None
+
+        while attempt < max_attempts:
+            attempt += 1
+            payload = self._post_graphql(query, token)
+            if payload is None:
+                if attempt < max_attempts:
+                    logger.warning(
+                        "github_graphql_retry_request_failed",
+                        operation=operation,
+                        attempt=attempt,
+                        delay_seconds=current_delay,
+                    )
+                    time.sleep(current_delay)
+                    current_delay *= backoff
+                    continue
+                return None
+
+            error_types = self._extract_graphql_error_types(payload)
+            if "RESOURCE_LIMITS_EXCEEDED" in error_types and attempt < max_attempts:
+                logger.warning(
+                    "github_graphql_rate_limited",
+                    operation=operation,
+                    attempt=attempt,
+                    delay_seconds=current_delay,
+                )
+                time.sleep(current_delay)
+                current_delay *= backoff
+                continue
+
+            return payload
+
+        return payload
+
+    def _post_graphql(self, query: str, token: str) -> dict[str, Any] | None:
+        """Post a GraphQL query to GitHub and return JSON data."""
+        import requests
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github.v4+json",
+            "User-Agent": "roadmap-cli/1.0",
+        }
+        try:
+            response = requests.post(
+                "https://api.github.com/graphql",
+                json={"query": query},
+                headers=headers,
+                timeout=30,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if payload.get("errors"):
+                logger.warning(
+                    "github_graphql_errors",
+                    errors=payload.get("errors"),
+                )
+            return payload
+        except requests.RequestException as e:
+            logger.warning(
+                "github_graphql_request_failed",
+                error=str(e),
+            )
+            return None
 
     @staticmethod
     def _dict_to_sync_issue(issue_dict: dict[str, Any]) -> SyncIssue:

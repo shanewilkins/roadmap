@@ -119,10 +119,23 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                 )
                 logger = get_logger()
                 # 403 is often expected (token scope), don't log as external error
-                logger.debug(
+                response_message = None
+                try:
+                    if response.content:
+                        response_message = response.json().get("message")
+                except Exception:
+                    response_message = None
+                logger.warning(
                     "github_api_access_forbidden",
                     status_code=status_code,
                     operation=f"{method} {endpoint}",
+                    owner=self.owner,
+                    repo=self.repo,
+                    rate_limit_remaining=response.headers.get(
+                        "X-RateLimit-Remaining"
+                    ),
+                    rate_limit_reset=response.headers.get("X-RateLimit-Reset"),
+                    response_message=response_message,
                     severity="config",
                 )
                 raise GitHubAPIError(error_msg) from e

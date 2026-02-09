@@ -187,9 +187,11 @@ git commit -m "[closes roadmap:issue-id] Implement auth"
 
 ```bash
 # Setup one-time
-roadmap sync setup \
-  --token "your-github-token" \
-  --repo "username/repo"
+roadmap git setup --auth
+roadmap config set github.repository "username/repo"
+roadmap config set github.enabled true
+roadmap config set github.sync_enabled true
+roadmap config set github.sync_backend github
 
 # Pull existing issues from GitHub
 roadmap sync pull

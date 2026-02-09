@@ -46,6 +46,7 @@ def _resolve_backend_and_init(core, backend, get_sync_backend_callable):
             "owner": github_config.get("owner"),
             "repo": github_config.get("repo"),
             "token": token,
+            "sync_settings": github_config.get("sync_settings", {}),
         }
     else:
         config_dict = {}

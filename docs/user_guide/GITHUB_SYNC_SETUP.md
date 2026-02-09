@@ -18,19 +18,22 @@ export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 Option B - System Keychain (macOS):
-The roadmap CLI will automatically store it securely after first use with `--github-token`
+Store it securely via the CLI:
+
+```bash
+roadmap git setup --auth
+```
 
 ## 3. Configure GitHub in Roadmap
 
-Run the initialization command:
-```bash
-roadmap init
-```
+Set the repository and enable sync:
 
-This will prompt you for:
-- GitHub personal access token (or uses GITHUB_TOKEN env var)
-- Repository owner (e.g., `shanewilkins`)
-- Repository name (e.g., `roadmap`)
+```bash
+roadmap config set github.repository "owner/repo"
+roadmap config set github.enabled true
+roadmap config set github.sync_enabled true
+roadmap config set github.sync_backend github
+```
 
 ## 4. Sync with GitHub
 

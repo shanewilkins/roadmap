@@ -1,6 +1,8 @@
 """GitHub synchronization operations with parallel execution."""
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
+import time
 from typing import Any
 
 from structlog import get_logger
@@ -23,6 +25,42 @@ class GitHubSyncOps:
             backend: GitHub backend instance.
         """
         self.backend = backend
+        self._create_lock = threading.Lock()
+        self._last_create_time = 0.0
+        self._create_min_interval_seconds = self._get_create_min_interval_seconds()
+
+    def _get_create_min_interval_seconds(self) -> float:
+        """Get minimum interval between issue creations to avoid secondary limits."""
+        config = getattr(self.backend, "config", {}) or {}
+        sync_settings = config.get("sync_settings", {}) if isinstance(config, dict) else {}
+        interval = sync_settings.get("create_min_interval_seconds")
+        try:
+            if interval is not None:
+                return max(0.0, float(interval))
+        except (TypeError, ValueError):
+            logger.debug(
+                "github_create_interval_invalid",
+                interval=interval,
+                severity="data_error",
+            )
+        return 1.0
+
+    def _throttle_issue_creation(self) -> None:
+        """Throttle issue creation to reduce secondary rate limit errors."""
+        if self._create_min_interval_seconds <= 0:
+            return
+
+        with self._create_lock:
+            now = time.monotonic()
+            elapsed = now - self._last_create_time
+            delay = self._create_min_interval_seconds - elapsed
+            if delay > 0:
+                logger.debug(
+                    "github_issue_create_throttle",
+                    delay_seconds=round(delay, 3),
+                )
+                time.sleep(delay)
+            self._last_create_time = time.monotonic()
 
     def _persist_issue_before_linking(self, issue: Any, issue_id: str) -> bool:
         """Persist issue to database before linking to GitHub.
@@ -203,7 +241,8 @@ class GitHubSyncOps:
                 )
                 return True, None
 
-            # Create new issue
+            # Create new issue (throttled to avoid secondary rate limits)
+            self._throttle_issue_creation()
             result = client.create_issue(**payload)
             github_number = result.get("number")
 

@@ -13,6 +13,7 @@ import pytest
 from roadmap.adapters.sync.sync_retrieval_orchestrator import (
     SyncRetrievalOrchestrator,
 )
+from roadmap.common.result import Ok
 from roadmap.core.services.baseline.baseline_selector import BaselineStrategy
 from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
@@ -37,8 +38,8 @@ class TestBaselineEnforcement:
     def mock_backend(self):
         """Create mock backend."""
         mock = MagicMock()
-        mock.authenticate = MagicMock(return_value=True)
-        mock.get_issues = MagicMock(return_value={})
+        mock.authenticate = MagicMock(return_value=Ok(True))
+        mock.get_issues = MagicMock(return_value=Ok({}))
         mock.__class__.__name__ = "MockBackend"
         return mock
 
@@ -176,7 +177,7 @@ class TestBaselineEnforcement:
             )
         }
 
-        orchestrator.backend.get_issues.return_value = remote_issues
+        orchestrator.backend.get_issues.return_value = Ok(remote_issues)
 
         result = orchestrator._create_baseline_from_remote()
 
@@ -190,7 +191,7 @@ class TestBaselineEnforcement:
 
     def test_create_baseline_from_remote_fails_when_auth_fails(self, orchestrator):
         """Test creating baseline from remote fails when auth fails."""
-        orchestrator.backend.authenticate.return_value = False
+        orchestrator.backend.authenticate.return_value = Ok(False)
 
         result = orchestrator._create_baseline_from_remote()
 
@@ -198,7 +199,7 @@ class TestBaselineEnforcement:
 
     def test_create_baseline_from_remote_fails_when_no_issues(self, orchestrator):
         """Test creating baseline from remote fails when no issues returned."""
-        orchestrator.backend.get_issues.return_value = None
+        orchestrator.backend.get_issues.return_value = Ok({})
 
         result = orchestrator._create_baseline_from_remote()
 

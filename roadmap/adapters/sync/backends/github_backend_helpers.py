@@ -62,7 +62,11 @@ class GitHubBackendHelpers:
         )
 
         github_state = sync_issue.status or "open"
-        status_map = {"open": Status.TODO, "closed": Status.CLOSED}
+        status_map = {
+            "open": Status.TODO,
+            "closed": Status.CLOSED,
+            "todo": Status.TODO,
+        }
         status = status_map.get(github_state, Status.TODO)
 
         priority = Priority.MEDIUM

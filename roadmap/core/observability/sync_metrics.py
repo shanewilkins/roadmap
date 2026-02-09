@@ -530,27 +530,27 @@ class SyncObservability:
     def record_sync_links(
         self,
         operation_id: str,
-        created: int,
+        created_count: int,
         orphaned: int = 0,
     ) -> None:
         """Record sync link metrics.
 
         Args:
             operation_id: ID of the sync operation
-            created: Number of sync links created
+            created_count: Number of sync links created
             orphaned: Number of orphaned links (default: 0)
         """
         metrics = self._get_metrics(operation_id)
         if not metrics:
             return
 
-        metrics.sync_links_created = created
+        metrics.sync_links_created = created_count
         metrics.orphaned_links = orphaned
 
         self._logger.info(
             "sync_links_recorded",
             operation_id=operation_id,
-            created=created,
+            created_count=created_count,
             orphaned=orphaned,
         )
 

@@ -73,6 +73,32 @@
 
 ---
 
+## 🔁 Rebuild Plan Cross-Reference (ARCHITECTURE_REBUILD_PLAN.md)
+
+This roadmap assumes the sync apply path is fully functional. The rebuild plan identifies missing implementation and contract mismatches that must be resolved before Tasks 6-12 can succeed.
+
+**Phase A: Contract Alignment (Required Before Task 6)**
+- SyncPlanExecutor must unwrap Result from backend push/pull and propagate errors correctly.
+- SyncReport counts must reflect actual push/pull outcomes.
+
+**Phase B: GraphQL Batch Delete (Required for Task 5 Execution)**
+- `GitHubSyncBackend.delete_issues()` is missing but is required by DeduplicateService.
+- GraphQL delete must be implemented for remote dedup cleanup.
+
+**Phase C: Telemetry + Error Handling (Required for Task 6)**
+- Record push/pull timing and counts in SyncObservability.
+- Record dedup deletion counts and failures.
+- Emit structured error events for Result failures.
+
+**Phase D: Tests + Validation (Required Before Task 7+)**
+- Add unit tests for executor Result handling and backend delete.
+- Add integration tests for end-to-end sync (duplicates + conflicts).
+
+**Documentation Alignment**
+- [GRAPHQL_DELETION_VERIFICATION.md](GRAPHQL_DELETION_VERIFICATION.md) claims deletion is implemented but backend is missing `delete_issues()`; reconcile after Phase B.
+
+---
+
 ## 🎯 Implementation Plan
 
 ### **Completed Tasks**
@@ -554,4 +580,4 @@ After implementation, measure and verify:
 ---
 
 **Last Updated**: February 6, 2026 (Pre-flight Validation Design)
-**Next Action**: Begin Task 6 Phase 2 (Database Persistence & CLI Display) - Continue observability implementation
+**Next Action**: Execute Rebuild Plan Phase A (executor Result alignment) before starting Task 6 Phase 2 (Database Persistence & CLI Display)

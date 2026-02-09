@@ -4,8 +4,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from roadmap.common.result import Err, Ok
 from roadmap.core.services.sync.sync_plan_executor import SyncPlanExecutor
 from roadmap.core.services.sync.sync_report import SyncReport
+from roadmap.core.services.sync.sync_errors import SyncError, SyncErrorType
 
 
 class TestSyncPlanExecutor:
@@ -330,9 +332,9 @@ class TestSyncPlanExecutor:
 
     def test_handle_push_batch_issues(self, executor):
         """Test _handle_push with batch issues."""
-        batch_result = MagicMock()
-        batch_result.pushed = [{"id": 1}, {"id": 2}]  # Return list of pushed items
-        executor.transport_adapter.push_issues.return_value = batch_result
+        batch_report = MagicMock()
+        batch_report.pushed = [{"id": 1}, {"id": 2}]  # Return list of pushed items
+        executor.transport_adapter.push_issues.return_value = Ok(batch_report)
 
         action = MagicMock()
         action.payload = {"issues": [{"id": 1}, {"id": 2}]}
@@ -340,7 +342,7 @@ class TestSyncPlanExecutor:
         result = executor._handle_push(action, dry_run=False)
 
         executor.transport_adapter.push_issues.assert_called_once()
-        assert result is True  # Should return True if items were pushed
+        assert result == 2
 
     def test_handle_push_batch_fallback_to_single(self, executor):
         """Test _handle_push falls back to single push on batch failure."""
@@ -354,6 +356,84 @@ class TestSyncPlanExecutor:
             result = executor._handle_push(action, dry_run=False)
 
         assert result is False
+
+    def test_handle_push_batch_result_ok(self, executor):
+        """Test _handle_push unwraps Result.Ok for batch push."""
+        report = MagicMock()
+        report.pushed = ["1", "2", "3"]
+        executor.transport_adapter.push_issues.return_value = Ok(report)
+
+        action = MagicMock()
+        action.payload = {"issues": [{"id": 1}, {"id": 2}, {"id": 3}]}
+
+        result = executor._handle_push(action, dry_run=False)
+
+        assert result == 3
+
+    def test_handle_push_batch_result_err_records_error(self, executor):
+        """Test _handle_push records Err when stop_on_error is False."""
+        executor.stop_on_error = False
+        error = SyncError(
+            error_type=SyncErrorType.NETWORK_ERROR,
+            message="Network down",
+            entity_type="Issue",
+            entity_id="123",
+        )
+        executor.transport_adapter.push_issues.return_value = Err(error)
+
+        action = MagicMock()
+        action.payload = {"issues": [{"id": 123}]}
+
+        result = executor._handle_push(action, dry_run=False)
+
+        assert result is False
+        assert executor._accumulated_errors.get("123") == str(error)
+
+    def test_handle_pull_batch_issues(self, executor):
+        """Test _handle_pull with batch issues."""
+        batch_report = MagicMock()
+        batch_report.pulled = [{"id": 1}, {"id": 2}]
+        executor.transport_adapter.pull_issues.return_value = Ok(batch_report)
+
+        action = MagicMock()
+        action.payload = {"issue_ids": ["1", "2"]}
+
+        result = executor._handle_pull(action, dry_run=False)
+
+        executor.transport_adapter.pull_issues.assert_called_once()
+        assert result == 2
+
+    def test_handle_pull_batch_result_ok(self, executor):
+        """Test _handle_pull unwraps Result.Ok for batch pull."""
+        report = MagicMock()
+        report.pulled = ["1", "2"]
+        executor.transport_adapter.pull_issues.return_value = Ok(report)
+
+        action = MagicMock()
+        action.payload = {"issue_ids": ["1", "2"]}
+
+        result = executor._handle_pull(action, dry_run=False)
+
+        assert result == 2
+
+    def test_handle_pull_batch_result_err_records_error(self, executor):
+        """Test _handle_pull records Err when stop_on_error is False."""
+        executor.stop_on_error = False
+        error = SyncError(
+            error_type=SyncErrorType.API_RATE_LIMIT,
+            message="Rate limited",
+            entity_type="Issue",
+            entity_id="456",
+        )
+        executor.transport_adapter.pull_issues.return_value = Err(error)
+
+        action = MagicMock()
+        action.payload = {"issue_ids": ["456"]}
+
+        result = executor._handle_pull(action, dry_run=False)
+
+        assert result is False
+        assert executor._accumulated_errors.get("456") == str(error)
 
     def test_created_local_ids_cache(self, executor):
         """Test _created_local_ids cache is initialized."""

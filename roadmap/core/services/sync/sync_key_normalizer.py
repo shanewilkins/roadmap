@@ -171,6 +171,13 @@ def normalize_remote_keys(
                 backend=backend_name,
                 db_lookup_used=db_lookup_available,
             )
+            if unmatched_count > 0 and not db_lookup_available:
+                logger.warning(
+                    "remote_keys_unmatched_no_db_links",
+                    unmatched=unmatched_count,
+                    backend=backend_name,
+                    hint="remote issues appear unlinked to local IDs",
+                )
         except Exception as logging_error:
             logger.error(
                 "logger_failed",

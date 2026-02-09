@@ -21,6 +21,7 @@ from roadmap.core.services.baseline.baseline_selector import (
 from roadmap.core.services.baseline.baseline_state_retriever import (
     BaselineStateRetriever,
 )
+from roadmap.core.models.sync_models import SyncIssue
 from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 
 logger = get_logger(__name__)
@@ -245,7 +246,21 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
             logger.info("creating_baseline_from_remote")
 
             # Authenticate with backend
-            if not self.backend.authenticate():
+            auth_result = self.backend.authenticate()
+            if hasattr(auth_result, "is_err") and callable(auth_result.is_err):
+                if auth_result.is_err():
+                    logger.error(
+                        "backend_auth_failed_for_baseline",
+                        error=str(auth_result.unwrap_err()),
+                        severity="infrastructure",
+                    )
+                    return False
+                if not auth_result.unwrap():
+                    logger.error(
+                        "backend_auth_failed_for_baseline", severity="infrastructure"
+                    )
+                    return False
+            elif not auth_result:
                 logger.error(
                     "backend_auth_failed_for_baseline", severity="infrastructure"
                 )
@@ -253,15 +268,27 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
             # Get remote issues
             remote_issues_result = self.backend.get_issues()
-            if remote_issues_result.is_err():
+            remote_issues: dict[str, SyncIssue] = {}
+            if hasattr(remote_issues_result, "is_err") and callable(
+                remote_issues_result.is_err
+            ):
+                if remote_issues_result.is_err():
+                    logger.warning(
+                        "backend_get_issues_failed",
+                        error=str(remote_issues_result.unwrap_err()),
+                        severity="operational",
+                    )
+                    return False
+                remote_issues = remote_issues_result.unwrap() or {}
+            elif isinstance(remote_issues_result, dict):
+                remote_issues = remote_issues_result
+            else:
                 logger.warning(
-                    "backend_get_issues_failed",
-                    error=remote_issues_result.unwrap_err().message,
+                    "backend_get_issues_unexpected_type",
+                    result_type=type(remote_issues_result).__name__,
                     severity="operational",
                 )
                 return False
-
-            remote_issues = remote_issues_result.unwrap()
             if not remote_issues:
                 logger.warning("no_remote_issues_for_baseline", severity="operational")
                 return False

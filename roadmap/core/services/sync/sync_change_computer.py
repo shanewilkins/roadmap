@@ -31,9 +31,9 @@ def _convert_enum_field(field_name: str, value: Any) -> Any:
             from roadmap.common.constants import Status
 
             try:
-                return Status(value)
+                return Status(value).value
             except (ValueError, KeyError):
-                return Status(value.lower())
+                return Status(value.lower()).value
         except Exception as e:
             logger.debug(
                 "enum_conversion_failed",
@@ -50,9 +50,9 @@ def _convert_enum_field(field_name: str, value: Any) -> Any:
             from roadmap.common.constants import Priority
 
             try:
-                return Priority(value)
+                return Priority(value).value
             except (ValueError, KeyError):
-                return Priority(value.lower())
+                return Priority(value.lower()).value
         except Exception as e:
             logger.debug(
                 "enum_conversion_failed",

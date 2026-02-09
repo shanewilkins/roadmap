@@ -35,6 +35,11 @@ class DeduplicateResponse:
     local_issues: list[Issue]
     remote_issues: dict[str, SyncIssue]
     duplicates_removed: int
+    local_duplicates: int
+    remote_duplicates: int
+    local_dedup_duration: float
+    remote_dedup_duration: float
+    deletion_duration: float
 
 
 class DeduplicateService:
@@ -251,6 +256,11 @@ class DeduplicateService:
             local_issues=clean_local,
             remote_issues=clean_remote,
             duplicates_removed=total_duplicates,
+            local_duplicates=len(local_dup_ids),
+            remote_duplicates=len(remote_dup_ids),
+            local_dedup_duration=phase1_elapsed,
+            remote_dedup_duration=phase2_elapsed,
+            deletion_duration=deletion_elapsed,
         )
 
     def _safe_delete_duplicate(

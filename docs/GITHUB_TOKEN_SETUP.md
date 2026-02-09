@@ -42,6 +42,27 @@ echo $GITHUB_TOKEN
 # Should show: ghp_xxxxx... (first 7 chars visible)
 ```
 
+## Optional: Store Token in Keychain (Interactive)
+
+If you prefer storing the token securely in your system keychain, run:
+
+```bash
+roadmap git setup --auth
+```
+
+This prompts for the token and stores it securely (no environment variable needed).
+
+## Configure GitHub Repository
+
+Set the GitHub repository in the roadmap config:
+
+```bash
+roadmap config set github.repository "owner/repo"
+roadmap config set github.enabled true
+roadmap config set github.sync_enabled true
+roadmap config set github.sync_backend github
+```
+
 ## Token Scopes Reference
 
 - **`repo`** - Full control of public and private repositories
@@ -61,7 +82,8 @@ echo $GITHUB_TOKEN
 **Solution**: 
 1. Verify token is set: `echo $GITHUB_TOKEN`
 2. If empty, export it: `export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`
-3. Try sync again: `roadmap sync github`
+3. Or run `roadmap git setup --auth` to store the token in keychain
+4. Try sync again: `roadmap sync`
 
 ### "401 Unauthorized" Error
 

@@ -1,7 +1,7 @@
 ---
 id: ff8c338c
 title: Validate assignee is team member
-headline: ''
+headline: '# Validate assignee is team member'
 priority: medium
 status: todo
 issue_type: other

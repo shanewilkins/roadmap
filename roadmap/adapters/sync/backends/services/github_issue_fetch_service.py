@@ -139,11 +139,14 @@ class GitHubIssueFetchService:
                 elif isinstance(label, str):
                     label_names.append(label)
 
+        github_state = issue_dict.get("state")
+        status = "todo" if github_state == "open" else "closed"
+
         return SyncIssue(
             id=f"github-{backend_id}" if backend_id else "unknown",
             title=issue_dict.get("title") or "Untitled",
             headline=issue_dict.get("body") or "",
-            status="open" if issue_dict.get("state") == "open" else "closed",
+            status=status,
             labels=label_names,
             assignee=assignee_obj.get("login")
             if isinstance(assignee_obj, dict)
