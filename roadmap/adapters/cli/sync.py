@@ -206,11 +206,25 @@ def _confirm_and_apply(
     )
 
 
-def _finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose):
+def _finalize_sync(
+    core,
+    console_inst,
+    report,
+    pre_sync_issue_count,
+    verbose,
+    backend_type: str | None,
+):
     """Finalize sync run: capture post-sync baseline and print completion messages."""
     from roadmap.adapters.cli.sync_handlers import finalize_sync
 
-    finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose)
+    finalize_sync(
+        core,
+        console_inst,
+        report,
+        pre_sync_issue_count,
+        verbose,
+        backend_type,
+    )
 
 
 def _run_analysis_phase(
@@ -1064,7 +1078,14 @@ def _execute_sync_workflow(
         return
 
     # Finalize real sync
-    _finalize_sync(core, console_inst, report, pre_sync_issue_count, verbose)
+    _finalize_sync(
+        core,
+        console_inst,
+        report,
+        pre_sync_issue_count,
+        verbose,
+        backend_type,
+    )
     # Display metrics if requested
     if show_metrics and hasattr(report, "metrics") and report.metrics:
         from roadmap.presentation.formatters.sync_metrics_formatter import (

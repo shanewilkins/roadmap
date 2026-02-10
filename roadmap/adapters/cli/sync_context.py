@@ -298,6 +298,28 @@ def _init_sync_context(
         f"🔄 Syncing with {backend_type.upper()} backend", style="bold cyan"
     )
 
+    if backend_type.lower() == "github" and not dry_run:
+        try:
+            db = getattr(core, "db", None)
+            roadmap_dir = getattr(core, "roadmap_dir", None)
+            if db and roadmap_dir:
+                db.sync_directory_incremental(roadmap_dir)
+            else:
+                logger.warning(
+                    "pre_sync_db_cache_skipped",
+                    reason="missing_db_or_path",
+                    has_db=bool(db),
+                    has_roadmap_dir=bool(roadmap_dir),
+                    severity="operational",
+                )
+        except Exception as e:
+            logger.warning(
+                "pre_sync_db_cache_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="operational",
+            )
+
     _prune_db_issues_missing_files(core, console_inst, dry_run)
     _repair_remote_links(core, console_inst, backend_type, dry_run)
     orchestrator = SyncRetrievalOrchestrator(

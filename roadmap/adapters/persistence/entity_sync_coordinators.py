@@ -1,6 +1,7 @@
 """Specialized synchronizers for different entity types."""
 
 import json
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -69,7 +70,18 @@ class EntitySyncCoordinator:
     def _extract_metadata(self, data: dict, exclude_fields: list[str]) -> str | None:
         """Extract non-standard fields as JSON metadata."""
         metadata = {k: v for k, v in data.items() if k not in exclude_fields}
-        return json.dumps(metadata) if metadata else None
+        if not metadata:
+            return None
+
+        return json.dumps(metadata, default=self._json_default)
+
+    @staticmethod
+    def _json_default(value: Any) -> str:
+        if isinstance(value, (datetime, date)):
+            return value.isoformat()
+        raise TypeError(
+            f"Object of type {type(value).__name__} is not JSON serializable"
+        )
 
     def _update_sync_status(self, file_path: Path) -> None:
         """Update sync status for a file."""

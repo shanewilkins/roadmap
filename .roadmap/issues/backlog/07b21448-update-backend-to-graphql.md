@@ -1,13 +1,14 @@
 ---
 id: 07b21448
 title: update backend to graphql
-headline: ''
+headline: '# update backend to graphql'
 priority: medium
 status: todo
 issue_type: other
 milestone: null
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '3749'
 created: '2026-02-10T13:45:03.757705+00:00'
 updated: '2026-02-10T13:45:03.757708+00:00'
 assignee: shanewilkins
@@ -25,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3749'
 ---
 
 # update backend to graphql

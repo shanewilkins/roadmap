@@ -360,7 +360,12 @@ def _display_sync_metrics(console_inst: Any, metrics: dict[str, Any]) -> None:
 
 
 def finalize_sync(
-    core: Any, console_inst: Any, report: Any, pre_sync_issue_count: int, verbose: bool
+    core: Any,
+    console_inst: Any,
+    report: Any,
+    pre_sync_issue_count: int,
+    verbose: bool,
+    backend_type: str | None = None,
 ) -> None:
     """Finalize sync run: capture post-sync baseline and print completion messages."""
     from roadmap.adapters.cli.sync_handlers.baseline_ops import (
@@ -375,6 +380,47 @@ def finalize_sync(
     )
     if hasattr(report, "baseline_update_failed"):
         report.baseline_update_failed = not baseline_updated
+
+    if (
+        backend_type
+        and backend_type.lower() == "github"
+        and getattr(report, "issues_pulled", 0) > 0
+    ):
+        try:
+            db = getattr(core, "db", None)
+            roadmap_dir = getattr(core, "roadmap_dir", None)
+            if db and roadmap_dir:
+                sync_result = db.sync_directory_incremental(roadmap_dir)
+                synced = sync_result.get("files_synced", 0)
+                console_inst.print(f"[dim]DB cache sync: {synced} file(s) synced[/dim]")
+            else:
+                logger.warning(
+                    "post_sync_db_cache_skipped",
+                    reason="missing_db_or_path",
+                    has_db=bool(db),
+                    has_roadmap_dir=bool(roadmap_dir),
+                    severity="operational",
+                )
+        except Exception as e:
+            logger.warning(
+                "post_sync_db_cache_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="operational",
+            )
+
+        try:
+            from roadmap.adapters.cli.sync_context import _repair_remote_links
+
+            backend_name = str(backend_type)
+            _repair_remote_links(core, console_inst, backend_name, dry_run=False)
+        except Exception as e:
+            logger.warning(
+                "post_sync_remote_link_repair_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="operational",
+            )
 
     # Save and display sync metrics if available in report
     if hasattr(report, "metrics") and report.metrics:
@@ -392,9 +438,6 @@ def finalize_sync(
             metrics_repo = SyncMetricsRepository(db_manager)
             metrics_repo.save(report.metrics)
         except Exception as e:
-            from roadmap.common.logging import get_logger
-
-            logger = get_logger(__name__)
             logger.warning(
                 "failed_to_save_sync_metrics",
                 error=str(e),
