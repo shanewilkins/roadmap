@@ -77,8 +77,15 @@ class EntitySyncCoordinator:
 
     @staticmethod
     def _json_default(value: Any) -> str:
+        """Handle JSON serialization of non-standard types."""
         if isinstance(value, (datetime, date)):
             return value.isoformat()
+        # Handle datetime-like objects that may have isoformat method
+        if hasattr(value, 'isoformat') and callable(getattr(value, 'isoformat')):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
         raise TypeError(
             f"Object of type {type(value).__name__} is not JSON serializable"
         )
@@ -396,7 +403,15 @@ class ProjectSyncCoordinator(EntitySyncCoordinator):
                 return False
 
             # Extract project ID
-            project_id = project_data.get("id", file_path.stem)
+            # If not in YAML, extract from filename (format: {uuid}-{name}.md)
+            if "id" in project_data:
+                project_id = project_data["id"]
+            else:
+                # Try to extract UUID from filename (before first hyphen)
+                stem = file_path.stem
+                # Check if it's in format like "99d80769-roadmap"
+                parts = stem.split("-", 1)  # Split on first hyphen only
+                project_id = parts[0] if parts else stem
             project_data["id"] = project_id
 
             # Set defaults

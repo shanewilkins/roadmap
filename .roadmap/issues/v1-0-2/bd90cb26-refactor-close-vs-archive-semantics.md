@@ -4,10 +4,12 @@ title: Refactor close vs archive semantics
 headline: '# Refactor close vs archive semantics'
 priority: medium
 status: in-progress
+archived: false
 issue_type: other
 milestone: v1-0-2
 labels: []
-remote_ids: {}
+remote_ids:
+  github: 3752
 created: '2026-02-10T21:25:38.676310+00:00'
 updated: '2026-02-10T21:28:04.096462+00:00'
 assignee: shanewilkins
@@ -25,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: 3752
 ---
 
 # Refactor close vs archive semantics
