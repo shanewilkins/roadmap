@@ -227,14 +227,26 @@ class CredentialManager:
         try:
             import keyring
 
+            try:
+                from keyring.errors import NoKeyringError
+            except Exception:
+                NoKeyringError = None
+
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
             if repo_info:
                 target_name += (
                     f":{repo_info.get('owner', '')}/{repo_info.get('repo', '')}"
                 )
 
-            keyring.set_password(self.SERVICE_NAME, target_name, token)
-            return True
+            try:
+                keyring.set_password(self.SERVICE_NAME, target_name, token)
+                return True
+            except Exception as e:
+                if NoKeyringError and isinstance(e, NoKeyringError):
+                    logger.debug("keyring_no_backend_store_wincred", error=str(e))
+                    return self._store_token_cmdkey(token, repo_info)
+                logger.debug("keyring_store_wincred_failed", error=str(e))
+                return False
         except ImportError as e:
             logger.debug("keyring_import_failed_keychain", error=str(e))
             # Fallback to cmdkey if keyring not available
@@ -245,8 +257,20 @@ class CredentialManager:
         try:
             import keyring
 
+            try:
+                from keyring.errors import NoKeyringError
+            except Exception:
+                NoKeyringError = None
+
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
-            return keyring.get_password(self.SERVICE_NAME, target_name)
+            try:
+                return keyring.get_password(self.SERVICE_NAME, target_name)
+            except Exception as e:
+                if NoKeyringError and isinstance(e, NoKeyringError):
+                    logger.debug("keyring_no_backend_get_wincred", error=str(e))
+                    return self._get_token_cmdkey()
+                logger.debug("keyring_get_wincred_failed", error=str(e))
+                return None
         except ImportError as e:
             logger.debug("keyring_import_failed_get_wincred", error=str(e))
             # Fallback to cmdkey if keyring not available
@@ -257,9 +281,21 @@ class CredentialManager:
         try:
             import keyring
 
+            try:
+                from keyring.errors import NoKeyringError
+            except Exception:
+                NoKeyringError = None
+
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
-            keyring.delete_password(self.SERVICE_NAME, target_name)
-            return True
+            try:
+                keyring.delete_password(self.SERVICE_NAME, target_name)
+                return True
+            except Exception as e:
+                if NoKeyringError and isinstance(e, NoKeyringError):
+                    logger.debug("keyring_no_backend_delete_wincred", error=str(e))
+                    return self._delete_token_cmdkey()
+                logger.debug("keyring_delete_wincred_failed", error=str(e))
+                return False
         except ImportError as e:
             logger.debug("keyring_import_failed_delete_wincred", error=str(e))
             # Fallback to cmdkey if keyring not available
@@ -322,14 +358,26 @@ class CredentialManager:
         try:
             import keyring
 
+            try:
+                from keyring.errors import NoKeyringError
+            except Exception:
+                NoKeyringError = None
+
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
             if repo_info:
                 target_name += (
                     f":{repo_info.get('owner', '')}/{repo_info.get('repo', '')}"
                 )
 
-            keyring.set_password(self.SERVICE_NAME, target_name, token)
-            return True
+            try:
+                keyring.set_password(self.SERVICE_NAME, target_name, token)
+                return True
+            except Exception as e:
+                if NoKeyringError and isinstance(e, NoKeyringError):
+                    logger.debug("keyring_no_backend_store_secretservice", error=str(e))
+                    return self._store_token_fallback(token, repo_info)
+                logger.debug("keyring_store_secretservice_failed", error=str(e))
+                return False
         except ImportError as e:
             logger.debug("keyring_import_failed_store_secretservice", error=str(e))
             # Fallback if keyring not available
@@ -340,8 +388,20 @@ class CredentialManager:
         try:
             import keyring
 
+            try:
+                from keyring.errors import NoKeyringError
+            except Exception:
+                NoKeyringError = None
+
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
-            return keyring.get_password(self.SERVICE_NAME, target_name)
+            try:
+                return keyring.get_password(self.SERVICE_NAME, target_name)
+            except Exception as e:
+                if NoKeyringError and isinstance(e, NoKeyringError):
+                    logger.debug("keyring_no_backend_get_secretservice", error=str(e))
+                    return self._get_token_fallback()
+                logger.debug("keyring_get_secretservice_failed", error=str(e))
+                return None
         except ImportError as e:
             logger.debug("keyring_import_failed_get_secretservice", error=str(e))
             # Fallback if keyring not available
@@ -352,9 +412,23 @@ class CredentialManager:
         try:
             import keyring
 
+            try:
+                from keyring.errors import NoKeyringError
+            except Exception:
+                NoKeyringError = None
+
             target_name = f"{self.SERVICE_NAME}:{self.ACCOUNT_NAME}"
-            keyring.delete_password(self.SERVICE_NAME, target_name)
-            return True
+            try:
+                keyring.delete_password(self.SERVICE_NAME, target_name)
+                return True
+            except Exception as e:
+                if NoKeyringError and isinstance(e, NoKeyringError):
+                    logger.debug(
+                        "keyring_no_backend_delete_secretservice", error=str(e)
+                    )
+                    return self._delete_token_fallback()
+                logger.debug("keyring_delete_secretservice_failed", error=str(e))
+                return False
         except ImportError as e:
             logger.debug("keyring_import_failed_delete_token", error=str(e))
             # Fallback if keyring not available
