@@ -16,7 +16,7 @@ class TestLargeDatasetHandling:
             priority = [Priority.LOW, Priority.MEDIUM, Priority.HIGH][i % 3]
             issue = (
                 IssueBuilder()
-                .with_title(f"Issue {i+1}")
+                .with_title(f"Issue {i + 1}")
                 .with_priority(priority)
                 .build()
             )
@@ -41,7 +41,7 @@ class TestLargeDatasetHandling:
 
         # Create milestones
         milestones = [
-            MilestoneBuilder().with_name(f"Milestone {i+1}").build()
+            MilestoneBuilder().with_name(f"Milestone {i + 1}").build()
             for i in range(num_milestones)
         ]
 
@@ -51,7 +51,7 @@ class TestLargeDatasetHandling:
             milestone_name = milestones[i % len(milestones)].name
             issue = (
                 IssueBuilder()
-                .with_title(f"Issue {i+1}")
+                .with_title(f"Issue {i + 1}")
                 .with_milestone(milestone_name)
                 .with_priority([Priority.LOW, Priority.MEDIUM, Priority.HIGH][i % 3])
                 .build()
@@ -82,7 +82,7 @@ class TestLargeDatasetHandling:
             else:
                 status = Status.CLOSED
 
-            issue = Issue(title=f"Issue {i+1}", status=status)
+            issue = Issue(title=f"Issue {i + 1}", status=status)
             issues.append(issue)
 
         # Count by status
@@ -102,7 +102,7 @@ class TestLargeDatasetHandling:
         # Create 50 issues with various properties
         issues = [
             Issue(
-                title=f"Issue {i+1}",
+                title=f"Issue {i + 1}",
                 milestone=f"v{(i % 10) + 1}.0",
                 status=[Status.TODO, Status.IN_PROGRESS, Status.CLOSED][i % 3],
                 priority=[Priority.LOW, Priority.MEDIUM, Priority.HIGH][i % 3],

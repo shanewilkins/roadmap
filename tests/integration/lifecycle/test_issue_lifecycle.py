@@ -134,7 +134,7 @@ class TestIssueLifecycle:
         for i in range(3):
             IntegrationTestBase.create_issue(
                 cli_runner,
-                title=f"Task {i+1}",
+                title=f"Task {i + 1}",
                 milestone="sprint-1",
             )
 
@@ -145,7 +145,7 @@ class TestIssueLifecycle:
         )
         IntegrationTestBase.assert_cli_success(result)
         for i in range(3):
-            assert f"Task {i+1}" in result.output
+            assert f"Task {i + 1}" in result.output
 
     def test_list_issues_by_status(self, roadmap_with_milestones):
         """Test listing issues filtered by status."""
@@ -264,7 +264,7 @@ class TestIssueLifecycle:
             for i in range(2):
                 IntegrationTestBase.create_issue(
                     cli_runner,
-                    title=f"{milestone} Issue {i+1}",
+                    title=f"{milestone} Issue {i + 1}",
                     milestone=milestone,
                 )
 

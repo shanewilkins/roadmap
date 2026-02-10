@@ -322,10 +322,10 @@ def roadmap_structure_factory(tmp_path):
                 for m in range(
                     (num_issues + issues_per_milestone - 1) // issues_per_milestone
                 ):
-                    milestone_dir = milestones_dir / f"milestone-{m+1}"
+                    milestone_dir = milestones_dir / f"milestone-{m + 1}"
                     milestone_dir.mkdir(parents=True, exist_ok=True)
                     (milestone_dir / ".milestone.md").write_text(
-                        f"---\nname: Milestone {m+1}\n---\n\n# Milestone {m+1}\n"
+                        f"---\nname: Milestone {m + 1}\n---\n\n# Milestone {m + 1}\n"
                     )
 
             return roadmap_dir

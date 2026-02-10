@@ -156,7 +156,7 @@ class TestRealWorldCompatibility:
                         "os.environ",
                         {
                             **ci_env,
-                            "GITHUB_TOKEN": f'ci_token_{ci_name.lower().replace(" ", "_")}',
+                            "GITHUB_TOKEN": f"ci_token_{ci_name.lower().replace(' ', '_')}",
                         },
                     ):
                         from roadmap.infrastructure.security.credentials import (
@@ -167,7 +167,7 @@ class TestRealWorldCompatibility:
 
                         # Should work in CI environment
                         token = cm.get_token()
-                        assert token == f'ci_token_{ci_name.lower().replace(" ", "_")}'
+                        assert token == f"ci_token_{ci_name.lower().replace(' ', '_')}"
 
     def test_docker_container_compatibility(self):
         """Test compatibility in Docker containers across platforms."""

@@ -156,8 +156,8 @@ class SyncIssueFactory:
         """
         return [
             SyncIssueFactory.create(
-                id=f"{id_prefix}{i+1}",
-                title=f"{title_prefix} {i+1}",
+                id=f"{id_prefix}{i + 1}",
+                title=f"{title_prefix} {i + 1}",
                 backend_id=i + 1,
                 remote_ids={SyncIssueFactory.DEFAULT_BACKEND: i + 1},
                 **kwargs,

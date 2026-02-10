@@ -153,15 +153,17 @@ def compute_changes_remote(
         "assignee": ("assignee", lambda: get_remote_field("assignee")),
         "content": (
             "content",
-            lambda: get_remote_field("content")
-            or get_remote_field("description")
-            or "",
+            lambda: (
+                get_remote_field("content") or get_remote_field("description") or ""
+            ),
         ),
         "labels": (
             "labels",
-            lambda: sorted(get_remote_field("labels", []))
-            if get_remote_field("labels")
-            else [],
+            lambda: (
+                sorted(get_remote_field("labels", []))
+                if get_remote_field("labels")
+                else []
+            ),
         ),
     }
 

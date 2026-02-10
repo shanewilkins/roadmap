@@ -106,7 +106,7 @@ class TestGitHooksAdvancedIntegration:
             for j in range(3):
                 work_file = repo_path / f"{stage}_{j}.py"
                 work_file.write_text(
-                    f"# {stage.capitalize()} work {j+1}\\n# Issue: {issue_id}\\n"
+                    f"# {stage.capitalize()} work {j + 1}\\n# Issue: {issue_id}\\n"
                 )
                 subprocess.run(
                     ["git", "add", f"{stage}_{j}.py"], cwd=repo_path, check=True
@@ -117,7 +117,7 @@ class TestGitHooksAdvancedIntegration:
                         f"{issue_id}: Complete {stage} work [closes roadmap:{issue_id}]"
                     )
                 else:
-                    commit_msg = f"{issue_id}: {stage.capitalize()} work part {j+1} [progress:{(j+1)*30}%]"
+                    commit_msg = f"{issue_id}: {stage.capitalize()} work part {j + 1} [progress:{(j + 1) * 30}%]"
 
                 subprocess.run(
                     ["git", "commit", "-m", commit_msg], cwd=repo_path, check=True
@@ -190,7 +190,7 @@ class TestGitHooksAdvancedIntegration:
                 ["git", "add", f"rebase_file_{i}.txt"], cwd=repo_path, check=True
             )
             subprocess.run(
-                ["git", "commit", "-m", f"{issue_id}: Rebase test commit {i+1}"],
+                ["git", "commit", "-m", f"{issue_id}: Rebase test commit {i + 1}"],
                 cwd=repo_path,
                 check=True,
             )

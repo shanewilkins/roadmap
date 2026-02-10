@@ -61,9 +61,11 @@ class LocalChangeFilter:
             base_state = base_state_issues[issue_id]
 
             fields_to_check = {
-                "status": lambda obj: obj.status.value
-                if hasattr(obj.status, "value")
-                else str(obj.status),
+                "status": lambda obj: (
+                    obj.status.value
+                    if hasattr(obj.status, "value")
+                    else str(obj.status)
+                ),
                 "assignee": lambda obj: obj.assignee,
                 "description": lambda obj: obj.description,
                 "labels": lambda obj: sorted(obj.labels or []),

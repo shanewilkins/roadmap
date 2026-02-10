@@ -144,7 +144,7 @@ class InitializationWorkflow:
         # If .gitignore doesn't exist, create it
         if not gitignore_path.exists():
             gitignore_path.write_text(
-                f"{config_entry_with_comment}\n" ".env.local\n" ".env.*.local\n"
+                f"{config_entry_with_comment}\n.env.local\n.env.*.local\n"
             )
             return
 

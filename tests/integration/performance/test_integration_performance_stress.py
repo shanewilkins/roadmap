@@ -65,7 +65,7 @@ class TestPerformanceAndStress:
         # Create milestones
         milestone_names = []
         for i in range(num_milestones):
-            milestone_name = f"Milestone {i+1}"
+            milestone_name = f"Milestone {i + 1}"
             result = runner.invoke(main, ["milestone", "create", milestone_name])
             assert result.exit_code == 0
             milestone_names.append(milestone_name)
@@ -75,7 +75,7 @@ class TestPerformanceAndStress:
         for i in range(num_issues):
             priority = ["low", "medium", "high"][i % 3]
             result = runner.invoke(
-                main, ["issue", "create", f"Issue {i+1}", "--priority", priority]
+                main, ["issue", "create", f"Issue {i + 1}", "--priority", priority]
             )
             assert result.exit_code == 0
 

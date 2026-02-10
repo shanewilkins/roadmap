@@ -69,7 +69,7 @@ class MilestonePresenter(BasePresenter):
 
         # Display metadata footer
         metadata_footer = (
-            f"Created: {milestone_dto.created} • " f"Updated: {milestone_dto.updated}"
+            f"Created: {milestone_dto.created} • Updated: {milestone_dto.updated}"
         )
         self._get_console().print(f"\n[dim]{metadata_footer}[/dim]")
 

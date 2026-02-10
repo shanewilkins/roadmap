@@ -152,7 +152,7 @@ class TestSyncMetadata:
         metadata = SyncMetadata(issue_id="issue-1", github_issue_id=123)
         for i in range(5):
             record = SyncRecord(
-                sync_timestamp=f"2025-12-22T{10+i}:00:00Z",
+                sync_timestamp=f"2025-12-22T{10 + i}:00:00Z",
                 success=True,
             )
             metadata.add_sync_record(record)

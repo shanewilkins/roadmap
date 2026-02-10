@@ -134,7 +134,7 @@ class TestWorkflowRobust:
         for i in range(issue_count):
             IntegrationTestBase.create_issue(
                 cli_runner,
-                title=f"Feature {i+1}",
+                title=f"Feature {i + 1}",
                 milestone="Beta Release",
                 priority=["critical", "high", "medium"][i],
             )
@@ -212,7 +212,7 @@ def test_create_issues_parametrized(cli_runner, priority, expected_count):
     for i in range(expected_count):
         IntegrationTestBase.create_issue(
             cli_runner,
-            title=f"Issue {i+1} with {priority}",
+            title=f"Issue {i + 1} with {priority}",
             priority=priority,
         )
 

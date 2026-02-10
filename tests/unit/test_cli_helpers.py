@@ -41,7 +41,7 @@ class TestOutputFormatHandler:
         "format_name,check_fn",
         [
             ("plain", lambda o: "ID" in o and "Alice" in o),
-            ("json", lambda o: ('"title"' in o or "'title'" in o)),
+            ("json", lambda o: '"title"' in o or "'title'" in o),
             ("csv", lambda o: "ID" in o and "Alice" in o),
             ("markdown", lambda o: "|" in o),
         ],

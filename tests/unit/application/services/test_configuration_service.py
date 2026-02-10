@@ -54,8 +54,8 @@ class TestConfigurationServiceSettings:
 
     def test_get_setting_returns_value(self, config_service, mock_settings):
         """Test getting a setting returns value."""
-        mock_settings.get.side_effect = (
-            lambda key, default: "test_value" if key == "test.key" else default
+        mock_settings.get.side_effect = lambda key, default: (
+            "test_value" if key == "test.key" else default
         )
 
         result = config_service.get_setting("test.key")

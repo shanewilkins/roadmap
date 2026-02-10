@@ -96,8 +96,7 @@ class LogCapture:
         found = any(message.lower() in log.lower() for log in logs)
         if found:
             raise AssertionError(
-                f"Unexpected message '{message}' found in logs\n"
-                f"Level: {level or 'any'}"
+                f"Unexpected message '{message}' found in logs\nLevel: {level or 'any'}"
             )
 
     def print_logs(self, level: str | None = None) -> None:

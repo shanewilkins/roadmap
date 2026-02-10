@@ -226,22 +226,22 @@ def _build_issue_health_panel(core, metadata_service, console) -> Panel:
         health_breakdown.add_row(
             "[green]✓ Healthy (90%+)[/green]",
             str(len(healthy)),
-            f"{(len(healthy)/total)*100:.1f}%",
+            f"{(len(healthy) / total) * 100:.1f}%",
         )
         health_breakdown.add_row(
             "[yellow]⚠ At Risk (70-89%)[/yellow]",
             str(len(at_risk)),
-            f"{(len(at_risk)/total)*100:.1f}%",
+            f"{(len(at_risk) / total) * 100:.1f}%",
         )
         health_breakdown.add_row(
             "[red]✗ Failing (<70%)[/red]",
             str(len(failing)),
-            f"{(len(failing)/total)*100:.1f}%",
+            f"{(len(failing) / total) * 100:.1f}%",
         )
         health_breakdown.add_row(
             "[dim]○ Never Synced[/dim]",
             str(len(never_synced)),
-            f"{(len(never_synced)/total)*100:.1f}%",
+            f"{(len(never_synced) / total) * 100:.1f}%",
         )
 
     return Panel(

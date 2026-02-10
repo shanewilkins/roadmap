@@ -339,8 +339,8 @@ class TestSyncObservability:
         op1 = observability.start_operation("github")
 
         # Manually set old start time
-        observability.get_metrics(op1).start_time = (
-            datetime.now(UTC) - timedelta(hours=2)
+        observability.get_metrics(op1).start_time = datetime.now(UTC) - timedelta(
+            hours=2
         )
 
         cleared = observability.clear_old_operations(max_age_seconds=3600)
@@ -353,8 +353,8 @@ class TestSyncObservability:
         op_new = observability.start_operation("github")
 
         # Only mark one as old
-        observability.get_metrics(op_old).start_time = (
-            datetime.now(UTC) - timedelta(hours=2)
+        observability.get_metrics(op_old).start_time = datetime.now(UTC) - timedelta(
+            hours=2
         )
 
         cleared = observability.clear_old_operations(max_age_seconds=3600)

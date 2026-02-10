@@ -131,9 +131,7 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                     operation=f"{method} {endpoint}",
                     owner=self.owner,
                     repo=self.repo,
-                    rate_limit_remaining=response.headers.get(
-                        "X-RateLimit-Remaining"
-                    ),
+                    rate_limit_remaining=response.headers.get("X-RateLimit-Remaining"),
                     rate_limit_reset=response.headers.get("X-RateLimit-Reset"),
                     response_message=response_message,
                     severity="config",

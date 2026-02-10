@@ -78,7 +78,7 @@ class ProjectPresenter(BasePresenter):
 
         # Display metadata footer
         metadata_footer = (
-            f"Created: {project_dto.created} • " f"Updated: {project_dto.updated}"
+            f"Created: {project_dto.created} • Updated: {project_dto.updated}"
         )
         self._get_console().print(f"\n[dim]{metadata_footer}[/dim]")
 

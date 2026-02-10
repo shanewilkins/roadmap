@@ -101,7 +101,7 @@ class TestCLIInit:
                     "--non-interactive",
                     "--skip-github",
                 ],
-                lambda result: (result.exit_code == 0 and Path(".roadmap").exists()),
+                lambda result: result.exit_code == 0 and Path(".roadmap").exists(),
             ),
             (
                 ["init", "--help"],
@@ -185,7 +185,7 @@ class TestCLIHealth:
                     )
                 ),
             ),
-            (["health", "--help"], "no_init", lambda result: (result.exit_code == 0)),
+            (["health", "--help"], "no_init", lambda result: result.exit_code == 0),
         ],
     )
     def test_health_variants(self, cli_runner, isolated_roadmap, cmd, env, check):

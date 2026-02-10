@@ -121,10 +121,9 @@ def assert_milestone_not_created(
         message: Optional message if assertion fails
     """
     milestones = [m for m in core.milestones.list() if m.name == name]
-    assert len(milestones) == 0, (
-        f"Milestone '{name}' should not exist, "
-        f"but found {len(milestones)}. {message}"
-    )
+    assert (
+        len(milestones) == 0
+    ), f"Milestone '{name}' should not exist, but found {len(milestones)}. {message}"
 
 
 def assert_issue_assigned_to_milestone(

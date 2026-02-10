@@ -171,7 +171,7 @@ class TestGitHooksIntegration:
         # Make some commits on feature branch
         for i in range(3):
             test_file = repo_path / f"feature_part_{i}.py"
-            test_file.write_text(f"# Feature part {i+1}\\n# Issue: {issue_id}\\n")
+            test_file.write_text(f"# Feature part {i + 1}\\n# Issue: {issue_id}\\n")
             subprocess.run(
                 ["git", "add", f"feature_part_{i}.py"], cwd=repo_path, check=True
             )
@@ -180,7 +180,7 @@ class TestGitHooksIntegration:
                     "git",
                     "commit",
                     "-m",
-                    f"{issue_id}: Implement feature part {i+1} [progress:{(i+1)*30}%]",
+                    f"{issue_id}: Implement feature part {i + 1} [progress:{(i + 1) * 30}%]",
                 ],
                 cwd=repo_path,
                 check=True,
@@ -481,7 +481,7 @@ class TestGitHooksIntegration:
                     "git",
                     "commit",
                     "-m",
-                    f"{issue_id}: Concurrent commit {i} [progress:{(i+1)*20}%]",
+                    f"{issue_id}: Concurrent commit {i} [progress:{(i + 1) * 20}%]",
                 ],
                 cwd=repo_path,
                 check=True,

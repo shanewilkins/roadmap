@@ -32,7 +32,11 @@ from roadmap.core.services.sync.duplicate_resolver import (
 @pytest.fixture
 def mock_issue_service():
     """Create a mock issue service."""
-    service = MagicMock(spec=__import__('roadmap.core.services.issue.issue_service', fromlist=['IssueService']).IssueService)
+    service = MagicMock(
+        spec=__import__(
+            "roadmap.core.services.issue.issue_service", fromlist=["IssueService"]
+        ).IssueService
+    )
     service.merge_issues.return_value = Ok(
         Issue(
             id="local-1",
@@ -119,7 +123,9 @@ class TestDuplicateResolverAnalysisPhase:
         )
         assert resolver.auto_resolve_threshold == 0.90
 
-    def test_resolve_automatic_returns_result_type(self, resolver, high_confidence_match):
+    def test_resolve_automatic_returns_result_type(
+        self, resolver, high_confidence_match
+    ):
         """Test that resolve_automatic returns Result type."""
         result = resolver.resolve_automatic([high_confidence_match])
         assert result.is_ok()
@@ -174,12 +180,14 @@ class TestDuplicateResolverAnalysisPhase:
         mock_issue_service.delete_issue.assert_not_called()
         mock_issue_service.archive_issue.assert_not_called()
 
-    def test_resolution_action_has_expected_fields(self, resolver, high_confidence_match):
+    def test_resolution_action_has_expected_fields(
+        self, resolver, high_confidence_match
+    ):
         """Test that ResolutionAction has all expected fields."""
         result = resolver.resolve_automatic([high_confidence_match])
         actions = result.unwrap()
         action = actions[0]
-        
+
         assert hasattr(action, "match")
         assert hasattr(action, "action_type")
         assert hasattr(action, "canonical_issue")
