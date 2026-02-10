@@ -3,14 +3,15 @@ id: 4fd74d1e
 title: Duplicate Test Issue Alpha
 headline: This is a test duplicate
 priority: medium
-status: todo
+status: closed
+archived: false
 issue_type: feature
 milestone: null
 labels: []
 remote_ids:
-  github: '3653'
+  github: 3653
 created: '2026-02-07T03:38:21.733315+00:00'
-updated: '2026-02-07T03:38:21.733317+00:00'
+updated: '2026-02-10T21:41:01.736098+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -18,7 +19,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3653'
+github_issue: 3653
 ---
 
 This is a test duplicate

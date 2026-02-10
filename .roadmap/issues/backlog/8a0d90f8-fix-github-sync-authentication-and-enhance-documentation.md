@@ -3,16 +3,17 @@ id: 8a0d90f8
 title: Fix GitHub sync authentication and enhance documentation
 headline: '## Summary'
 priority: medium
-status: todo
+status: closed
+archived: false
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
 remote_ids:
-  github: '3684'
+  github: 3684
 created: '2026-02-05T15:17:52.594350+00:00'
-updated: '2026-02-05T15:17:52.594350+00:00'
-assignee: null
+updated: '2026-02-10T21:41:50.848177+00:00'
+assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
@@ -27,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3684'
+github_issue: 3684
 ---
 
 ## Summary

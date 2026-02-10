@@ -5,7 +5,7 @@ headline: '# Validate assignee is team member'
 priority: medium
 status: todo
 issue_type: other
-milestone: v.0.5.0
+milestone: ''
 labels:
 - priority:high
 - status:done
@@ -16,7 +16,7 @@ labels:
 remote_ids:
   github: 3657
 created: '2026-02-05T15:17:52.498921+00:00'
-updated: '2026-02-05T15:17:52.498922+00:00'
+updated: '2026-02-10T21:20:39.041945+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

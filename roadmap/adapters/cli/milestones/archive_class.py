@@ -90,10 +90,115 @@ class MilestoneArchive(BaseArchive):
                     continue
         return files
 
+    def execute(self, entity_id: str | None = None, **kwargs) -> bool:
+        """Execute archive operation.
+
+        Archives milestones by moving files and setting the archived flag.
+
+        Args:
+            entity_id: Optional milestone name
+            **kwargs: Filter options (all_closed, etc.)
+
+        Returns:
+            True if successful
+        """
+        try:
+            entities = self.get_entities_to_archive(entity_id, **kwargs)
+
+            if not entities:
+                self.console.print(
+                    f"No {self.entity_type.value}s to archive",
+                    style="yellow",
+                )
+                return False
+
+            # Validate entities
+            invalid_entities = []
+            for entity in entities:
+                is_valid, error_msg = self.validate_entity_before_archive(
+                    entity, **kwargs
+                )
+                if not is_valid:
+                    invalid_entities.append((entity, error_msg))
+                    self.console.print(
+                        f"⚠️  Cannot archive {entity.name}: {error_msg}",
+                        style="yellow",
+                    )
+
+            if invalid_entities:
+                entities = [e for e in entities if (e, None) not in invalid_entities]
+                if not entities:
+                    return False
+
+            # Find files
+            files_to_archive = self.find_entity_files(entities)
+
+            if not files_to_archive:
+                self.console.print(
+                    f"Could not find files for {len(entities)} {self.entity_type.value}(s)",
+                    style="yellow",
+                )
+                return False
+
+            # Archive with folder structure preservation
+            from roadmap.adapters.cli.crud.crud_helpers import (
+                display_archive_success,
+                get_archive_dir,
+            )
+
+            archive_dir = get_archive_dir(self.entity_type)
+            archive_dir.mkdir(parents=True, exist_ok=True)
+
+            archived_files = []
+            failed_count = 0
+
+            for file_path in files_to_archive:
+                try:
+                    archive_file = archive_dir / file_path.name
+                    if archive_file.exists():
+                        failed_count += 1
+                        continue
+
+                    # Ensure parent directory exists and use rename (mv) for atomicity
+                    archive_file.parent.mkdir(parents=True, exist_ok=True)
+                    file_path.rename(archive_file)
+                    archived_files.append(archive_file)
+
+                except Exception as e:
+                    self.console.print(
+                        f"⚠️  Failed to archive {file_path.name}: {str(e)}",
+                        style="yellow",
+                    )
+                    failed_count += 1
+
+            # Update state (set archived flag and move associated issues)
+            self.post_archive_hook(archived_files, entities, **kwargs)
+
+            # Display results
+            display_archive_success(
+                self.entity_type,
+                len(archived_files),
+                failed_count,
+                console=self.console,
+            )
+
+            return True
+
+        except Exception as e:
+            self.console.print(
+                f"❌ Archive operation failed: {str(e)}",
+                style="red",
+            )
+            import click
+
+            raise click.ClickException(str(e)) from e
+
     def post_archive_hook(
         self, archived_files: list[Path], entities: list[Any], **kwargs
     ) -> None:
         """Handle post-archive state updates.
+
+        Moves associated issues folder and sets archived flag.
 
         Args:
             archived_files: Files that were archived
@@ -117,9 +222,12 @@ class MilestoneArchive(BaseArchive):
                         style="yellow",
                     )
 
-            # Update database
+            # Set archived flag
             try:
-                self.core.db.mark_milestone_archived(entity.name, archived=True)
+                self.core.milestones.update_milestone(
+                    name=entity.name,
+                    archived=True,
+                )
             except Exception as e:
                 self.console.print(
                     f"⚠️  Warning: Failed to mark milestone {entity.name} as archived: {e}",

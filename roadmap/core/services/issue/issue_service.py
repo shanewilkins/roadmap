@@ -460,6 +460,9 @@ class IssueService:
         if params.estimate is not NOT_PROVIDED:
             issue.estimated_hours = params.estimate
             log_event("issue_field_updated", issue_id=params.issue_id, field="estimate")
+        if params.archived is not NOT_PROVIDED:
+            issue.archived = params.archived
+            log_event("issue_field_updated", issue_id=params.issue_id, field="archived")
 
         # Update timestamp
         issue.updated = now_utc()

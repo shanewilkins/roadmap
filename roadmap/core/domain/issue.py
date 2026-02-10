@@ -27,6 +27,7 @@ class Issue(BaseModel):
     headline: str = ""  # Short summary for list views
     priority: Priority = Priority.MEDIUM
     status: Status = Status.TODO
+    archived: bool = False  # Mark for remote deletion
     issue_type: IssueType = IssueType.OTHER
     milestone: str | None = None
     labels: list[str] = Field(default_factory=list)

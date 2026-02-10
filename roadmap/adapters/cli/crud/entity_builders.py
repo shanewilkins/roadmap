@@ -263,6 +263,7 @@ class MilestoneBuilder:
         description: str | None = None,
         due_date: str | None = None,
         status: str | None = None,
+        project_id: str | None = None,
     ) -> dict[str, Any]:
         """Build update dictionary for milestone.
 
@@ -271,6 +272,7 @@ class MilestoneBuilder:
             description: New content/description
             due_date: New due date (YYYY-MM-DD format)
             status: New status
+            project_id: Project ID to assign milestone to
 
         Returns:
             Dictionary ready for core.milestones.update()
@@ -288,6 +290,9 @@ class MilestoneBuilder:
 
         if status is not None:
             update_dict["status"] = status
+
+        if project_id is not None:
+            update_dict["project_id"] = project_id
 
         return update_dict
 

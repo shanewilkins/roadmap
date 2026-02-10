@@ -106,6 +106,7 @@ class MilestoneOperations:
         due_date: datetime | None = None,
         clear_due_date: bool = False,
         status: str | None = None,
+        project_id: str | None = None,
     ) -> bool:
         """Update a milestone's properties.
 
@@ -115,6 +116,7 @@ class MilestoneOperations:
             due_date: New due date (None to keep current)
             clear_due_date: If True, remove the due date
             status: New status (None to keep current)
+            project_id: Project ID to assign milestone to
 
         Returns:
             True if milestone was updated, False if not found or error occurred
@@ -128,6 +130,7 @@ class MilestoneOperations:
             has_due_date=due_date is not None,
             clear_due_date=clear_due_date,
             has_status=status is not None,
+            has_project_id=project_id is not None,
         )
         try:
             return (
@@ -137,6 +140,7 @@ class MilestoneOperations:
                     due_date=due_date,
                     clear_due_date=clear_due_date,
                     status=status,
+                    project_id=project_id,
                 )
                 is not None
             )

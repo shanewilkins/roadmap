@@ -20,6 +20,7 @@ class MilestoneUpdate(BaseUpdate):
             description=kwargs.get("description"),
             due_date=kwargs.get("due_date"),
             status=kwargs.get("status"),
+            project_id=kwargs.get("project"),
         )
 
 
@@ -33,6 +34,7 @@ class MilestoneUpdate(BaseUpdate):
     type=click.Choice(["open", "closed"]),
     help="Set milestone status (open|closed)",
 )
+@click.option("--project", "-p", default=None, help="Project ID to assign milestone to")
 @click.pass_context
 @require_initialized
 @log_command("milestone_update", entity_type="milestone", track_duration=True)
@@ -43,6 +45,7 @@ def update_milestone(
     description: str,
     due_date: str,
     status: str,
+    project: str,
 ):
     """Update an existing milestone."""
     core = ctx.obj["core"]
@@ -54,4 +57,5 @@ def update_milestone(
         description=description,
         due_date=due_date,
         status=status,
+        project=project,
     )

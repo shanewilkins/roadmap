@@ -55,6 +55,7 @@ class IssueUpdateServiceParams:
     content: str | None | _NotProvided = NOT_PROVIDED
     estimate: float | None | _NotProvided = NOT_PROVIDED
     reason: str | None | _NotProvided = NOT_PROVIDED
+    archived: bool | _NotProvided = NOT_PROVIDED
 
 
 @dataclass
@@ -91,6 +92,7 @@ class MilestoneUpdateServiceParams:
     due_date: datetime | None = None
     clear_due_date: bool = False
     status: str | None = None
+    archived: bool | _NotProvided = NOT_PROVIDED
 
 
 @dataclass

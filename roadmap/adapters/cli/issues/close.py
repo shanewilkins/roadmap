@@ -1,6 +1,12 @@
 """Close issue command - thin wrapper around update.
 
 This command is syntactic sugar for: roadmap issue update <ID> --status closed
+
+SEMANTICS:
+- Close: Changes status to 'closed', keeps files in place (no file movement), archived=false
+- Archive: Moves files to archive directory AND sets archived=true flag (signals sync to delete remotely)
+
+This separation allows for flexible status management without workspace reorganization.
 """
 
 from datetime import UTC, datetime

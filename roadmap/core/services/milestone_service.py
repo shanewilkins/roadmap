@@ -206,6 +206,8 @@ class MilestoneService:
         due_date: datetime | None = None,
         clear_due_date: bool = False,
         status: str | None = None,
+        project_id: str | None = None,
+        archived: bool | None = None,
     ) -> Milestone | None:
         """Update a milestone's properties.
 
@@ -215,6 +217,8 @@ class MilestoneService:
             due_date: New due date (None to keep current)
             clear_due_date: If True, remove the due date
             status: New status
+            project_id: Project ID to assign milestone to
+            archived: Whether the milestone is archived (None to keep current)
 
         Returns:
             Updated Milestone object if found, None otherwise
@@ -259,6 +263,24 @@ class MilestoneService:
                 milestone_name=name,
                 field="status",
                 value=status,
+            )
+
+        if project_id is not None:
+            milestone.project_id = project_id
+            log_event(
+                "milestone_field_updated",
+                milestone_name=name,
+                field="project_id",
+                value=project_id,
+            )
+
+        if archived is not None:
+            milestone.archived = archived
+            log_event(
+                "milestone_field_updated",
+                milestone_name=name,
+                field="archived",
+                value=archived,
             )
 
         milestone.updated = now_utc()

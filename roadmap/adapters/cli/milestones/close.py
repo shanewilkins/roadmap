@@ -1,7 +1,11 @@
-"""Close milestone command."""
+"""Close milestone command.
 
-import shutil
-from pathlib import Path
+SEMANTICS:
+- Close: Changes status to 'closed', keeps files in place (no file movement), archived=false
+- Archive: Moves files to archive directory AND sets archived=true flag (signals sync to delete remotely)
+
+This separation allows for flexible status management without workspace reorganization.
+"""
 
 import click
 
@@ -146,30 +150,6 @@ def close_milestone(ctx: click.Context, milestone_name: str, force: bool):
         success = _close_milestone_in_db(core, milestone_name)
 
         if success:
-            # Move milestone file to archive directory
-            try:
-                # Build source and target paths
-                milestones_dir = Path(".roadmap/milestones").resolve()
-                archive_dir = Path(".roadmap/archive/milestones/closed").resolve()
-
-                # Create archive directory if it doesn't exist
-                archive_dir.mkdir(parents=True, exist_ok=True)
-
-                # Find the milestone file
-                milestone_filename = milestone.filename
-                source_path = milestones_dir / milestone_filename
-
-                # Move to archive if file exists
-                if source_path.exists():
-                    target_path = archive_dir / milestone_filename
-                    shutil.move(str(source_path), str(target_path))
-            except Exception as archive_error:
-                # Log archive error but don't fail the operation
-                console.print(
-                    f"⚠️  Warning: Could not move milestone file to archive: {archive_error}",
-                    style="yellow",
-                )
-
             extra_details = {"Completed issues": str(len(all_issues))}
             lines = format_operation_success(
                 "✅", "Closed", milestone_name, "", None, extra_details

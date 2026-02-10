@@ -1,24 +1,23 @@
 ---
-id: 07b21448
-title: update backend to graphql
-headline: '# update backend to graphql'
+id: bd90cb26
+title: Refactor close vs archive semantics
+headline: '# Refactor close vs archive semantics'
 priority: medium
-status: todo
+status: in-progress
 issue_type: other
-milestone: null
+milestone: v1-0-2
 labels: []
-remote_ids:
-  github: '3749'
-created: '2026-02-10T13:45:03.757705+00:00'
-updated: '2026-02-10T13:45:03.757708+00:00'
+remote_ids: {}
+created: '2026-02-10T21:25:38.676310+00:00'
+updated: '2026-02-10T21:28:04.096462+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
 depends_on: []
 blocks: []
-actual_start_date: null
+actual_start_date: '2026-02-10T21:28:03.887096+00:00'
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 0.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -26,10 +25,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3749'
+github_issue: null
 ---
 
-# update backend to graphql
+# Refactor close vs archive semantics
 
 ## Description
 

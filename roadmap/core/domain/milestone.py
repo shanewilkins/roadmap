@@ -30,6 +30,7 @@ class Milestone(BaseModel):
     content: str = ""  # Markdown content
     due_date: datetime | None = None
     status: MilestoneStatus = MilestoneStatus.OPEN
+    archived: bool = False  # Mark for remote deletion
     github_milestone: int | None = None
     created: datetime = Field(default_factory=now_utc)
     updated: datetime = Field(default_factory=now_utc)

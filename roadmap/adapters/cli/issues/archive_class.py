@@ -70,8 +70,6 @@ class IssueArchive(BaseArchive):
         Returns:
             List of file paths
         """
-        from pathlib import Path
-
         roadmap_dir = Path.cwd() / ".roadmap"
         issues_dir = roadmap_dir / "issues"
 
@@ -122,6 +120,8 @@ class IssueArchive(BaseArchive):
     def execute(self, entity_id: str | None = None, **kwargs) -> bool:
         """Execute archive operation.
 
+        Archives issues by moving files and setting the archived flag.
+
         Args:
             entity_id: Optional issue ID
             **kwargs: Filter options (all_closed, orphaned, etc.)
@@ -129,7 +129,6 @@ class IssueArchive(BaseArchive):
         Returns:
             True if successful
         """
-        # Call parent execute, but override file movement to use preserve-folder logic
         try:
             entities = self.get_entities_to_archive(entity_id, **kwargs)
 
@@ -143,7 +142,9 @@ class IssueArchive(BaseArchive):
             # Validate entities
             invalid_entities = []
             for entity in entities:
-                is_valid, error_msg = self.validate_entity_before_archive(entity)
+                is_valid, error_msg = self.validate_entity_before_archive(
+                    entity, **kwargs
+                )
                 if not is_valid:
                     invalid_entities.append((entity, error_msg))
                     self.console.print(
@@ -197,7 +198,7 @@ class IssueArchive(BaseArchive):
                     )
                     failed_count += 1
 
-            # Update state
+            # Update state (set archived flag and update cache)
             self.post_archive_hook(archived_files, entities, **kwargs)
 
             # Display results
@@ -224,14 +225,23 @@ class IssueArchive(BaseArchive):
     ) -> None:
         """Handle post-archive state updates.
 
+        Sets the archived flag on entities after moving files.
+
         Args:
             archived_files: Files that were archived
             entities: Entities that were archived
             **kwargs: Additional arguments
         """
+        # Set archived flag on entities
+        from roadmap.core.models import IssueUpdateServiceParams
+
         for entity in entities:
             try:
-                self.core.db.mark_issue_archived(entity.id, archived=True)
+                params = IssueUpdateServiceParams(
+                    issue_id=entity.id,
+                    archived=True,
+                )
+                self.core.issues.update_issue(params)
             except Exception as e:
                 self.console.print(
                     f"⚠️  Warning: Failed to mark issue {entity.id} as archived: {e}",
