@@ -83,7 +83,9 @@ class EntitySyncCoordinator:
         # Handle datetime-like objects that may have isoformat method
         if hasattr(value, "isoformat") and callable(value.isoformat):
             try:
-                return value.isoformat()
+                result = value.isoformat()
+                if isinstance(result, str):
+                    return result
             except Exception:
                 pass
         raise TypeError(
