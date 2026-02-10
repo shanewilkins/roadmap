@@ -81,7 +81,7 @@ class EntitySyncCoordinator:
         if isinstance(value, (datetime, date)):
             return value.isoformat()
         # Handle datetime-like objects that may have isoformat method
-        if hasattr(value, 'isoformat') and callable(getattr(value, 'isoformat')):
+        if hasattr(value, "isoformat") and callable(value.isoformat):
             try:
                 return value.isoformat()
             except Exception:
@@ -412,7 +412,9 @@ class ProjectSyncCoordinator(EntitySyncCoordinator):
                 parts = stem.split("-", 1)
                 first_part = parts[0]
                 # Only treat as UUID if first part is 8+ hex characters
-                if len(first_part) >= 8 and all(c in "0123456789abcdefABCDEF" for c in first_part):
+                if len(first_part) >= 8 and all(
+                    c in "0123456789abcdefABCDEF" for c in first_part
+                ):
                     project_id = first_part  # Use UUID only
                 else:
                     project_id = stem  # Use full filename as ID
