@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 from roadmap.common.constants import IssueType, Priority, Status
 from roadmap.core.domain.comment import Comment
@@ -66,6 +66,9 @@ class Issue(BaseModel):
     github_sync_metadata: dict[str, Any] | None = Field(
         default=None, exclude=True
     )  # Internal: sync metadata tracking for GitHub integration
+
+    _modified: bool = PrivateAttr(default=False)
+    _local_changes: dict[str, Any] | None = PrivateAttr(default=None)
 
     @model_validator(mode="before")
     @classmethod

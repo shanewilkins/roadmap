@@ -340,7 +340,7 @@ class TestDependencyResolver:
 
         # Find positions
         positions = {}
-        for i, (et, eid, _) in enumerate(result.ordered_entities):
+        for i, (_et, eid, _) in enumerate(result.ordered_entities):
             positions[eid] = i
 
         # Verify project comes before its milestones

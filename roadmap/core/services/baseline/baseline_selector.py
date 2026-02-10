@@ -5,7 +5,7 @@ initial baseline during first sync. Ensures explicit, informed choices
 about the agreed-upon starting state.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from structlog import get_logger
@@ -13,7 +13,7 @@ from structlog import get_logger
 logger = get_logger()
 
 
-class BaselineStrategy(str, Enum):
+class BaselineStrategy(StrEnum):
     """Strategy for creating initial baseline."""
 
     LOCAL = "local"

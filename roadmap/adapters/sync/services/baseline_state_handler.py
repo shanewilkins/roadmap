@@ -3,6 +3,7 @@
 Extracted from SyncMergeEngine to separate baseline management concerns.
 """
 
+from dataclasses import fields
 from datetime import UTC, datetime
 from typing import Any
 
@@ -39,16 +40,24 @@ class BaselineStateHandler:
                     "baseline_loaded_from_database", issue_count=len(db_baseline)
                 )
                 base_issues = {}
+                issue_field_names = {field.name for field in fields(IssueBaseState)}
                 for issue_id, data in db_baseline.items():
-                    base_issues[issue_id] = IssueBaseState(
-                        id=issue_id,
-                        status=data.get("status", "todo"),
-                        title=data.get("title", ""),
-                        assignee=data.get("assignee"),
-                        headline=data.get("headline", ""),
-                        content=data.get("content", ""),
-                        labels=data.get("labels", []),
-                    )
+                    issue_kwargs = {
+                        "id": issue_id,
+                        "title": data.get("title", ""),
+                        "assignee": data.get("assignee"),
+                        "headline": data.get("headline", ""),
+                        "content": data.get("content", ""),
+                        "description": data.get("description", ""),
+                        "labels": data.get("labels", []),
+                    }
+                    status_value = data.get("status", "todo")
+                    if "status" in issue_field_names:
+                        issue_kwargs["status"] = status_value
+                    elif "state" in issue_field_names:
+                        issue_kwargs["state"] = status_value
+
+                    base_issues[issue_id] = IssueBaseState(**issue_kwargs)
 
                 sync_state = SyncState(
                     last_sync_time=datetime.now(UTC),

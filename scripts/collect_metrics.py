@@ -6,7 +6,7 @@ rows = []
 root_dir = os.path.join(os.path.dirname(__file__), "..", "roadmap")
 root_dir = os.path.normpath(root_dir)
 
-for root, dirs, files in os.walk(root_dir):
+for root, _dirs, files in os.walk(root_dir):
     # skip virtualenvs
     if "/.venv" in root or "/venv" in root:
         continue

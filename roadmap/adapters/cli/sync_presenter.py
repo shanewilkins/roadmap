@@ -7,7 +7,6 @@ the sync command can remain focused on orchestration.
 
 from typing import Any
 
-
 from roadmap.common.console import get_console
 
 

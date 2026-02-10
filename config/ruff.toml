@@ -20,6 +20,9 @@ ignore = [
     "C901",  # too complex
 ]
 
+[lint.per-file-ignores]
+"roadmap/common/result.py" = ["UP046", "UP047", "UP007"]
+
 [format]
 quote-style = "double"
 indent-style = "space"

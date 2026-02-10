@@ -183,7 +183,7 @@ class InteractiveConflictResolver:
 
         # Display options
         self.console.print("[bold]Choose resolution:[/bold]")
-        for key, (strategy, description) in options.items():
+        for key, (_strategy, description) in options.items():
             self.console.print(f"  {key}. {description}")
         self.console.print()
 

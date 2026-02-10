@@ -5,11 +5,11 @@ differently), this module applies field-level strategies to decide
 what to do with that conflict.
 """
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class ConflictResolutionStrategy(str, Enum):
+class ConflictResolutionStrategy(StrEnum):
     """Strategy for resolving a conflict."""
 
     FLAG_FOR_REVIEW = "flag_for_review"  # Return None, needs manual review

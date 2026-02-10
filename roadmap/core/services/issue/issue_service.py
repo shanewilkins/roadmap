@@ -20,7 +20,7 @@ from roadmap.common.logging.error_logging import (
     log_error_with_context,
 )
 from roadmap.common.observability.instrumentation import traced
-from roadmap.common.result import Ok, Err
+from roadmap.common.result import Err, Ok
 from roadmap.common.services import log_entry, log_event, log_exit, log_metric
 from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain.issue import Issue

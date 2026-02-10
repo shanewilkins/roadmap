@@ -8,7 +8,7 @@ title duplicates, and content duplicates using various similarity metrics.
 import time
 from dataclasses import dataclass
 from difflib import SequenceMatcher
-from enum import Enum
+from enum import StrEnum
 
 import structlog
 
@@ -19,7 +19,7 @@ from roadmap.core.models.sync_models import SyncIssue
 logger = structlog.get_logger()
 
 
-class MatchType(str, Enum):
+class MatchType(StrEnum):
     """Type of duplicate match detected."""
 
     ID_COLLISION = "id_collision"  # Same ID, different content
@@ -28,7 +28,7 @@ class MatchType(str, Enum):
     CONTENT_SIMILAR = "content_similar"  # >85% content similarity
 
 
-class RecommendedAction(str, Enum):
+class RecommendedAction(StrEnum):
     """Recommended action for handling a duplicate match."""
 
     AUTO_MERGE = "auto_merge"  # High confidence, can auto-resolve

@@ -19,6 +19,22 @@ class IntegrationTestBase:
     and improve test robustness.
     """
 
+    _open_cores: list[RoadmapCore] = []
+
+    @classmethod
+    def _register_core(cls, core: RoadmapCore) -> RoadmapCore:
+        cls._open_cores.append(core)
+        return core
+
+    @classmethod
+    def close_open_cores(cls) -> None:
+        while cls._open_cores:
+            core = cls._open_cores.pop()
+            try:
+                core.close()
+            except Exception:
+                pass
+
     @staticmethod
     def init_roadmap(
         cli_runner: CliRunner,
@@ -60,7 +76,7 @@ class IntegrationTestBase:
                 error_msg += f"\nException: {result.exception}"
             raise AssertionError(error_msg)
 
-        return RoadmapCore()
+        return IntegrationTestBase._register_core(RoadmapCore())
 
     @staticmethod
     def create_milestone(
@@ -100,7 +116,7 @@ class IntegrationTestBase:
             raise AssertionError(error_msg)
 
         # Return milestone object from core
-        core = RoadmapCore()
+        core = IntegrationTestBase._register_core(RoadmapCore())
         try:
             milestone = core.milestones.get(name)
             if milestone is not None:
@@ -111,6 +127,8 @@ class IntegrationTestBase:
                 }
         except Exception:
             pass
+        finally:
+            core.close()
 
         # If not found immediately, return dict with known values
         return {
@@ -281,7 +299,7 @@ class IntegrationTestBase:
         Returns:
             RoadmapCore instance
         """
-        return RoadmapCore()
+        return IntegrationTestBase._register_core(RoadmapCore())
 
     @staticmethod
     def roadmap_state() -> dict[str, Any]:
@@ -292,9 +310,12 @@ class IntegrationTestBase:
         Returns:
             Dictionary with issues, milestones, and other state
         """
-        core = RoadmapCore()
-        return {
-            "issues": core.issues.list(),
-            "milestones": core.milestones.list(),
-            "projects": core.projects.list(),
-        }
+        core = IntegrationTestBase._register_core(RoadmapCore())
+        try:
+            return {
+                "issues": core.issues.list(),
+                "milestones": core.milestones.list(),
+                "projects": core.projects.list(),
+            }
+        finally:
+            core.close()

@@ -5,11 +5,11 @@ to automatically resolve most conflicts without data loss.
 """
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class MergeStatus(str, Enum):
+class MergeStatus(StrEnum):
     """Result of merging a field."""
 
     CLEAN = "clean"  # Auto-resolved, no conflict

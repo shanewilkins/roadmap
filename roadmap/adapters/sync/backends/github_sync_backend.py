@@ -6,9 +6,9 @@ with GitHub repositories. It implements the SyncBackendInterface protocol.
 Updated to use Result<T, SyncError> pattern for explicit error handling.
 """
 
+import time
 from collections.abc import Callable
 from datetime import datetime  # noqa: F401  # Used in type hints
-import time
 from typing import Any, TypeVar
 
 from structlog import get_logger
@@ -770,7 +770,7 @@ class GitHubSyncBackend:
         query_parts = []
         for idx, number in enumerate(issue_numbers):
             query_parts.append(
-                """
+                f"""
                 issue{idx}: repository(owner: \"{owner}\", name: \"{repo}\") {{
                   issueOrPullRequest(number: {number}) {{
                     __typename
@@ -778,7 +778,7 @@ class GitHubSyncBackend:
                     ... on PullRequest {{ id number }}
                   }}
                 }}
-                """.format(idx=idx, owner=owner, repo=repo, number=number)
+                """
             )
 
         query = "query {" + "\n".join(query_parts) + "\n}"
@@ -829,13 +829,13 @@ class GitHubSyncBackend:
     ) -> tuple[int, bool, list[int]]:
         """Delete issues by node ID via GraphQL mutation."""
         mutation_parts = []
-        for idx, (number, node_id) in enumerate(node_ids.items()):
+        for idx, (_number, node_id) in enumerate(node_ids.items()):
             mutation_parts.append(
-                """
+                f"""
                 delete{idx}: deleteIssue(input: {{issueId: \"{node_id}\"}}) {{
                   clientMutationId
                 }}
-                """.format(idx=idx, node_id=node_id)
+                """
             )
 
         mutation = "mutation {" + "\n".join(mutation_parts) + "\n}"

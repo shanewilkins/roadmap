@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from roadmap.common.result import Err, Ok
+from roadmap.core.services.sync.sync_errors import SyncError, SyncErrorType
 from roadmap.core.services.sync.sync_plan_executor import SyncPlanExecutor
 from roadmap.core.services.sync.sync_report import SyncReport
-from roadmap.core.services.sync.sync_errors import SyncError, SyncErrorType
 
 
 class TestSyncPlanExecutor:

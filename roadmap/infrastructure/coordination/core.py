@@ -21,6 +21,7 @@ This design:
 
 from pathlib import Path
 
+from roadmap.common.logging import get_logger
 from roadmap.common.utils.path_utils import build_roadmap_paths
 from roadmap.core.services import (
     ConfigurationService,
@@ -46,6 +47,8 @@ from roadmap.infrastructure.coordination.validation_coordinator import (
 )
 from roadmap.infrastructure.coordination_gateway import CoordinationGateway
 from roadmap.infrastructure.git.git_integration_ops import GitIntegrationOps
+
+logger = get_logger(__name__)
 
 
 class RoadmapCore:
@@ -236,6 +239,23 @@ class RoadmapCore:
     def initialize(self) -> None:
         """Initialize a new roadmap in the current directory."""
         self._init_manager.initialize()
+
+    def close(self) -> None:
+        """Close any database resources held by this core."""
+        try:
+            self.db.close()
+        except Exception as e:
+            logger.warning(
+                "core_close_failed", error=str(e), error_type=type(e).__name__
+            )
+
+    def __enter__(self) -> "RoadmapCore":
+        """Enter context manager and return self."""
+        return self
+
+    def __exit__(self, _exc_type, _exc, _tb) -> None:
+        """Exit context manager and close resources."""
+        self.close()
 
     def _update_gitignore(self) -> None:
         """Update .gitignore to exclude roadmap local data from version control."""

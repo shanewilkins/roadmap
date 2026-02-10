@@ -47,6 +47,12 @@ def isolate_roadmap_workspace(request, tmp_path):
         yield
 
     finally:
+        try:
+            from tests.fixtures.integration_helpers import IntegrationTestBase
+
+            IntegrationTestBase.close_open_cores()
+        except Exception:
+            pass
         # Always restore original working directory and environment
         try:
             if os.path.exists(original_cwd):

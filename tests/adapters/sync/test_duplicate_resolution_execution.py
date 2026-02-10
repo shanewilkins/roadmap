@@ -5,8 +5,10 @@ The _execute_duplicate_resolution method does not exist in SyncMergeOrchestrator
 Tests are being skipped until the feature is implemented.
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
+
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
 from roadmap.core.services.sync.sync_report import SyncReport
 

@@ -1088,10 +1088,11 @@ def _execute_sync_workflow(
     )
     # Display metrics if requested
     if show_metrics and hasattr(report, "metrics") and report.metrics:
+        from rich.panel import Panel
+
         from roadmap.presentation.formatters.sync_metrics_formatter import (
             create_metrics_summary_table,
         )
-        from rich.panel import Panel
 
         console_inst.print()
         console_inst.print(

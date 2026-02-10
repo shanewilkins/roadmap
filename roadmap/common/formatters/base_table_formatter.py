@@ -5,21 +5,14 @@ eliminating duplicate code across Issue, Project, and Milestone formatters.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from roadmap.common.console import get_console
 from roadmap.common.models import TableData
 
-# Generic type for domain models
-T = TypeVar("T")
 
-
-class BaseTableFormatter(ABC, Generic[T]):
+class BaseTableFormatter[T](ABC):
     """Abstract base class for table formatters."""
-
-    def __init__(self):
-        """Initialize base formatter."""
-        pass
 
     @property
     def console(self):

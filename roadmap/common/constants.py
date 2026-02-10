@@ -1,9 +1,9 @@
 """Application-wide constants and enums."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class Priority(str, Enum):
+class Priority(StrEnum):
     """Issue priority levels."""
 
     CRITICAL = "critical"
@@ -12,7 +12,7 @@ class Priority(str, Enum):
     LOW = "low"
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """Issue status values."""
 
     TODO = "todo"
@@ -23,14 +23,14 @@ class Status(str, Enum):
     ARCHIVED = "archived"  # Soft-deleted (duplicate or obsolete)
 
 
-class MilestoneStatus(str, Enum):
+class MilestoneStatus(StrEnum):
     """Milestone status values."""
 
     OPEN = "open"
     CLOSED = "closed"
 
 
-class ProjectStatus(str, Enum):
+class ProjectStatus(StrEnum):
     """Project status values."""
 
     PLANNING = "planning"
@@ -40,7 +40,7 @@ class ProjectStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class RiskLevel(str, Enum):
+class RiskLevel(StrEnum):
     """Risk level values for projects and milestones."""
 
     LOW = "low"
@@ -48,7 +48,7 @@ class RiskLevel(str, Enum):
     HIGH = "high"
 
 
-class IssueType(str, Enum):
+class IssueType(StrEnum):
     """Issue type categories."""
 
     FEATURE = "feature"
@@ -56,7 +56,7 @@ class IssueType(str, Enum):
     OTHER = "other"
 
 
-class SyncBackend(str, Enum):
+class SyncBackend(StrEnum):
     """Sync backend types."""
 
     GITHUB = "github"

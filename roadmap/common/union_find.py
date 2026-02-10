@@ -17,7 +17,7 @@ class UnionFind:
             items: List of hashable items to track
         """
         self.parent: dict[Any, Any] = {item: item for item in items}
-        self.rank: dict[Any, int] = {item: 0 for item in items}
+        self.rank: dict[Any, int] = dict.fromkeys(items, 0)
 
     def find(self, item: Any) -> Any:
         """Find the canonical representative of item's set with path compression.

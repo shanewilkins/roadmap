@@ -7,13 +7,13 @@ duplicate issues detected during sync operations.
 from dataclasses import dataclass
 
 from roadmap.common.logging import get_logger
-from roadmap.common.result import Ok, Err, Result
+from roadmap.common.result import Ok, Result
 from roadmap.core.domain.issue import Issue
+from roadmap.core.services.issue.issue_service import IssueService
 from roadmap.core.services.sync.duplicate_detector import (
     DuplicateMatch,
     RecommendedAction,
 )
-from roadmap.core.services.issue.issue_service import IssueService
 
 logger = get_logger(__name__)
 

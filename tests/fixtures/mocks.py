@@ -193,7 +193,10 @@ def roadmap_core():
 
         # Create core instance
         core = RoadmapCore()
-        yield core
+        try:
+            yield core
+        finally:
+            core.close()
 
 
 @pytest.fixture

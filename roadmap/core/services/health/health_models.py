@@ -4,11 +4,11 @@ Holds dataclasses and enums used by the various health scanners.
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class EntityType(str, Enum):
+class EntityType(StrEnum):
     """Types of entities that can be scanned."""
 
     ISSUE = "issue"
@@ -16,7 +16,7 @@ class EntityType(str, Enum):
     PROJECT = "project"
 
 
-class HealthSeverity(str, Enum):
+class HealthSeverity(StrEnum):
     """Severity levels for health issues."""
 
     INFO = "info"

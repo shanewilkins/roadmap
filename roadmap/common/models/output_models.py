@@ -6,11 +6,11 @@ the same data to be rendered in multiple formats.
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class ColumnType(str, Enum):
+class ColumnType(StrEnum):
     """Supported column data types."""
 
     STRING = "string"

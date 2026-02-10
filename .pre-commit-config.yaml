@@ -118,7 +118,7 @@ repos:
     hooks:
       - id: semgrep
         name: semgrep - semantic error pattern detection
-        args: [--config=config/.semgrep.yml, --error]
+        args: [--config=config/.semgrep.yml, --error, --disable-version-check]
         types: [python]
 
   # Run cosmetic fixes last (don't block on whitespace)

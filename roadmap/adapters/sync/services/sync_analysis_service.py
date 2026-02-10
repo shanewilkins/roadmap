@@ -4,8 +4,8 @@ from datetime import UTC, datetime
 
 from structlog import get_logger
 
-from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.sync.sync_key_normalizer import normalize_remote_keys
+from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
 from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 from roadmap.core.services.sync.sync_state_manager import SyncStateManager
 

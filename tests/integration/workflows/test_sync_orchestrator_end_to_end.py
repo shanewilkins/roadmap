@@ -4,16 +4,17 @@ Tests the full sync workflow using SyncMergeOrchestrator, SyncStateComparator,
 and SyncConflictResolver to verify they work together correctly.
 """
 
-import pytest
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
+
+import pytest
 
 from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
 from roadmap.common.constants import Priority, Status
 from roadmap.common.result import Err, Ok
 from roadmap.core.domain.issue import Issue
-from roadmap.core.services.sync import sync_errors
 from roadmap.core.interfaces.sync_backend import SyncReport
+from roadmap.core.services.sync import sync_errors
 from roadmap.core.services.sync.sync_conflict_resolver import (
     SyncConflictResolver,
 )

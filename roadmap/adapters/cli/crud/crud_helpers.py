@@ -4,14 +4,14 @@ This module provides common functionality for Create, Update, Delete,
 Archive, and Restore operations across all entity types.
 """
 
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 from roadmap.common.console import get_console
 
 
-class EntityType(str, Enum):
+class EntityType(StrEnum):
     """Entity types for CRUD operations."""
 
     ISSUE = "issue"
@@ -19,7 +19,7 @@ class EntityType(str, Enum):
     PROJECT = "project"
 
 
-class CRUDOperation(str, Enum):
+class CRUDOperation(StrEnum):
     """CRUD operation types.
 
     Note: Individual operation values are not currently used.

@@ -1,8 +1,8 @@
 """GitHub synchronization operations with parallel execution."""
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from structlog import get_logger
@@ -810,7 +810,7 @@ class GitHubSyncOps:
 
         logger.info("pulling_issues_phase", issue_count=len(issues_to_pull))
 
-        for issue_id, lookup_id, sync_issue in issues_to_pull:
+        for issue_id, _lookup_id, sync_issue in issues_to_pull:
             try:
                 # Check if issue's milestone was successfully pulled
                 if sync_issue.milestone:

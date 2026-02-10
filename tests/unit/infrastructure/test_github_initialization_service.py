@@ -461,6 +461,6 @@ class TestSyncBackendValidation:
         """Test SyncBackend enum is string-compatible."""
         backend = SyncBackend.GITHUB
         # Should be usable as string
-        assert str(backend) == "SyncBackend.GITHUB"
+        assert str(backend) == "github"
         # But .value should give the actual string value
         assert backend.value == "github"

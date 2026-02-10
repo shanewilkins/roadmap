@@ -208,9 +208,9 @@ class SyncCheckpointManager:
 
                     # Clear modification flags
                     if hasattr(issue, "_modified"):
-                        setattr(issue, "_modified", False)
+                        issue._modified = False
                     if hasattr(issue, "_local_changes"):
-                        setattr(issue, "_local_changes", None)
+                        issue._local_changes = None
 
                     # Save restored issue
                     self.core.issues.update(

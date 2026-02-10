@@ -290,7 +290,7 @@ class SyncPlanExecutor:
 
         key = issue_id
         if not key and hasattr(error, "entity_id"):
-            key = getattr(error, "entity_id")
+            key = error.entity_id
         if not key:
             key = operation
 

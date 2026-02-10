@@ -1,1 +1,4 @@
 extend = "config/ruff.toml"
+
+[lint.per-file-ignores]
+"roadmap/common/result.py" = ["UP046", "UP047", "UP007"]

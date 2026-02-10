@@ -12,7 +12,7 @@
     ".venv/**",
     "htmlcov"
   ],
-  "pythonVersion": "3.14",
+  "pythonVersion": "3.13",
   "pythonPlatform": "All",
   "typeCheckingMode": "basic",
   "reportMissingModuleSource": false,

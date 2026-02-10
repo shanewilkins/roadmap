@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import structlog
@@ -22,7 +22,7 @@ import structlog
 logger = structlog.get_logger()
 
 
-class EntityType(str, Enum):
+class EntityType(StrEnum):
     """Entity types in dependency order."""
 
     PROJECT = "project"

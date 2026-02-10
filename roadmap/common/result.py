@@ -20,8 +20,9 @@ Examples:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, NoReturn, TypeVar, Union
+from typing import Any, Generic, NoReturn, TypeVar, Union
 
 T = TypeVar("T")  # Success type
 E = TypeVar("E")  # Error type

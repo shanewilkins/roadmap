@@ -6,7 +6,7 @@ to present clear, actionable error summaries to users.
 
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from roadmap.common.logging import get_logger
@@ -14,7 +14,7 @@ from roadmap.common.logging import get_logger
 logger = get_logger(__name__)
 
 
-class ErrorCategory(str, Enum):
+class ErrorCategory(StrEnum):
     """Categories of sync errors for classification and reporting."""
 
     # Dependency/relationship errors

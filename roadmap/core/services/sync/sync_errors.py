@@ -5,11 +5,11 @@ enabling explicit error handling without exceptions.
 """
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class SyncErrorType(str, Enum):
+class SyncErrorType(StrEnum):
     """Types of errors that can occur during sync operations."""
 
     # Authentication errors

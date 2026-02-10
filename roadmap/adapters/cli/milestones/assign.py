@@ -59,4 +59,4 @@ def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
         lines = format_operation_failure("Assign", issue_id, str(e))
         for line in lines:
             console.print(line, style="bold red")
-        raise click.Abort()
+        raise click.Abort() from e
