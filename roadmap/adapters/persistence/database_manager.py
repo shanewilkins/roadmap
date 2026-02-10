@@ -160,6 +160,7 @@ class DatabaseManager:
             status TEXT NOT NULL DEFAULT 'open',
             due_date DATE,
             progress_percentage REAL DEFAULT 0.0,
+            archived BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             metadata TEXT,  -- JSON for additional data
@@ -179,6 +180,7 @@ class DatabaseManager:
             issue_type TEXT NOT NULL DEFAULT 'task',
             assignee TEXT,
             estimate_hours REAL,
+            archived BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             due_date DATE,
