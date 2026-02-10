@@ -8,6 +8,10 @@ from typing import Any
 from roadmap.adapters.persistence.file_parser import FileParser
 from roadmap.common.datetime_parser import UnifiedDateTimeParser
 from roadmap.common.logging import get_logger
+from roadmap.core.interfaces.sync_validators import (
+    ForeignKeyValidationError,
+    ForeignKeyValidator,
+)
 
 logger = get_logger(__name__)
 
@@ -110,6 +114,165 @@ class EntitySyncCoordinator:
                         metadata["modified_time"],
                     ),
                 )
+
+
+class MilestoneFKValidator(ForeignKeyValidator):
+    """Validates foreign key constraints for milestone syncing.
+
+    Ensures that projects table has data before syncing milestones,
+    preventing FOREIGN KEY constraint violations.
+    """
+
+    def __init__(self, get_connection):
+        """Initialize validator.
+
+        Args:
+            get_connection: Callable that returns database connection
+        """
+        self._get_connection = get_connection
+
+    def validate(self) -> None:
+        """Validate that projects table has data.
+
+        Raises:
+            ForeignKeyValidationError: If projects table is empty
+            RuntimeError: If database connection fails
+        """
+        try:
+            with self._get_connection() as conn:
+                result = conn.execute(
+                    "SELECT COUNT(*) as count FROM projects"
+                ).fetchone()
+                project_count = result[0] if result else 0
+
+                if project_count == 0:
+                    raise ForeignKeyValidationError(
+                        entity_type="milestone",
+                        missing_references=[],
+                        error_details="Projects table is empty. Cannot sync milestones without prerequisite projects. "
+                        "Ensure ProjectSyncCoordinator syncs all projects before MilestoneSyncCoordinator.",
+                    )
+
+                logger.info(
+                    "milestone_fk_validation_passed",
+                    project_count=project_count,
+                )
+
+        except ForeignKeyValidationError:
+            raise
+        except Exception as e:
+            logger.error(
+                "milestone_fk_validation_error",
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="system_error",
+            )
+            raise RuntimeError(
+                f"Failed to validate milestone FK constraints: {str(e)}"
+            ) from e
+
+    def missing_prerequisites(self) -> list[str]:
+        """Return list of empty prerequisite tables.
+
+        Returns:
+            List describing which prerequisites are missing
+        """
+        try:
+            with self._get_connection() as conn:
+                result = conn.execute(
+                    "SELECT COUNT(*) as count FROM projects"
+                ).fetchone()
+                project_count = result[0] if result else 0
+
+                if project_count == 0:
+                    return ["projects (empty)"]
+                return []
+
+        except Exception as e:
+            logger.error("Error checking prerequisites", error=str(e))
+            return ["unknown (database error)"]
+
+
+class IssueFKValidator(ForeignKeyValidator):
+    """Validates foreign key constraints for issue syncing.
+
+    Ensures that both projects and milestones tables have prerequisite data
+    before syncing issues, preventing FOREIGN KEY constraint violations.
+    """
+
+    def __init__(self, get_connection):
+        """Initialize validator.
+
+        Args:
+            get_connection: Callable that returns database connection
+        """
+        self._get_connection = get_connection
+
+    def validate(self) -> None:
+        """Validate that projects table has data.
+
+        Raises:
+            ForeignKeyValidationError: If projects table is empty
+            RuntimeError: If database connection fails
+
+        Notes:
+            Issues depend on projects being populated.
+            Milestones are optional but must exist if referenced.
+        """
+        try:
+            with self._get_connection() as conn:
+                # Check projects (required)
+                projects_result = conn.execute(
+                    "SELECT COUNT(*) as count FROM projects"
+                ).fetchone()
+                project_count = projects_result[0] if projects_result else 0
+
+                if project_count == 0:
+                    raise ForeignKeyValidationError(
+                        entity_type="issue",
+                        missing_references=[],
+                        error_details="Projects table is empty. Cannot sync issues without prerequisite projects. "
+                        "Ensure ProjectSyncCoordinator syncs all projects before IssueSyncCoordinator.",
+                    )
+
+                logger.info(
+                    "issue_fk_validation_passed",
+                    project_count=project_count,
+                )
+
+        except ForeignKeyValidationError:
+            raise
+        except Exception as e:
+            logger.error(
+                "issue_fk_validation_error",
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="system_error",
+            )
+            raise RuntimeError(
+                f"Failed to validate issue FK constraints: {str(e)}"
+            ) from e
+
+    def missing_prerequisites(self) -> list[str]:
+        """Return list of empty prerequisite tables.
+
+        Returns:
+            List describing which prerequisites are missing
+        """
+        try:
+            with self._get_connection() as conn:
+                result = conn.execute(
+                    "SELECT COUNT(*) as count FROM projects"
+                ).fetchone()
+                project_count = result[0] if result else 0
+
+                if project_count == 0:
+                    return ["projects (empty)"]
+                return []
+
+        except Exception as e:
+            logger.error("Error checking prerequisites", error=str(e))
+            return ["unknown (database error)"]
 
 
 class IssueSyncCoordinator(EntitySyncCoordinator):
@@ -280,9 +443,36 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
 class MilestoneSyncCoordinator(EntitySyncCoordinator):
     """Handles syncing milestone files to database."""
 
+    def __init__(self, get_connection, transaction_context):
+        """Initialize coordinator with FK validator.
+
+        Args:
+            get_connection: Callable that returns a database connection
+            transaction_context: Context manager for transactions
+        """
+        super().__init__(get_connection, transaction_context)
+        self._fk_validator = MilestoneFKValidator(get_connection)
+
     def sync_milestone_file(self, file_path: Path) -> bool:
-        """Sync a single milestone file to database."""
+        """Sync a single milestone file to database.
+
+        Validates foreign key constraints before syncing to prevent
+        database corruption from FOREIGN KEY constraint violations.
+        """
         try:
+            # Validate foreign key constraints first
+            try:
+                self._fk_validator.validate()
+            except ForeignKeyValidationError as fk_error:
+                logger.error(
+                    "milestone_sync_blocked_by_fk_validation",
+                    file_path=str(file_path),
+                    entity_type=fk_error.entity_type,
+                    error=str(fk_error),
+                    severity="operational",
+                )
+                return False
+
             if not file_path.exists():
                 logger.warning(
                     "milestone_file_not_found",

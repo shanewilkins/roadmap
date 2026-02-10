@@ -98,6 +98,12 @@ class SyncOrchestrator:
         }
 
         try:
+            logger.info(
+                "Starting incremental sync",
+                roadmap_dir=str(roadmap_dir),
+                roadmap_dir_type=type(roadmap_dir).__name__,
+            )
+
             if not roadmap_dir.exists():
                 logger.warning(
                     "roadmap_directory_not_found",
@@ -106,20 +112,49 @@ class SyncOrchestrator:
                 )
                 return stats
 
+            logger.debug(
+                "Roadmap directory verified",
+                roadmap_dir=str(roadmap_dir),
+                is_dir=roadmap_dir.is_dir(),
+            )
+
             # Process in dependency order: projects first, then milestones, then issues
-            # Note: Use simple patterns first, then recursive
+            # Use recursive patterns to find files in subdirectories
             patterns = [
-                "projects/*.md",  # Top-level projects
-                "milestones/*.md",  # Top-level milestones
-                "issues/*.md",  # Top-level issues
+                "projects/**/*.md",  # All project files including subdirectories
+                "milestones/**/*.md",  # All milestone files including subdirectories
+                "issues/**/*.md",  # All issue files including subdirectories
             ]
-            
+
             for pattern in patterns:
-                for file_path in roadmap_dir.glob(pattern):
-                    stats["files_checked"] += 1
-                    if self._has_file_changed(file_path):
-                        stats["files_changed"] += 1
-                        self._sync_file_by_type(file_path, stats)
+                logger.debug(
+                    "Processing glob pattern",
+                    pattern=pattern,
+                    search_root=str(roadmap_dir),
+                )
+                try:
+                    pattern_results = list(roadmap_dir.glob(pattern))
+                    logger.debug(
+                        "Glob pattern results",
+                        pattern=pattern,
+                        file_count=len(pattern_results),
+                        files=[(str(f), f.exists()) for f in pattern_results],
+                    )
+
+                    for file_path in pattern_results:
+                        stats["files_checked"] += 1
+                        if self._has_file_changed(file_path):
+                            stats["files_changed"] += 1
+                            self._sync_file_by_type(file_path, stats)
+
+                except Exception as pattern_error:
+                    logger.error(
+                        "Error processing glob pattern",
+                        pattern=pattern,
+                        error=str(pattern_error),
+                        error_type=type(pattern_error).__name__,
+                        severity="operational",
+                    )
 
             # Update checkpoint
             self._state_tracker.update_last_incremental_sync(str(stats["sync_time"]))

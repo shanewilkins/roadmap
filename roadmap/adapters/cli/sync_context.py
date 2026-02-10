@@ -299,26 +299,44 @@ def _init_sync_context(
     )
 
     if backend_type.lower() == "github" and not dry_run:
-        try:
-            db = getattr(core, "db", None)
-            roadmap_dir = getattr(core, "roadmap_dir", None)
-            if db and roadmap_dir:
-                db.sync_directory_incremental(roadmap_dir)
-            else:
-                logger.warning(
-                    "pre_sync_db_cache_skipped",
-                    reason="missing_db_or_path",
-                    has_db=bool(db),
-                    has_roadmap_dir=bool(roadmap_dir),
-                    severity="operational",
-                )
-        except Exception as e:
+        db = getattr(core, "db", None)
+        roadmap_dir = getattr(core, "roadmap_dir", None)
+
+        if not db or not roadmap_dir:
             logger.warning(
-                "pre_sync_db_cache_failed",
-                error=str(e),
-                error_type=type(e).__name__,
+                "pre_sync_db_cache_skipped",
+                reason="missing_db_or_path",
+                has_db=bool(db),
+                has_roadmap_dir=bool(roadmap_dir),
                 severity="operational",
             )
+        else:
+            try:
+                console_inst.print("[dim]✔ Pre-syncing local database cache[/dim]")
+                result = db.sync_directory_incremental(roadmap_dir)
+                files_synced = (
+                    result.get("files_synced", 0) if isinstance(result, dict) else 0
+                )
+                console_inst.print(
+                    f"[dim]✔ Database cache updated: {files_synced} files synced[/dim]"
+                )
+                logger.info(
+                    "pre_sync_db_cache_succeeded",
+                    files_synced=files_synced,
+                )
+            except Exception as e:
+                logger.error(
+                    "pre_sync_db_cache_failed",
+                    error=str(e),
+                    error_type=type(e).__name__,
+                    severity="system_error",
+                )
+                console_inst.print(
+                    f"[red]✗ Pre-sync database cache failed: {str(e)}[/red]"
+                )
+                raise RuntimeError(
+                    f"Database cache sync failed. Cannot proceed with sync. {str(e)}"
+                ) from e
 
     _prune_db_issues_missing_files(core, console_inst, dry_run)
     _repair_remote_links(core, console_inst, backend_type, dry_run)
