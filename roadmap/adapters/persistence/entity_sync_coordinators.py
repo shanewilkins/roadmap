@@ -407,11 +407,15 @@ class ProjectSyncCoordinator(EntitySyncCoordinator):
             if "id" in project_data:
                 project_id = project_data["id"]
             else:
-                # Try to extract UUID from filename (before first hyphen)
                 stem = file_path.stem
-                # Check if it's in format like "99d80769-roadmap"
-                parts = stem.split("-", 1)  # Split on first hyphen only
-                project_id = parts[0] if parts else stem
+                # Check if filename matches UUID pattern (8+ hex chars before hyphen)
+                parts = stem.split("-", 1)
+                first_part = parts[0]
+                # Only treat as UUID if first part is 8+ hex characters
+                if len(first_part) >= 8 and all(c in "0123456789abcdefABCDEF" for c in first_part):
+                    project_id = first_part  # Use UUID only
+                else:
+                    project_id = stem  # Use full filename as ID
             project_data["id"] = project_id
 
             # Set defaults
