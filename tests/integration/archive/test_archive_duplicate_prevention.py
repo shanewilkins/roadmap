@@ -132,12 +132,12 @@ class TestArchiveDuplicatePrevention:
         active_after_second = self.count_active_issue_files(core)
         archived_after_second = self.count_archived_issue_files(core)
 
-        assert (
-            active_after_second == active_after_first
-        ), "Active files should not change on second archive"
-        assert (
-            archived_after_second == archived_after_first
-        ), "Archived files should not change on second archive"
+        assert active_after_second == active_after_first, (
+            "Active files should not change on second archive"
+        )
+        assert archived_after_second == archived_after_first, (
+            "Archived files should not change on second archive"
+        )
 
         # Most importantly: verify no duplicates exist
         active_ids = self.get_active_issue_ids(core)

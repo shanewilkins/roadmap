@@ -30,7 +30,7 @@ class MilestoneConsistencyValidator:
         """
         inconsistencies = []
 
-        for milestone_file in self.milestones_dir.rglob("*.md"):
+        for milestone_file in sorted(self.milestones_dir.rglob("*.md"), key=str):
             try:
                 milestone = ValidationGateway.parse_milestone_for_validation(
                     milestone_file

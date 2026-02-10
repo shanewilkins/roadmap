@@ -86,9 +86,9 @@ def assert_not_called():
     """
 
     def _assert(mock_obj):
-        assert (
-            mock_obj.call_count == 0
-        ), f"Expected mock not to be called, but was called {mock_obj.call_count} times"
+        assert mock_obj.call_count == 0, (
+            f"Expected mock not to be called, but was called {mock_obj.call_count} times"
+        )
         return True
 
     return _assert

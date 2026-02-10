@@ -45,9 +45,9 @@ class CLIAssertion:
             AssertionError: If expected text not in output
         """
         output = clean_cli_output(result.output) if clean else result.output
-        assert (
-            expected.lower() in output.lower()
-        ), f"Expected '{expected}' not found in output.\nOutput: {output}"
+        assert expected.lower() in output.lower(), (
+            f"Expected '{expected}' not found in output.\nOutput: {output}"
+        )
 
     @staticmethod
     def output_not_contains(result: Any, unexpected: str, clean: bool = True) -> None:
@@ -62,9 +62,9 @@ class CLIAssertion:
             AssertionError: If unexpected text IS in output
         """
         output = clean_cli_output(result.output) if clean else result.output
-        assert (
-            unexpected.lower() not in output.lower()
-        ), f"Unexpected '{unexpected}' found in output.\nOutput: {output}"
+        assert unexpected.lower() not in output.lower(), (
+            f"Unexpected '{unexpected}' found in output.\nOutput: {output}"
+        )
 
     @staticmethod
     def success(result: Any, message: str = "") -> None:

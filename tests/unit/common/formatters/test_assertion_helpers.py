@@ -27,9 +27,9 @@ def assert_command_success(result: Any, message: str = "") -> None:
         result: Click CliRunner result
         message: Optional message if assertion fails
     """
-    assert (
-        result.exit_code == 0
-    ), f"Command failed with exit code {result.exit_code}. {message}"
+    assert result.exit_code == 0, (
+        f"Command failed with exit code {result.exit_code}. {message}"
+    )
 
 
 def assert_command_failed(result: Any, message: str = "") -> None:
@@ -80,9 +80,9 @@ def assert_issue_not_created(
         message: Optional message if assertion fails
     """
     issues = [issue for issue in core.issues.list() if issue.title == title]
-    assert (
-        len(issues) == 0
-    ), f"Issue titled '{title}' should not exist, but found {len(issues)}. {message}"
+    assert len(issues) == 0, (
+        f"Issue titled '{title}' should not exist, but found {len(issues)}. {message}"
+    )
 
 
 def assert_milestone_created(
@@ -121,9 +121,9 @@ def assert_milestone_not_created(
         message: Optional message if assertion fails
     """
     milestones = [m for m in core.milestones.list() if m.name == name]
-    assert (
-        len(milestones) == 0
-    ), f"Milestone '{name}' should not exist, but found {len(milestones)}. {message}"
+    assert len(milestones) == 0, (
+        f"Milestone '{name}' should not exist, but found {len(milestones)}. {message}"
+    )
 
 
 def assert_issue_assigned_to_milestone(
@@ -182,9 +182,9 @@ def assert_issue_count(
         message: Optional message if assertion fails
     """
     issues = core.issues.list()
-    assert (
-        len(issues) == expected_count
-    ), f"Expected {expected_count} issues, found {len(issues)}. {message}"
+    assert len(issues) == expected_count, (
+        f"Expected {expected_count} issues, found {len(issues)}. {message}"
+    )
 
 
 def assert_milestone_count(
@@ -200,9 +200,9 @@ def assert_milestone_count(
         message: Optional message if assertion fails
     """
     milestones = core.milestones.list()
-    assert (
-        len(milestones) == expected_count
-    ), f"Expected {expected_count} milestones, found {len(milestones)}. {message}"
+    assert len(milestones) == expected_count, (
+        f"Expected {expected_count} milestones, found {len(milestones)}. {message}"
+    )
 
 
 def get_latest_issue(core: RoadmapCore) -> Issue | None:

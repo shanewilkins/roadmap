@@ -90,6 +90,11 @@ class GitHubIntegrationService:
                 owner = getattr(github_config, "owner", None)
                 repo = getattr(github_config, "repo", None)
 
+            if not isinstance(owner, str) or not owner:
+                owner = None
+            if not isinstance(repo, str) or not repo:
+                repo = None
+
             # Get token from credentials manager or environment
             credential_manager = get_credential_manager()
             token = credential_manager.get_token()

@@ -475,10 +475,10 @@ def test_conflict_detection_values(local_val, remote_val, should_conflict):
         local_issue, remote_issue, fields_to_check=["content"]
     )
     if should_conflict:
-        assert (
-            len(conflicts) > 0
-        ), f"Expected conflict for {local_val!r} vs {remote_val!r}"
+        assert len(conflicts) > 0, (
+            f"Expected conflict for {local_val!r} vs {remote_val!r}"
+        )
     else:
-        assert (
-            len(conflicts) == 0
-        ), f"Expected no conflict for {local_val!r} vs {remote_val!r}"
+        assert len(conflicts) == 0, (
+            f"Expected no conflict for {local_val!r} vs {remote_val!r}"
+        )

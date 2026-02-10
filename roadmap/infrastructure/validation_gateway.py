@@ -8,7 +8,18 @@ Core services use this gateway instead of importing validation modules directly
 or accessing adapters through validation.
 """
 
+import os
 from typing import Any
+
+
+class _NullGitHubClient:
+    """Fallback client for validation when no GitHub token is configured."""
+
+    def validate_assignee(self, assignee: str) -> tuple[bool, str]:
+        return False, "GitHub token not configured"
+
+    def get_team_members(self) -> list[str]:
+        return []
 
 
 class ValidationGateway:
@@ -31,8 +42,19 @@ class ValidationGateway:
             GitHub client instance from adapters
         """
         from roadmap.adapters.github.github import GitHubClient
+        from roadmap.infrastructure.security.credentials import get_credential_manager
 
-        return GitHubClient(token=token, owner=org)
+        resolved_token = token or os.getenv("GITHUB_TOKEN")
+        if not resolved_token:
+            try:
+                resolved_token = get_credential_manager().get_token()
+            except Exception:
+                resolved_token = None
+
+        if not resolved_token:
+            return _NullGitHubClient()
+
+        return GitHubClient(token=resolved_token, owner=org)
 
     @staticmethod
     def parse_issue_for_validation(file_path: Any) -> Any:

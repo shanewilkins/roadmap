@@ -338,9 +338,9 @@ class TestCommentCommands:
             from tests.fixtures.click_testing import ClickTestHelper
 
             issue_id = ClickTestHelper.extract_issue_id(result.output)
-            assert (
-                issue_id is not None
-            ), f"Could not find issue ID in output: {result.output}"
+            assert issue_id is not None, (
+                f"Could not find issue ID in output: {result.output}"
+            )
 
             result = cli_runner.invoke(
                 main,
@@ -391,9 +391,9 @@ class TestCommentCommands:
             from tests.fixtures.click_testing import ClickTestHelper
 
             issue_id = ClickTestHelper.extract_issue_id(result.output)
-            assert (
-                issue_id is not None
-            ), f"Could not find issue ID in output: {result.output}"
+            assert issue_id is not None, (
+                f"Could not find issue ID in output: {result.output}"
+            )
 
             result = cli_runner.invoke(
                 main,

@@ -47,9 +47,9 @@ class TestGitHooksIntegration:
                     capture_output=True,
                     text=True,
                 )
-                assert (
-                    result.returncode == 0
-                ), f"Hook has bash syntax errors: {result.stderr}"
+                assert result.returncode == 0, (
+                    f"Hook has bash syntax errors: {result.stderr}"
+                )
 
             finally:
                 os.chdir(original_cwd)
@@ -88,9 +88,9 @@ class TestGitHooksIntegration:
                         capture_output=True,
                         text=True,
                     )
-                    assert (
-                        result.returncode == 0
-                    ), f"Hook {hook_name} has syntax errors: {result.stderr}"
+                    assert result.returncode == 0, (
+                        f"Hook {hook_name} has syntax errors: {result.stderr}"
+                    )
 
             finally:
                 os.chdir(original_cwd)

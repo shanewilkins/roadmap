@@ -191,9 +191,9 @@ class TestStatusChangeServiceConsistency:
         for change_str, expected in test_cases:
             parsed = parse_status_change(change_str)
             # Specific assertion on whitespace handling
-            assert (
-                parsed == expected
-            ), f"Inconsistent whitespace handling for: {change_str}"
+            assert parsed == expected, (
+                f"Inconsistent whitespace handling for: {change_str}"
+            )
 
     def test_service_produces_consistent_github_mappings(self):
         """Test service produces consistent mappings across multiple calls."""
@@ -220,9 +220,9 @@ class TestStatusChangeServiceConsistency:
             assert result["status_enum"] == status
             # Verify mapping logic
             expected_state = "closed" if status == Status.CLOSED else "open"
-            assert (
-                result["github_state"] == expected_state
-            ), f"Wrong mapping for {status.value}"
+            assert result["github_state"] == expected_state, (
+                f"Wrong mapping for {status.value}"
+            )
 
     def test_service_all_milestone_values_map_correctly(self):
         """Test service maps all MilestoneStatus enum values to GitHub states correctly."""

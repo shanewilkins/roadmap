@@ -39,7 +39,7 @@ jobs:
           ${{ runner.os }}-uv-${{ matrix.python-version }}-
 
     - name: Install dependencies
-      run: uv sync --all-extras
+      run: uv sync --all-extras --locked
 
     - name: Run Tests
       run: uv run pytest --cov=roadmap --cov-report=xml --cov-report=term-missing
@@ -79,13 +79,16 @@ jobs:
           ${{ runner.os }}-uv-3.14-
 
     - name: Install dependencies
-      run: uv sync --all-extras
+      run: uv sync --all-extras --locked
+
+    - name: Check Ruff Version
+      run: uv run ruff --version
 
     - name: Run Ruff Format Check
-      run: uv run ruff format --check roadmap tests
+      run: uv run ruff format --config config/ruff.toml --check roadmap tests
 
     - name: Run Ruff Linter
-      run: uv run ruff check roadmap tests
+      run: uv run ruff check --config config/ruff.toml roadmap tests
 
     - name: Run Bandit Security Check
       run: uv run bandit -r roadmap --severity-level=high

@@ -178,9 +178,9 @@ class TestEstimatedTimeCLI:
                 created_issue = issue
                 break
 
-        assert (
-            created_issue is not None
-        ), f"Could not find created issue with title: {message}"
+        assert created_issue is not None, (
+            f"Could not find created issue with title: {message}"
+        )
 
         if should_contain_estimate:
             assert created_issue.estimated_hours == float(estimated_value.rstrip("h"))

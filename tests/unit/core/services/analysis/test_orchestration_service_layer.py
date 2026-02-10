@@ -298,9 +298,9 @@ class TestOrchestrationErrorHandling:
             result = extract_milestone_status_update(change_str)
 
             # Verify: All milestone statuses process successfully
-            assert (
-                result is not None
-            ), f"Failed to process milestone status: {milestone_status.value}"
+            assert result is not None, (
+                f"Failed to process milestone status: {milestone_status.value}"
+            )
             assert result["status_enum"] == milestone_status
             valid_statuses.append(milestone_status.value)
 

@@ -47,9 +47,9 @@ class ClickTestResult:
         self, exit_code: int = 1, msg: str = "Command should fail"
     ) -> "ClickTestResult":
         """Assert that command failed with specific exit code."""
-        assert (
-            self.exit_code == exit_code
-        ), f"{msg} (expected {exit_code}, got {self.exit_code})\n\nOutput:\n{self.output}"
+        assert self.exit_code == exit_code, (
+            f"{msg} (expected {exit_code}, got {self.exit_code})\n\nOutput:\n{self.output}"
+        )
         return self
 
     def assert_contains(
@@ -57,9 +57,9 @@ class ClickTestResult:
     ) -> "ClickTestResult":
         """Assert that output contains text (with optional cleaning)."""
         output = self.clean_output if clean else self.output
-        assert (
-            text in output
-        ), f"'{text}' not found in output.{f' {msg}' if msg else ''}\n\nOutput:\n{output}"
+        assert text in output, (
+            f"'{text}' not found in output.{f' {msg}' if msg else ''}\n\nOutput:\n{output}"
+        )
         return self
 
     def assert_not_contains(
@@ -67,9 +67,9 @@ class ClickTestResult:
     ) -> "ClickTestResult":
         """Assert that output does not contain text."""
         output = self.clean_output if clean else self.output
-        assert (
-            text not in output
-        ), f"'{text}' found in output but shouldn't be.{f' {msg}' if msg else ''}\n\nOutput:\n{output}"
+        assert text not in output, (
+            f"'{text}' found in output but shouldn't be.{f' {msg}' if msg else ''}\n\nOutput:\n{output}"
+        )
         return self
 
     def assert_contains_all(
@@ -86,9 +86,9 @@ class ClickTestResult:
     ) -> "ClickTestResult":
         """Assert that output contains at least one of provided texts."""
         output = self.clean_output if clean else self.output
-        assert any(
-            text in output for text in texts
-        ), f"None of {texts} found in output.\n\nOutput:\n{output}"
+        assert any(text in output for text in texts), (
+            f"None of {texts} found in output.\n\nOutput:\n{output}"
+        )
         return self
 
     def assert_matches_regex(
@@ -96,21 +96,21 @@ class ClickTestResult:
     ) -> "ClickTestResult":
         """Assert that output matches regex pattern."""
         output = self.clean_output if clean else self.output
-        assert re.search(
-            pattern, output
-        ), f"Pattern '{pattern}' not found in output.\n\nOutput:\n{output}"
+        assert re.search(pattern, output), (
+            f"Pattern '{pattern}' not found in output.\n\nOutput:\n{output}"
+        )
         return self
 
     def assert_exception(self, exception_type=None) -> "ClickTestResult":
         """Assert that command raised an exception."""
         if exception_type:
-            assert isinstance(
-                self.exception, exception_type
-            ), f"Expected {exception_type}, got {type(self.exception)}"
+            assert isinstance(self.exception, exception_type), (
+                f"Expected {exception_type}, got {type(self.exception)}"
+            )
         else:
-            assert (
-                self.exception is not None
-            ), "Expected an exception, but none was raised"
+            assert self.exception is not None, (
+                "Expected an exception, but none was raised"
+            )
         return self
 
     def extract_first_match(

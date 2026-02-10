@@ -131,9 +131,9 @@ node_modules/
         artifacts_count = sum(
             1 for line in lines if line.strip() == ".roadmap/artifacts/"
         )
-        assert (
-            artifacts_count == 1
-        ), "Existing .roadmap/artifacts/ pattern was duplicated"
+        assert artifacts_count == 1, (
+            "Existing .roadmap/artifacts/ pattern was duplicated"
+        )
 
     def test_gitignore_with_custom_roadmap_dir(self, temp_dir):
         """Test .gitignore patterns with custom roadmap directory name."""

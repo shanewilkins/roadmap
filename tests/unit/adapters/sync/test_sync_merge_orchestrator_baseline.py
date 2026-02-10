@@ -410,9 +410,9 @@ class TestSchemaValidation(unittest.TestCase):
 
         # Verify all required fields exist and are accessible
         for field in required_fields:
-            assert hasattr(
-                state, field
-            ), f"IssueBaseState missing required field: {field}"
+            assert hasattr(state, field), (
+                f"IssueBaseState missing required field: {field}"
+            )
 
     def test_issue_base_state_defaults(self):
         """Test that IssueBaseState has sensible defaults."""

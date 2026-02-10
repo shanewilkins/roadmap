@@ -61,9 +61,9 @@ class TestOverdueIssueFiltering:
                 main, ["issue", "list", "--overdue"], catch_exceptions=False
             )
 
-            assert (
-                result.exit_code == 0
-            ), f"Issue list --overdue failed: {result.output}"
+            assert result.exit_code == 0, (
+                f"Issue list --overdue failed: {result.output}"
+            )
 
     def test_issue_list_without_overdue_shows_all(self, cli_runner):
         """Test that without --overdue flag, all issues are shown."""
@@ -150,9 +150,9 @@ class TestOverdueMilestoneFiltering:
                 main, ["milestone", "list", "--overdue"], catch_exceptions=False
             )
 
-            assert (
-                result.exit_code == 0
-            ), f"Milestone list --overdue failed: {result.output}"
+            assert result.exit_code == 0, (
+                f"Milestone list --overdue failed: {result.output}"
+            )
             assert "overdue" in result.output.lower()
 
     def test_milestone_list_without_overdue_shows_all(self, cli_runner):

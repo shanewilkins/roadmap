@@ -294,9 +294,9 @@ class TestEndToEndWorkflows:
 
         result = runner.invoke(main, ["issue", "create", "Backlog Issue"])
         backlog_issue_id = ClickTestHelper.extract_issue_id(result.output)
-        assert (
-            backlog_issue_id is not None
-        ), "Failed to parse backlog_issue_id from output"
+        assert backlog_issue_id is not None, (
+            "Failed to parse backlog_issue_id from output"
+        )
 
         # Create milestone
         milestone_name = "Milestone 1"

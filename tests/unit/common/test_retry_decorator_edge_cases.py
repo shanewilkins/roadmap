@@ -111,15 +111,15 @@ class TestRetryDecorator:
         assert len(sleep_times) == 3
 
         # Verify exponential backoff: 0.05, 0.1, 0.2
-        assert (
-            abs(sleep_times[0] - 0.05) < 0.001
-        ), f"First sleep should be ~0.05, got {sleep_times[0]}"
-        assert (
-            abs(sleep_times[1] - 0.1) < 0.001
-        ), f"Second sleep should be ~0.1, got {sleep_times[1]}"
-        assert (
-            abs(sleep_times[2] - 0.2) < 0.001
-        ), f"Third sleep should be ~0.2, got {sleep_times[2]}"
+        assert abs(sleep_times[0] - 0.05) < 0.001, (
+            f"First sleep should be ~0.05, got {sleep_times[0]}"
+        )
+        assert abs(sleep_times[1] - 0.1) < 0.001, (
+            f"Second sleep should be ~0.1, got {sleep_times[1]}"
+        )
+        assert abs(sleep_times[2] - 0.2) < 0.001, (
+            f"Third sleep should be ~0.2, got {sleep_times[2]}"
+        )
 
     @pytest.mark.parametrize(
         "delay,backoff,description",

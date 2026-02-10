@@ -118,9 +118,9 @@ class TestCLIMilestoneAssign:
         )
 
         # Should succeed or handle gracefully
-        assert (
-            result.exit_code == 0 or "assigned" in result.output.lower()
-        ), f"Exit code: {result.exit_code}, Output: {result.output}"
+        assert result.exit_code == 0 or "assigned" in result.output.lower(), (
+            f"Exit code: {result.exit_code}, Output: {result.output}"
+        )
 
     def test_assign_nonexistent_issue(self, roadmap_with_milestones):
         """Test assigning non-existent issue."""

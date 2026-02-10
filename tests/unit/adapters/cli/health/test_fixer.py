@@ -231,12 +231,12 @@ class TestFixerInterface:
 
             # Check required properties
             assert hasattr(fixer, "fix_type"), f"{fix_type} missing fix_type property"
-            assert hasattr(
-                fixer, "safety_level"
-            ), f"{fix_type} missing safety_level property"
-            assert hasattr(
-                fixer, "description"
-            ), f"{fix_type} missing description property"
+            assert hasattr(fixer, "safety_level"), (
+                f"{fix_type} missing safety_level property"
+            )
+            assert hasattr(fixer, "description"), (
+                f"{fix_type} missing description property"
+            )
 
             # Verify they are callable
             assert callable(fixer.scan), f"{fix_type}.scan is not callable"

@@ -97,9 +97,9 @@ class TestAssertionQualityIssueStatusChanges:
         # GOOD: Verify correct enum value
         assert result["status_enum"] == status, f"Wrong enum for {status.value}"
         # GOOD: Verify correct GitHub state mapping
-        assert (
-            result["github_state"] == expected_github_state
-        ), f"Status {status.value} should map to '{expected_github_state}'"
+        assert result["github_state"] == expected_github_state, (
+            f"Status {status.value} should map to '{expected_github_state}'"
+        )
         """Test assertions verify parsing doesn't lose change context."""
         issue = (
             IssueChangeTestBuilder()
@@ -164,13 +164,13 @@ class TestAssertionQualityMilestoneStatusChanges:
 
         # GOOD: Verify correct status enum
         assert result is not None
-        assert (
-            result["status_enum"] == status_enum
-        ), f"Wrong enum for {status_enum.value}"
+        assert result["status_enum"] == status_enum, (
+            f"Wrong enum for {status_enum.value}"
+        )
         # GOOD: Verify correct GitHub state mapping
-        assert (
-            result["github_state"] == github_state
-        ), f"Wrong GitHub state for {status_enum.value}"
+        assert result["github_state"] == github_state, (
+            f"Wrong GitHub state for {status_enum.value}"
+        )
 
 
 class TestAssertionQualityBatchOperations:
@@ -199,13 +199,13 @@ class TestAssertionQualityBatchOperations:
         # Type guard: filter out None values for subscripting
         non_none_results = [r for r in results if r is not None]
         # GOOD: Verify each has correct status
-        assert all(
-            r["status_enum"] == Status.IN_PROGRESS for r in non_none_results
-        ), "All should transition to in-progress"
+        assert all(r["status_enum"] == Status.IN_PROGRESS for r in non_none_results), (
+            "All should transition to in-progress"
+        )
         # GOOD: Verify each has correct GitHub state
-        assert all(
-            r["github_state"] == "open" for r in non_none_results
-        ), "in-progress maps to open"
+        assert all(r["github_state"] == "open" for r in non_none_results), (
+            "in-progress maps to open"
+        )
 
     def test_assertion_quality_for_batch_milestone_processing(self):
         """Test assertions verify batch milestone processing."""
@@ -233,9 +233,9 @@ class TestAssertionQualityBatchOperations:
             r["status_enum"] == MilestoneStatus.CLOSED for r in non_none_results
         ), "All should close"
         # GOOD: Verify all map to GitHub closed state
-        assert all(
-            r["github_state"] == "closed" for r in non_none_results
-        ), "Closed maps to closed"
+        assert all(r["github_state"] == "closed" for r in non_none_results), (
+            "Closed maps to closed"
+        )
 
 
 class TestAssertionQualityErrorCases:
@@ -318,13 +318,13 @@ class TestAssertionQualityDataBuilders:
 
         # GOOD: Verify all chained values present
         assert milestone["number"] == 5, "Number should be preserved from with_number()"
-        assert (
-            milestone["title"] == "v5.0"
-        ), "Title should be preserved from with_title()"
+        assert milestone["title"] == "v5.0", (
+            "Title should be preserved from with_title()"
+        )
         assert milestone["github_number"] == 25, "GitHub number should be preserved"
-        assert (
-            milestone["status_change"] == "open -> closed"
-        ), "Status change should be preserved"
+        assert milestone["status_change"] == "open -> closed", (
+            "Status change should be preserved"
+        )
 
 
 class TestAssertionQualityEnumHandling:
@@ -340,13 +340,13 @@ class TestAssertionQualityEnumHandling:
             # GOOD: Verify result exists
             assert result is not None, f"Status {status.value} should be supported"
             # GOOD: Verify exact enum match
-            assert (
-                result["status_enum"] is status
-            ), f"Should return {status} enum, not string"
+            assert result["status_enum"] is status, (
+                f"Should return {status} enum, not string"
+            )
             # GOOD: Verify GitHub mapping exists
-            assert (
-                "github_state" in result
-            ), f"GitHub state mapping missing for {status.value}"
+            assert "github_state" in result, (
+                f"GitHub state mapping missing for {status.value}"
+            )
             assert result["github_state"] in [
                 "open",
                 "closed",
@@ -360,14 +360,14 @@ class TestAssertionQualityEnumHandling:
             result = extract_milestone_status_update(change_str)
 
             # GOOD: Verify result exists
-            assert (
-                result is not None
-            ), f"Milestone status {milestone_status.value} should be supported"
+            assert result is not None, (
+                f"Milestone status {milestone_status.value} should be supported"
+            )
             # GOOD: Verify exact enum match
-            assert (
-                result["status_enum"] is milestone_status
-            ), f"Should return {milestone_status} enum, not string"
+            assert result["status_enum"] is milestone_status, (
+                f"Should return {milestone_status} enum, not string"
+            )
             # GOOD: Verify GitHub mapping
-            assert (
-                result["github_state"] == milestone_status.value
-            ), "Milestone should map 1:1 to GitHub state"
+            assert result["github_state"] == milestone_status.value, (
+                "Milestone should map 1:1 to GitHub state"
+            )

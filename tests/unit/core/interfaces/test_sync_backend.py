@@ -30,9 +30,9 @@ class TestSyncBackendInterface:
         ]
 
         for method in required_methods:
-            assert hasattr(
-                SyncBackendInterface, method
-            ), f"SyncBackendInterface missing required method: {method}"
+            assert hasattr(SyncBackendInterface, method), (
+                f"SyncBackendInterface missing required method: {method}"
+            )
 
     def test_sync_conflict_creation(self):
         """Test SyncConflict can be created with proper fields."""

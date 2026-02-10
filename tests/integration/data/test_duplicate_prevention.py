@@ -44,9 +44,9 @@ class TestIssueDuplicatePrevention:
         )
 
         final_count = self.count_issue_files(core)
-        assert (
-            initial_count == final_count
-        ), f"Update created duplicate files: {initial_count} → {final_count}"
+        assert initial_count == final_count, (
+            f"Update created duplicate files: {initial_count} → {final_count}"
+        )
 
     def test_update_description_no_duplicates(self, core):
         """Ensure updating description doesn't create duplicates."""
@@ -56,9 +56,9 @@ class TestIssueDuplicatePrevention:
         core.issues.update(issue.id, headline="New detailed description here")
 
         final_count = self.count_issue_files(core)
-        assert (
-            initial_count == final_count
-        ), "Description update created duplicate files"
+        assert initial_count == final_count, (
+            "Description update created duplicate files"
+        )
 
     def test_update_status_multiple_times_no_duplicates(self, core):
         """Ensure multiple status updates don't accumulate duplicates."""
@@ -71,9 +71,9 @@ class TestIssueDuplicatePrevention:
             core.issues.update(issue.id, status=status)
 
         final_count = self.count_issue_files(core)
-        assert (
-            initial_count == final_count
-        ), f"Multiple updates created duplicates: {initial_count} → {final_count}"
+        assert initial_count == final_count, (
+            f"Multiple updates created duplicates: {initial_count} → {final_count}"
+        )
 
     def test_update_priority_no_duplicates(self, core):
         """Ensure updating priority doesn't create duplicates."""
@@ -101,18 +101,18 @@ class TestIssueDuplicatePrevention:
 
         # No extra files should exist
         final_count = self.count_issue_files(core)
-        assert (
-            initial_count == final_count
-        ), "Milestone move created or left duplicate files"
+        assert initial_count == final_count, (
+            "Milestone move created or left duplicate files"
+        )
 
         # Verify file is in correct location
         updated_issue = core.issues.get(issue.id)
         assert updated_issue is not None
         new_path = Path(updated_issue.file_path)
         assert new_path.exists(), "New file doesn't exist at expected location"
-        assert (
-            "Milestone 1" in new_path.parts
-        ), "File not in correct milestone directory"
+        assert "Milestone 1" in new_path.parts, (
+            "File not in correct milestone directory"
+        )
 
     def test_move_issue_back_to_backlog_no_duplicates(self, core):
         """Ensure moving issue to backlog doesn't leave stale files."""
@@ -161,9 +161,9 @@ class TestMilestoneDuplicatePrevention:
         )
 
         final_count = self.count_milestone_files(core)
-        assert (
-            initial_count == final_count
-        ), f"Update created duplicate milestone files: {initial_count} → {final_count}"
+        assert initial_count == final_count, (
+            f"Update created duplicate milestone files: {initial_count} → {final_count}"
+        )
 
     def test_update_milestone_status_no_duplicates(self, core):
         """Ensure updating milestone status doesn't create duplicates."""
@@ -173,9 +173,9 @@ class TestMilestoneDuplicatePrevention:
         core.milestones.update(milestone.name, status=MilestoneStatus.CLOSED)
 
         final_count = self.count_milestone_files(core)
-        assert (
-            initial_count == final_count
-        ), "Status update created duplicate milestone files"
+        assert initial_count == final_count, (
+            "Status update created duplicate milestone files"
+        )
 
 
 class TestProjectDuplicatePrevention:
@@ -201,9 +201,9 @@ class TestProjectDuplicatePrevention:
         core.projects.update(project.id, headline="Updated description")
 
         final_count = self.count_project_files(core)
-        assert (
-            initial_count == final_count
-        ), f"Update created duplicate project files: {initial_count} → {final_count}"
+        assert initial_count == final_count, (
+            f"Update created duplicate project files: {initial_count} → {final_count}"
+        )
 
     def test_update_project_status_no_duplicates(self, core):
         """Ensure updating project status doesn't create duplicates."""
@@ -213,6 +213,6 @@ class TestProjectDuplicatePrevention:
         core.projects.update(project.id, status=ProjectStatus.COMPLETED)
 
         final_count = self.count_project_files(core)
-        assert (
-            initial_count == final_count
-        ), "Status update created duplicate project files"
+        assert initial_count == final_count, (
+            "Status update created duplicate project files"
+        )

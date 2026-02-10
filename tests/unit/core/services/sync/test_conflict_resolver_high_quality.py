@@ -26,9 +26,9 @@ class TestConflictResolverFieldRules:
 
         for field in ["status", "assignee", "milestone"]:
             strategy = resolver.RULES.get(field)
-            assert (
-                strategy == ConflictResolutionStrategy.FLAG_FOR_REVIEW
-            ), f"{field} should be FLAG_FOR_REVIEW"
+            assert strategy == ConflictResolutionStrategy.FLAG_FOR_REVIEW, (
+                f"{field} should be FLAG_FOR_REVIEW"
+            )
 
     def test_merge_friendly_fields_have_merge_strategies(self):
         """Test that mergeable fields use merge strategies."""

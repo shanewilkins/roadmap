@@ -76,9 +76,9 @@ class TestGitHooksManagerFix:
 
         for method_name in handler_methods:
             assert hasattr(manager, method_name), f"Missing method: {method_name}"
-            assert callable(
-                getattr(manager, method_name)
-            ), f"Not callable: {method_name}"
+            assert callable(getattr(manager, method_name)), (
+                f"Not callable: {method_name}"
+            )
 
     def test_hook_installation_creates_files(self):
         """Test that installing hooks creates the hook files with correct permissions."""

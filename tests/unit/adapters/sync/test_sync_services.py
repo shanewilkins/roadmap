@@ -93,9 +93,9 @@ class TestIssueStateService:
                 backend_id=42,
             )
             result = IssueStateService.sync_issue_to_issue("local-123", sync_issue)
-            assert (
-                result.status == expected_status
-            ), f"Failed for status: {backend_status}"
+            assert result.status == expected_status, (
+                f"Failed for status: {backend_status}"
+            )
 
     def test_sync_issue_to_issue_metadata_tracking(self):
         """Test that backend metadata is tracked."""

@@ -113,9 +113,9 @@ class TestGitCommandConstruction:
         """Verify git commit messages properly escape shell metacharacters."""
         # Safe format: pass as argument, not interpreted by shell
         safe_cmd = ["git", "commit", "-m", dangerous_message]
-        assert isinstance(
-            safe_cmd, list
-        ), f"Message '{dangerous_message}' handled unsafely"
+        assert isinstance(safe_cmd, list), (
+            f"Message '{dangerous_message}' handled unsafely"
+        )
         # When passed as list, subprocess.run won't interpret shell syntax
         assert dangerous_message == safe_cmd[3], "Message should be preserved exactly"
 
@@ -135,9 +135,9 @@ class TestGitCommandConstruction:
         # Safe characters for git branch names: alphanumeric, dash, underscore, slash
         branch_name_pattern = r"^[a-zA-Z0-9\-_/]+$"
         is_valid = bool(re.match(branch_name_pattern, dangerous_branch))
-        assert (
-            not is_valid
-        ), f"Dangerous branch name '{dangerous_branch}' should be rejected"
+        assert not is_valid, (
+            f"Dangerous branch name '{dangerous_branch}' should be rejected"
+        )
 
     @pytest.mark.parametrize(
         "dangerous_url",
@@ -226,9 +226,9 @@ class TestGitParsingValidation:
 
         # Verify format uses standard git placeholders, not user input
         has_user_input_placeholder = "%U" in safe_format
-        assert (
-            not has_user_input_placeholder
-        ), "Format should not use user data directly"
+        assert not has_user_input_placeholder, (
+            "Format should not use user data directly"
+        )
         assert True
 
     def test_git_reflog_parsing_prevents_timestamp_injection(self):
@@ -386,9 +386,9 @@ class TestLoggingPrivacy:
         for field in sensitive_fields:
             if field in str(api_response):
                 # In actual logging, these should be filtered or masked
-                assert field in str(
-                    api_response
-                ), f"Test setup: {field} should be present"
+                assert field in str(api_response), (
+                    f"Test setup: {field} should be present"
+                )
         assert True
 
     def test_database_logs_dont_expose_credentials_table(self):
@@ -438,9 +438,9 @@ class TestDataRetention:
 
         for temp_file in temp_patterns:
             # These files might contain sensitive data and should be cleaned
-            assert temp_file.endswith("_MSG") or temp_file.startswith(
-                ".git/"
-            ), "Test setup: should be git temp file"
+            assert temp_file.endswith("_MSG") or temp_file.startswith(".git/"), (
+                "Test setup: should be git temp file"
+            )
         assert True
 
     def test_clone_operation_validates_cache_directory(self):

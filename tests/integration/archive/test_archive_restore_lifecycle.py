@@ -243,36 +243,36 @@ class TestMilestoneArchiveRestore:
             ["milestone", "archive", "v1.0", "--force"],
         )
 
-        assert (
-            result.exit_code == 0
-        ), f"Archive command failed (exit {result.exit_code}): {result.output}"
+        assert result.exit_code == 0, (
+            f"Archive command failed (exit {result.exit_code}): {result.output}"
+        )
 
         # Verify milestone file was archived
         archive_milestones_dir = roadmap_dir / "archive" / "milestones"
-        assert (
-            archive_milestones_dir.exists()
-        ), "Archive milestones directory should exist"
+        assert archive_milestones_dir.exists(), (
+            "Archive milestones directory should exist"
+        )
 
         milestone_files = list(archive_milestones_dir.glob("*.md"))
-        assert (
-            len(milestone_files) > 0
-        ), f"No milestone files found in {archive_milestones_dir}"
+        assert len(milestone_files) > 0, (
+            f"No milestone files found in {archive_milestones_dir}"
+        )
 
         # Verify issues folder was also archived
-        assert (
-            not issues_dir.exists()
-        ), "Issues folder should not exist in active directory after archiving"
+        assert not issues_dir.exists(), (
+            "Issues folder should not exist in active directory after archiving"
+        )
 
         archive_issues_dir = roadmap_dir / "archive" / "issues" / "v1.0"
-        assert (
-            archive_issues_dir.exists()
-        ), "Issues folder should be moved to archive/issues/"
+        assert archive_issues_dir.exists(), (
+            "Issues folder should be moved to archive/issues/"
+        )
 
         # Verify the issue file was moved
         archived_issue_file = archive_issues_dir / "test-issue.md"
-        assert (
-            archived_issue_file.exists()
-        ), "Issue file should be moved to archived folder"
+        assert archived_issue_file.exists(), (
+            "Issue file should be moved to archived folder"
+        )
 
     def test_archive_list_milestones(self, roadmap_with_issues_and_milestones):
         """Test listing archived milestones."""

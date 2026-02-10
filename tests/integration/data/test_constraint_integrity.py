@@ -106,9 +106,9 @@ class TestForeignKeyConstraints:
                 all_comment_ids.append(comment.id)
 
         # Verify all IDs are unique
-        assert len(all_comment_ids) == len(
-            set(all_comment_ids)
-        ), "Comment IDs must be unique"
+        assert len(all_comment_ids) == len(set(all_comment_ids)), (
+            "Comment IDs must be unique"
+        )
 
     def test_issue_updates_maintain_comment_order(self, core_with_data):
         """Verify comment order is maintained after issue updates."""

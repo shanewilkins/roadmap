@@ -1,11 +1,10 @@
-[tool.ruff]
 line-length = 88
 target-version = "py312"
 exclude = [
     "roadmap/cli_backup_original.py",
 ]
 
-[tool.ruff.lint]
+[lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -21,7 +20,7 @@ ignore = [
     "C901",  # too complex
 ]
 
-[tool.ruff.format]
+[format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false

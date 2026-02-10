@@ -9,9 +9,9 @@ from datetime import UTC, datetime
 from roadmap.common.constants import Priority, Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.models.sync_models import SyncIssue
+from roadmap.core.services.issue.issue_service import IssueService
 from roadmap.core.services.sync.duplicate_detector import DuplicateDetector
 from roadmap.core.services.sync.duplicate_resolver import DuplicateResolver
-from roadmap.core.services.issue.issue_service import IssueService
 
 
 class TestDuplicateDetectionPipeline:
@@ -80,9 +80,9 @@ class TestDuplicateDetectionPipeline:
         reduction_remote = 1 - (len(dedup_remote) / len(remote_issues))
 
         assert reduction_local >= 0.49, f"Local reduction too small: {reduction_local}"
-        assert (
-            reduction_remote >= 0.49
-        ), f"Remote reduction too small: {reduction_remote}"
+        assert reduction_remote >= 0.49, (
+            f"Remote reduction too small: {reduction_remote}"
+        )
 
     def test_duplicate_detection_finds_matches_after_dedup(self):
         """Test that duplicate detection works on deduplicated sets with overlapping content."""
@@ -130,13 +130,14 @@ class TestDuplicateDetectionPipeline:
         matches = detector.detect_all(dedup_local, dedup_remote)
 
         # Should find exact title matches between local and remote
-        assert (
-            len(matches) > 0
-        ), "Should find matches between local and remote with same titles"
+        assert len(matches) > 0, (
+            "Should find matches between local and remote with same titles"
+        )
 
     def test_resolution_action_counts_are_accurate(self):
         """Test that ResolutionAction counts match actual resolutions."""
         from unittest.mock import MagicMock
+
         from roadmap.common.result import Ok
 
         # Create mock issue service
@@ -216,17 +217,17 @@ class TestDuplicateDetectionPipeline:
 
         # Stage 2: Self-dedup remote
         dedup_remote = detector.remote_self_dedup(remote_issues)
-        assert len(dedup_remote) < len(
-            remote_issues
-        ), "Remote dedup should reduce count"
+        assert len(dedup_remote) < len(remote_issues), (
+            "Remote dedup should reduce count"
+        )
 
         # Stage 3: Cross-comparison
         matches = detector.detect_all(dedup_local, dedup_remote)
 
         # Verify no match explosion
-        assert len(matches) < len(dedup_local) * len(
-            dedup_remote
-        ), "Matches should be sparse, not Cartesian product"
+        assert len(matches) < len(dedup_local) * len(dedup_remote), (
+            "Matches should be sparse, not Cartesian product"
+        )
 
     def test_integration_with_status_archived(self):
         """Test that Status.ARCHIVED is properly defined for archiving."""
