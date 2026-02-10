@@ -1,7 +1,7 @@
 ---
 id: 651f7e25
 title: 'CLI Enhancement: Align terminology with Git and improve workflow'
-headline: ''
+headline: '# CLI Enhancement: Align terminology with Git and improve workflow'
 priority: medium
 status: todo
 issue_type: other
@@ -11,7 +11,8 @@ labels:
 - ux
 - 1.0-target
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3724'
 created: '2026-02-05T15:17:51.794324+00:00'
 updated: '2026-02-05T15:17:51.794325+00:00'
 assignee: shanewilkins
@@ -29,7 +30,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3724'
 ---
 
 # CLI Enhancement: Align terminology with Git and improve workflow

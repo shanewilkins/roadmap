@@ -1,7 +1,7 @@
 ---
 id: 62e5b01c
 title: Auto-create feature branch for new issues
-headline: ''
+headline: '# Auto-create feature branch for new issues'
 priority: medium
 status: todo
 issue_type: other
@@ -13,7 +13,8 @@ labels:
 - git-integration
 - workflow
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3658'
 created: '2026-02-05T15:17:52.400753+00:00'
 updated: '2026-02-05T15:17:52.400754+00:00'
 assignee: null
@@ -31,7 +32,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3658'
 ---
 
 # Auto-create feature branch for new issues

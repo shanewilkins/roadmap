@@ -1,14 +1,15 @@
 ---
 id: 09f0b31d
 title: Create production deployment and operations guide
-headline: ''
+headline: '# Create production deployment and operations guide'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3693'
 created: '2026-02-05T15:17:49.948169+00:00'
 updated: '2026-02-05T15:17:49.948169+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3693'
 ---
 
 # Create production deployment and operations guide

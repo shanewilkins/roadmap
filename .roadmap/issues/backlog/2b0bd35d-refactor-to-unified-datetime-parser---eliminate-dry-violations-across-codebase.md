@@ -1,14 +1,16 @@
 ---
 id: 2b0bd35d
 title: Refactor to unified datetime parser - eliminate DRY violations across codebase
-headline: ''
+headline: '# Refactor to unified datetime parser - eliminate DRY violations across
+  codebase'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3709'
 created: '2026-02-05T15:17:52.006207+00:00'
 updated: '2026-02-05T15:17:52.006207+00:00'
 assignee: null
@@ -26,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3709'
 ---
 
 # Refactor to unified datetime parser - eliminate DRY violations across codebase

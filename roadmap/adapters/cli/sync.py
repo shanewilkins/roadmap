@@ -819,6 +819,14 @@ def _execute_dedup_only(
     and deletes duplicates (both local and remote via GraphQL).
 
     Args:
+        core: RoadmapCore instance
+        console_inst: Console instance for output
+        verbose: If True, show detailed output
+        detect_duplicates: If True, enable duplicate detection
+        duplicate_title_threshold: Title similarity threshold override
+        duplicate_content_threshold: Content similarity threshold override
+        duplicate_auto_resolve_threshold: Auto-resolve confidence threshold
+        interactive_duplicates: If True, prompt for duplicate resolution
         fuzzy: If True, enable fuzzy matching (slower but catches more duplicates)
         dry_run: If True, preview duplicates without actually deleting
     """

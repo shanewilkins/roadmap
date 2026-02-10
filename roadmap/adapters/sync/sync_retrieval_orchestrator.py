@@ -245,100 +245,36 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
         try:
             logger.info("creating_baseline_from_remote")
 
-            # Authenticate with backend
-            auth_result = self.backend.authenticate()
-            if hasattr(auth_result, "is_err") and callable(auth_result.is_err):
-                if auth_result.is_err():
-                    logger.error(
-                        "backend_auth_failed_for_baseline",
-                        error=str(auth_result.unwrap_err()),
-                        severity="infrastructure",
-                    )
-                    return False
-                if not auth_result.unwrap():
-                    logger.error(
-                        "backend_auth_failed_for_baseline", severity="infrastructure"
-                    )
-                    return False
-            elif not auth_result:
-                logger.error(
-                    "backend_auth_failed_for_baseline", severity="infrastructure"
-                )
+            if not self._authenticate_for_baseline():
                 return False
 
-            # Get remote issues
-            remote_issues_result = self.backend.get_issues()
-            remote_issues: dict[str, SyncIssue] = {}
-            if hasattr(remote_issues_result, "is_err") and callable(
-                remote_issues_result.is_err
-            ):
-                if remote_issues_result.is_err():
-                    logger.warning(
-                        "backend_get_issues_failed",
-                        error=str(remote_issues_result.unwrap_err()),
-                        severity="operational",
-                    )
-                    return False
-                remote_issues = remote_issues_result.unwrap() or {}
-            elif isinstance(remote_issues_result, dict):
-                remote_issues = remote_issues_result
-            else:
-                logger.warning(
-                    "backend_get_issues_unexpected_type",
-                    result_type=type(remote_issues_result).__name__,
-                    severity="operational",
-                )
-                return False
+            remote_issues = self._fetch_remote_issues_for_baseline()
             if not remote_issues:
-                logger.warning("no_remote_issues_for_baseline", severity="operational")
                 return False
 
-            # Create baseline from remote
-            baseline = SyncState(
-                last_sync_time=datetime.now(UTC),
-            )
-
-            # Convert remote issues to baseline states
-            from roadmap.core.services.sync.sync_state import IssueBaseState
-
-            for issue_id, remote_issue in remote_issues.items():
-                try:
-                    baseline_state = IssueBaseState(
-                        id=issue_id,
-                        status=remote_issue.status or "todo",
-                        title=remote_issue.title or "Untitled",
-                        assignee=remote_issue.assignee,
-                        headline=remote_issue.headline or "",
-                        labels=remote_issue.labels or [],
-                        updated_at=datetime.now(UTC),
-                    )
-                    baseline.base_issues[issue_id] = baseline_state
-                except Exception as e:
-                    logger.warning(
-                        "baseline_issue_conversion_failed",
-                        issue_id=issue_id,
-                        error=str(e),
-                        severity="operational",
-                    )
-
-            # Save baseline to database for fast retrieval
-            baseline_dict = {
-                issue_id: {
-                    "status": base_state.status,
-                    "assignee": base_state.assignee,
-                    "description": base_state.description,
-                    "labels": base_state.labels or [],
+            baseline = self._build_baseline_from_remote_issues(remote_issues)
+            if baseline.base_issues:
+                baseline_dict = {
+                    issue_id: {
+                        "status": state.status,
+                        "assignee": state.assignee,
+                        "description": state.headline or "",
+                        "labels": state.labels or [],
+                    }
+                    for issue_id, state in baseline.base_issues.items()
                 }
-                for issue_id, base_state in baseline.base_issues.items()
-            }
-            self.core.db.save_sync_baseline(baseline_dict)
+                self.core.db.save_sync_baseline(baseline_dict)
+                logger.info(
+                    "baseline_created_from_remote",
+                    issue_count=len(baseline.base_issues),
+                )
+                return True
 
-            logger.info(
-                "baseline_created_from_remote",
-                issue_count=len(baseline.base_issues),
+            logger.warning(
+                "baseline_creation_produced_empty_state",
+                severity="operational",
             )
-            return True
-
+            return False
         except Exception as e:
             logger.error(
                 "baseline_creation_from_remote_failed",
@@ -347,7 +283,87 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
             )
             return False
 
-    def _build_baseline_state_from_git(
+    def _authenticate_for_baseline(self) -> bool:
+        auth_result = self.backend.authenticate()
+        if hasattr(auth_result, "is_err") and callable(auth_result.is_err):
+            if auth_result.is_err():
+                logger.error(
+                    "backend_auth_failed_for_baseline",
+                    error=str(auth_result.unwrap_err()),
+                    severity="infrastructure",
+                )
+                return False
+            if not auth_result.unwrap():
+                logger.error(
+                    "backend_auth_failed_for_baseline", severity="infrastructure"
+                )
+                return False
+            return True
+
+        if not auth_result:
+            logger.error("backend_auth_failed_for_baseline", severity="infrastructure")
+            return False
+        return True
+
+    def _fetch_remote_issues_for_baseline(self) -> dict[str, SyncIssue] | None:
+        remote_issues_result = self.backend.get_issues()
+        if hasattr(remote_issues_result, "is_err") and callable(
+            remote_issues_result.is_err
+        ):
+            if remote_issues_result.is_err():
+                logger.warning(
+                    "backend_get_issues_failed",
+                    error=str(remote_issues_result.unwrap_err()),
+                    severity="operational",
+                )
+                return None
+            remote_issues = remote_issues_result.unwrap() or {}
+        elif isinstance(remote_issues_result, dict):
+            remote_issues = remote_issues_result
+        else:
+            logger.warning(
+                "backend_get_issues_unexpected_type",
+                result_type=type(remote_issues_result).__name__,
+                severity="operational",
+            )
+            return None
+
+        if not remote_issues:
+            logger.warning("no_remote_issues_for_baseline", severity="operational")
+            return None
+        return remote_issues
+
+    def _build_baseline_from_remote_issues(
+        self, remote_issues: dict[str, SyncIssue]
+    ) -> SyncState:
+        baseline = SyncState(last_sync_time=datetime.now(UTC))
+
+        from roadmap.core.services.sync.sync_state import IssueBaseState
+
+        for issue_id, remote_issue in remote_issues.items():
+            try:
+                baseline_state = IssueBaseState(
+                    id=issue_id,
+                    status=remote_issue.status or "todo",
+                    title=remote_issue.title or "Untitled",
+                    assignee=remote_issue.assignee,
+                    headline=remote_issue.headline or "",
+                    labels=remote_issue.labels or [],
+                    updated_at=datetime.now(UTC),
+                )
+                baseline.base_issues[issue_id] = baseline_state
+            except Exception as e:
+                logger.warning(
+                    "baseline_issue_conversion_failed",
+                    issue_id=issue_id,
+                    error=str(e),
+                    severity="operational",
+                )
+                continue
+
+        return baseline
+
+    def _build_baseline_state_from_git_history(
         self, last_synced: datetime | None
     ) -> SyncState | None:
         """Build baseline state by querying git history for each issue.
@@ -682,7 +698,7 @@ class SyncRetrievalOrchestrator(SyncMergeOrchestrator):
 
             if remote_baseline:
                 # Now get local baseline from git history
-                local_baseline = self._build_baseline_state_from_git(
+                local_baseline = self._build_baseline_state_from_git_history(
                     remote_baseline.last_sync_time
                 )
 

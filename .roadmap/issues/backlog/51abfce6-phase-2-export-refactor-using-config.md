@@ -1,14 +1,15 @@
 ---
 id: 51abfce6
 title: 'Phase 2: Export Refactor (Using Config)'
-headline: ''
+headline: '# Phase 2: Export Refactor (Using Config)'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3696'
 created: '2026-02-05T15:17:47.952489+00:00'
 updated: '2026-02-05T15:17:47.952490+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3696'
 ---
 
 # Phase 2: Export Refactor (Using Config)

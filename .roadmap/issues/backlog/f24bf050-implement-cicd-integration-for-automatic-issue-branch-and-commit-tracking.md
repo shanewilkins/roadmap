@@ -1,7 +1,7 @@
 ---
 id: f24bf050
 title: Implement CI/CD integration for automatic issue branch and commit tracking
-headline: ''
+headline: '# Implement CI/CD integration for automatic issue branch and commit tracking'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:high
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3699'
 created: '2026-02-05T15:17:52.335232+00:00'
 updated: '2026-02-05T15:17:52.335233+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3699'
 ---
 
 # Implement CI/CD integration for automatic issue branch and commit tracking

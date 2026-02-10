@@ -1,7 +1,7 @@
 ---
 id: 2cc67d0a
 title: Complete comprehensive API documentation and freeze API design
-headline: ''
+headline: '# Complete comprehensive API documentation and freeze API design'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:high
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3730'
 created: '2026-02-05T15:17:52.368937+00:00'
 updated: '2026-02-05T15:17:52.368937+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3730'
 ---
 
 # Complete comprehensive API documentation and freeze API design

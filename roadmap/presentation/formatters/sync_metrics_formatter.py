@@ -60,148 +60,189 @@ def format_percentage(value: float, decimals: int = 1) -> str:
     return f"{value:.{decimals}f}%"
 
 
+def _add_dedup_rows(table: Table, metrics: SyncMetrics) -> None:
+    if (
+        metrics.local_issues_before_dedup <= 0
+        and metrics.remote_issues_before_dedup <= 0
+    ):
+        return
+
+    table.add_row("[bold cyan]═══ Deduplication ═══[/bold cyan]", "")
+
+    if metrics.local_issues_before_dedup > 0:
+        table.add_row(
+            "  Local Issues (Before)",
+            format_count(metrics.local_issues_before_dedup),
+        )
+        table.add_row(
+            "  Local Issues (After)",
+            format_count(metrics.local_issues_after_dedup),
+        )
+        if metrics.local_dedup_reduction_pct > 0:
+            table.add_row(
+                "  Local Dedup Reduction",
+                Text(
+                    format_percentage(metrics.local_dedup_reduction_pct),
+                    style="green",
+                ),
+            )
+
+    if metrics.remote_issues_before_dedup > 0:
+        table.add_row(
+            "  Remote Issues (Before)",
+            format_count(metrics.remote_issues_before_dedup),
+        )
+        table.add_row(
+            "  Remote Issues (After)",
+            format_count(metrics.remote_issues_after_dedup),
+        )
+        if metrics.remote_dedup_reduction_pct > 0:
+            table.add_row(
+                "  Remote Dedup Reduction",
+                Text(
+                    format_percentage(metrics.remote_dedup_reduction_pct),
+                    style="green",
+                ),
+            )
+
+
+def _add_sync_ops_rows(table: Table, metrics: SyncMetrics) -> None:
+    if not (
+        metrics.issues_fetched > 0
+        or metrics.issues_pushed > 0
+        or metrics.issues_pulled > 0
+    ):
+        return
+
+    table.add_row("[bold cyan]═══ Sync Operations ═══[/bold cyan]", "")
+
+    if metrics.issues_fetched > 0:
+        table.add_row(
+            "  Issues Fetched",
+            format_count(metrics.issues_fetched),
+        )
+    if metrics.issues_pushed > 0:
+        table.add_row(
+            "  Issues Pushed",
+            format_count(metrics.issues_pushed),
+        )
+    if metrics.issues_pulled > 0:
+        table.add_row(
+            "  Issues Pulled",
+            format_count(metrics.issues_pulled),
+        )
+
+
+def _add_duplicate_rows(table: Table, metrics: SyncMetrics) -> None:
+    if metrics.duplicates_detected <= 0:
+        return
+
+    table.add_row("[bold cyan]═══ Duplicates ═══[/bold cyan]", "")
+    table.add_row(
+        "  Duplicates Detected",
+        Text(format_count(metrics.duplicates_detected), style="yellow"),
+    )
+    if metrics.duplicates_auto_resolved > 0:
+        table.add_row(
+            "  Auto-Resolved",
+            Text(
+                format_count(metrics.duplicates_auto_resolved),
+                style="green",
+            ),
+        )
+    if metrics.duplicates_manual_resolved > 0:
+        table.add_row(
+            "  Manual Resolution",
+            Text(
+                format_count(metrics.duplicates_manual_resolved),
+                style="cyan",
+            ),
+        )
+
+
+def _add_conflict_rows(table: Table, metrics: SyncMetrics) -> None:
+    if metrics.conflicts_detected <= 0:
+        return
+
+    table.add_row("[bold cyan]═══ Conflicts ═══[/bold cyan]", "")
+    table.add_row(
+        "  Conflicts Detected",
+        Text(format_count(metrics.conflicts_detected), style="yellow"),
+    )
+
+
+def _add_link_rows(table: Table, metrics: SyncMetrics) -> None:
+    if metrics.sync_links_created <= 0 and metrics.orphaned_links <= 0:
+        return
+
+    table.add_row("[bold cyan]═══ Sync Links ═══[/bold cyan]", "")
+    if metrics.sync_links_created > 0:
+        table.add_row(
+            "  Links Created",
+            format_count(metrics.sync_links_created),
+        )
+    if metrics.orphaned_links > 0:
+        table.add_row(
+            "  Orphaned Links",
+            Text(
+                format_count(metrics.orphaned_links),
+                style="yellow",
+            ),
+        )
+
+
+def _add_performance_rows(table: Table, metrics: SyncMetrics) -> None:
+    table.add_row("[bold cyan]═══ Performance ═══[/bold cyan]", "")
+    if metrics.cache_hit_rate > 0:
+        table.add_row(
+            "  Cache Hit Rate",
+            Text(
+                format_percentage(metrics.cache_hit_rate * 100),
+                style="green",
+            ),
+        )
+    if metrics.database_query_time > 0:
+        table.add_row(
+            "  DB Query Time",
+            Text(format_duration(metrics.database_query_time), style="yellow"),
+        )
+    if metrics.total_api_calls > 0:
+        table.add_row(
+            "  API Calls",
+            Text(format_count(metrics.total_api_calls), style="cyan"),
+        )
+
+
 def create_metrics_summary_table(metrics: SyncMetrics, verbose: bool = False) -> Table:
     """Create a summary table of sync metrics.
 
     Args:
         metrics: SyncMetrics object to display
-        verbose: If True, show additional detailed metrics
+        verbose: Include performance and phase timing details
 
     Returns:
-        Rich Table with formatted metrics
+        Rich Table with sync summary metrics
     """
-    table = Table(show_header=True, header_style="bold cyan", box=None)
-    table.add_column("Metric", style="bold")
-    table.add_column("Value", justify="right")
+    table = Table(show_header=False, box=None, padding=(0, 2))
+    table.add_column(style="bold")
+    table.add_column(justify="right", style="cyan")
 
-    # Basic operation info
-    table.add_row("Backend", Text(metrics.backend_type, style="green"))
+    table.add_row("[bold cyan]═══ Summary ═══[/bold cyan]", "")
+    table.add_row("Backend", metrics.backend_type or "unknown")
     table.add_row(
-        "Duration",
-        Text(format_duration(metrics.duration_seconds), style="yellow"),
+        "Started",
+        metrics.start_time.strftime("%Y-%m-%d %H:%M"),
     )
+    table.add_row("Duration", format_duration(metrics.duration_seconds))
 
-    # Deduplication metrics
-    if metrics.local_issues_before_dedup > 0 or metrics.remote_issues_before_dedup > 0:
-        table.add_row("[bold cyan]═══ Deduplication ═══[/bold cyan]", "")
+    _add_dedup_rows(table, metrics)
+    _add_sync_ops_rows(table, metrics)
+    _add_duplicate_rows(table, metrics)
+    _add_conflict_rows(table, metrics)
+    _add_link_rows(table, metrics)
 
-        if metrics.local_issues_before_dedup > 0:
-            table.add_row(
-                "  Local Issues (Before)",
-                format_count(metrics.local_issues_before_dedup),
-            )
-            table.add_row(
-                "  Local Issues (After)",
-                format_count(metrics.local_issues_after_dedup),
-            )
-            if metrics.local_dedup_reduction_pct > 0:
-                table.add_row(
-                    "  Local Dedup Reduction",
-                    Text(
-                        format_percentage(metrics.local_dedup_reduction_pct),
-                        style="green",
-                    ),
-                )
-
-        if metrics.remote_issues_before_dedup > 0:
-            table.add_row(
-                "  Remote Issues (Before)",
-                format_count(metrics.remote_issues_before_dedup),
-            )
-            table.add_row(
-                "  Remote Issues (After)",
-                format_count(metrics.remote_issues_after_dedup),
-            )
-            if metrics.remote_dedup_reduction_pct > 0:
-                table.add_row(
-                    "  Remote Dedup Reduction",
-                    Text(
-                        format_percentage(metrics.remote_dedup_reduction_pct),
-                        style="green",
-                    ),
-                )
-
-    # Sync operation metrics
-    if (
-        metrics.issues_fetched > 0
-        or metrics.issues_pushed > 0
-        or metrics.issues_pulled > 0
-    ):
-        table.add_row("[bold cyan]═══ Sync Operations ═══[/bold cyan]", "")
-
-        if metrics.issues_fetched > 0:
-            table.add_row(
-                "  Issues Fetched",
-                format_count(metrics.issues_fetched),
-            )
-        if metrics.issues_pushed > 0:
-            table.add_row(
-                "  Issues Pushed",
-                format_count(metrics.issues_pushed),
-            )
-        if metrics.issues_pulled > 0:
-            table.add_row(
-                "  Issues Pulled",
-                format_count(metrics.issues_pulled),
-            )
-
-    # Duplicate detection metrics
-    if metrics.duplicates_detected > 0:
-        table.add_row("[bold cyan]═══ Duplicates ═══[/bold cyan]", "")
-        table.add_row(
-            "  Duplicates Detected",
-            Text(format_count(metrics.duplicates_detected), style="yellow"),
-        )
-        if metrics.duplicates_auto_resolved > 0:
-            table.add_row(
-                "  Auto-Resolved",
-                Text(
-                    format_count(metrics.duplicates_auto_resolved),
-                    style="green",
-                ),
-            )
-        if metrics.duplicates_manual_resolved > 0:
-            table.add_row(
-                "  Manual Resolution",
-                Text(
-                    format_count(metrics.duplicates_manual_resolved),
-                    style="cyan",
-                ),
-            )
-
-    # Conflict metrics
-    if metrics.conflicts_detected > 0:
-        table.add_row("[bold cyan]═══ Conflicts ═══[/bold cyan]", "")
-        table.add_row(
-            "  Conflicts Detected",
-            Text(format_count(metrics.conflicts_detected), style="yellow"),
-        )
-
-    # Sync link metrics
-    if metrics.sync_links_created > 0 or metrics.orphaned_links > 0:
-        table.add_row("[bold cyan]═══ Sync Links ═══[/bold cyan]", "")
-        if metrics.sync_links_created > 0:
-            table.add_row(
-                "  Links Created",
-                format_count(metrics.sync_links_created),
-            )
-        if metrics.orphaned_links > 0:
-            table.add_row(
-                "  Orphaned Links",
-                Text(
-                    format_count(metrics.orphaned_links),
-                    style="yellow",
-                ),
-            )
-
-    # Performance metrics
     if verbose:
-        table.add_row("[bold cyan]═══ Performance ═══[/bold cyan]", "")
-        if metrics.cache_hit_rate > 0:
-            table.add_row(
-                "  Cache Hit Rate",
-                format_percentage(metrics.cache_hit_rate * 100),
-            )
+        _add_performance_rows(table, metrics)
         if metrics.circuit_breaker_state:
             state_style = (
                 "green"
@@ -220,6 +261,16 @@ def create_metrics_summary_table(metrics: SyncMetrics, verbose: bool = False) ->
                 "  Fetch Time",
                 format_duration(metrics.fetch_phase_duration),
             )
+        if metrics.push_phase_duration > 0:
+            table.add_row(
+                "  Push Time",
+                format_duration(metrics.push_phase_duration),
+            )
+        if metrics.pull_phase_duration > 0:
+            table.add_row(
+                "  Pull Time",
+                format_duration(metrics.pull_phase_duration),
+            )
         if metrics.analysis_phase_duration > 0:
             table.add_row(
                 "  Analysis Time",
@@ -235,7 +286,6 @@ def create_metrics_summary_table(metrics: SyncMetrics, verbose: bool = False) ->
                 "  Conflict Resolution Time",
                 format_duration(metrics.conflict_resolution_duration),
             )
-
     # Errors
     if metrics.errors_count > 0:
         table.add_row("[bold cyan]═══ Errors ═══[/bold cyan]", "")

@@ -199,6 +199,71 @@ def _create_and_save_baseline(
         return False
 
 
+def _prune_db_issues_missing_files(core, console_inst, dry_run: bool) -> None:
+    """Remove DB issues that no longer have matching local files."""
+    import sqlite3
+
+    issues_dir = core.roadmap_dir / "issues"
+    if not issues_dir.exists():
+        return
+
+    try:
+        from roadmap.adapters.persistence.parser.issue import IssueParser
+
+        local_issue_ids: set[str] = set()
+        for file_path in issues_dir.glob("**/*.md"):
+            try:
+                issue = IssueParser.parse_issue_file(file_path)
+            except Exception:
+                continue
+            if getattr(issue, "id", None):
+                local_issue_ids.add(str(issue.id))
+
+        if not local_issue_ids:
+            return
+
+        db_path = core.db_dir / "state.db"
+        if not db_path.exists():
+            return
+
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT id FROM issues").fetchall()
+        db_issue_ids = {row["id"] for row in rows}
+
+        stale_ids = sorted(db_issue_ids - local_issue_ids)
+        if not stale_ids:
+            conn.close()
+            return
+
+        if dry_run:
+            console_inst.print(
+                f"🧹 DB preflight: {len(stale_ids)} issues would be removed (no local file)",
+                style="yellow",
+            )
+            conn.close()
+            return
+
+        placeholders = ",".join("?" * len(stale_ids))
+        conn.execute(f"DELETE FROM issues WHERE id IN ({placeholders})", stale_ids)
+        conn.commit()
+        conn.close()
+
+        console_inst.print(
+            f"🧹 DB preflight: removed {len(stale_ids)} stale issues", style="green"
+        )
+    except Exception as e:
+        logger.warning(
+            "db_issue_prune_failed",
+            error=str(e),
+            error_type=type(e).__name__,
+            severity="operational",
+        )
+        console_inst.print(
+            f"⚠️  Warning: Could not prune DB issues: {str(e)}", style="yellow"
+        )
+
+
 def _init_sync_context(
     core,
     backend,
@@ -232,6 +297,9 @@ def _init_sync_context(
     console_inst.print(
         f"🔄 Syncing with {backend_type.upper()} backend", style="bold cyan"
     )
+
+    _prune_db_issues_missing_files(core, console_inst, dry_run)
+    _repair_remote_links(core, console_inst, backend_type, dry_run)
     orchestrator = SyncRetrievalOrchestrator(
         core,
         sync_backend,
@@ -262,3 +330,63 @@ def _init_sync_context(
         state_comparator,
         conflict_resolver,
     )
+
+
+def _repair_remote_links(core, console_inst, backend_type: str, dry_run: bool) -> None:
+    """Repair remote link cache from YAML before sync.
+
+    Args:
+        core: RoadmapCore instance
+        console_inst: Rich console
+        backend_type: Backend name (github, git, etc.)
+        dry_run: Whether sync is in dry-run mode
+    """
+    if backend_type.lower() != "github":
+        return
+
+    if dry_run:
+        console_inst.print("[dim]Skipping remote link repair in dry-run mode[/dim]")
+        return
+
+    try:
+        validation_data = core.validation.collect_remote_link_validation_data(
+            core.issues_dir, backend_name="github"
+        )
+        report = core.validation.build_remote_link_report(
+            validation_data["yaml_remote_ids"], validation_data["db_links"]
+        )
+        if not (
+            report.get("missing_in_db")
+            or report.get("extra_in_db")
+            or report.get("duplicate_remote_ids")
+        ):
+            return
+
+        yaml_remote_ids = validation_data["yaml_remote_ids"]
+        should_prune = bool(yaml_remote_ids)
+
+        results = core.validation.apply_remote_link_fixes(
+            yaml_remote_ids,
+            report,
+            backend_name="github",
+            prune_extra=should_prune,
+            dedupe=True,
+            dry_run=False,
+        )
+        fixed = results.get("fixed_count", 0)
+        removed = results.get("removed_count", 0)
+        deduped = results.get("deduped_count", 0)
+        console_inst.print(
+            f"🔧 Remote links repaired: +{fixed} / -{removed} / deduped {deduped}",
+            style="dim",
+        )
+    except Exception as e:
+        logger.warning(
+            "remote_link_repair_failed",
+            error=str(e),
+            error_type=type(e).__name__,
+            severity="operational",
+        )
+        console_inst.print(
+            "[yellow]⚠️  Remote link repair failed; continuing sync[/yellow]"
+        )

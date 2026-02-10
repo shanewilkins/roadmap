@@ -1,7 +1,8 @@
 ---
 id: 0e1aee32
 title: Implement automatic milestone and project progress updates based on issue completion
-headline: ''
+headline: '# Implement automatic milestone and project progress updates based on issue
+  completion'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +11,8 @@ labels:
 - priority:high
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3650'
 created: '2026-02-05T15:17:52.331828+00:00'
 updated: '2026-02-05T15:17:52.331829+00:00'
 assignee: null
@@ -28,7 +30,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3650'
 ---
 
 # Implement automatic milestone and project progress updates based on issue completion

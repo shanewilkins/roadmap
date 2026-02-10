@@ -462,8 +462,10 @@ class TestStateManagerErrors:
 
     def test_database_error_on_invalid_path(self):
         """StateManager should handle invalid database paths gracefully."""
+        from roadmap.adapters.persistence.database_manager import DatabaseError
+
         # Try to create database in invalid location
-        with pytest.raises((OSError, PermissionError)):
+        with pytest.raises((OSError, PermissionError, DatabaseError)):
             # This should fail on most systems
             StateManager(db_path="/invalid/readonly/path/test.db")
 

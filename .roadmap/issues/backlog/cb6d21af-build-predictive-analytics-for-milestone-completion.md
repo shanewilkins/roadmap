@@ -1,7 +1,7 @@
 ---
 id: cb6d21af
 title: Build predictive analytics for milestone completion
-headline: ''
+headline: '# Build predictive analytics for milestone completion'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:high
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3654'
 created: '2026-02-05T15:17:52.362769+00:00'
 updated: '2026-02-05T15:17:52.362770+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3654'
 ---
 
 # Build predictive analytics for milestone completion

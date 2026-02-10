@@ -1,14 +1,15 @@
 ---
 id: b902692e
 title: Implement performance optimization strategy with hybrid storage and caching
-headline: ''
+headline: '# Implement performance optimization strategy with hybrid storage and caching'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3687'
 created: '2026-02-05T15:17:49.860679+00:00'
 updated: '2026-02-05T15:17:49.860680+00:00'
 assignee: shanewilkins
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3687'
 ---
 
 # Implement performance optimization strategy with hybrid storage and caching

@@ -212,6 +212,20 @@ class GitHubSyncBackend:
             repo=self.config.get("repo"),
         )
 
+    def get_label_client(self) -> Any | None:
+        """Get a GitHub client that supports label operations."""
+        token = self.config.get("token")
+        if not token:
+            return None
+
+        from roadmap.adapters.github.github import GitHubClient
+
+        return GitHubClient(
+            token=token,
+            owner=self.config.get("owner"),
+            repo=self.config.get("repo"),
+        )
+
     def get_issues(self) -> Result[dict[str, SyncIssue], SyncError]:
         """Fetch all issues from GitHub remote.
 
@@ -878,7 +892,9 @@ class GitHubSyncBackend:
             and isinstance((error_type := error.get("type")), str)
         }
 
-    def _extract_graphql_error_details(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
+    def _extract_graphql_error_details(
+        self, payload: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Extract error details from a GraphQL payload."""
         errors = payload.get("errors") or []
         details: list[dict[str, Any]] = []
@@ -968,6 +984,7 @@ class GitHubSyncBackend:
             logger.warning(
                 "github_graphql_request_failed",
                 error=str(e),
+                severity="operational",
             )
             return None
 

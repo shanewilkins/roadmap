@@ -1,14 +1,15 @@
 ---
 id: 522d10ba
 title: Review Missing Critical 1.0 Functionality
-headline: ''
+headline: '# Review Missing Critical 1.0 Functionality'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3746'
 created: '2026-02-05T15:17:51.753194+00:00'
 updated: '2026-02-05T15:17:51.753195+00:00'
 assignee: shanewilkins
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3746'
 ---
 
 # Review Missing Critical 1.0 Functionality

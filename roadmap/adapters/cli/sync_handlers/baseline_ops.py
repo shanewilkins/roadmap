@@ -195,7 +195,7 @@ def clear_baseline(core: Any, backend: str | None, console_inst: Any) -> bool:
         return True
 
     try:
-        db_path = core.roadmap_dir / ".roadmap" / "db" / "state.db"
+        db_path = core.db_dir / "state.db"
         if db_path.exists():
             conn = sqlite3.connect(str(db_path))
             cursor = conn.cursor()
@@ -240,7 +240,7 @@ def clear_baseline(core: Any, backend: str | None, console_inst: Any) -> bool:
 
 def capture_and_save_post_sync_baseline(
     core: Any, console_inst: Any, pre_sync_issue_count: int, verbose: bool
-) -> None:
+) -> bool:
     """Capture local issues and save them as the post-sync baseline."""
     try:
         baseline_dict = {}
@@ -300,6 +300,7 @@ def capture_and_save_post_sync_baseline(
                 console_inst.print(
                     "✅ Baseline updated with post-sync state", style="dim"
                 )
+            return bool(result)
         except OSError as e:
             logger.error(
                 "post_sync_baseline_save_exception",
@@ -314,6 +315,7 @@ def capture_and_save_post_sync_baseline(
                 console_inst.print(
                     f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
                 )
+            return False
         except Exception as e:
             logger.error(
                 "post_sync_baseline_save_exception",
@@ -327,6 +329,7 @@ def capture_and_save_post_sync_baseline(
                 console_inst.print(
                     f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
                 )
+            return False
     except Exception as e:
         logger.error(
             "post_sync_baseline_capture_exception",
@@ -340,3 +343,4 @@ def capture_and_save_post_sync_baseline(
             console_inst.print(
                 f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
             )
+        return False

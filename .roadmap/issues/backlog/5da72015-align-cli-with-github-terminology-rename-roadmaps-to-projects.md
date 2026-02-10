@@ -1,7 +1,7 @@
 ---
 id: 5da72015
 title: 'Align CLI with GitHub terminology: rename roadmaps to projects'
-headline: ''
+headline: '# Align CLI with GitHub terminology: rename roadmaps to projects'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:high
 - status:done
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3740'
 created: '2026-02-05T15:17:52.378954+00:00'
 updated: '2026-02-05T15:17:52.378954+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3740'
 ---
 
 # Align CLI with GitHub terminology: rename roadmaps to projects

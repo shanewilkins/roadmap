@@ -225,9 +225,10 @@ class TestGitHubSyncBackendOperations:
         }
         mocker.patch.object(backend, "_post_graphql", return_value=response)
 
-        node_ids = backend._resolve_issue_node_ids([1, 2], "o", "r", "t")
+        node_ids, skipped_prs = backend._resolve_issue_node_ids([1, 2], "o", "r", "t")
 
         assert node_ids == {1: "n1", 2: "n2"}
+        assert skipped_prs == []
 
 
 class TestGitHubSyncBackendErrorHandling:

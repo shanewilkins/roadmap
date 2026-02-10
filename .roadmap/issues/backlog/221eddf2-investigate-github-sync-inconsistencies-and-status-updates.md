@@ -1,7 +1,7 @@
 ---
 id: 221eddf2
 title: Investigate GitHub sync inconsistencies and status updates
-headline: ''
+headline: '# Investigate GitHub sync inconsistencies and status updates'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:high
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3704'
 created: '2026-02-05T15:17:52.323648+00:00'
 updated: '2026-02-05T15:17:52.323649+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3704'
 ---
 
 # Investigate GitHub sync inconsistencies and status updates

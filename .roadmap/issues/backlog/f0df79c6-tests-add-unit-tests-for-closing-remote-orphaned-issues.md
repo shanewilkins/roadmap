@@ -1,14 +1,15 @@
 ---
 id: f0df79c6
 title: 'tests: add unit tests for closing remote orphaned issues'
-headline: ''
+headline: '# tests: add unit tests for closing remote orphaned issues'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3707'
 created: '2026-02-05T15:17:49.366665+00:00'
 updated: '2026-02-05T15:17:49.366665+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3707'
 ---
 
 # tests: add unit tests for closing remote orphaned issues

@@ -92,9 +92,9 @@ class RoadmapCore:
         self._git = CoordinationGateway.get_git_integration()
         self._git.root_path = self.root_path
 
-        # Initialize StateManager first (without GitSyncMonitor)
-        self.db = CoordinationGateway.get_state_manager()
-        self.db.db_path = self.db_dir / "state.db"
+        # Initialize StateManager with correct project-local database path
+        db_path = self.db_dir / "state.db"
+        self.db = CoordinationGateway.get_state_manager(db_path=db_path)
 
         # Initialize GitSyncMonitor with StateManager for database sync
         self.git_sync_monitor = CoordinationGateway.get_git_sync_monitor()

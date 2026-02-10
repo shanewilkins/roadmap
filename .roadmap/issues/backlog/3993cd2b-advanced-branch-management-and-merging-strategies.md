@@ -1,14 +1,15 @@
 ---
 id: 3993cd2b
 title: Advanced branch management and merging strategies
-headline: ''
+headline: '# Advanced branch management and merging strategies'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3706'
 created: '2026-02-05T15:17:49.149132+00:00'
 updated: '2026-02-05T15:17:49.149133+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3706'
 ---
 
 # Advanced branch management and merging strategies

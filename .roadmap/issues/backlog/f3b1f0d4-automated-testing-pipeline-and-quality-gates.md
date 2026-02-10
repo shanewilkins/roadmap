@@ -1,7 +1,7 @@
 ---
 id: f3b1f0d4
 title: Automated testing pipeline and quality gates
-headline: ''
+headline: '# Automated testing pipeline and quality gates'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:high
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3747'
 created: '2026-02-05T15:17:52.355441+00:00'
 updated: '2026-02-05T15:17:52.355442+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3747'
 ---
 
 # Automated testing pipeline and quality gates

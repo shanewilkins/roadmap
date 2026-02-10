@@ -1,14 +1,15 @@
 ---
 id: d8a47a6f
 title: Build enterprise SSO and role-based access control
-headline: ''
+headline: '# Build enterprise SSO and role-based access control'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3741'
 created: '2026-02-05T15:17:49.165719+00:00'
 updated: '2026-02-05T15:17:49.165720+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3741'
 ---
 
 # Build enterprise SSO and role-based access control

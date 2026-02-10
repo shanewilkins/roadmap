@@ -71,7 +71,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
             import json
             import sqlite3
 
-            db_path = self.core.roadmap_dir / ".roadmap" / "db" / "state.db"
+            db_path = self.core.db_dir / "state.db"
             if not db_path.exists():
                 logger.debug("cached_baseline_db_not_found")
                 return None
@@ -128,7 +128,7 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
             import json
             import sqlite3
 
-            db_path = self.core.roadmap_dir / ".roadmap" / "db" / "state.db"
+            db_path = self.core.db_dir / "state.db"
             db_path.parent.mkdir(parents=True, exist_ok=True)
 
             conn = sqlite3.connect(str(db_path))

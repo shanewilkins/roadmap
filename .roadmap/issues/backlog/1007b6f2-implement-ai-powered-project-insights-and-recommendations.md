@@ -1,7 +1,7 @@
 ---
 id: 1007b6f2
 title: Implement AI-powered project insights and recommendations
-headline: ''
+headline: '# Implement AI-powered project insights and recommendations'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:high
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3716'
 created: '2026-02-05T15:17:52.564624+00:00'
 updated: '2026-02-05T15:17:52.564625+00:00'
 assignee: shanewilkins
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3716'
 ---
 
 # Implement AI-powered project insights and recommendations

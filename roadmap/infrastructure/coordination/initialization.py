@@ -12,7 +12,11 @@ from roadmap.common.security import (
     create_secure_directory,
     create_secure_file,
 )
+from roadmap.common.logging import get_logger
 from roadmap.common.utils.path_utils import build_roadmap_paths
+from roadmap.adapters.persistence.database_manager import DatabaseManager, DatabaseError
+
+logger = get_logger(__name__)
 
 
 class InitializationManager:
@@ -111,6 +115,28 @@ class InitializationManager:
 
         # Create default config file
         self._create_default_config()
+
+        # Initialize database file in project-local directory
+        self._initialize_database()
+
+    def _initialize_database(self) -> None:
+        """Create and validate the project-local database file."""
+        try:
+            create_secure_directory(self.db_dir, 0o755)
+            db_path = self.db_dir / "state.db"
+            db_manager = DatabaseManager(db_path=db_path)
+            db_manager.validate_read_write()
+        except (OSError, DatabaseError) as e:
+            logger.error(
+                "database_init_failed",
+                db_path=str(self.db_dir / "state.db"),
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="system_error",
+            )
+            raise RuntimeError(
+                f"Failed to initialize database at {self.db_dir / 'state.db'}: {e}"
+            ) from e
 
     def _create_default_templates(self) -> None:
         """Create default templates for issues, milestones, and projects."""

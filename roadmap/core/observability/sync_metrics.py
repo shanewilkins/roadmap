@@ -69,6 +69,8 @@ class SyncMetrics:
     # Performance metrics
     cache_hit_rate: float = 0.0
     circuit_breaker_state: str = "closed"
+    database_query_time: float = 0.0
+    total_api_calls: int = 0
 
     # Phase timing
     analysis_phase_duration: float = 0.0
@@ -85,15 +87,15 @@ class SyncMetrics:
         """Calculate deduplication reduction percentages."""
         if self.local_issues_before_dedup > 0:
             self.local_dedup_reduction_pct = (
-                ((self.local_issues_before_dedup - self.local_issues_after_dedup) /
-                 self.local_issues_before_dedup) * 100
-            )
+                (self.local_issues_before_dedup - self.local_issues_after_dedup)
+                / self.local_issues_before_dedup
+            ) * 100
 
         if self.remote_issues_before_dedup > 0:
             self.remote_dedup_reduction_pct = (
-                ((self.remote_issues_before_dedup - self.remote_issues_after_dedup) /
-                 self.remote_issues_before_dedup) * 100
-            )
+                (self.remote_issues_before_dedup - self.remote_issues_after_dedup)
+                / self.remote_issues_before_dedup
+            ) * 100
 
     def to_dict(self) -> dict[str, Any]:
         """Convert metrics to dictionary for storage."""
@@ -134,6 +136,8 @@ class SyncMetrics:
             # Performance
             "cache_hit_rate": self.cache_hit_rate,
             "circuit_breaker_state": self.circuit_breaker_state,
+            "database_query_time": self.database_query_time,
+            "total_api_calls": self.total_api_calls,
             # Phase timing
             "analysis_phase_duration": self.analysis_phase_duration,
             "merge_phase_duration": self.merge_phase_duration,
@@ -415,7 +419,7 @@ class SyncObservability:
             return
 
         metrics.duplicates_auto_resolved += auto_resolved
-        metrics.duplicates_manual_resolved += (count - auto_resolved)
+        metrics.duplicates_manual_resolved += count - auto_resolved
         metrics.issues_deleted += deleted
         metrics.issues_archived += archived
 
@@ -530,16 +534,30 @@ class SyncObservability:
     def record_sync_links(
         self,
         operation_id: str,
-        created_count: int,
+        created_count: int | None = None,
         orphaned: int = 0,
+        *args: int,
+        created: int | None = None,
     ) -> None:
         """Record sync link metrics.
 
         Args:
             operation_id: ID of the sync operation
             created_count: Number of sync links created
+            created: Deprecated alias for created_count
             orphaned: Number of orphaned links (default: 0)
         """
+        if args:
+            if created_count is None:
+                created_count = args[0]
+            if len(args) > 1:
+                orphaned = args[1]
+
+        if created_count is None and created is not None:
+            created_count = created
+        if created_count is None:
+            created_count = 0
+
         metrics = self._get_metrics(operation_id)
         if not metrics:
             return
@@ -587,9 +605,7 @@ class SyncObservability:
             return SyncMetrics()
 
         end_time = datetime.now(UTC)
-        metrics.duration_seconds = (
-            (end_time - metrics.start_time).total_seconds()
-        )
+        metrics.duration_seconds = (end_time - metrics.start_time).total_seconds()
 
         self._logger.info(
             "sync_operation_completed",

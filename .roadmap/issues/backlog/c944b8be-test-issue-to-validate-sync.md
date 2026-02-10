@@ -1,7 +1,7 @@
 ---
 id: c944b8be
 title: test issue to validate sync
-headline: ''
+headline: lorem ipsum etc. etc. etc.
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:medium
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3659'
 created: '2026-02-05T15:17:52.597271+00:00'
 updated: '2026-02-05T15:17:52.597272+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3659'
 ---
 
 lorem ipsum etc. etc. etc.

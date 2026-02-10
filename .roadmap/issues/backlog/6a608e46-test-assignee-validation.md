@@ -1,7 +1,7 @@
 ---
 id: 6a608e46
 title: Test assignee validation
-headline: ''
+headline: '# Test assignee validation'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:low
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3655'
 created: '2026-02-05T15:17:52.514621+00:00'
 updated: '2026-02-05T15:17:52.514622+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3655'
 ---
 
 # Test assignee validation

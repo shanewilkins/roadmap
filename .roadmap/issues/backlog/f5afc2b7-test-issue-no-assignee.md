@@ -1,14 +1,15 @@
 ---
 id: f5afc2b7
 title: test issue no assignee
-headline: ''
+headline: '# test issue no assignee'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3718'
 created: '2026-02-05T15:17:49.712171+00:00'
 updated: '2026-02-05T15:17:49.712171+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3718'
 ---
 
 # test issue no assignee

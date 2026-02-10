@@ -398,6 +398,216 @@ class DuplicateDetector:
 
         return list(match_map.values())
 
+    def _build_title_buckets_local(
+        self, local_issues: list[Issue]
+    ) -> dict[str, list[Issue]]:
+        title_buckets: dict[str, list[Issue]] = {}
+        for issue in local_issues:
+            title_buckets.setdefault(issue.title, []).append(issue)
+        return title_buckets
+
+    def _union_title_buckets_local(
+        self, uf: UnionFind, title_buckets: dict[str, list[Issue]]
+    ) -> int:
+        title_match_count = 0
+        for issues_in_bucket in title_buckets.values():
+            if len(issues_in_bucket) > 1:
+                first_issue_id = id(issues_in_bucket[0])
+                first_issue = issues_in_bucket[0]
+                for other_issue in issues_in_bucket[1:]:
+                    uf.union(first_issue_id, id(other_issue))
+                    logger.debug(
+                        "duplicate_detected_local_title_match",
+                        primary_id=first_issue.id,
+                        primary_title=first_issue.title,
+                        duplicate_id=other_issue.id,
+                        duplicate_title=other_issue.title,
+                        match_type="title_exact",
+                    )
+                    title_match_count += 1
+        return title_match_count
+
+    def _union_github_id_collisions_local(
+        self, uf: UnionFind, local_issues: list[Issue]
+    ) -> int:
+        id_collision_count = 0
+        github_id_map: dict[str, list[Issue]] = {}
+        for issue in local_issues:
+            github_id = issue.remote_ids.get("github")
+            if github_id:
+                github_id_key = str(github_id)
+                github_id_map.setdefault(github_id_key, []).append(issue)
+
+        for github_id, issues_with_id in github_id_map.items():
+            if len(issues_with_id) > 1:
+                first_issue_id = id(issues_with_id[0])
+                first_issue = issues_with_id[0]
+                for other_issue in issues_with_id[1:]:
+                    uf.union(first_issue_id, id(other_issue))
+                    logger.debug(
+                        "duplicate_detected_local_id_collision",
+                        primary_id=first_issue.id,
+                        primary_title=first_issue.title,
+                        duplicate_id=other_issue.id,
+                        duplicate_title=other_issue.title,
+                        match_type="id_collision",
+                        github_id=str(github_id),
+                    )
+                    id_collision_count += 1
+        return id_collision_count
+
+    def _apply_fuzzy_matches_local(
+        self,
+        uf: UnionFind,
+        local_issues: list[Issue],
+        title_buckets: dict[str, list[Issue]],
+    ) -> int:
+        similarity_match_count = 0
+        if not self.enable_fuzzy_matching:
+            return similarity_match_count
+
+        fuzzy_buckets: dict[str, list[Issue]] = {}
+        for issue in local_issues:
+            if issue.title in title_buckets and len(title_buckets[issue.title]) > 1:
+                continue
+            normalized_title = issue.title.lower().strip()
+            if normalized_title:
+                fuzzy_key = normalized_title[:3]
+                fuzzy_buckets.setdefault(fuzzy_key, []).append(issue)
+
+        for issues_in_bucket in fuzzy_buckets.values():
+            if len(issues_in_bucket) > 1:
+                for i, issue1 in enumerate(issues_in_bucket):
+                    for issue2 in issues_in_bucket[i + 1 :]:
+                        title_similarity = self._calculate_text_similarity(
+                            issue1.title, issue2.title
+                        )
+                        if title_similarity >= self.title_similarity_threshold:
+                            uf.union(id(issue1), id(issue2))
+                            logger.debug(
+                                "duplicate_detected_local_similarity",
+                                primary_id=issue1.id,
+                                primary_title=issue1.title,
+                                duplicate_id=issue2.id,
+                                duplicate_title=issue2.title,
+                                match_type="title_similar",
+                                similarity=round(title_similarity, 3),
+                            )
+                            similarity_match_count += 1
+        return similarity_match_count
+
+    def _build_title_buckets_remote(
+        self, remote_issues: dict[str, "SyncIssue"], remote_id_list: list[str]
+    ) -> dict[str, list[str]]:
+        title_buckets: dict[str, list[str]] = {}
+        for rid in remote_id_list:
+            issue = remote_issues[rid]
+            title_buckets.setdefault(issue.title, []).append(rid)
+        return title_buckets
+
+    def _union_title_buckets_remote(
+        self,
+        uf: UnionFind,
+        title_buckets: dict[str, list[str]],
+        remote_issues: dict[str, "SyncIssue"],
+    ) -> int:
+        title_match_count = 0
+        for rids_in_bucket in title_buckets.values():
+            if len(rids_in_bucket) > 1:
+                first_rid = rids_in_bucket[0]
+                first_issue = remote_issues[first_rid]
+                for other_rid in rids_in_bucket[1:]:
+                    other_issue = remote_issues[other_rid]
+                    uf.union(first_rid, other_rid)
+                    logger.debug(
+                        "duplicate_detected_remote_title_match",
+                        primary_id=first_issue.id,
+                        primary_title=first_issue.title,
+                        duplicate_id=other_issue.id,
+                        duplicate_title=other_issue.title,
+                        match_type="title_exact",
+                    )
+                    title_match_count += 1
+        return title_match_count
+
+    def _union_backend_id_collisions_remote(
+        self,
+        uf: UnionFind,
+        remote_issues: dict[str, "SyncIssue"],
+        remote_id_list: list[str],
+    ) -> int:
+        id_collision_count = 0
+        backend_id_map: dict[str, list[str]] = {}
+        for rid in remote_id_list:
+            issue = remote_issues[rid]
+            if issue.backend_id:
+                backend_id_key = str(issue.backend_id)
+                backend_id_map.setdefault(backend_id_key, []).append(rid)
+
+        for backend_id, rids_with_id in backend_id_map.items():
+            if len(rids_with_id) > 1:
+                first_rid = rids_with_id[0]
+                first_issue = remote_issues[first_rid]
+                for other_rid in rids_with_id[1:]:
+                    other_issue = remote_issues[other_rid]
+                    uf.union(first_rid, other_rid)
+                    logger.debug(
+                        "duplicate_detected_remote_id_collision",
+                        primary_id=first_issue.id,
+                        primary_title=first_issue.title,
+                        duplicate_id=other_issue.id,
+                        duplicate_title=other_issue.title,
+                        match_type="id_collision",
+                        backend_id=str(backend_id),
+                    )
+                    id_collision_count += 1
+        return id_collision_count
+
+    def _apply_fuzzy_matches_remote(
+        self,
+        uf: UnionFind,
+        remote_issues: dict[str, "SyncIssue"],
+        title_buckets: dict[str, list[str]],
+        remote_id_list: list[str],
+    ) -> int:
+        similarity_match_count = 0
+        if not self.enable_fuzzy_matching:
+            return similarity_match_count
+
+        fuzzy_buckets: dict[str, list[str]] = {}
+        for rid in remote_id_list:
+            issue = remote_issues[rid]
+            if issue.title in title_buckets and len(title_buckets[issue.title]) > 1:
+                continue
+
+            normalized = issue.title.lower().strip()
+            if normalized:
+                fuzzy_key = normalized[:3]
+                fuzzy_buckets.setdefault(fuzzy_key, []).append(rid)
+
+        for bucket_rids in fuzzy_buckets.values():
+            for i, rid1 in enumerate(bucket_rids):
+                for rid2 in bucket_rids[i + 1 :]:
+                    issue1 = remote_issues[rid1]
+                    issue2 = remote_issues[rid2]
+                    similarity = self._calculate_text_similarity(
+                        issue1.title, issue2.title
+                    )
+
+                    if similarity >= self.title_similarity_threshold:
+                        uf.union(rid1, rid2)
+                        similarity_match_count += 1
+                        logger.debug(
+                            "duplicate_detected_remote_similarity",
+                            primary_id=issue1.id,
+                            primary_title=issue1.title,
+                            duplicate_id=issue2.id,
+                            duplicate_title=issue2.title,
+                            match_type="title_similar",
+                            similarity=round(similarity, 3),
+                        )
+        return similarity_match_count
+
     def local_self_dedup(self, local_issues: list[Issue]) -> list[Issue]:
         """Deduplicate local issues by grouping canonical duplicates.
 
@@ -429,91 +639,14 @@ class DuplicateDetector:
         title_match_count = 0
         similarity_match_count = 0
 
-        # STEP 1: Group by exact title match (fast O(n) bucketing)
-        title_buckets: dict[str, list[Issue]] = {}
-        for issue in local_issues:
-            title_buckets.setdefault(issue.title, []).append(issue)
-
-        # STEP 2: Within exact title buckets, union all issues (definitely duplicates)
-        for title, issues_in_bucket in title_buckets.items():
-            if len(issues_in_bucket) > 1:
-                # Union all issues with same title
-                first_issue_id = id(issues_in_bucket[0])
-                first_issue = issues_in_bucket[0]
-                for other_issue in issues_in_bucket[1:]:
-                    uf.union(first_issue_id, id(other_issue))
-                    logger.debug(
-                        "duplicate_detected_local_title_match",
-                        primary_id=first_issue.id,
-                        primary_title=first_issue.title,
-                        duplicate_id=other_issue.id,
-                        duplicate_title=other_issue.title,
-                        match_type="title_exact",
-                    )
-                    title_match_count += 1
-
-        # STEP 3: Check ID collisions (different titles but same GitHub ID)
-        github_id_map: dict[str, list[Issue]] = {}
-        for issue in local_issues:
-            github_id = issue.remote_ids.get("github")
-            if github_id:
-                github_id_key = str(github_id)
-                github_id_map.setdefault(github_id_key, []).append(issue)
-
-        for github_id, issues_with_id in github_id_map.items():
-            if len(issues_with_id) > 1:
-                first_issue_id = id(issues_with_id[0])
-                first_issue = issues_with_id[0]
-                for other_issue in issues_with_id[1:]:
-                    uf.union(first_issue_id, id(other_issue))
-                    logger.debug(
-                        "duplicate_detected_local_id_collision",
-                        primary_id=first_issue.id,
-                        primary_title=first_issue.title,
-                        duplicate_id=other_issue.id,
-                        duplicate_title=other_issue.title,
-                        match_type="id_collision",
-                        github_id=str(github_id),
-                    )
-                    id_collision_count += 1
-
-        # STEP 4: Fuzzy matching - can be enabled via enable_fuzzy_matching parameter
-        # Disabled by default in sync pipeline due to O(n²) performance impact
-        similarity_match_count = 0
-
-        if self.enable_fuzzy_matching:
-            # Create fuzzy buckets with 3-char prefix (larger buckets = more matches)
-            fuzzy_buckets: dict[str, list[Issue]] = {}
-            for issue in local_issues:
-                # Already handled exact matches, skip those
-                if issue.title in title_buckets and len(title_buckets[issue.title]) > 1:
-                    continue
-                # Create fuzzy bucket from first 3 chars of normalized title
-                normalized_title = issue.title.lower().strip()
-                if normalized_title:
-                    fuzzy_key = normalized_title[:3]
-                    fuzzy_buckets.setdefault(fuzzy_key, []).append(issue)
-
-            # Within fuzzy buckets, check title similarity
-            for fuzzy_key, issues_in_bucket in fuzzy_buckets.items():
-                if len(issues_in_bucket) > 1:
-                    for i, issue1 in enumerate(issues_in_bucket):
-                        for issue2 in issues_in_bucket[i + 1 :]:
-                            title_similarity = self._calculate_text_similarity(
-                                issue1.title, issue2.title
-                            )
-                            if title_similarity >= self.title_similarity_threshold:
-                                uf.union(id(issue1), id(issue2))
-                                logger.debug(
-                                    "duplicate_detected_local_similarity",
-                                    primary_id=issue1.id,
-                                    primary_title=issue1.title,
-                                    duplicate_id=issue2.id,
-                                    duplicate_title=issue2.title,
-                                    match_type="title_similar",
-                                    similarity=round(title_similarity, 3),
-                                )
-                                similarity_match_count += 1
+        title_buckets = self._build_title_buckets_local(local_issues)
+        title_match_count = self._union_title_buckets_local(uf, title_buckets)
+        id_collision_count = self._union_github_id_collisions_local(uf, local_issues)
+        similarity_match_count = self._apply_fuzzy_matches_local(
+            uf,
+            local_issues,
+            title_buckets,
+        )
 
         # Extract canonical representatives
         representatives = uf.get_representatives()
@@ -573,97 +706,23 @@ class DuplicateDetector:
         title_match_count = 0
         similarity_match_count = 0
 
-        # STEP 1: Group by exact title match (fast O(n) bucketing)
-        title_buckets: dict[str, list[str]] = {}
-        for rid in remote_id_list:
-            issue = remote_issues[rid]
-            title_buckets.setdefault(issue.title, []).append(rid)
-
-        # STEP 2: Within exact title buckets, union all issues
-        for title, rids_in_bucket in title_buckets.items():
-            if len(rids_in_bucket) > 1:
-                first_rid = rids_in_bucket[0]
-                first_issue = remote_issues[first_rid]
-                for other_rid in rids_in_bucket[1:]:
-                    other_issue = remote_issues[other_rid]
-                    uf.union(first_rid, other_rid)
-                    logger.debug(
-                        "duplicate_detected_remote_title_match",
-                        primary_id=first_issue.id,
-                        primary_title=first_issue.title,
-                        duplicate_id=other_issue.id,
-                        duplicate_title=other_issue.title,
-                        match_type="title_exact",
-                    )
-                    title_match_count += 1
-
-        # STEP 3: Check ID collisions (different titles but same backend ID)
-        backend_id_map: dict[str, list[str]] = {}
-        for rid in remote_id_list:
-            issue = remote_issues[rid]
-            if issue.backend_id:
-                backend_id_key = str(issue.backend_id)
-                backend_id_map.setdefault(backend_id_key, []).append(rid)
-
-        for backend_id, rids_with_id in backend_id_map.items():
-            if len(rids_with_id) > 1:
-                first_rid = rids_with_id[0]
-                first_issue = remote_issues[first_rid]
-                for other_rid in rids_with_id[1:]:
-                    other_issue = remote_issues[other_rid]
-                    uf.union(first_rid, other_rid)
-                    logger.debug(
-                        "duplicate_detected_remote_id_collision",
-                        primary_id=first_issue.id,
-                        primary_title=first_issue.title,
-                        duplicate_id=other_issue.id,
-                        duplicate_title=other_issue.title,
-                        match_type="id_collision",
-                        backend_id=str(backend_id),
-                    )
-                    id_collision_count += 1
-
-        # STEP 4: Fuzzy matching - can be enabled via enable_fuzzy_matching parameter
-        # Disabled by default in sync pipeline due to O(n²) performance impact
-        similarity_match_count = 0
-
-        if self.enable_fuzzy_matching:
-            # Build fuzzy buckets (first 3 chars of normalized title)
-            fuzzy_buckets: dict[str, list[str]] = {}
-            for rid in remote_id_list:
-                issue = remote_issues[rid]
-                # Skip if already matched exactly
-                if issue.title in title_buckets and len(title_buckets[issue.title]) > 1:
-                    continue
-
-                normalized = issue.title.lower().strip()
-                if normalized:
-                    fuzzy_key = normalized[:3]  # First 3 characters
-                    fuzzy_buckets.setdefault(fuzzy_key, []).append(rid)
-
-            # Compare within each fuzzy bucket
-            for bucket_rids in fuzzy_buckets.values():
-                for i, rid1 in enumerate(bucket_rids):
-                    for rid2 in bucket_rids[i + 1 :]:
-                        issue1 = remote_issues[rid1]
-                        issue2 = remote_issues[rid2]
-                        similarity = self._calculate_text_similarity(
-                            issue1.title, issue2.title
-                        )
-
-                        if similarity >= self.title_similarity_threshold:
-                            # Found fuzzy match - union them
-                            uf.union(rid1, rid2)
-                            similarity_match_count += 1
-                            logger.debug(
-                                "duplicate_detected_remote_similarity",
-                                primary_id=issue1.id,
-                                primary_title=issue1.title,
-                                duplicate_id=issue2.id,
-                                duplicate_title=issue2.title,
-                                match_type="title_similar",
-                                similarity=round(similarity, 3),
-                            )
+        title_buckets = self._build_title_buckets_remote(remote_issues, remote_id_list)
+        title_match_count = self._union_title_buckets_remote(
+            uf,
+            title_buckets,
+            remote_issues,
+        )
+        id_collision_count = self._union_backend_id_collisions_remote(
+            uf,
+            remote_issues,
+            remote_id_list,
+        )
+        similarity_match_count = self._apply_fuzzy_matches_remote(
+            uf,
+            remote_issues,
+            title_buckets,
+            remote_id_list,
+        )
 
         # Extract canonical representatives
         representatives = uf.get_representatives()

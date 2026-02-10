@@ -1,13 +1,14 @@
 ---
 id: 6fa6cfb1
 title: Duplicate Test Issue Beta
-headline: ''
+headline: This is a test duplicate
 priority: medium
 status: todo
 issue_type: feature
 milestone: null
 labels: []
-remote_ids: {}
+remote_ids:
+  github: '3742'
 created: '2026-02-07T03:40:11.979591+00:00'
 updated: '2026-02-07T03:40:11.979593+00:00'
 assignee: shanewilkins
@@ -25,7 +26,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3742'
 ---
 
 This is a test duplicate

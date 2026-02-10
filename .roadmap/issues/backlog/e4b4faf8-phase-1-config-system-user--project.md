@@ -1,14 +1,15 @@
 ---
 id: e4b4faf8
 title: 'Phase 1: Config System (User + Project)'
-headline: ''
+headline: '# Phase 1: Config System (User + Project)'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3667'
 created: '2026-02-05T15:17:51.881003+00:00'
 updated: '2026-02-05T15:17:51.881003+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3667'
 ---
 
 # Phase 1: Config System (User + Project)

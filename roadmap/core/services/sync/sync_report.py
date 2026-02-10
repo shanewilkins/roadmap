@@ -102,6 +102,9 @@ class IssueChange:
 class SyncReport:
     """Complete sync operation report."""
 
+    # Operation context
+    operation_id: str | None = None
+
     # Local items
     total_issues: int = 0
     active_issues: int = 0
@@ -134,6 +137,8 @@ class SyncReport:
 
     changes: list[IssueChange] = field(default_factory=list)
     errors: dict[str, str] = field(default_factory=dict)  # Issue ID -> error message
+    error_buckets: dict[str, int] = field(default_factory=dict)
+    baseline_update_failed: bool = False
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     error: str | None = None
     metrics: Any | None = None  # SyncMetrics object if available
@@ -143,6 +148,9 @@ class SyncReport:
         if self.error:
             console.print(f"❌ Sync failed: {self.error}", style="bold red")
             return
+
+        if self.operation_id:
+            console.print(f"Operation ID: {self.operation_id}", style="dim")
 
         console.print("\n📊 Sync Report", style="bold cyan")
 
@@ -227,6 +235,18 @@ class SyncReport:
                 console.print(f"   Pushed: {self.issues_pushed}", style="green")
             if self.issues_pulled > 0:
                 console.print(f"   Pulled: {self.issues_pulled}", style="green")
+
+        if self.error_buckets:
+            bucket_summary = ", ".join(
+                f"{key}={value}" for key, value in sorted(self.error_buckets.items())
+            )
+            console.print(f"   Errors: {bucket_summary}", style="yellow")
+
+        if self.baseline_update_failed:
+            console.print(
+                "⚠️  Baseline update failed (next sync may re-detect changes)",
+                style="yellow",
+            )
 
     def display_verbose(self) -> None:
         """Display verbose output: show brief summary plus detailed issue IDs being synced."""

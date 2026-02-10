@@ -492,6 +492,7 @@ class SyncMergeOrchestrator:
         sync_start_time = time.time()
 
         report = SyncReport()
+        report.operation_id = self._current_operation_id
 
         try:
             logger.info(
@@ -526,6 +527,7 @@ class SyncMergeOrchestrator:
                 return report
 
             # Phase 3: Analyze changes
+            analysis_start = time.time()
             (
                 changes,
                 conflicts,
@@ -536,8 +538,16 @@ class SyncMergeOrchestrator:
                 pulls,
                 up_to_date,
             ) = self._sync_analyze(local_issues_dict, remote_issues_data, report)
+            analysis_duration = time.time() - analysis_start
+            if self._current_operation_id:
+                self._observability.record_phase_timing(
+                    self._current_operation_id,
+                    "analysis",
+                    analysis_duration,
+                )
 
             # Phase 4: Resolve and apply
+            apply_start = time.time()
             report = self._sync_resolve_and_apply(
                 conflicts,
                 updates,
@@ -549,6 +559,13 @@ class SyncMergeOrchestrator:
                 pull_only,
                 report,
             )
+            apply_duration = time.time() - apply_start
+            if self._current_operation_id:
+                self._observability.record_phase_timing(
+                    self._current_operation_id,
+                    "merge",
+                    apply_duration,
+                )
 
             # Phase 5: Execute duplicate resolution (merge/archive)
             local_issues_after_sync = list(local_issues_dict.values())
@@ -940,14 +957,12 @@ class SyncMergeOrchestrator:
                 total_applied = report.issues_pushed + report.issues_pulled
                 if total_applied > 0:
                     push_duration = (
-                        apply_duration
-                        * (report.issues_pushed / total_applied)
+                        apply_duration * (report.issues_pushed / total_applied)
                         if report.issues_pushed
                         else 0.0
                     )
                     pull_duration = (
-                        apply_duration
-                        * (report.issues_pulled / total_applied)
+                        apply_duration * (report.issues_pulled / total_applied)
                         if report.issues_pulled
                         else 0.0
                     )
@@ -1061,6 +1076,7 @@ class SyncMergeOrchestrator:
                     logger.warning(
                         "automatic_resolution_failed",
                         error=resolution_result.unwrap_err(),
+                        severity="operational",
                     )
                     return
 
@@ -1077,6 +1093,7 @@ class SyncMergeOrchestrator:
             logger.error(
                 "duplicate_resolution_phase_failed",
                 error=str(e),
+                severity="system_error",
             )
 
     def _execute_resolution_actions(
@@ -1198,8 +1215,10 @@ class SyncMergeOrchestrator:
         self._observability.record_conflict(
             self._current_operation_id, count=len(conflicts)
         )
-        self._observability.record_phase_timing(
-            self._current_operation_id, "analysis", sync_duration
+        self._observability.record_metadata(
+            self._current_operation_id,
+            "total_duration_seconds",
+            round(sync_duration, 4),
         )
         self._observability.record_sync_links(
             self._current_operation_id, created_count=len(local_issues_dict)
@@ -1217,6 +1236,8 @@ class SyncMergeOrchestrator:
                     "issue_error",
                     f"{issue_id}: {message}",
                 )
+                bucket = self._bucket_error(message)
+                report.error_buckets[bucket] = report.error_buckets.get(bucket, 0) + 1
         final_metrics = self._observability.finalize(self._current_operation_id)
         report.metrics = final_metrics
 
@@ -1229,3 +1250,22 @@ class SyncMergeOrchestrator:
         metadata_service.store_sync_metrics(
             self.core, self._current_operation_id, final_metrics.to_dict()
         )
+
+    @staticmethod
+    def _bucket_error(message: str) -> str:
+        lowered = message.lower()
+        if "rate limit" in lowered or "429" in lowered:
+            return "rate_limited"
+        if "permission" in lowered or "403" in lowered:
+            return "permission"
+        if "not found" in lowered or "404" in lowered:
+            return "not_found"
+        if "milestone" in lowered:
+            return "milestone"
+        if "timeout" in lowered:
+            return "timeout"
+        if "database" in lowered or "sqlite" in lowered:
+            return "database"
+        if "yaml" in lowered or "file" in lowered:
+            return "filesystem"
+        return "other"

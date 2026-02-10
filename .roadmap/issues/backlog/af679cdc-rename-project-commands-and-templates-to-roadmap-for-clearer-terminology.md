@@ -1,7 +1,7 @@
 ---
 id: af679cdc
 title: Rename project commands and templates to roadmap for clearer terminology
-headline: ''
+headline: '# Rename project commands and templates to roadmap for clearer terminology'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:medium
 - status:done
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3688'
 created: '2026-02-05T15:17:52.540965+00:00'
 updated: '2026-02-05T15:17:52.540966+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3688'
 ---
 
 # Rename project commands and templates to roadmap for clearer terminology

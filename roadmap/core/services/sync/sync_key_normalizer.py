@@ -154,11 +154,45 @@ def normalize_remote_keys(
     remote_id_to_local_uuid, db_lookup_available = _build_remote_id_mapping(
         local, backend, remote_link_repo, logger
     )
+    if logger is not None:
+        try:
+            logger.info(
+                "remote_link_mapping_built",
+                backend=backend_name,
+                db_lookup_used=db_lookup_available,
+                local_issue_count=len(local),
+                remote_issue_count=len(remote),
+                mapped_links=len(remote_id_to_local_uuid),
+            )
+        except Exception as logging_error:
+            logger.error(
+                "logger_failed",
+                operation="log_remote_link_mapping_built",
+                error=str(logging_error),
+            )
 
     # Apply mapping to normalize remote
     normalized_remote, unmatched_count = _apply_remote_normalization(
         remote, remote_id_to_local_uuid, backend_name, logger
     )
+    if logger is not None:
+        try:
+            sample_unmatched = [
+                str(key)
+                for key in list(remote.keys())[:5]
+                if str(key) not in remote_id_to_local_uuid
+            ]
+            logger.debug(
+                "remote_link_mapping_sample",
+                backend=backend_name,
+                sample_unmatched=sample_unmatched,
+            )
+        except Exception as logging_error:
+            logger.error(
+                "logger_failed",
+                operation="log_remote_link_mapping_sample",
+                error=str(logging_error),
+            )
 
     if logger is not None:
         try:

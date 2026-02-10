@@ -2,14 +2,16 @@
 id: 9aeca032
 title: Deprecate Status.DONE terminology - update codebase to use consistent status
   naming
-headline: ''
+headline: Deprecate Status.DONE terminology - update codebase to use consistent status
+  naming
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3713'
 created: '2026-02-05T15:17:52.128724+00:00'
 updated: '2026-02-05T15:17:52.128725+00:00'
 assignee: null
@@ -27,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3713'
 ---
 
 Deprecate Status.DONE terminology - update codebase to use consistent status naming

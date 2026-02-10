@@ -1,14 +1,15 @@
 ---
 id: 57c21a53
 title: Implement comprehensive security audit framework
-headline: ''
+headline: '# Implement comprehensive security audit framework'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3698'
 created: '2026-02-05T15:17:49.498487+00:00'
 updated: '2026-02-05T15:17:49.498487+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3698'
 ---
 
 # Implement comprehensive security audit framework

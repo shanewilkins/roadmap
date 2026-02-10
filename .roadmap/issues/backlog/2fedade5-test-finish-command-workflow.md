@@ -1,7 +1,7 @@
 ---
 id: 2fedade5
 title: Test finish command workflow
-headline: ''
+headline: '# Test finish command workflow'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:medium
 - status:done
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3679'
 created: '2026-02-05T15:17:52.393504+00:00'
 updated: '2026-02-05T15:17:52.393505+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3679'
 ---
 
 # Test finish command workflow

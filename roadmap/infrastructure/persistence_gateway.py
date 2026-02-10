@@ -139,8 +139,12 @@ class PersistenceGateway:
             StateManager instance from persistence adapter.
         """
         from roadmap.adapters.persistence.storage import StateManager
+        from roadmap.common.utils.path_utils import build_roadmap_paths
 
-        return StateManager()
+        db_dir = build_roadmap_paths(Path.cwd())["db_dir"]
+        db_path = db_dir / "state.db"
+
+        return StateManager(db_path=db_path)
 
     @staticmethod
     def get_changed_files_since_commit(ref: str = "HEAD~1", cwd: str = ".") -> set[str]:

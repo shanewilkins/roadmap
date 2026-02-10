@@ -1,14 +1,16 @@
 ---
 id: b4027cbc
 title: Implement comprehensive logging for CLI, errors, performance, and audit trail
-headline: ''
+headline: '# Implement comprehensive logging for CLI, errors, performance, and audit
+  trail'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3725'
 created: '2026-02-05T15:17:52.003514+00:00'
 updated: '2026-02-05T15:17:52.003515+00:00'
 assignee: null
@@ -26,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3725'
 ---
 
 # Implement comprehensive logging for CLI, errors, performance, and audit trail

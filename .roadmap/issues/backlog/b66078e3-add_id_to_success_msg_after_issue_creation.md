@@ -1,14 +1,15 @@
 ---
 id: b66078e3
 title: add_id_to_success_msg_after_issue_creation
-headline: ''
+headline: '# add_id_to_success_msg_after_issue_creation'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3744'
 created: '2026-02-05T15:17:51.849249+00:00'
 updated: '2026-02-05T15:17:51.849250+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3744'
 ---
 
 # add_id_to_success_msg_after_issue_creation

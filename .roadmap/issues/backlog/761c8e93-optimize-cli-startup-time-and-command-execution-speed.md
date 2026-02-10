@@ -1,7 +1,7 @@
 ---
 id: 761c8e93
 title: Optimize CLI startup time and command execution speed
-headline: ''
+headline: '# Optimize CLI startup time and command execution speed'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - performance
 - optimization
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3674'
 created: '2026-02-05T15:17:51.970826+00:00'
 updated: '2026-02-05T15:17:51.970827+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3674'
 ---
 
 # Optimize CLI startup time and command execution speed

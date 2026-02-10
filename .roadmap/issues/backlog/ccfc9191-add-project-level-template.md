@@ -1,7 +1,7 @@
 ---
 id: ccfc9191
 title: Add project level template
-headline: ''
+headline: '# Add project level template'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:medium
 - status:done
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3672'
 created: '2026-02-05T15:17:52.382098+00:00'
 updated: '2026-02-05T15:17:52.382099+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3672'
 ---
 
 # Add project level template

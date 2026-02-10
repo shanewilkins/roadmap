@@ -13,7 +13,8 @@ labels:
 - validation
 - github-integration
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: 3657
 created: '2026-02-05T15:17:52.498921+00:00'
 updated: '2026-02-05T15:17:52.498922+00:00'
 assignee: shanewilkins
@@ -31,7 +32,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: 3657
 ---
 
 # Validate assignee is team member

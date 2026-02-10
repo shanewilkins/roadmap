@@ -1,7 +1,7 @@
 ---
 id: dd975f10
 title: Test backward compatibility
-headline: ''
+headline: '# Test backward compatibility'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:medium
 - status:done
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3722'
 created: '2026-02-05T15:17:52.397165+00:00'
 updated: '2026-02-05T15:17:52.397166+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3722'
 ---
 
 # Test backward compatibility

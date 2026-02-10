@@ -1,14 +1,15 @@
 ---
 id: 5060d198
 title: Feat/1900c289 auto branch
-headline: ''
+headline: '# Feat/1900c289 auto branch'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3664'
 created: '2026-02-05T15:17:52.471260+00:00'
 updated: '2026-02-05T15:17:52.471261+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3664'
 ---
 
 # Feat/1900c289 auto branch

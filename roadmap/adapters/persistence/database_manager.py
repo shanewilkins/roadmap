@@ -7,7 +7,7 @@ It separates database infrastructure concerns from the state management layer.
 import sqlite3
 import threading
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from roadmap.common.logging import get_logger
@@ -34,13 +34,67 @@ class DatabaseManager:
             db_path = Path.home() / ".roadmap" / "roadmap.db"
 
         self.db_path = Path(db_path)
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            logger.error(
+                "database_directory_create_failed",
+                db_path=str(self.db_path),
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="system_error",
+            )
+            raise DatabaseError(
+                f"Failed to create database directory for {self.db_path}: {e}"
+            ) from e
 
         # Thread-local storage for connections
         self._local = threading.local()
 
         logger.info("Initializing database manager", db_path=str(self.db_path))
-        self._init_database()
+        try:
+            self._init_database()
+        except sqlite3.Error as e:
+            logger.error(
+                "database_schema_init_failed",
+                db_path=str(self.db_path),
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="system_error",
+            )
+            raise DatabaseError(
+                f"Failed to initialize database schema at {self.db_path}: {e}"
+            ) from e
+
+    def validate_read_write(self) -> None:
+        """Validate that the database is readable and writable."""
+        conn = self._get_connection()
+        try:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS db_health_check (
+                    id INTEGER PRIMARY KEY,
+                    checked_at TIMESTAMP
+                )
+                """
+            )
+            conn.execute(
+                "INSERT INTO db_health_check (checked_at) VALUES (?)",
+                (datetime.now(UTC).isoformat(),),
+            )
+            row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            conn.execute("DELETE FROM db_health_check WHERE id = ?", (row_id,))
+        except sqlite3.Error as e:
+            logger.error(
+                "database_read_write_failed",
+                db_path=str(self.db_path),
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="system_error",
+            )
+            raise DatabaseError(
+                f"Database read/write check failed for {self.db_path}: {e}"
+            ) from e
 
     def _get_connection(self) -> sqlite3.Connection:
         """Get thread-local database connection."""

@@ -370,9 +370,11 @@ def finalize_sync(
     console_inst.print("[bold]BASELINE CHANGES:[/bold]")
     console_inst.print(f"   Before: {pre_sync_issue_count} issues in baseline")
 
-    capture_and_save_post_sync_baseline(
+    baseline_updated = capture_and_save_post_sync_baseline(
         core, console_inst, pre_sync_issue_count, verbose
     )
+    if hasattr(report, "baseline_update_failed"):
+        report.baseline_update_failed = not baseline_updated
 
     # Save and display sync metrics if available in report
     if hasattr(report, "metrics") and report.metrics:

@@ -1,5 +1,6 @@
 """Service for persisting issues to local storage (YAML files)."""
 
+import time
 from typing import TYPE_CHECKING
 
 from structlog import get_logger
@@ -94,7 +95,25 @@ class IssuePersistenceService:
                 )
                 return False
 
-            repo.save(issue)
+            attempts = 0
+            max_attempts = 3
+            while True:
+                try:
+                    repo.save(issue)
+                    break
+                except OSError as e:
+                    attempts += 1
+                    if attempts >= max_attempts:
+                        raise
+                    backoff = 0.1 * (2 ** (attempts - 1))
+                    logger.warning(
+                        "issue_persistence_retrying",
+                        issue_id=issue.id,
+                        attempt=attempts,
+                        delay_seconds=backoff,
+                        error=str(e),
+                    )
+                    time.sleep(backoff)
 
             logger.info(
                 "issue_saved_to_yaml",

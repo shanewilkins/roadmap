@@ -1,7 +1,7 @@
 ---
 id: 726f2efc
 title: Test git integration workflow
-headline: ''
+headline: '# Test git integration workflow'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:medium
 - status:done
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3665'
 created: '2026-02-05T15:17:52.543901+00:00'
 updated: '2026-02-05T15:17:52.543902+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3665'
 ---
 
 # Test git integration workflow

@@ -22,6 +22,16 @@ logger = get_logger(__name__)
     help="Automatically repair broken or missing links",
 )
 @click.option(
+    "--prune-extra",
+    is_flag=True,
+    help="Remove database links that are not present in YAML",
+)
+@click.option(
+    "--dedupe",
+    is_flag=True,
+    help="Remove duplicate remote_id links (keep YAML-backed link if present)",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Preview changes without applying them",
@@ -36,6 +46,8 @@ logger = get_logger(__name__)
 def validate_links(
     ctx: click.Context,
     auto_fix: bool,
+    prune_extra: bool,
+    dedupe: bool,
     dry_run: bool,
     verbose: bool,
 ) -> None:
@@ -59,15 +71,10 @@ def validate_links(
         # Repair broken links
         roadmap sync validate-links --auto-fix
     """
-    from roadmap.adapters.persistence.parser.issue import IssueParser
-
     core = ctx.obj["core"]
     console = get_console()
 
     try:
-        # Get the state manager to access remote_link_repo
-        state_manager = core.persistence.state_manager
-
         # Load all issues from YAML files
         issues_dir = core.issues_dir
 
@@ -78,8 +85,10 @@ def validate_links(
             )
             sys.exit(1)
 
-        # Collect all issue files
-        issue_files = sorted(issues_dir.glob("**/*.md"))
+        validation_data = core.validation.collect_remote_link_validation_data(
+            issues_dir
+        )
+        issue_files = validation_data["issue_files"]
         if not issue_files:
             console.print("ℹ️  No issue files found", style="yellow")
             return
@@ -92,43 +101,16 @@ def validate_links(
             "discrepancies": [],
             "missing_in_db": [],
             "extra_in_db": [],
+            "duplicate_remote_ids": {},
         }
 
-        yaml_remote_ids = {}  # issue_id -> {backend -> remote_id}
-        unparseable_files = []
+        yaml_remote_ids = validation_data["yaml_remote_ids"]
+        unparseable_files = validation_data["unparseable_files"]
+        db_links = validation_data["db_links"]
 
-        # First pass: load all YAML remote_ids
-        yaml_remote_ids, unparseable_files = _load_yaml_remote_ids(
-            issue_files, IssueParser, console, verbose
+        validation_report.update(
+            core.validation.build_remote_link_report(yaml_remote_ids, db_links)
         )
-
-        # Get all database links for GitHub (main backend)
-        db_links = state_manager.remote_link_repo.get_all_links_for_backend("github")
-        db_issue_uuids = {link.issue_uuid for link in db_links}
-        validation_report["database_links"] = len(db_links)
-
-        # Check for discrepancies
-        yaml_issue_uuids = set(yaml_remote_ids.keys())
-
-        # Issues in YAML but not in database
-        for issue_uuid in yaml_issue_uuids:
-            if issue_uuid not in db_issue_uuids:
-                validation_report["missing_in_db"].append(issue_uuid)
-                if verbose:
-                    console.print(
-                        f"  ⚠️  Missing in DB: {issue_uuid}",
-                        style="yellow",
-                    )
-
-        # Links in database but not in YAML (might be archived)
-        for link in db_links:
-            if link.issue_uuid not in yaml_issue_uuids:
-                validation_report["extra_in_db"].append(link.issue_uuid)
-                if verbose:
-                    console.print(
-                        f"  ℹ️  In DB but not YAML: {link.issue_uuid} (may be archived)",
-                        style="dim",
-                    )
 
         # Display summary
         console.print(
@@ -157,6 +139,21 @@ def validate_links(
             )
             console.print("  (These may be archived issues)")
 
+        if validation_report["duplicate_remote_ids"]:
+            console.print(
+                f"\n[bold yellow]⚠️  Duplicate remote IDs: {len(validation_report['duplicate_remote_ids'])}[/bold yellow]"
+            )
+            sample = list(validation_report["duplicate_remote_ids"].items())[:5]
+            for remote_id, issue_uuids in sample:
+                console.print(
+                    f"  - {remote_id}: {', '.join(issue_uuids)}",
+                    style="dim",
+                )
+            if len(validation_report["duplicate_remote_ids"]) > 5:
+                console.print(
+                    f"  ... and {len(validation_report['duplicate_remote_ids']) - 5} more"
+                )
+
         if unparseable_files:
             console.print(
                 f"\n[bold yellow]⚠️  Could not parse {len(unparseable_files)} files[/bold yellow]"
@@ -169,16 +166,18 @@ def validate_links(
         # Auto-fix if requested
         if auto_fix:
             _apply_auto_fix(
-                state_manager,
+                core,
                 yaml_remote_ids,
                 validation_report,
                 console,
                 dry_run,
                 verbose,
+                prune_extra,
+                dedupe,
             )
 
-        # Exit with error if there are discrepancies
-        if validation_report["missing_in_db"]:
+        # Exit with error if there are discrepancies and we did not apply fixes
+        if validation_report["missing_in_db"] and (not auto_fix or dry_run):
             sys.exit(1)
 
         console.print(
@@ -197,104 +196,101 @@ def validate_links(
         sys.exit(1)
 
 
-def _load_yaml_remote_ids(issue_files, IssueParser, console, verbose):
-    """Load remote_ids from a list of issue files.
-
-    Returns a tuple `(yaml_remote_ids, unparseable_files)`.
-    """
-    yaml_remote_ids = {}
-    unparseable_files = []
-
-    for file_path in issue_files:
-        try:
-            issue = IssueParser.parse_issue_file(file_path)
-            if issue.remote_ids:
-                yaml_remote_ids[issue.id] = issue.remote_ids
-                if verbose:
-                    console.print(
-                        f"  📄 {issue.id}: {', '.join(issue.remote_ids.keys())}",
-                        style="cyan",
-                    )
-        except Exception as e:
-            logger.warning(
-                "failed_to_parse_issue_file", file_path=str(file_path), error=str(e)
-            )
-            unparseable_files.append((str(file_path), str(e)))
-
-    return yaml_remote_ids, unparseable_files
-
-
 def _apply_auto_fix(
-    state_manager,
+    core,
     yaml_remote_ids: dict,
     validation_report: dict,
     console,
     dry_run: bool,
     verbose: bool,
+    prune_extra: bool,
+    dedupe: bool,
 ) -> None:
     """Apply automatic fixes for missing remote links.
 
     Args:
-        state_manager: StateManager instance with access to repositories
+        core: RoadmapCore instance with validation coordinator
         yaml_remote_ids: Dict of issue_uuid -> {backend -> remote_id}
         validation_report: Validation report dict to update
         console: Console instance for output
         dry_run: If True, don't actually apply changes
         verbose: If True, show detailed information
+        prune_extra: If True, remove links missing from YAML
+        dedupe: If True, remove duplicate remote IDs
     """
     missing = validation_report["missing_in_db"]
 
-    if not missing:
+    if not missing and not prune_extra and not dedupe:
         console.print("\n✅ No links need fixing", style="bold green")
         return
 
-    console.print(
-        f"\n[bold cyan]🔧 Auto-fixing {len(missing)} missing links...[/bold cyan]"
-    )
+    if missing:
+        console.print(
+            f"\n[bold cyan]🔧 Auto-fixing {len(missing)} missing links...[/bold cyan]"
+        )
 
-    if dry_run:
-        console.print("  (Dry-run mode - no changes will be made)", style="dim yellow")
+        if dry_run:
+            console.print(
+                "  (Dry-run mode - no changes will be made)", style="dim yellow"
+            )
 
     fixed_count = 0
-    for issue_uuid in missing:
-        if issue_uuid not in yaml_remote_ids:
-            continue
+    removed_count = 0
+    deduped_count = 0
+    if verbose and yaml_remote_ids:
+        for issue_uuid, remote_ids in yaml_remote_ids.items():
+            console.print(
+                f"  📄 {issue_uuid}: {', '.join(remote_ids.keys())}",
+                style="cyan",
+            )
 
-        remote_ids = yaml_remote_ids[issue_uuid]
+    if prune_extra and validation_report.get("extra_in_db"):
+        console.print(
+            f"\n[bold cyan]🧹 Removing {len(validation_report['extra_in_db'])} extra links...[/bold cyan]"
+        )
 
-        if not dry_run:
-            # Import here to avoid circular dependencies
-            try:
-                for backend_name, remote_id in remote_ids.items():
-                    state_manager.remote_link_repo.link_issue(
-                        issue_uuid, backend_name, remote_id
-                    )
-                fixed_count += 1
+    if dedupe and validation_report.get("duplicate_remote_ids"):
+        console.print(
+            f"\n[bold cyan]🧹 Removing {len(validation_report['duplicate_remote_ids'])} duplicate remote IDs...[/bold cyan]"
+        )
 
-                if verbose:
-                    console.print(
-                        f"  ✅ Fixed {issue_uuid}: {', '.join(remote_ids.keys())}",
-                        style="green",
-                    )
-            except Exception as e:
-                logger.warning(
-                    "auto_fix_failed",
-                    issue_uuid=issue_uuid,
-                    error=str(e),
-                )
-                console.print(
-                    f"  ⚠️  Failed to fix {issue_uuid}: {str(e)}",
-                    style="yellow",
-                )
-        else:
-            fixed_count += 1
-            if verbose:
-                console.print(
-                    f"  → Would fix {issue_uuid}: {', '.join(remote_ids.keys())}",
-                    style="dim cyan",
-                )
+    try:
+        results = core.validation.apply_remote_link_fixes(
+            yaml_remote_ids,
+            validation_report,
+            backend_name="github",
+            prune_extra=prune_extra,
+            dedupe=dedupe,
+            dry_run=dry_run,
+        )
+        fixed_count = results.get("fixed_count", 0)
+        removed_count = results.get("removed_count", 0)
+        deduped_count = results.get("deduped_count", 0)
+    except Exception as e:
+        logger.warning(
+            "auto_fix_failed",
+            error=str(e),
+            severity="operational",
+        )
+        console.print(
+            f"  ⚠️  Auto-fix failed: {str(e)}",
+            style="yellow",
+        )
 
-    console.print(f"\n[bold green]✅ Fixed {fixed_count} remote links[/bold green]")
+    if fixed_count:
+        console.print(
+            f"\n[bold green]✅ Fixed {fixed_count} missing remote links[/bold green]"
+        )
+
+    if removed_count:
+        console.print(
+            f"[bold green]✅ Removed {removed_count} extra remote links[/bold green]"
+        )
+
+    if deduped_count:
+        console.print(
+            f"[bold green]✅ Removed {deduped_count} duplicate remote links[/bold green]"
+        )
 
     if dry_run:
         console.print("Re-run without --dry-run to apply changes", style="dim yellow")

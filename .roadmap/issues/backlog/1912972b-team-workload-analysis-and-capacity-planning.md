@@ -1,14 +1,15 @@
 ---
 id: 1912972b
 title: Team workload analysis and capacity planning
-headline: ''
+headline: '# Team workload analysis and capacity planning'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3727'
 created: '2026-02-05T15:17:47.933516+00:00'
 updated: '2026-02-05T15:17:47.933517+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3727'
 ---
 
 # Team workload analysis and capacity planning

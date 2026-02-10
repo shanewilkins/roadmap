@@ -1,7 +1,7 @@
 ---
 id: f9b09a6d
 title: Test sync validation fix without assignee
-headline: ''
+headline: '# Test sync validation fix without assignee'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:medium
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3660'
 created: '2026-02-05T15:17:52.418793+00:00'
 updated: '2026-02-05T15:17:52.418794+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3660'
 ---
 
 # Test sync validation fix without assignee

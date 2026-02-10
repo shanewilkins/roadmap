@@ -1,7 +1,7 @@
 ---
 id: 8a1080c8
 title: Test assignee validation improved
-headline: ''
+headline: '# Test assignee validation improved'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:low
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3689'
 created: '2026-02-05T15:17:52.511586+00:00'
 updated: '2026-02-05T15:17:52.511587+00:00'
 assignee: shanewilkins
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3689'
 ---
 
 # Test assignee validation improved

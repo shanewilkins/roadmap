@@ -1,14 +1,15 @@
 ---
 id: 1fa2e1b5
 title: 'feat(init): enhance init command, credential flow, tests & docs'
-headline: ''
+headline: '# feat(init): enhance init command, credential flow, tests & docs'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3711'
 created: '2026-02-05T15:17:52.306330+00:00'
 updated: '2026-02-05T15:17:52.306331+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3711'
 ---
 
 # feat(init): enhance init command, credential flow, tests & docs

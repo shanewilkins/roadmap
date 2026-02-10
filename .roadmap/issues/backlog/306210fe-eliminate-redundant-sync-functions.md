@@ -1,14 +1,15 @@
 ---
 id: 306210fe
 title: Eliminate Redundant Sync Functions
-headline: ''
+headline: '# Eliminate Redundant Sync Functions'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3671'
 created: '2026-02-05T15:17:52.243628+00:00'
 updated: '2026-02-05T15:17:52.243628+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3671'
 ---
 
 # Eliminate Redundant Sync Functions

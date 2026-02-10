@@ -1,7 +1,7 @@
 ---
 id: efae2ab3
 title: Implement semantic versioning enforcement and PyPI publication
-headline: ''
+headline: '# Implement semantic versioning enforcement and PyPI publication'
 priority: medium
 status: todo
 issue_type: other
@@ -10,7 +10,8 @@ labels:
 - priority:high
 - status:todo
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3723'
 created: '2026-02-05T15:17:52.371869+00:00'
 updated: '2026-02-05T15:17:52.371870+00:00'
 assignee: null
@@ -28,7 +29,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3723'
 ---
 
 # Implement semantic versioning enforcement and PyPI publication

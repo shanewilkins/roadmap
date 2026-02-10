@@ -35,17 +35,16 @@ class IssueToGitHubPayloadConverter:
             "body": issue.content or "",  # Use content as description
         }
 
-        # NOTE: labels field requires labels to exist in the repository
-        # GitHub API validation fails if we send labels that don't exist
-        # Skip labels for now until we have proper label validation
-        # if issue.labels:
-        #     payload["labels"] = issue.labels
+        labels = [
+            label
+            for label in (issue.labels or [])
+            if isinstance(label, str) and label.strip()
+        ]
+        if labels:
+            payload["labels"] = labels
 
-        # NOTE: assignees must be valid collaborators on the repository
-        # GitHub API validation fails if we send invalid usernames
-        # Skip assignees for now until we have proper assignee validation
-        # if issue.assignee and isinstance(issue.assignee, str) and issue.assignee.strip():
-        #     payload["assignees"] = [issue.assignee]
+        if isinstance(issue.assignee, str) and issue.assignee.strip():
+            payload["assignees"] = [issue.assignee.strip()]
 
         # NOTE: milestone field requires a milestone number/ID, not a string name
         # GitHub API validation fails if we send milestone names instead of numbers
@@ -77,17 +76,16 @@ class IssueToGitHubPayloadConverter:
         else:
             payload["state"] = "open"
 
-        # NOTE: labels field requires labels to exist in the repository
-        # GitHub API validation fails if we send labels that don't exist
-        # Skip labels for now until we have proper label validation
-        # if issue.labels:
-        #     payload["labels"] = issue.labels
+        labels = [
+            label
+            for label in (issue.labels or [])
+            if isinstance(label, str) and label.strip()
+        ]
+        if labels:
+            payload["labels"] = labels
 
-        # NOTE: assignees must be valid collaborators on the repository
-        # GitHub API validation fails if we send invalid usernames
-        # Skip assignees for now until we have proper assignee validation
-        # if issue.assignee and isinstance(issue.assignee, str) and issue.assignee.strip():
-        #     payload["assignees"] = [issue.assignee]
+        if isinstance(issue.assignee, str) and issue.assignee.strip():
+            payload["assignees"] = [issue.assignee.strip()]
 
         # NOTE: milestone field requires a milestone number/ID, not a string name
         # GitHub API validation fails if we send milestone names instead of numbers

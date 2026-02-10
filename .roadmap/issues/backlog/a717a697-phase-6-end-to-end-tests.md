@@ -1,14 +1,15 @@
 ---
 id: a717a697
 title: 'Phase 6: End-to-End Tests'
-headline: ''
+headline: '# Phase 6: End-to-End Tests'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3685'
 created: '2026-02-05T15:17:47.747412+00:00'
 updated: '2026-02-05T15:17:47.747413+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3685'
 ---
 
 # Phase 6: End-to-End Tests

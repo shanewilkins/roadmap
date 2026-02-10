@@ -1,14 +1,15 @@
 ---
 id: df14e04c
 title: Complete production deployment and security certification
-headline: ''
+headline: '# Complete production deployment and security certification'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3739'
 created: '2026-02-05T15:17:49.153157+00:00'
 updated: '2026-02-05T15:17:49.153158+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3739'
 ---
 
 # Complete production deployment and security certification

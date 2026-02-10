@@ -70,7 +70,6 @@ class SyncStateComparator:
             "status",
             "priority",
             "content",
-            "labels",
             "assignee",
         ]
         self.fields_to_sync = fields_to_sync or default_fields

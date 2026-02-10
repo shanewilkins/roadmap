@@ -1,7 +1,7 @@
 ---
 id: 3f4dc5fe
 title: Add milestone-level kanban board with status columns
-headline: ''
+headline: '# Add milestone-level kanban board with status columns'
 priority: medium
 status: todo
 issue_type: other
@@ -13,7 +13,8 @@ labels:
 - milestone
 - ui
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3731'
 created: '2026-02-05T15:17:52.345971+00:00'
 updated: '2026-02-05T15:17:52.345972+00:00'
 assignee: null
@@ -31,7 +32,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3731'
 ---
 
 # Add milestone-level kanban board with status columns

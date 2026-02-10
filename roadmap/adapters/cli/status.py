@@ -8,6 +8,7 @@ from structlog import get_logger
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.health.fixer import HealthFixOrchestrator
 from roadmap.adapters.cli.health.formatter import HealthCheckFormatter
+from roadmap.adapters.cli.health.db_integrity import db_integrity
 from roadmap.adapters.cli.health.scan import scan as health_scan
 from roadmap.adapters.cli.presentation.core_initialization_presenter import (
     CoreInitializationPresenter,
@@ -348,3 +349,4 @@ def health(ctx: click.Context, details: bool, format: str, verbose: bool) -> Non
 # Register health subcommands (scan, fix, and check is now the default)
 health.add_command(health_scan, name="scan")
 health.add_command(fix_health, name="fix")
+health.add_command(db_integrity, name="db-integrity")

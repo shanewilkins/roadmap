@@ -1,14 +1,15 @@
 ---
 id: 21da1994
 title: 'Phase 4: Critical Path Calculation'
-headline: ''
+headline: '# Phase 4: Critical Path Calculation'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3661'
 created: '2026-02-05T15:17:49.903103+00:00'
 updated: '2026-02-05T15:17:49.903103+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3661'
 ---
 
 # Phase 4: Critical Path Calculation

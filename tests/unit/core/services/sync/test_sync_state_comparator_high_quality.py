@@ -563,7 +563,7 @@ class TestComparatorConfiguration:
 
         assert "status" in comparator.fields_to_sync
         assert "content" in comparator.fields_to_sync
-        assert "labels" in comparator.fields_to_sync
+        assert "labels" not in comparator.fields_to_sync
 
     def test_custom_fields_to_sync(self):
         """Test custom fields_to_sync."""

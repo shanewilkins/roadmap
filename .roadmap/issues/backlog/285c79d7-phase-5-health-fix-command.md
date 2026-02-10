@@ -1,14 +1,15 @@
 ---
 id: 285c79d7
 title: 'Phase 5: Health Fix Command'
-headline: ''
+headline: '# Phase 5: Health Fix Command'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3743'
 created: '2026-02-05T15:17:52.059110+00:00'
 updated: '2026-02-05T15:17:52.059111+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3743'
 ---
 
 # Phase 5: Health Fix Command

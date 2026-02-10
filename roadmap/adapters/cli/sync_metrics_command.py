@@ -57,28 +57,27 @@ def sync_metrics(
     stats: bool,
     verbose: bool,
 ) -> None:
-    """Display sync operation metrics and history.
+    r"""Display sync operation metrics and history.
 
     View historical sync metrics, performance data, and statistics
     to monitor sync health and performance over time.
 
     Examples:
+    \b
+        # Show metrics from last 7 days
+        roadmap sync metrics
 
     \b
-      # Show metrics from last 7 days
-      roadmap sync metrics
+        # Show metrics from last 30 days for GitHub
+        roadmap sync metrics --backend github --days 30
 
     \b
-      # Show metrics from last 30 days for GitHub
-      roadmap sync metrics --backend github --days 30
+        # Show only the latest sync
+        roadmap sync metrics --latest
 
     \b
-      # Show only the latest sync
-      roadmap sync metrics --latest
-
-    \b
-      # Show aggregate statistics
-      roadmap sync metrics --stats
+        # Show aggregate statistics
+        roadmap sync metrics --stats
     """
     console_inst = get_console()
     core = ctx.obj["core"]

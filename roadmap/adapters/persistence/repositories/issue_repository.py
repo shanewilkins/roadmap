@@ -33,6 +33,34 @@ class IssueRepository:
             Issue ID
         """
         with self._transaction() as conn:
+            project_id = issue_data.get("project_id")
+            if project_id:
+                exists = conn.execute(
+                    "SELECT 1 FROM projects WHERE id = ?",
+                    (project_id,),
+                ).fetchone()
+                if not exists:
+                    logger.warning(
+                        "issue_create_missing_project",
+                        issue_id=issue_data.get("id"),
+                        project_id=project_id,
+                    )
+                    project_id = None
+
+            milestone_id = issue_data.get("milestone_id")
+            if milestone_id:
+                exists = conn.execute(
+                    "SELECT 1 FROM milestones WHERE id = ?",
+                    (milestone_id,),
+                ).fetchone()
+                if not exists:
+                    logger.warning(
+                        "issue_create_missing_milestone",
+                        issue_id=issue_data.get("id"),
+                        milestone_id=milestone_id,
+                    )
+                    milestone_id = None
+
             conn.execute(
                 """
                 INSERT INTO issues (id, project_id, milestone_id, title, headline, description, status, priority, issue_type, assignee, estimate_hours, due_date, metadata)
@@ -40,8 +68,8 @@ class IssueRepository:
             """,
                 (
                     issue_data["id"],
-                    issue_data.get("project_id"),
-                    issue_data.get("milestone_id"),
+                    project_id,
+                    milestone_id,
                     issue_data.get("title"),
                     issue_data.get("headline", ""),
                     issue_data.get("description"),

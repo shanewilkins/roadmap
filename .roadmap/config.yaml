@@ -25,4 +25,4 @@ behavior:
   confirm_destructive: true
   show_tips: true
   include_closed_in_critical_path: false
-  default_project_id: null
+  default_project_id: 99d80769

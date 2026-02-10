@@ -1,14 +1,15 @@
 ---
 id: 335da302
 title: Cross-platform compatibility testing (macOS, Linux, Windows)
-headline: ''
+headline: '# Cross-platform compatibility testing (macOS, Linux, Windows)'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3720'
 created: '2026-02-05T15:17:48.821123+00:00'
 updated: '2026-02-05T15:17:48.821124+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3720'
 ---
 
 # Cross-platform compatibility testing (macOS, Linux, Windows)

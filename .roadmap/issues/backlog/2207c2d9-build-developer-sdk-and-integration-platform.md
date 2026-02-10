@@ -1,14 +1,15 @@
 ---
 id: 2207c2d9
 title: Build developer SDK and integration platform
-headline: ''
+headline: '# Build developer SDK and integration platform'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3705'
 created: '2026-02-05T15:17:48.122189+00:00'
 updated: '2026-02-05T15:17:48.122190+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3705'
 ---
 
 # Build developer SDK and integration platform

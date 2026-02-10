@@ -1,14 +1,15 @@
 ---
 id: 3b51dc40
 title: Test issue for sync push
-headline: ''
+headline: '# Test issue for sync push'
 priority: medium
 status: todo
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
-remote_ids: {}
+remote_ids:
+  github: '3717'
 created: '2026-02-05T15:17:49.673522+00:00'
 updated: '2026-02-05T15:17:49.673523+00:00'
 assignee: null
@@ -26,7 +27,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: null
+github_issue: '3717'
 ---
 
 # Test issue for sync push
