@@ -18,15 +18,15 @@ class TestMilestoneClose:
             # Create a milestone
             create_result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "--title", "v0.2.0", "--description", "desc"],
+                ["milestone", "create", "--title", "v0-2-0", "--description", "desc"],
             )
             assert create_result.exit_code == 0
 
             # Close it if command exists
-            close_result = cli_runner.invoke(main, ["milestone", "close", "v0.2.0"])
+            close_result = cli_runner.invoke(main, ["milestone", "close", "v0-2-0"])
             if close_result.exit_code == 0:
                 # Verify output contains milestone reference
                 assert (
-                    "v0.2.0" in close_result.output
+                    "v0-2-0" in close_result.output
                     or "closed" in close_result.output.lower()
                 )

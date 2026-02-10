@@ -31,12 +31,12 @@ class TestMilestoneTablePresenter:
     def test_display_milestone_table_single_milestone(self, mock_console):
         """Test displaying table with single milestone."""
         mock_ms = MagicMock()
-        mock_ms.name = "v1.0"
+        mock_ms.name = "v1-0"
         mock_ms.description = "First release"
         mock_ms.status.value = "open"
 
-        progress = {"v1.0": {"total": 10, "completed": 5}}
-        estimates = {"v1.0": "40 hours"}
+        progress = {"v1-0": {"total": 10, "completed": 5}}
+        estimates = {"v1-0": "40 hours"}
 
         def get_due_date(ms):
             return ("2025-12-31", None)
@@ -51,20 +51,20 @@ class TestMilestoneTablePresenter:
     def test_display_milestone_table_multiple_milestones(self, mock_console):
         """Test displaying table with multiple milestones."""
         mock_ms1 = MagicMock()
-        mock_ms1.name = "v1.0"
+        mock_ms1.name = "v1-0"
         mock_ms1.description = "First"
         mock_ms1.status.value = "open"
 
         mock_ms2 = MagicMock()
-        mock_ms2.name = "v2.0"
+        mock_ms2.name = "v2-0"
         mock_ms2.description = "Second"
         mock_ms2.status.value = "open"
 
         progress = {
-            "v1.0": {"total": 10, "completed": 5},
-            "v2.0": {"total": 20, "completed": 20},
+            "v1-0": {"total": 10, "completed": 5},
+            "v2-0": {"total": 20, "completed": 20},
         }
-        estimates = {"v1.0": "40 hours", "v2.0": "80 hours"}
+        estimates = {"v1-0": "40 hours", "v2-0": "80 hours"}
 
         def get_due_date(ms):
             return ("2025-12-31", None)
@@ -79,12 +79,12 @@ class TestMilestoneTablePresenter:
     def test_display_milestone_table_with_overdue_styling(self, mock_console):
         """Test displaying table with overdue styling."""
         mock_ms = MagicMock()
-        mock_ms.name = "v1.0"
+        mock_ms.name = "v1-0"
         mock_ms.description = "First release"
         mock_ms.status.value = "open"
 
-        progress = {"v1.0": {"total": 10, "completed": 5}}
-        estimates = {"v1.0": "40 hours"}
+        progress = {"v1-0": {"total": 10, "completed": 5}}
+        estimates = {"v1-0": "40 hours"}
 
         def get_due_date(ms):
             return ("2025-10-15", "bold red")
@@ -99,7 +99,7 @@ class TestMilestoneTablePresenter:
     def test_display_milestone_table_missing_data(self, mock_console):
         """Test displaying table with missing progress/estimate data."""
         mock_ms = MagicMock()
-        mock_ms.name = "v1.0"
+        mock_ms.name = "v1-0"
         mock_ms.description = "First release"
         mock_ms.status.value = "open"
 
@@ -173,8 +173,8 @@ class TestMilestoneListPresenter:
         milestones_data = {
             "has_data": True,
             "milestones": [mock_ms],
-            "progress": {"v1.0": {"total": 10, "completed": 5}},
-            "estimates": {"v1.0": "40 hours"},
+            "progress": {"v1-0": {"total": 10, "completed": 5}},
+            "estimates": {"v1-0": "40 hours"},
         }
 
         MilestoneListPresenter.show_milestones_list(
@@ -202,18 +202,18 @@ class TestMilestoneListPresenter:
     def test_show_milestones_list_with_multiple(self, mock_console, mock_table):
         """Test showing milestones list with multiple milestones."""
         mock_ms1 = MagicMock()
-        mock_ms1.name = "v1.0"
+        mock_ms1.name = "v1-0"
         mock_ms2 = MagicMock()
-        mock_ms2.name = "v2.0"
+        mock_ms2.name = "v2-0"
 
         milestones_data = {
             "has_data": True,
             "milestones": [mock_ms1, mock_ms2],
             "progress": {
-                "v1.0": {"total": 10, "completed": 5},
-                "v2.0": {"total": 20, "completed": 20},
+                "v1-0": {"total": 10, "completed": 5},
+                "v2-0": {"total": 20, "completed": 20},
             },
-            "estimates": {"v1.0": "40 hours", "v2.0": "80 hours"},
+            "estimates": {"v1-0": "40 hours", "v2-0": "80 hours"},
         }
 
         MilestoneListPresenter.show_milestones_list(

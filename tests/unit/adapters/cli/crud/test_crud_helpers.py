@@ -52,7 +52,7 @@ class TestFormatEntityTitle:
         "etype,attr,value,expected",
         [
             (EntityType.ISSUE, "title", "Test Issue Title", "Test Issue Title"),
-            (EntityType.MILESTONE, "name", "v1.0.0", "v1.0.0"),
+            (EntityType.MILESTONE, "name", "v1-0-0", "v1-0-0"),
             (EntityType.PROJECT, "name", "My Project", "My Project"),
         ],
     )
@@ -81,7 +81,7 @@ class TestFormatEntityId:
         [
             (EntityType.ISSUE, MagicMock(id="ISSUE-123"), "ISSUE-123"),
             (EntityType.ISSUE, "some_string", "some_string"),
-            (EntityType.MILESTONE, MagicMock(id="v1.0.0"), "v1.0.0"),
+            (EntityType.MILESTONE, MagicMock(id="v1-0-0"), "v1-0-0"),
         ],
     )
     def test_format_entity_id(self, etype, entity, expected):
@@ -99,7 +99,7 @@ class TestValidateEntityExists:
         [
             (EntityType.ISSUE, True, "ISSUE-1", True, False, "issues"),
             (EntityType.ISSUE, False, "ISSUE-999", False, True, "issues"),
-            (EntityType.MILESTONE, True, "v1.0.0", True, False, "milestones"),
+            (EntityType.MILESTONE, True, "v1-0-0", True, False, "milestones"),
             (EntityType.MILESTONE, False, "v2.0.0", False, True, "milestones"),
             (EntityType.PROJECT, True, "proj-1", True, False, "projects"),
             (EntityType.PROJECT, False, "proj-999", False, True, "projects"),

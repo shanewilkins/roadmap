@@ -50,7 +50,7 @@ class TestHeadlineValidationHealthyState:
         # Mock milestones with headlines
         milestone1 = Mock()
         milestone1.headline = "v1.0 Release"
-        milestone1.id = "v1.0"
+        milestone1.id = "v1-0"
 
         # Mock projects with headlines
         project1 = Mock()
@@ -104,7 +104,7 @@ class TestHeadlineValidationHealthyState:
 
         milestone_no_headline = Mock()
         milestone_no_headline.headline = None
-        milestone_no_headline.id = "v1.0"
+        milestone_no_headline.id = "v1-0"
 
         core.issue_service.list_issues.return_value = []
         core.milestone_service.list_milestones.return_value = [milestone_no_headline]
@@ -163,7 +163,7 @@ class TestHeadlineValidationMultipleMissing:
             Mock(headline=None, id="issue-1"),
         ]
         core.milestone_service.list_milestones.return_value = [
-            Mock(headline="", id="v1.0"),
+            Mock(headline="", id="v1-0"),
         ]
         core.project_service.list_projects.return_value = [
             Mock(headline=None, id="core"),

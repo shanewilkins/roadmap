@@ -102,11 +102,11 @@ class TestDataIntegrityValidator:
             issues_dir = Path(tmpdir)
 
             # Create nested structure
-            v1_dir = issues_dir / "v1.0"
+            v1_dir = issues_dir / "v1-0"
             v1_dir.mkdir()
             (v1_dir / "a1b2c3d4-Issue.md").write_text("content")
 
-            v2_dir = issues_dir / "v2.0"
+            v2_dir = issues_dir / "v2-0"
             v2_dir.mkdir()
             (v2_dir / "e5f6g7h8-Issue.md").write_text("content")
 
@@ -124,7 +124,7 @@ class TestDataIntegrityValidator:
         """Test that malformed file paths are relative."""
         with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
-            subdir = issues_dir / "v1.0"
+            subdir = issues_dir / "v1-0"
             subdir.mkdir()
             malformed = subdir / "a1b2c3d4-Bad.md"
             malformed.write_text("content")
@@ -139,7 +139,7 @@ class TestDataIntegrityValidator:
 
             # Path should be relative to issues_dir
             assert len(result["malformed_files"]) == 1
-            assert "v1.0" in result["malformed_files"][0]
+            assert "v1-0" in result["malformed_files"][0]
             assert str(issues_dir) not in result["malformed_files"][0]
 
     def test_scan_multiple_malformed_files(self, temp_dir_context):

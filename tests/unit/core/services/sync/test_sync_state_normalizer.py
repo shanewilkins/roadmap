@@ -165,7 +165,7 @@ class TestNormalizeRemoteState:
         obj.title = "Test Issue"
         obj.status = "open"
         obj.assignee = "alice"
-        obj.milestone = "v1.0"
+        obj.milestone = "v1-0"
         obj.headline = None
         obj.description = "A test issue"
         obj.labels = ["bug", "urgent"]
@@ -178,7 +178,7 @@ class TestNormalizeRemoteState:
         assert result["title"] == "Test Issue"
         assert result["status"] == "open"
         assert result["assignee"] == "alice"
-        assert result["milestone"] == "v1.0"
+        assert result["milestone"] == "v1-0"
         assert result["description"] == "A test issue"
         assert result["labels"] == ["bug", "urgent"]
         assert result["updated_at"] == "2024-01-15T10:00:00Z"

@@ -60,14 +60,14 @@ class TestCheckRootIssues:
             issue_file.write_text("# Test Issue")
 
             # Create milestone folder
-            milestone_dir = issues_dir / "v1.0"
+            milestone_dir = issues_dir / "v1-0"
             milestone_dir.mkdir()
 
             # Mock core and issue service
             mock_issue = Mock()
             mock_issue.id = "a1b2c3d4"
             mock_issue.title = "Test Issue"
-            mock_issue.milestone = "v1.0"
+            mock_issue.milestone = "v1-0"
 
             core = Mock()
             core.issue_service.get_issue.return_value = mock_issue
@@ -77,7 +77,7 @@ class TestCheckRootIssues:
 
             assert len(misplaced) == 1
             assert misplaced[0]["issue_id"] == "a1b2c3d4"
-            assert misplaced[0]["assigned_milestone"] == "v1.0"
+            assert misplaced[0]["assigned_milestone"] == "v1-0"
             assert "a1b2c3d4" in misplaced[0]["current_location"]
 
     def test_check_root_issues_with_backup_file(self, temp_dir_context):
@@ -131,7 +131,7 @@ class TestCheckRootIssues:
             # Mock issue with milestone that doesn't exist
             mock_issue = Mock()
             mock_issue.id = "a1b2c3d4"
-            mock_issue.milestone = "v1.0"
+            mock_issue.milestone = "v1-0"
 
             core = Mock()
             core.issue_service.get_issue.return_value = mock_issue

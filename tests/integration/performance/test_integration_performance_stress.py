@@ -65,7 +65,7 @@ class TestPerformanceAndStress:
         # Create milestones
         milestone_names = []
         for i in range(num_milestones):
-            milestone_name = f"Milestone {i + 1}"
+            milestone_name = f"milestone-{i + 1}"
             result = runner.invoke(
                 main, ["milestone", "create", "--title", milestone_name]
             )

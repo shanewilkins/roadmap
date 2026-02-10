@@ -146,7 +146,7 @@ Test content.
         content = """---
 id: "abcdef12"
 title: Complex Issue
-milestone: v1.0
+milestone: v1-0
 assignee: user1
 ---
 
@@ -159,7 +159,7 @@ Test content.
 
             issue = IssueParser.parse_issue_file(Path(f.name))
 
-        assert issue.milestone == "v1.0"
+        assert issue.milestone == "v1-0"
         assert issue.assignee == "user1"
 
     def test_parse_issue_file_labels_and_github(self):
@@ -238,7 +238,7 @@ More details here.
             title="Roundtrip Test",
             priority=Priority.MEDIUM,
             status=Status.REVIEW,
-            milestone="v2.0",
+            milestone="v2-0",
             labels=["test"],
             content="Test description",
             created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=UTC),
@@ -264,7 +264,7 @@ More details here.
             title="Roundtrip Test",
             priority=Priority.MEDIUM,
             status=Status.REVIEW,
-            milestone="v2.0",
+            milestone="v2-0",
             labels=["test"],
             content="Test description",
             created=datetime(2024, 1, 1, 12, 30, 45, tzinfo=UTC),

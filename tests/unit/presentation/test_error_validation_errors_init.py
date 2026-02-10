@@ -285,10 +285,10 @@ class TestMilestoneNotFoundErrorInitialization:
             ("Milestone does not exist", None, ErrorSeverity.MEDIUM, {}, None, False),
             (
                 "Milestone not found",
-                "Sprint 1",
+                "sprint-1",
                 ErrorSeverity.MEDIUM,
                 {},
-                "Sprint 1",
+                "sprint-1",
                 True,
             ),
             (

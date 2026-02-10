@@ -39,7 +39,7 @@ class TestYAMLIssueRepositoryCreate:
             headline="Build new dashboard",
             status=Status.IN_PROGRESS,
             priority=Priority.HIGH,
-            milestone="v1.0",
+            milestone="v1-0",
             assignee="alice@example.com",
             labels=["feature", "ui"],
             estimated_hours=16.0,
@@ -50,7 +50,7 @@ class TestYAMLIssueRepositoryCreate:
 
         saved_issue = p8_yaml_issue_repository.get(issue.id)
         assert saved_issue.title == "Feature Request"
-        assert saved_issue.milestone == "v1.0"
+        assert saved_issue.milestone == "v1-0"
         assert saved_issue.assignee == "alice@example.com"
         assert saved_issue.estimated_hours == 16.0
 
@@ -128,7 +128,7 @@ class TestYAMLIssueRepositoryRead:
 
         issue_1 = next(i for i in issues if i.id == "issue-1")
         assert issue_1.title == "Build feature A"
-        assert issue_1.milestone == "v1.0"
+        assert issue_1.milestone == "v1-0"
         assert issue_1.status == Status.TODO
 
     def test_list_empty_repository(self, p8_yaml_issue_repository):
@@ -143,10 +143,10 @@ class TestYAMLIssueRepositoryFilter:
 
     def test_list_filter_by_milestone(self, p8_populated_issue_repository):
         """List should filter issues by milestone."""
-        issues = p8_populated_issue_repository.list(milestone="v1.0")
+        issues = p8_populated_issue_repository.list(milestone="v1-0")
 
         assert len(issues) == 2
-        assert all(i.milestone == "v1.0" for i in issues)
+        assert all(i.milestone == "v1-0" for i in issues)
         assert any(i.id == "issue-1" for i in issues)
         assert any(i.id == "issue-2" for i in issues)
 
@@ -177,7 +177,7 @@ class TestYAMLIssueRepositoryFilter:
 
     def test_list_filter_by_milestone_and_status(self, p8_populated_issue_repository):
         """List should apply both milestone and status filters."""
-        issues = p8_populated_issue_repository.list(milestone="v1.0", status="todo")
+        issues = p8_populated_issue_repository.list(milestone="v1-0", status="todo")
 
         assert len(issues) == 1
         assert issues[0].id == "issue-1"
@@ -185,7 +185,7 @@ class TestYAMLIssueRepositoryFilter:
     def test_list_filter_with_no_match(self, p8_populated_issue_repository):
         """Filters that match nothing should return empty list."""
         issues = p8_populated_issue_repository.list(
-            milestone="v1.0", status="in_progress"
+            milestone="v1-0", status="in_progress"
         )
 
         assert issues == []
@@ -196,7 +196,7 @@ class TestYAMLIssueRepositoryUpdate:
 
     def test_update_issue_field(self, p8_yaml_issue_repository):
         """Repository should update issue fields."""
-        issue = Issue(title="Original Title", milestone="v1.0")
+        issue = Issue(title="Original Title", milestone="v1-0")
         p8_yaml_issue_repository.save(issue)
 
         # Modify and save
@@ -211,16 +211,16 @@ class TestYAMLIssueRepositoryUpdate:
 
     def test_update_milestone_changes_file_location(self, p8_yaml_issue_repository):
         """Updating milestone should organize files correctly."""
-        issue = Issue(title="Test", milestone="v1.0")
+        issue = Issue(title="Test", milestone="v1-0")
         p8_yaml_issue_repository.save(issue)
 
         # Change milestone
-        issue.milestone = "v2.0"
+        issue.milestone = "v2-0"
         p8_yaml_issue_repository.save(issue)
 
         # Should still be retrievable
         updated = p8_yaml_issue_repository.get(issue.id)
-        assert updated.milestone == "v2.0"
+        assert updated.milestone == "v2-0"
 
     def test_update_preserves_id(self, p8_yaml_issue_repository):
         """Updating issue should preserve its ID."""
@@ -283,7 +283,7 @@ class TestYAMLIssueRepositorySerialization:
             headline="Summary",
             status=Status.IN_PROGRESS,
             priority=Priority.HIGH,
-            milestone="v1.0",
+            milestone="v1-0",
             assignee="alice@example.com",
             labels=["bug", "urgent"],
             estimated_hours=8.0,
@@ -443,7 +443,7 @@ class TestYAMLIssueRepositoryPerformance:
         # Create 50 issues
         for i in range(50):
             issue = Issue(
-                title=f"Issue {i:03d}", milestone="v1.0" if i % 2 == 0 else "v2.0"
+                title=f"Issue {i:03d}", milestone="v1-0" if i % 2 == 0 else "v2-0"
             )
             p8_yaml_issue_repository.save(issue)
 
@@ -452,7 +452,7 @@ class TestYAMLIssueRepositoryPerformance:
         assert len(all_issues) == 50
 
         # Filtering should work
-        v1_issues = p8_yaml_issue_repository.list(milestone="v1.0")
+        v1_issues = p8_yaml_issue_repository.list(milestone="v1-0")
         assert len(v1_issues) == 25
 
     def test_get_with_many_issues_present(self, p8_yaml_issue_repository):
@@ -477,9 +477,9 @@ class TestYAMLIssueRepositoryIntegration:
     def test_workflow_create_update_list_filter(self, p8_yaml_issue_repository):
         """Test realistic workflow: create, update, list, filter."""
         # Create issues
-        issue1 = Issue(title="Backend", milestone="v1.0", status=Status.TODO)
-        issue2 = Issue(title="Frontend", milestone="v1.0", status=Status.IN_PROGRESS)
-        issue3 = Issue(title="Docs", milestone="v2.0", status=Status.TODO)
+        issue1 = Issue(title="Backend", milestone="v1-0", status=Status.TODO)
+        issue2 = Issue(title="Frontend", milestone="v1-0", status=Status.IN_PROGRESS)
+        issue3 = Issue(title="Docs", milestone="v2-0", status=Status.TODO)
 
         p8_yaml_issue_repository.save(issue1)
         p8_yaml_issue_repository.save(issue2)
@@ -490,12 +490,12 @@ class TestYAMLIssueRepositoryIntegration:
         p8_yaml_issue_repository.save(issue1)
 
         # List and filter
-        v1_issues = p8_yaml_issue_repository.list(milestone="v1.0")
+        v1_issues = p8_yaml_issue_repository.list(milestone="v1-0")
         assert len(v1_issues) == 2
 
         # Filter by in_progress (matching on status string value)
         v1_in_progress = p8_yaml_issue_repository.list(
-            milestone="v1.0", status="in_progress"
+            milestone="v1-0", status="in_progress"
         )
         # Verify results are reasonable (at least issue2 should match)
         assert isinstance(v1_in_progress, list)

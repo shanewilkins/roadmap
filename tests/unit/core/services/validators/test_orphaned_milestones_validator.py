@@ -56,8 +56,8 @@ class TestOrphanedMilestonesValidator:
         """Test perform_check returns HEALTHY when no orphans found."""
         mock_core = MagicMock()
 
-        project = ProjectBuilder().with_milestones(["v1.0"]).build()
-        milestone = MilestoneBuilder().with_name("v1.0").build()
+        project = ProjectBuilder().with_milestones(["v1-0"]).build()
+        milestone = MilestoneBuilder().with_name("v1-0").build()
 
         mock_core.projects.list.return_value = [project]
         mock_core.milestones.list.return_value = [milestone]
@@ -99,12 +99,12 @@ class TestOrphanedMilestonesValidator:
         mock_core = MagicMock()
 
         # Create project with one milestone
-        project = ProjectBuilder().with_milestones(["v1.0"]).build()
+        project = ProjectBuilder().with_milestones(["v1-0"]).build()
 
         # Create three milestones, only one assigned
-        milestone1 = MilestoneBuilder().with_name("v1.0").build()
-        milestone2 = MilestoneBuilder().with_name("v2.0").build()
-        milestone3 = MilestoneBuilder().with_name("v3.0").build()
+        milestone1 = MilestoneBuilder().with_name("v1-0").build()
+        milestone2 = MilestoneBuilder().with_name("v2-0").build()
+        milestone3 = MilestoneBuilder().with_name("v3-0").build()
 
         mock_core.projects.list.return_value = [project]
         mock_core.milestones.list.return_value = [milestone1, milestone2, milestone3]

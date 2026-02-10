@@ -16,7 +16,7 @@ from roadmap.core.domain.issue import IssueType
 def sample_milestone():
     """Create a sample milestone."""
     return Milestone(
-        name="v1.0",
+        name="v1-0",
         content="First release",
         due_date=None,
         status=MilestoneStatus.OPEN,
@@ -32,21 +32,21 @@ def sample_issues():
             status=Status.TODO,
             priority=Priority.HIGH,
             issue_type=IssueType.FEATURE,
-            milestone="v1.0",
+            milestone="v1-0",
         ),
         Issue(
             title="Feature B",
             status=Status.IN_PROGRESS,
             priority=Priority.MEDIUM,
             issue_type=IssueType.FEATURE,
-            milestone="v1.0",
+            milestone="v1-0",
         ),
         Issue(
             title="Bug Fix",
             status=Status.CLOSED,
             priority=Priority.HIGH,
             issue_type=IssueType.BUG,
-            milestone="v1.0",
+            milestone="v1-0",
         ),
     ]
 
@@ -78,7 +78,7 @@ class TestRecalculateMilestoneProgress:
                 runner = CliRunner()
                 result = runner.invoke(
                     recalculate_milestone_progress,
-                    ["v1.0"],
+                    ["v1-0"],
                     obj={"core": mock_core},
                 )
 
@@ -163,7 +163,7 @@ class TestRecalculateMilestoneProgress:
                 runner = CliRunner()
                 result = runner.invoke(
                     recalculate_milestone_progress,
-                    ["v1.0", "--method", "effort_weighted"],
+                    ["v1-0", "--method", "effort_weighted"],
                     obj={"core": mock_core},
                 )
 
@@ -194,7 +194,7 @@ class TestRecalculateMilestoneProgress:
                 runner = CliRunner()
                 result = runner.invoke(
                     recalculate_milestone_progress,
-                    ["v1.0", "--method", "count_based"],
+                    ["v1-0", "--method", "count_based"],
                     obj={"core": mock_core},
                 )
 
@@ -227,7 +227,7 @@ class TestRecalculateMilestoneProgress:
     ):
         """Test recalculating multiple milestones."""
         milestone2 = Milestone(
-            name="v2.0",
+            name="v2-0",
             content="Second release",
             due_date=None,
             status=MilestoneStatus.OPEN,
@@ -282,7 +282,7 @@ class TestRecalculateMilestoneProgress:
                 runner = CliRunner()
                 result = runner.invoke(
                     recalculate_milestone_progress,
-                    ["v1.0"],
+                    ["v1-0"],
                     obj={"core": mock_core},
                 )
 
@@ -313,7 +313,7 @@ class TestRecalculateMilestoneProgress:
                 runner = CliRunner()
                 result = runner.invoke(
                     recalculate_milestone_progress,
-                    ["v1.0"],
+                    ["v1-0"],
                     obj={"core": mock_core},
                 )
 

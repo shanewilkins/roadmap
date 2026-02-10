@@ -37,7 +37,7 @@ class TestMilestoneRepositoryUpdate:
 
         repo = MilestoneRepository(mock_get_connection, mock_transaction)
 
-        result = repo.update("m1", {"title": "v2.0", "status": "closed"})
+        result = repo.update("m1", {"title": "v2-0", "status": "closed"})
 
         assert result is True
         mock_conn.execute.assert_called_once()
@@ -125,7 +125,7 @@ class TestMilestoneRepositoryUpdate:
         repo = MilestoneRepository(mock_get_connection, mock_transaction)
 
         updates = {
-            "title": "v2.0",
+            "title": "v2-0",
             "description": "New description",
             "status": "closed",
             "due_date": "2025-12-31",

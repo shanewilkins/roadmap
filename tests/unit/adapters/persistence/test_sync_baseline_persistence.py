@@ -97,7 +97,7 @@ class TestSyncBaselineSchema(unittest.TestCase):
                     "issue-1",
                     "open",
                     "alice@example.com",
-                    "v1.0",
+                    "v1-0",
                     "Description",
                     "Headline",
                     "Content",
@@ -183,7 +183,7 @@ class TestSyncBaselinePersistence(unittest.TestCase):
             "issue-1": {
                 "status": "open",
                 "assignee": "alice@example.com",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "headline": "Fix bug",
                 "content": "Fix critical bug",
                 "labels": ["bug", "critical"],
@@ -191,7 +191,7 @@ class TestSyncBaselinePersistence(unittest.TestCase):
             "issue-2": {
                 "status": "closed",
                 "assignee": "bob@example.com",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "headline": "Add feature",
                 "content": "Add new feature",
                 "labels": ["feature"],
@@ -215,7 +215,7 @@ class TestSyncBaselinePersistence(unittest.TestCase):
         issue_1 = retrieved["issue-1"]
         self.assertEqual(issue_1["status"], "open")
         self.assertEqual(issue_1["assignee"], "alice@example.com")
-        self.assertEqual(issue_1["milestone"], "v1.0")
+        self.assertEqual(issue_1["milestone"], "v1-0")
         self.assertEqual(issue_1["headline"], "Fix bug")
         self.assertEqual(issue_1["content"], "Fix critical bug")
         self.assertEqual(issue_1["labels"], ["bug", "critical"])
@@ -237,7 +237,7 @@ class TestSyncBaselinePersistence(unittest.TestCase):
             "issue-2": {
                 "status": "closed",
                 "assignee": "bob",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "headline": "New",
                 "content": "New",
                 "labels": ["feature"],
@@ -319,7 +319,7 @@ class TestSyncBaselinePersistence(unittest.TestCase):
             "issue-1": {
                 "status": "open",
                 "assignee": "alice",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "headline": "Test",
                 "content": "Test",
                 "labels": ["feature", "high-priority", "ui/ux", "bug-fix"],

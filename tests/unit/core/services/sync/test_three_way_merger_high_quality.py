@@ -27,7 +27,7 @@ class TestNoChangesCase:
         [
             "todo",
             "alice@example.com",
-            "v1.0",
+            "v1-0",
             "",  # Empty string
             None,  # None/null
             123,  # Numbers
@@ -110,7 +110,7 @@ class TestOnlyRemoteChangedCase:
         [
             ("todo", "closed"),
             ("alice", None),
-            ("v1.0", "v2.0"),
+            ("v1-0", "v2-0"),
             ([], ["tag"]),
             ("", "filled"),
         ],
@@ -151,7 +151,7 @@ class TestBothChangedSameCase:
         [
             ("todo", "in-progress"),
             (None, "assigned"),
-            ("v1.0", "v2.0"),
+            ("v1-0", "v2-0"),
             ([], ["tag"]),
             (0, 1),
         ],
@@ -190,7 +190,7 @@ class TestBothChangedDifferentlyCase:
         [
             ("todo", "in-progress", "closed"),
             ("alice", "bob", "charlie"),
-            ("v1.0", "v2.0", "v1.5"),
+            ("v1-0", "v2-0", "v1.5"),
             (None, "local", "remote"),
             ("base", None, "remote"),
         ],

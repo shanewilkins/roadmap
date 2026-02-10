@@ -20,7 +20,7 @@ class MockIssue:
         assignee="John",
         priority=None,
         estimated_hours=0,
-        milestone="v1.0",
+        milestone="v1-0",
         created="2024-01-01",
         updated="2024-01-02",
         estimated_time_display="0h",
@@ -156,7 +156,7 @@ class TestIssueExporter:
                 "assignee": "John",
                 "priority": "medium",
                 "estimated_hours": "0",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "created": "2024-01-01",
                 "updated": "2024-01-02",
             }
@@ -225,7 +225,7 @@ class TestIssueExporter:
         issue.title = "Test"
         issue.status = Status.TODO
         issue.assignee = "John"
-        issue.milestone = "v1.0"
+        issue.milestone = "v1-0"
         issue.estimated_time_display = None
 
         # Should handle missing attributes

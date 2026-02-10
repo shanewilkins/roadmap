@@ -99,7 +99,7 @@ class TestHandleArchiveParseError:
         "entity_type,entity_id",
         [
             ("issue", "issue-1"),
-            ("milestone", "v1.0"),
+            ("milestone", "v1-0"),
             ("project", "myproject"),
         ],
     )
@@ -212,7 +212,7 @@ class TestHandleRestoreParseError:
                 handle_restore_parse_error(
                     error=error,
                     entity_type="milestone",
-                    entity_id="v1.0",
+                    entity_id="v1-0",
                     archive_dir="/tmp/archive",
                     extra_context=extra_context,
                 )
@@ -227,7 +227,7 @@ class TestHandleRestoreParseError:
         "entity_type,entity_id",
         [
             ("issue", "issue-1"),
-            ("milestone", "v1.0"),
+            ("milestone", "v1-0"),
             ("project", "myproject"),
         ],
     )

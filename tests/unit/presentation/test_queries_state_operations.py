@@ -226,7 +226,7 @@ class TestGetMilestoneProgress:
             mock_tx.return_value.__enter__.return_value = mock_conn
 
             service = QueryService(mock_state_manager)
-            result = service.get_milestone_progress("Sprint 1")
+            result = service.get_milestone_progress("sprint-1")
 
             assert result == {"total": 0, "completed": 0}
 

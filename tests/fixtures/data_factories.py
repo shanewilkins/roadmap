@@ -63,19 +63,19 @@ class MilestoneScenarioFactory:
         return self
 
     def with_multiple_milestones(
-        self, count: int, name_prefix: str = "Sprint"
+        self, count: int, name_prefix: str = "sprint"
     ) -> "MilestoneScenarioFactory":
         """Add multiple milestones.
 
         Args:
             count: Number of milestones to create
-            name_prefix: Prefix for milestone names (e.g., "Sprint 1", "Sprint 2")
+            name_prefix: Prefix for milestone names (e.g., "sprint-1", "sprint-2")
 
         Returns:
             Self for fluent chaining
         """
         for i in range(1, count + 1):
-            self.with_milestone(f"{name_prefix} {i}")
+            self.with_milestone(f"{name_prefix}-{i}")
         return self
 
     def build(self) -> dict[str, Any]:
@@ -232,7 +232,7 @@ class ComplexWorkflowFactory:
 
     def with_release_plan(
         self,
-        milestone_name: str = "v1.0",
+        milestone_name: str = "v1-0",
         num_features: int = 3,
         num_bugs: int = 2,
     ) -> "ComplexWorkflowFactory":
@@ -292,7 +292,7 @@ class ComplexWorkflowFactory:
             Self for fluent chaining
         """
         for sprint_num in range(1, sprint_count + 1):
-            sprint_name = f"Sprint {sprint_num}"
+            sprint_name = f"sprint-{sprint_num}"
 
             # Create sprint milestone
             IntegrationTestBase.create_milestone(

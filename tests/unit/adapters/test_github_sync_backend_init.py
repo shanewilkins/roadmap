@@ -130,8 +130,8 @@ class TestGitHubSyncBackendOperations:
     def test_backend_fetch_milestones(self, backend):
         """Test backend can fetch milestones from GitHub."""
         backend.github_client.get_milestones.return_value = [
-            {"number": 1, "title": "v1.0", "state": "open"},
-            {"number": 2, "title": "v2.0", "state": "closed"},
+            {"number": 1, "title": "v1-0", "state": "open"},
+            {"number": 2, "title": "v2-0", "state": "closed"},
         ]
 
         # Should be able to call get_milestones through client

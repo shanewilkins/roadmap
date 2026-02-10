@@ -23,7 +23,7 @@ class TestCheckEntityExists:
         core.issues = {"issue-1": issue}
 
         # Setup milestones collection
-        milestone = Mock(id="milestone-1", name="v1.0")
+        milestone = Mock(id="milestone-1", name="v1-0")
         core.milestones = {"milestone-1": milestone}
 
         # Setup projects collection

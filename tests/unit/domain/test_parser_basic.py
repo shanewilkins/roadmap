@@ -111,7 +111,7 @@ class TestMilestoneParser:
         "name,headline,status,due_date_str,github_milestone,expected_has_due_date,expected_has_github_milestone,body_content",
         [
             (
-                "v1.0",
+                "v1-0",
                 "First release",
                 "open",
                 None,
@@ -121,7 +121,7 @@ class TestMilestoneParser:
                 "This is the first release milestone.\n\n## Goals\n\n- Feature A\n- Feature B",
             ),
             (
-                "v2.0",
+                "v2-0",
                 "Second release",
                 "closed",
                 "2024-12-31T23:59:59",
@@ -183,7 +183,7 @@ class TestMilestoneParser:
     def test_save_milestone_file(self):
         """Test saving milestone to file."""
         milestone = Milestone(
-            name="v1.0",
+            name="v1-0",
             headline="First release",
             status=MilestoneStatus.OPEN,
             content="Milestone content",
@@ -198,7 +198,7 @@ class TestMilestoneParser:
 
         # Read back and verify
         saved_content = file_path.read_text()
-        assert "name: v1.0" in saved_content
+        assert "name: v1-0" in saved_content
         assert "headline: First release" in saved_content
         assert "status: open" in saved_content
         assert "Milestone content" in saved_content
@@ -206,7 +206,7 @@ class TestMilestoneParser:
     def test_roundtrip_serialization_basic_fields(self):
         """Test that basic milestone fields survive roundtrip."""
         original_milestone = Milestone(
-            name="v1.5",
+            name="v1-5",
             headline="Patch release",
             status=MilestoneStatus.OPEN,
             due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC),
@@ -230,7 +230,7 @@ class TestMilestoneParser:
     def test_roundtrip_serialization_dates_and_content(self):
         """Test that dates and content survive roundtrip."""
         original_milestone = Milestone(
-            name="v1.5",
+            name="v1-5",
             headline="Patch release",
             status=MilestoneStatus.OPEN,
             due_date=datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC),

@@ -10,7 +10,7 @@ class TestMilestoneCloseCommand:
         """Test closing a milestone."""
         result = cli_runner.invoke(
             close_milestone,
-            ["v1.0"],
+            ["v1-0"],
         )
 
         # Test completes
@@ -30,7 +30,7 @@ class TestMilestoneCloseCommand:
         """Test close with force flag."""
         result = cli_runner.invoke(
             close_milestone,
-            ["v1.0", "--force"],
+            ["v1-0", "--force"],
         )
 
         # Test completes without exception
@@ -40,7 +40,7 @@ class TestMilestoneCloseCommand:
         """Test user declining close operation."""
         result = cli_runner.invoke(
             close_milestone,
-            ["v1.0"],
+            ["v1-0"],
             input="n\n",
         )
 
@@ -51,7 +51,7 @@ class TestMilestoneCloseCommand:
         """Test close with dry-run."""
         result = cli_runner.invoke(
             close_milestone,
-            ["v1.0", "--dry-run"],
+            ["v1-0", "--dry-run"],
         )
 
         # Test completes without exception
@@ -61,7 +61,7 @@ class TestMilestoneCloseCommand:
         """Test user accepting close operation."""
         result = cli_runner.invoke(
             close_milestone,
-            ["v1.0"],
+            ["v1-0"],
             input="y\n",
         )
 

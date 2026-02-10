@@ -95,7 +95,7 @@ class TestEndToEndWorkflows:
             assert_issue_created(core, title)
 
         # Step 4: Create milestones (verify via database)
-        milestone_titles = ["Version 1.0", "Version 1.1"]
+        milestone_titles = ["version-1-0", "version-1-1"]
 
         for title in milestone_titles:
             result = runner.invoke(main, ["milestone", "create", "--title", title])
@@ -203,7 +203,7 @@ class TestEndToEndWorkflows:
             ],
         )
         runner.invoke(main, ["issue", "create", "--title", "Test issue"])
-        runner.invoke(main, ["milestone", "create", "--title", "Test milestone"])
+        runner.invoke(main, ["milestone", "create", "--title", "test-milestone"])
 
         # Verify data exists
         core = RoadmapCore()
@@ -215,7 +215,7 @@ class TestEndToEndWorkflows:
         assert len(issues) == 1
         assert len(milestones) == 1
         assert issues[0].title == "Test issue"
-        assert milestones[0].name == "Test milestone"
+        assert milestones[0].name == "test-milestone"
 
         # Create a new core instance (simulating restart)
         core2 = RoadmapCore()
@@ -226,7 +226,7 @@ class TestEndToEndWorkflows:
         assert len(issues2) == 1
         assert len(milestones2) == 1
         assert issues2[0].title == "Test issue"
-        assert milestones2[0].name == "Test milestone"
+        assert milestones2[0].name == "test-milestone"
 
     def test_configuration_management(self, temp_workspace):
         """Test configuration file creation and management."""
@@ -299,7 +299,7 @@ class TestEndToEndWorkflows:
         )
 
         # Create milestone
-        milestone_name = "Milestone 1"
+        milestone_name = "milestone-1"
         result = runner.invoke(main, ["milestone", "create", "--title", milestone_name])
         assert result.exit_code == 0
 

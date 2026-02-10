@@ -205,7 +205,7 @@ class TestFindNamingConflicts:
 
             conflicts = MilestoneNamingValidator.find_naming_conflicts(milestones_dir)
             assert len(conflicts) > 0
-            assert any("Sprint 1" in str(c) for c in conflicts)
+            assert any("sprint1" in str(c) for c in conflicts)
 
     def test_detects_collisions(self, temp_dir_context):
         """Test detection of naming collisions."""

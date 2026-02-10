@@ -45,7 +45,7 @@ class TestDataIntegrityThreeWayMerge:
             .with_title("Original Issue")
             .with_status(Status.TODO)
             .with_assignee("alice")
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_content("Original description")
             .with_labels(["bug"])
             .with_updated_date(baseline_state.updated_at)
@@ -57,7 +57,7 @@ class TestDataIntegrityThreeWayMerge:
             "title": "Original Issue",
             "status": "todo",
             "assignee": "alice",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": baseline_state.updated_at.isoformat(),
@@ -89,7 +89,7 @@ class TestDataIntegrityThreeWayMerge:
             .with_title("Original Issue")
             .with_status(Status.IN_PROGRESS)
             .with_assignee("alice")
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_content("Original description")
             .with_labels(["bug"])
             .with_updated_date(datetime.now(UTC))
@@ -101,7 +101,7 @@ class TestDataIntegrityThreeWayMerge:
             "title": "Original Issue",
             "status": "todo",  # Same as baseline
             "assignee": "alice",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": baseline_state.updated_at.isoformat(),
@@ -133,7 +133,7 @@ class TestDataIntegrityThreeWayMerge:
             .with_title("Original Issue")
             .with_status(Status.TODO)
             .with_assignee("alice")
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_content("Original description")
             .with_labels(["bug"])
             .with_updated_date(baseline_state.updated_at)
@@ -145,7 +145,7 @@ class TestDataIntegrityThreeWayMerge:
             "title": "Original Issue",
             "status": "closed",  # Changed
             "assignee": "bob",  # Changed
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": datetime.now(UTC).isoformat(),
@@ -176,7 +176,7 @@ class TestDataIntegrityThreeWayMerge:
             .with_title("Original Issue")
             .with_status(Status.IN_PROGRESS)
             .with_assignee("alice")
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_content("Original description")
             .with_labels(["bug"])
             .with_updated_date(datetime.now(UTC))
@@ -188,7 +188,7 @@ class TestDataIntegrityThreeWayMerge:
             "title": "Original Issue",
             "status": "closed",  # Changed to CLOSED
             "assignee": "bob",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": datetime.now(UTC).isoformat(),
@@ -300,7 +300,7 @@ class TestDataIntegrityThreeWayMerge:
             .with_title("Original Issue")
             .with_status(Status.IN_PROGRESS)
             .with_assignee("alice")
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_content("Original description")
             .with_labels(["bug"])
             .with_updated_date(datetime.now(UTC))
@@ -312,7 +312,7 @@ class TestDataIntegrityThreeWayMerge:
             "title": "Original Issue",
             "status": "closed",
             "assignee": "bob",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": datetime.now(UTC).isoformat(),
@@ -368,7 +368,7 @@ class TestDataIntegrityThreeWayMerge:
             .with_title("Original Issue")
             .with_status(Status.IN_PROGRESS)
             .with_assignee("alice")
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_content("Original description")
             .with_labels(["bug"])
             .with_updated_date(datetime.now(UTC))
@@ -380,7 +380,7 @@ class TestDataIntegrityThreeWayMerge:
             "title": "Original Issue",
             "status": "closed",
             "assignee": "bob",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": datetime.now(UTC).isoformat(),

@@ -134,18 +134,18 @@ class TestRoadmapCore:
         issue = core.issues.create(
             title="Test Issue",
             priority=Priority.HIGH,
-            milestone="v1.0",
+            milestone="v1-0",
             labels=["bug", "urgent"],
         )
 
         assert issue.title == "Test Issue"
         assert issue.priority == Priority.HIGH
-        assert issue.milestone == "v1.0"
+        assert issue.milestone == "v1-0"
         assert issue.labels == ["bug", "urgent"]
         assert len(issue.id) == 8  # UUID prefix
 
         # Check file was created in the milestone directory
-        issue_file = core.issues_dir / "v1.0" / issue.filename
+        issue_file = core.issues_dir / "v1-0" / issue.filename
         assert issue_file.exists()
 
     def test_list_issues_empty(self, core):
@@ -176,13 +176,13 @@ class TestRoadmapCore:
         core.initialize()
 
         # Create test issues
-        core.issues.create("Issue 1", Priority.HIGH, milestone="v1.0")
-        core.issues.create("Issue 2", Priority.LOW, milestone="v2.0")
-        issue3 = core.issues.create("Issue 3", Priority.HIGH, milestone="v1.0")
+        core.issues.create("Issue 1", Priority.HIGH, milestone="v1-0")
+        core.issues.create("Issue 2", Priority.LOW, milestone="v2-0")
+        issue3 = core.issues.create("Issue 3", Priority.HIGH, milestone="v1-0")
         core.issues.update(issue3.id, status=Status.CLOSED)
 
         # Filter by milestone
-        v1_issues = core.issues.list(milestone="v1.0")
+        v1_issues = core.issues.list(milestone="v1-0")
         assert len(v1_issues) == 2
 
         # Filter by status
@@ -227,13 +227,13 @@ class TestRoadmapCore:
             issue.id,
             priority=Priority.HIGH,
             status=Status.IN_PROGRESS,
-            milestone="v1.0",
+            milestone="v1-0",
         )
 
         assert updated_issue is not None
         assert updated_issue.priority == Priority.HIGH
         assert updated_issue.status == Status.IN_PROGRESS
-        assert updated_issue.milestone == "v1.0"
+        assert updated_issue.milestone == "v1-0"
         assert updated_issue.updated > original_updated
 
     def test_update_issue_not_found(self, core):
@@ -270,10 +270,10 @@ class TestRoadmapCore:
 
         due_date = datetime(2025, 12, 31)
         milestone = core.milestones.create(
-            name="v1.0", headline="First release", due_date=due_date
+            name="v1-0", headline="First release", due_date=due_date
         )
 
-        assert milestone.name == "v1.0"
+        assert milestone.name == "v1-0"
         assert milestone.headline == "First release"
         assert milestone.due_date == due_date
         assert milestone.status == MilestoneStatus.OPEN
@@ -282,8 +282,8 @@ class TestRoadmapCore:
         """Test listing milestones."""
         core.initialize()
 
-        core.milestones.create("v1.0", "First release")
-        core.milestones.create("v2.0", "Second release")
+        core.milestones.create("v1-0", "First release")
+        core.milestones.create("v2-0", "Second release")
 
         milestones = core.milestones.list()
 
@@ -295,11 +295,11 @@ class TestRoadmapCore:
         """Test getting specific milestone."""
         core.initialize()
 
-        core.milestones.create("v1.0", headline="First release")
-        retrieved_milestone = core.milestones.get("v1.0")
+        core.milestones.create("v1-0", headline="First release")
+        retrieved_milestone = core.milestones.get("v1-0")
 
         assert retrieved_milestone is not None
-        assert retrieved_milestone.name == "v1.0"
+        assert retrieved_milestone.name == "v1-0"
         assert retrieved_milestone.headline == "First release"
 
     def test_get_milestone_not_found(self, core):
@@ -314,22 +314,22 @@ class TestRoadmapCore:
         core.initialize()
 
         issue = core.issues.create("Test Issue")
-        core.milestones.create("v1.0", "First release")
+        core.milestones.create("v1-0", "First release")
 
-        success = core.issues.assign_to_milestone(issue.id, "v1.0")
+        success = core.issues.assign_to_milestone(issue.id, "v1-0")
         assert success
 
         # Verify assignment
         updated_issue = core.issues.get(issue.id)
-        assert updated_issue.milestone == "v1.0"
+        assert updated_issue.milestone == "v1-0"
 
     def test_assign_issue_to_milestone_issue_not_found(self, core):
         """Test assigning non-existent issue to milestone."""
         core.initialize()
 
-        core.milestones.create("v1.0", "First release")
+        core.milestones.create("v1-0", "First release")
 
-        success = core.issues.assign_to_milestone("nonexistent", "v1.0")
+        success = core.issues.assign_to_milestone("nonexistent", "v1-0")
         assert not success
 
     def test_assign_issue_to_milestone_milestone_not_found(self, core):
@@ -352,21 +352,21 @@ class TestRoadmapCore:
         core.initialize()
 
         # Create milestone and issues
-        core.milestones.create("v1.0", "First release")
+        core.milestones.create("v1-0", "First release")
 
         issue1 = core.issues.create("Issue 1")
         issue2 = core.issues.create("Issue 2")
         issue3 = core.issues.create("Issue 3")
 
         # Assign issues to milestone
-        core.issues.assign_to_milestone(issue1.id, "v1.0")
-        core.issues.assign_to_milestone(issue2.id, "v1.0")
-        core.issues.assign_to_milestone(issue3.id, "v1.0")
+        core.issues.assign_to_milestone(issue1.id, "v1-0")
+        core.issues.assign_to_milestone(issue2.id, "v1-0")
+        core.issues.assign_to_milestone(issue3.id, "v1-0")
 
         # Complete one issue
         core.issues.update(issue1.id, status=Status.CLOSED)
 
-        progress = core.milestones.get_progress("v1.0")
+        progress = core.milestones.get_progress("v1-0")
 
         assert progress["completed"] == 1
         assert progress["completed"] == 1
@@ -558,7 +558,7 @@ class TestRoadmapCoreUncoveredLines:
 
     def test_milestone_operations_with_complex_names(self, core):
         """Test milestone operations with various name formats."""
-        milestone_names = ["v1.0", "v2.0-beta", "release-2025-01-15", "2025.Q1.alpha"]
+        milestone_names = ["v1-0", "v2.0-beta", "release-2025-01-15", "2025.Q1.alpha"]
 
         for name in milestone_names:
             core.milestones.create(name, f"Milestone {name}")
@@ -581,8 +581,8 @@ class TestRoadmapCoreUncoveredLines:
         assert issue.status == Status.TODO
 
         # Assign to milestone
-        core.milestones.create("v1.0", "First Release")
-        core.issues.assign_to_milestone(issue.id, "v1.0")
+        core.milestones.create("v1-0", "First Release")
+        core.issues.assign_to_milestone(issue.id, "v1-0")
 
         # Update status to in progress
         issue = core.issues.update(issue.id, status=Status.IN_PROGRESS)
@@ -595,7 +595,7 @@ class TestRoadmapCoreUncoveredLines:
         # Verify final state
         final = core.issues.get(issue.id)
         assert final.status == Status.CLOSED
-        assert final.milestone == "v1.0"
+        assert final.milestone == "v1-0"
 
     def test_empty_repository_operations(self, core):
         """Test operations on empty repository."""
@@ -614,7 +614,7 @@ class TestRoadmapCoreUncoveredLines:
             labels=["urgent", "blocker", "fix"],
             estimated_hours=16,
             issue_type=IssueType.BUG,
-            milestone="v1.0",
+            milestone="v1-0",
         )
 
         # Update status after creation
@@ -628,11 +628,11 @@ class TestRoadmapCoreUncoveredLines:
         assert "urgent" in retrieved.labels
         assert retrieved.estimated_hours == 16
         assert retrieved.issue_type == IssueType.BUG
-        assert retrieved.milestone == "v1.0"
+        assert retrieved.milestone == "v1-0"
 
     def test_multiple_issues_per_milestone(self, core):
         """Test milestone with multiple issues in various states."""
-        core.milestones.create("v2.0", "Second Release")
+        core.milestones.create("v2-0", "Second Release")
 
         # Create issues in different states
         issue1 = core.issues.create("Feature 1")
@@ -641,7 +641,7 @@ class TestRoadmapCoreUncoveredLines:
 
         # Assign all to milestone
         for issue_id in [issue1.id, issue2.id, issue3.id]:
-            core.issues.assign_to_milestone(issue_id, "v2.0")
+            core.issues.assign_to_milestone(issue_id, "v2-0")
 
         # Set different statuses
         core.issues.update(issue1.id, status=Status.CLOSED)
@@ -649,7 +649,7 @@ class TestRoadmapCoreUncoveredLines:
         # issue3 stays TODO
 
         # Check progress
-        progress = core.milestones.get_progress("v2.0")
+        progress = core.milestones.get_progress("v2-0")
         assert progress["total"] == 3
         assert progress["completed"] == 1
         assert abs(progress["progress"] - 33.333) < 0.01

@@ -83,7 +83,7 @@ class TestIssueUpdateDisplay:
             "priority": "high",
             "status": "in-progress",
             "assignee": "testuser",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "estimated_hours": 16.0,
         }
 
@@ -94,7 +94,7 @@ class TestIssueUpdateDisplay:
         assert any("priority: high" in c for c in calls)
         assert any("status: in-progress" in c for c in calls)
         assert any("assignee: testuser" in c for c in calls)
-        assert any("milestone: v1.0" in c for c in calls)
+        assert any("milestone: v1-0" in c for c in calls)
         assert any("estimate: 2d" in c for c in calls)
 
     def test_show_update_result_with_reason(self):

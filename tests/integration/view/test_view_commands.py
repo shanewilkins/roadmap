@@ -26,7 +26,7 @@ def roadmap_with_data(cli_runner):
         # Create a milestone
         IntegrationTestBase.create_milestone(
             cli_runner,
-            name="v1.0.0",
+            name="v1-0-0",
             headline="First release",
             due_date=(datetime.now(UTC) + timedelta(days=30)).strftime("%Y-%m-%d"),
         )
@@ -37,7 +37,7 @@ def roadmap_with_data(cli_runner):
             title="Test issue for viewing",
             issue_type="feature",
             priority="high",
-            milestone="v1.0.0",
+            milestone="v1-0-0",
         )
 
         # Get the first issue ID from core
@@ -99,7 +99,7 @@ def roadmap_with_data(cli_runner):
             cli_runner,
             {
                 "issue_id": issue_id,
-                "milestone_name": "v1.0.0",
+                "milestone_name": "v1-0-0",
                 "project_id": project_id,
             },
         )
@@ -132,7 +132,7 @@ class TestIssueViewCommand:
         )
 
         assert result.exit_code == 0
-        assert "v1.0.0" in result.output
+        assert "v1-0-0" in result.output
 
     def test_issue_view_displays_type(self, roadmap_with_data):
         """Test that issue view displays the type."""
@@ -174,7 +174,7 @@ class TestMilestoneViewCommand:
         )
 
         assert result.exit_code == 0, f"Milestone view failed: {result.output}"
-        assert "v1.0.0" in result.output
+        assert "v1-0-0" in result.output
         assert "First release" in result.output
 
     def test_milestone_view_displays_progress(self, roadmap_with_data):

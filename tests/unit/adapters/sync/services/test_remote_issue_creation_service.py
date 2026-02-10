@@ -62,7 +62,7 @@ class TestRemoteIssueCreationService:
             status="open",
             labels=["bug", "urgent"],
             assignee="john",
-            milestone="v1.0",
+            milestone="v1-0",
             backend_id=456,
         )
 
@@ -72,7 +72,7 @@ class TestRemoteIssueCreationService:
         assert "urgent" in result.labels
         assert "synced:from-github" in result.labels
         assert result.assignee == "john"
-        assert result.milestone == "v1.0"
+        assert result.milestone == "v1-0"
 
     def test_create_issue_from_remote_status_open(self, service):
         """Test status normalization for 'open'."""
@@ -391,7 +391,7 @@ class TestRemoteIssueCreationService:
             status="open",
             labels=labels.copy(),
             assignee="jane",
-            milestone="v2.0",
+            milestone="v2-0",
             backend_id=16,
         )
 

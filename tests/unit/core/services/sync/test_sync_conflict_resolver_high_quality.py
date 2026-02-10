@@ -36,7 +36,7 @@ def local_issue():
         title="Local Title",
         status=Status.IN_PROGRESS,
         assignee="alice@example.com",
-        milestone="v1.0",
+        milestone="v1-0",
         content="Local description",
     )
 
@@ -49,7 +49,7 @@ def remote_issue_dict():
         "title": "Remote Title",
         "status": "closed",
         "assignee": "bob@example.com",
-        "milestone": "v2.0",
+        "milestone": "v2-0",
         "description": "Remote description",
     }
 

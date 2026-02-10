@@ -55,21 +55,21 @@ class TestMilestoneLifecycle:
             # Create milestone
             IntegrationTestBase.create_milestone(
                 cli_runner,
-                name="v1.0",
+                name="v1-0",
                 headline="Version 1.0",
             )
 
             # Update milestone description
             result = cli_runner.invoke(
                 main,
-                ["milestone", "update", "v1.0", "--description", "Updated description"],
+                ["milestone", "update", "v1-0", "--description", "Updated description"],
             )
             IntegrationTestBase.assert_cli_success(result)
 
             # Verify milestone still exists
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
-            assert "v1.0" in result.output
+            assert "v1-0" in result.output
 
     def test_milestone_with_issues(self, cli_runner):
         """Test creating milestone and assigning issues to it."""
@@ -80,7 +80,7 @@ class TestMilestoneLifecycle:
             IntegrationTestBase.create_milestone(
                 cli_runner,
                 name="sprint-1",
-                headline="Sprint 1",
+                headline="sprint-1",
             )
 
             # Create issue assigned to milestone
@@ -111,12 +111,12 @@ class TestMilestoneLifecycle:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
 
             # Verify milestone was created
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
-            assert "v1.0" in result.output
+            assert "v1-0" in result.output
 
     def test_close_milestone_fails_with_open_issues(self, cli_runner):
         """Test that closing milestone with open issues fails and shows guidance."""
@@ -137,12 +137,12 @@ class TestMilestoneLifecycle:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone
-            IntegrationTestBase.create_milestone(cli_runner, name="v0.1")
+            IntegrationTestBase.create_milestone(cli_runner, name="v0-1")
 
             # Verify milestone was created
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
-            assert "v0.1" in result.output
+            assert "v0-1" in result.output
 
     def test_duplicate_milestone_names_prevented(self, cli_runner):
         """Test that creating milestone with duplicate name is handled."""

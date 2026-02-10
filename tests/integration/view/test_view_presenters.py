@@ -106,7 +106,7 @@ class TestMilestonePresenterIntegrationWithMapper:
         # Create domain milestone
         milestone = (
             MilestoneBuilder()
-            .with_name("v1.0.0")
+            .with_name("v1-0-0")
             .with_status(MilestoneStatus.OPEN)
             .build()
         )
@@ -115,7 +115,7 @@ class TestMilestonePresenterIntegrationWithMapper:
         milestone_dto_converted = MilestoneMapper.domain_to_dto(milestone)
 
         # Verify DTO conversion
-        assert milestone_dto_converted.name == "v1.0.0"
+        assert milestone_dto_converted.name == "v1-0-0"
         assert milestone_dto_converted.status == "open"
         # Note: progress_percentage may not be preserved in mapper, so just check rendering
 
@@ -130,7 +130,7 @@ class TestMilestonePresenterIntegrationWithMapper:
         # Create domain milestone with enum status
         milestone = (
             MilestoneBuilder()
-            .with_name("v1.0.0")
+            .with_name("v1-0-0")
             .with_status(MilestoneStatus.CLOSED)
             .build()
         )

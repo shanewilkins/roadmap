@@ -187,7 +187,7 @@ class TestDataFactory:
                             "body": "Test issue description",
                             "labels": [{"name": "bug"}, {"name": "enhancement"}],
                             "assignee": {"login": "assignee-user"},
-                            "milestone": {"title": "v1.0"},
+                            "milestone": {"title": "v1-0"},
                             "state": "open",
                         },
                     ),

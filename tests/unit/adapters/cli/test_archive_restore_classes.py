@@ -22,7 +22,7 @@ class MockEntity:
         self.id = entity_id
         self.name = name
         self.title = f"Test {name}"
-        self.milestone: str | None = "v1.0"
+        self.milestone: str | None = "v1-0"
         self.status = Mock(value=status)
 
 
@@ -150,8 +150,8 @@ class TestMilestoneArchive:
 
     def test_get_entities_to_archive_all_closed_milestones(self):
         """Test getting all closed milestones."""
-        closed = MockEntity("m1", "v1.0", "closed")
-        open_m = MockEntity("m2", "v2.0", "open")
+        closed = MockEntity("m1", "v1-0", "closed")
+        open_m = MockEntity("m2", "v2-0", "open")
         self.mock_core.milestones.list.return_value = [closed, open_m]
 
         result = self.archive.get_entities_to_archive(all_closed=True)
@@ -160,7 +160,7 @@ class TestMilestoneArchive:
 
     def test_validate_milestone_before_archive(self):
         """Test milestone validation."""
-        entity = MockEntity("m1", "v1.0", "closed")
+        entity = MockEntity("m1", "v1-0", "closed")
 
         is_valid, error = self.archive.validate_entity_before_archive(entity)
 

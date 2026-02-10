@@ -45,7 +45,7 @@ class TestThreeWayAnalysis:
             title="Original Title",
             status=Status.IN_PROGRESS,
             assignee="alice",
-            milestone="v1.0",
+            milestone="v1-0",
             content="Original description",
             labels=["bug"],
             updated=datetime.now(UTC),
@@ -59,7 +59,7 @@ class TestThreeWayAnalysis:
             "title": "Original Title",
             "status": Status.CLOSED,
             "assignee": "bob",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": datetime.now(UTC).isoformat(),
@@ -95,7 +95,7 @@ class TestThreeWayAnalysis:
             .with_title("Original Title")
             .with_status(Status.IN_PROGRESS)
             .with_assignee("alice")
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_content("Original description")
             .with_labels(["bug"])
             .with_updated_date(datetime.now(UTC))
@@ -107,7 +107,7 @@ class TestThreeWayAnalysis:
             "title": "Original Title",
             "status": "todo",  # Same as baseline
             "assignee": "alice",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": datetime.now(UTC).isoformat(),
@@ -135,7 +135,7 @@ class TestThreeWayAnalysis:
             .with_title("Original Title")
             .with_status(Status.TODO)
             .with_assignee("alice")
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_content("Original description")
             .with_labels(["bug"])
             .with_updated_date(datetime.now(UTC))
@@ -147,7 +147,7 @@ class TestThreeWayAnalysis:
             "title": "Original Title",
             "status": "closed",  # Changed from baseline
             "assignee": "bob",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": datetime.now(UTC).isoformat(),
@@ -175,7 +175,7 @@ class TestThreeWayAnalysis:
             .with_title("Original Title")
             .with_status(Status.TODO)
             .with_assignee("alice")
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_content("Original description")
             .with_labels(["bug"])
             .with_updated_date(datetime.now(UTC))
@@ -187,7 +187,7 @@ class TestThreeWayAnalysis:
             "title": "Original Title",
             "status": "todo",
             "assignee": "alice",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "description": "Original description",
             "labels": ["bug"],
             "updated_at": datetime.now(UTC).isoformat(),

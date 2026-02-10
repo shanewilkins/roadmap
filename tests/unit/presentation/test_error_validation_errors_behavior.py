@@ -259,11 +259,11 @@ class TestErrorIntegration:
         """Test raising and catching MilestoneNotFoundError."""
         with pytest.raises(MilestoneNotFoundError) as exc_info:
             raise MilestoneNotFoundError(
-                "Milestone not found", milestone_name="Sprint 1"
+                "Milestone not found", milestone_name="sprint-1"
             )
 
         error = exc_info.value
-        assert error.milestone_name == "Sprint 1"
+        assert error.milestone_name == "sprint-1"
 
     def test_error_message_in_exception_string(self):
         """Test that error message appears in string representation."""

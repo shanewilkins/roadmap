@@ -71,13 +71,13 @@ class TestGitHubIssueValidation:
             {
                 "title": "Complete Issue",
                 "assignee": "john",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "github_issue": 456,
             }
         )
         assert issue.github_issue == 456
         assert issue.assignee == "john"
-        assert issue.milestone == "v1.0"
+        assert issue.milestone == "v1-0"
 
     def test_github_issue_model_dump(self):
         """Test that github_issue is included in model dump."""

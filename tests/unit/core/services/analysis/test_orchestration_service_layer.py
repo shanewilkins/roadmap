@@ -154,12 +154,12 @@ class TestOrchestrationMultiChangeWorkflow:
         milestone_changes = [
             MilestoneChangeTestBuilder()
             .with_number(1)
-            .with_title("v1.0")
+            .with_title("v1-0")
             .with_status_change("open", "closed")
             .build(),
             MilestoneChangeTestBuilder()
             .with_number(2)
-            .with_title("v2.0")
+            .with_title("v2-0")
             .with_status_change("open", "open")  # No change
             .build(),
         ]

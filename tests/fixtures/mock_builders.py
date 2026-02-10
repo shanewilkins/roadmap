@@ -321,7 +321,7 @@ def build_mock_issue(
 
 def build_mock_milestone(
     id: str = "milestone-1",
-    name: str = "v1.0",
+    name: str = "v1-0",
     status: str = "IN_PROGRESS",
     **kwargs: Any,
 ) -> Mock:

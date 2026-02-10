@@ -48,7 +48,7 @@ class TestIssueValidation:
             "status": "in-progress",
             "issue_type": "bug",
             "assignee": "john_doe",
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "estimated_hours": 8,
             "progress_percentage": 50,
         }
@@ -176,7 +176,7 @@ class TestMilestoneValidation:
     def test_milestone_minimal(self, validator):
         """Test milestone with only required fields."""
         minimal_milestone = {
-            "name": "v1.0",
+            "name": "v1-0",
             "status": "open",
         }
         result = validator.validate_milestone(minimal_milestone)

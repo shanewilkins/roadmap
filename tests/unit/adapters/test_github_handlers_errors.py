@@ -83,7 +83,7 @@ class TestIssueHandlerOperations:
             mock_request.return_value = mock_response
 
             result = issue_handler.get_issues(
-                labels=["bug", "critical"], milestone="v1.0", assignee="@me"
+                labels=["bug", "critical"], milestone="v1-0", assignee="@me"
             )
             assert len(result) == 1
             mock_request.assert_called_once()
@@ -233,26 +233,26 @@ class TestMilestoneHandlerOperations:
         with patch.object(milestone_handler, "_make_request") as mock_request:
             mock_response = create_mock_response(
                 [
-                    {"number": 1, "title": "v1.0", "state": "open"},
-                    {"number": 2, "title": "v2.0", "state": "closed"},
+                    {"number": 1, "title": "v1-0", "state": "open"},
+                    {"number": 2, "title": "v2-0", "state": "closed"},
                 ]
             )
             mock_request.return_value = mock_response
 
             result = milestone_handler.get_milestones()
             assert len(result) == 2
-            assert result[0]["title"] == "v1.0"
+            assert result[0]["title"] == "v1-0"
 
     def test_get_milestones_with_state_filter(self, milestone_handler):
         """Test fetching milestones with state filter."""
         with patch.object(milestone_handler, "_paginate_request") as mock_paginate:
             mock_paginate.return_value = [
-                {"number": 2, "title": "v2.0", "state": "closed"}
+                {"number": 2, "title": "v2-0", "state": "closed"}
             ]
 
             result = milestone_handler.get_milestones(state="closed")
             assert len(result) == 1
-            assert result[0]["title"] == "v2.0"
+            assert result[0]["title"] == "v2-0"
 
     def test_get_milestones_empty(self, milestone_handler):
         """Test fetching milestones when none exist."""
@@ -270,13 +270,13 @@ class TestMilestoneHandlerOperations:
             mock_response = Mock()
             mock_response.json.return_value = {
                 "number": 1,
-                "title": "v1.0",
+                "title": "v1-0",
                 "state": "open",
             }
             mock_request.return_value = mock_response
 
             result = milestone_handler.get_milestone(1)
-            assert result["title"] == "v1.0"
+            assert result["title"] == "v1-0"
 
     def test_create_milestone_basic(self, milestone_handler):
         """Test creating a basic milestone."""
@@ -284,13 +284,13 @@ class TestMilestoneHandlerOperations:
             mock_response = Mock()
             mock_response.json.return_value = {
                 "number": 1,
-                "title": "v1.0",
+                "title": "v1-0",
                 "state": "open",
             }
             mock_request.return_value = mock_response
 
-            result = milestone_handler.create_milestone(title="v1.0")
-            assert result["title"] == "v1.0"
+            result = milestone_handler.create_milestone(title="v1-0")
+            assert result["title"] == "v1-0"
 
     def test_create_milestone_with_description(self, milestone_handler):
         """Test creating milestone with description and due date."""
@@ -302,16 +302,16 @@ class TestMilestoneHandlerOperations:
             mock_response = Mock()
             mock_response.json.return_value = {
                 "number": 1,
-                "title": "v1.0",
+                "title": "v1-0",
                 "description": "First release",
                 "due_on": "2024-12-31T00:00:00Z",
             }
             mock_request.return_value = mock_response
 
             result = milestone_handler.create_milestone(
-                title="v1.0", description="First release", due_date=naive_date
+                title="v1-0", description="First release", due_date=naive_date
             )
-            assert result["title"] == "v1.0"
+            assert result["title"] == "v1-0"
 
     def test_update_milestone_success(self, milestone_handler):
         """Test updating a milestone."""

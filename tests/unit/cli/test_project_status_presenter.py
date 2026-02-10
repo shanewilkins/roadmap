@@ -39,10 +39,10 @@ class TestMilestoneProgressPresenter:
         mock_get_console.return_value = mock_console
         progress = {"total": 0, "completed": 0}
 
-        MilestoneProgressPresenter.show_milestone_progress("v1.0", progress)
+        MilestoneProgressPresenter.show_milestone_progress("v1-0", progress)
 
         calls = str(mock_console.print.call_args_list)
-        assert "v1.0" in calls
+        assert "v1-0" in calls
         assert "No issues" in calls or "assigned" in calls
 
     @patch("roadmap.adapters.cli.presentation.project_status_presenter.Progress")
@@ -53,11 +53,11 @@ class TestMilestoneProgressPresenter:
         mock_get_console.return_value = mock_console
         progress = {"total": 10, "completed": 7}
 
-        MilestoneProgressPresenter.show_milestone_progress("v1.0", progress)
+        MilestoneProgressPresenter.show_milestone_progress("v1-0", progress)
 
         # Should have printed milestone name
         calls = [call[0][0] for call in mock_console.print.call_args_list]
-        assert any("v1.0" in str(call) for call in calls)
+        assert any("v1-0" in str(call) for call in calls)
 
     @patch(
         "roadmap.adapters.cli.presentation.project_status_presenter.MilestoneProgressPresenter.show_milestone_progress"
@@ -68,12 +68,12 @@ class TestMilestoneProgressPresenter:
     def test_show_all_milestones(self, mock_header, mock_progress):
         """Test displaying all milestones."""
         mock_milestones = [
-            MagicMock(name="v1.0"),
-            MagicMock(name="v2.0"),
+            MagicMock(name="v1-0"),
+            MagicMock(name="v2-0"),
         ]
         milestone_progress = {
-            "v1.0": {"total": 10, "completed": 5},
-            "v2.0": {"total": 20, "completed": 20},
+            "v1-0": {"total": 10, "completed": 5},
+            "v2-0": {"total": 20, "completed": 20},
         }
 
         MilestoneProgressPresenter.show_all_milestones(
@@ -266,8 +266,8 @@ class TestRoadmapStatusPresenter:
                 Status.CLOSED: 6,
             },
             "milestone_details": [
-                {"name": "v1.0", "progress": {"percentage": 100}},
-                {"name": "v2.0", "progress": {"percentage": 50}},
+                {"name": "v1-0", "progress": {"percentage": 100}},
+                {"name": "v2-0", "progress": {"percentage": 50}},
             ],
         }
 

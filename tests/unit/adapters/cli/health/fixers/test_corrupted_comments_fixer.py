@@ -106,7 +106,7 @@ class TestCorruptedCommentsFixer:
         ]
 
         milestone = MagicMock()
-        milestone.id = "v1.0.0"
+        milestone.id = "v1-0-0"
         milestone.comments = [
             {
                 "author": "user2",
@@ -244,7 +244,7 @@ class TestCorruptedCommentsFixer:
         issue.comments = [{"author": "user1", "content": '{"bad": }', "created_at": ""}]
 
         milestone = MagicMock()
-        milestone.id = "v1.0.0"
+        milestone.id = "v1-0-0"
         milestone.comments = [
             {"author": "user2", "content": '{"wrong": json}', "created_at": ""}
         ]

@@ -21,7 +21,7 @@ class MockIssue:
         progress_display="0%",
         assignee: str | None = "John Doe",
         estimated_time_display="0h",
-        milestone_name="v1.0",
+        milestone_name="v1-0",
         is_backlog=False,
         github_issue=None,
         progress_percentage=0,

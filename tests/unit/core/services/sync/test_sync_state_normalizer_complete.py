@@ -148,7 +148,7 @@ class TestNormalizeRemoteStateBasic:
         obj.title = "Test Issue"
         obj.status = "open"
         obj.assignee = "alice"
-        obj.milestone = "v1.0"
+        obj.milestone = "v1-0"
         obj.headline = "Headline text"
         obj.description = "Description text"
         obj.labels = ["bug", "urgent"]
@@ -160,7 +160,7 @@ class TestNormalizeRemoteStateBasic:
         assert result["title"] == "Test Issue"
         assert result["status"] == "open"
         assert result["assignee"] == "alice"
-        assert result["milestone"] == "v1.0"
+        assert result["milestone"] == "v1-0"
         assert result["description"] == "Headline text"  # headline takes precedence
         assert result["labels"] == ["bug", "urgent"]
         assert isinstance(result["updated_at"], datetime)

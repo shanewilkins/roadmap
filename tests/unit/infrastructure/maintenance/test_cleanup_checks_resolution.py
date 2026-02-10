@@ -239,7 +239,7 @@ class TestResolveFolderIssues:
             issues_dir.mkdir()
 
         if dir_exists and has_issues:
-            v1_dir = tmp_path / "v1.0"
+            v1_dir = tmp_path / "v1-0"
             v1_dir.mkdir()
             source_file = v1_dir / "issue-1.md"
             source_file.write_text("test")
@@ -249,7 +249,7 @@ class TestResolveFolderIssues:
                     {
                         "issue_id": "issue-1",
                         "current_location": str(source_file),
-                        "expected_location": str(tmp_path / "v2.0" / "issue-1.md"),
+                        "expected_location": str(tmp_path / "v2-0" / "issue-1.md"),
                     }
                 ]
             }

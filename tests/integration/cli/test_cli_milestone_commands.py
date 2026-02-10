@@ -37,8 +37,8 @@ def roadmap_with_milestones(cli_runner):
         for i in range(1, 4):
             IntegrationTestBase.create_milestone(
                 cli_runner,
-                name=f"Sprint {i}",
-                headline=f"Sprint {i} milestone",
+                name=f"sprint-{i}",
+                headline=f"sprint-{i} milestone",
             )
         # Refresh core to pick up newly created milestones
         core = IntegrationTestBase.get_roadmap_core()
@@ -51,12 +51,12 @@ class TestCLIMilestoneCreate:
     @pytest.mark.parametrize(
         "name,options",
         [
-            ("Test Milestone", []),  # Minimal
+            ("test-milestone", []),  # Minimal
             (
-                "Sprint 1",
+                "sprint-1",
                 ["--description", "First development sprint"],
             ),  # With description
-            ("Release 1.0", ["--due-date", "2025-12-31"]),  # With due date
+            ("release-1-0", ["--due-date", "2025-12-31"]),  # With due date
         ],
     )
     def test_create_milestone(self, empty_roadmap, name, options):
@@ -114,7 +114,7 @@ class TestCLIMilestoneAssign:
 
         result = cli_runner.invoke(
             main,
-            ["milestone", "assign", str(issue_id), "Sprint 1"],
+            ["milestone", "assign", str(issue_id), "sprint-1"],
         )
 
         # Should succeed or handle gracefully
@@ -128,7 +128,7 @@ class TestCLIMilestoneAssign:
 
         result = cli_runner.invoke(
             main,
-            ["milestone", "assign", "999", "Sprint 1"],
+            ["milestone", "assign", "999", "sprint-1"],
         )
 
         # Should not crash
@@ -159,7 +159,7 @@ class TestCLIMilestoneUpdate:
 
         result = cli_runner.invoke(
             main,
-            ["milestone", "update", "Sprint 1", "--description", "Updated description"],
+            ["milestone", "update", "sprint-1", "--description", "Updated description"],
         )
 
         # Should succeed
@@ -187,7 +187,7 @@ class TestCLIMilestoneClose:
 
         result = cli_runner.invoke(
             main,
-            ["milestone", "close", "Sprint 1"],
+            ["milestone", "close", "sprint-1"],
         )
 
         # Should succeed or handle gracefully
@@ -215,7 +215,7 @@ class TestCLIMilestoneDelete:
 
         result = cli_runner.invoke(
             main,
-            ["milestone", "delete", "Sprint 1", "--yes"],
+            ["milestone", "delete", "sprint-1", "--yes"],
         )
 
         # Should succeed or handle gracefully

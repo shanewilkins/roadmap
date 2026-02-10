@@ -525,7 +525,7 @@ def roadmap_cli_with_data(isolated_roadmap_cli, isolated_cli_runner):
         )
 
         milestone_result = isolated_roadmap_cli.create_milestone(
-            "v1.0.0"
+            "v1-0-0"
         ).assert_success()
         milestone_id = ClickTestHelper.create_id_extractor(r"\[([^\]]+)\]")(
             milestone_result.output
@@ -541,7 +541,7 @@ def roadmap_cli_with_data(isolated_roadmap_cli, isolated_cli_runner):
             "issue_id": issue_id,
             "issue_title": "Test Issue",
             "milestone_id": milestone_id,
-            "milestone_name": "v1.0.0",
+            "milestone_name": "v1-0-0",
             "project_id": project_id,
             "project_name": "test-project",
         }

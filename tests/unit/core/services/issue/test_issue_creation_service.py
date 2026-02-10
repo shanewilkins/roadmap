@@ -287,7 +287,7 @@ class TestIssueCreationService:
 
     def test_format_created_issue_display_with_milestone(self, service, mock_issue):
         """Test issue display with milestone."""
-        service.format_created_issue_display(mock_issue, milestone="v1.0")
+        service.format_created_issue_display(mock_issue, milestone="v1-0")
         assert True
 
     def test_format_created_issue_display_with_dependencies(self, service, mock_issue):
@@ -360,7 +360,7 @@ class TestIssueCreationServiceIntegration:
         assert branch_name == "issue-1-feature"
 
         # Test display
-        service.format_created_issue_display(issue, milestone="v1.0")
+        service.format_created_issue_display(issue, milestone="v1-0")
 
     def test_assignee_resolution_with_canonical_mapping(self, mock_core):
         """Test assignee resolution with canonical mapping."""
@@ -440,5 +440,5 @@ class TestIssueCreationServiceIntegration:
         issue.depends_on = ["issue-2", "issue-3", "issue-4"]
         issue.blocks = ["issue-5", "issue-6"]
 
-        service.format_created_issue_display(issue, milestone="v2.0")
+        service.format_created_issue_display(issue, milestone="v2-0")
         assert True

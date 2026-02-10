@@ -47,7 +47,7 @@ class TestEntityHealthScanner:
     def mock_milestone(self, mock_milestone_factory):
         """Create a mock milestone for testing."""
         milestone = mock_milestone_factory(
-            name="v1.0.0",
+            name="v1-0-0",
             status=Status.TODO,
         )
         milestone.content = "Test milestone"
@@ -225,7 +225,7 @@ class TestEntityHealthScanner:
         """Test scanning a healthy milestone."""
         report = scanner.scan_milestone(mock_milestone)
 
-        assert report.entity_id == "v1.0.0"
+        assert report.entity_id == "v1-0-0"
         assert report.entity_type == EntityType.MILESTONE
         assert report.is_healthy
 

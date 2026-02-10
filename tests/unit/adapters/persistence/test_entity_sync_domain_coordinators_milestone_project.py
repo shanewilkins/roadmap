@@ -57,7 +57,7 @@ class TestMilestoneSyncCoordinator:
         mock_transaction.__enter__.return_value = mock_conn
 
         with patch.object(coordinator._parser, "parse_yaml_frontmatter") as mock_parse:
-            mock_parse.return_value = {"title": "v1.0"}
+            mock_parse.return_value = {"title": "v1-0"}
             result = coordinator.sync_milestone_file(milestone_file)
             assert not result
 
@@ -70,7 +70,7 @@ class TestMilestoneSyncCoordinator:
         mock_transaction.__enter__.return_value = mock_conn
 
         milestone_data = {
-            "title": "v1.0",
+            "title": "v1-0",
             "project_id": "proj-1",
         }
 
@@ -120,7 +120,7 @@ class TestMilestoneSyncCoordinator:
         mock_conn = MagicMock()
         mock_transaction.__enter__.return_value = mock_conn
 
-        milestone_data = {"title": "v1.0", "project_id": "proj-1"}
+        milestone_data = {"title": "v1-0", "project_id": "proj-1"}
 
         with patch.object(
             coordinator._parser, "parse_yaml_frontmatter", return_value=milestone_data

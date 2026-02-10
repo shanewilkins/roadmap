@@ -22,39 +22,39 @@ class TestMilestoneScenarioFactory:
         scenario = (
             MilestoneScenarioFactory(cli_runner)
             .with_initialized_roadmap()
-            .with_milestone("v1.0", description="First release")
+            .with_milestone("v1-0", description="First release")
             .build()
         )
 
         assert len(scenario["milestones"]) == 1
-        assert scenario["milestones"][0].name == "v1.0"
+        assert scenario["milestones"][0].name == "v1-0"
 
     def test_multiple_milestones_fluent(self, cli_runner):
         """Test building multiple milestones with one method call."""
         scenario = (
             MilestoneScenarioFactory(cli_runner)
             .with_initialized_roadmap()
-            .with_multiple_milestones(count=3, name_prefix="Sprint")
+            .with_multiple_milestones(count=3, name_prefix="sprint")
             .build()
         )
 
         assert len(scenario["milestones"]) == 3
-        assert all(m.name.startswith("Sprint") for m in scenario["milestones"])
+        assert all(m.name.startswith("sprint-") for m in scenario["milestones"])
 
     def test_chaining_different_milestone_methods(self, cli_runner):
         """Test combining different milestone creation methods."""
         scenario = (
             MilestoneScenarioFactory(cli_runner)
             .with_initialized_roadmap()
-            .with_milestone("v1.0", description="Current release")
-            .with_multiple_milestones(count=2, name_prefix="Sprint")
+            .with_milestone("v1-0", description="Current release")
+            .with_multiple_milestones(count=2, name_prefix="sprint")
             .build()
         )
 
         assert len(scenario["milestones"]) == 3
         milestone_names = [m.name for m in scenario["milestones"]]
-        assert "v1.0" in milestone_names
-        assert any("Sprint" in name for name in milestone_names)
+        assert "v1-0" in milestone_names
+        assert any("sprint-" in name for name in milestone_names)
 
 
 class TestIssueScenarioFactory:
@@ -92,20 +92,20 @@ class TestIssueScenarioFactory:
         (
             IssueScenarioFactory(cli_runner)
             .with_initialized_roadmap()
-            .with_issue("Create milestone", milestone="v1.0")
+            .with_issue("Create milestone", milestone="v1-0")
         )
 
         # Manually create milestone (factory only creates issues)
-        IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+        IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
 
         # Now create issues for milestone
         scenario = (
             IssueScenarioFactory(cli_runner)
-            .with_issues_by_priority(milestone="v1.0")
+            .with_issues_by_priority(milestone="v1-0")
             .build()
         )
 
-        assert all(issue.milestone == "v1.0" for issue in scenario["issues"])
+        assert all(issue.milestone == "v1-0" for issue in scenario["issues"])
 
     def test_bulk_issues(self, cli_runner):
         """Test creating many issues at once."""
@@ -146,16 +146,16 @@ class TestComplexWorkflowFactory:
         scenario = (
             ComplexWorkflowFactory(cli_runner)
             .with_initialized_roadmap()
-            .with_release_plan(milestone_name="v2.0", num_features=4, num_bugs=2)
+            .with_release_plan(milestone_name="v2-0", num_features=4, num_bugs=2)
             .build()
         )
 
         assert len(scenario["milestones"]) == 1
-        assert scenario["milestones"][0].name == "v2.0"
+        assert scenario["milestones"][0].name == "v2-0"
         assert len(scenario["issues"]) == 6  # 4 features + 2 bugs
 
         # Verify issues assigned correctly
-        v2_issues = [i for i in scenario["issues"] if i.milestone == "v2.0"]
+        v2_issues = [i for i in scenario["issues"] if i.milestone == "v2-0"]
         assert len(v2_issues) == 6
         high_priority = [i for i in v2_issues if i.priority.value == "high"]
         assert len(high_priority) == 4  # Features
@@ -175,7 +175,7 @@ class TestComplexWorkflowFactory:
         # Verify each sprint has issues
         for sprint_num in range(1, 4):
             sprint_issues = [
-                i for i in scenario["issues"] if i.milestone == f"Sprint {sprint_num}"
+                i for i in scenario["issues"] if i.milestone == f"sprint-{sprint_num}"
             ]
             assert len(sprint_issues) == 5
 
@@ -204,18 +204,18 @@ class TestQuickSetupBuilder:
         """Test quick setup with just milestones."""
         scenario = TestDataBuilder.quick_setup(
             cli_runner,
-            milestones=["v1.0", "v2.0", "v3.0"],
+            milestones=["v1-0", "v2-0", "v3-0"],
         )
 
         assert len(scenario["milestones"]) == 3
         names = {m.name for m in scenario["milestones"]}
-        assert names == {"v1.0", "v2.0", "v3.0"}
+        assert names == {"v1-0", "v2-0", "v3-0"}
 
     def test_quick_setup_with_issues_per_milestone(self, cli_runner):
         """Test quick setup creating issues for each milestone."""
         scenario = TestDataBuilder.quick_setup(
             cli_runner,
-            milestones=["v1.0", "v2.0"],
+            milestones=["v1-0", "v2-0"],
             issues_per_milestone=3,
         )
 

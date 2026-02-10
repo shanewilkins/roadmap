@@ -114,12 +114,12 @@ class TestOperationFormatterEntity:
 
     def test_entity_with_details(self):
         """Test entity with additional details."""
-        details = {"Assignee": "Alice", "Milestone": "v1.0"}
+        details = {"Assignee": "Alice", "Milestone": "v1-0"}
         result = OperationFormatter.entity(
             "issue-789", entity_title="Enhancement", details=details
         )
         assert "Assignee: Alice" in result
-        assert "Milestone: v1.0" in result
+        assert "Milestone: v1-0" in result
 
     def test_entity_custom_type(self):
         """Test entity with custom type."""

@@ -21,8 +21,8 @@ class TestMilestoneCreate:
     @pytest.mark.parametrize(
         "milestone_name,description",
         [
-            ("v1.0", "First release"),
-            ("v2.0", None),
+            ("v1-0", "First release"),
+            ("v2-0", None),
         ],
     )
     def test_milestone_create_variants(self, cli_runner, milestone_name, description):
@@ -42,7 +42,7 @@ class TestMilestoneCreate:
     def test_milestone_create_without_roadmap(self, cli_runner):
         """Test creating a milestone without initialized roadmap."""
         with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["milestone", "create", "--title", "v1.0"])
+            result = cli_runner.invoke(main, ["milestone", "create", "--title", "v1-0"])
             assert result.exit_code != 0
 
 
@@ -63,7 +63,7 @@ class TestMilestoneList:
                     "milestone",
                     "create",
                     "--title",
-                    "v1.0",
+                    "v1-0",
                     "--description",
                     "First release",
                 ],
@@ -74,7 +74,7 @@ class TestMilestoneList:
                     "milestone",
                     "create",
                     "--title",
-                    "v2.0",
+                    "v2-0",
                     "--description",
                     "Second release",
                 ],
@@ -83,8 +83,8 @@ class TestMilestoneList:
             result = cli_runner.invoke(main, ["milestone", "list"])
             assert result.exit_code == 0
             clean_output = strip_ansi(result.output)
-            assert "v1.0" in clean_output
-            assert "v2.0" in clean_output
+            assert "v1-0" in clean_output
+            assert "v2-0" in clean_output
 
     def test_milestone_list_empty(self, cli_runner):
         """Test listing milestones when none exist."""
@@ -122,7 +122,7 @@ class TestMilestoneAssign:
                     "milestone",
                     "create",
                     "--title",
-                    "v1.0",
+                    "v1-0",
                     "--description",
                     "First release",
                 ],
@@ -133,16 +133,16 @@ class TestMilestoneAssign:
 
             assert_command_success(result)
             issue = assert_issue_created(core, "test-issue")
-            assert_milestone_created(core, "v1.0")
+            assert_milestone_created(core, "v1-0")
 
             result = cli_runner.invoke(
-                main, ["milestone", "assign", str(issue.id), "v1.0"]
+                main, ["milestone", "assign", str(issue.id), "v1-0"]
             )
             assert_command_success(result)
 
             issue = core.issues.get(issue.id)
             assert issue is not None
-            assert_issue_assigned_to_milestone(core, issue, "v1.0")
+            assert_issue_assigned_to_milestone(core, issue, "v1-0")
 
     def test_milestone_assign_invalid_target(self, cli_runner):
         """Test assigning to non-existent milestone or issue."""
@@ -161,7 +161,7 @@ class TestMilestoneAssign:
     def test_milestone_assign_without_roadmap(self, cli_runner):
         """Test assigning without initialized roadmap."""
         with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["milestone", "assign", "some-id", "v1.0"])
+            result = cli_runner.invoke(main, ["milestone", "assign", "some-id", "v1-0"])
             assert result.exit_code != 0
 
 
@@ -177,14 +177,14 @@ class TestMilestoneDelete:
             assert init_result.exit_code == 0
 
             cli_runner.invoke(
-                main, ["milestone", "create", "v1.0", "--description", "First release"]
+                main, ["milestone", "create", "v1-0", "--description", "First release"]
             )
 
             result = cli_runner.invoke(
-                main, ["milestone", "delete", "v1.0"], input="y\n"
+                main, ["milestone", "delete", "v1-0"], input="y\n"
             )
             assert result.exit_code == 0
-            assert "v1.0" in result.output
+            assert "v1-0" in result.output
 
     def test_milestone_delete_nonexistent(self, cli_runner):
         """Test deleting a non-existent milestone."""
@@ -203,6 +203,6 @@ class TestMilestoneDelete:
         """Test deleting without initialized roadmap."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(
-                main, ["milestone", "delete", "v1.0"], input="y\n"
+                main, ["milestone", "delete", "v1-0"], input="y\n"
             )
             assert result.exit_code != 0

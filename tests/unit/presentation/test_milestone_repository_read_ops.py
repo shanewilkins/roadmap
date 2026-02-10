@@ -28,7 +28,7 @@ class TestMilestoneRepositoryGet:
 
     def test_get_existing_milestone(self, mock_database_connection_factory):
         """Test successful retrieval of existing milestone."""
-        mock_row = {"id": "m1", "title": "v1.0", "status": "open"}
+        mock_row = {"id": "m1", "title": "v1-0", "status": "open"}
         mock_get_connection, mock_conn = mock_database_connection_factory(
             fetch_result=mock_row
         )
@@ -141,7 +141,7 @@ class TestMilestoneRepositoryEdgeCases:
         class CustomDict(dict):
             pass
 
-        milestone_data = CustomDict({"id": "m1", "title": "v1.0"})
+        milestone_data = CustomDict({"id": "m1", "title": "v1-0"})
         result = repo.create(milestone_data)
 
         assert result == "m1"

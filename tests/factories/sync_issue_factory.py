@@ -19,7 +19,7 @@ class SyncIssueFactory:
     DEFAULT_STATUS = "open"
     DEFAULT_HEADLINE = "This is a test issue"
     DEFAULT_ASSIGNEE = "testuser"
-    DEFAULT_MILESTONE = "v1.0"
+    DEFAULT_MILESTONE = "v1-0"
     DEFAULT_BACKEND = "github"
     DEFAULT_BACKEND_ID = 1
 
@@ -49,7 +49,7 @@ class SyncIssueFactory:
             status: Status like "open", "closed" (default: "open")
             headline: Short description (default: "This is a test issue")
             assignee: Assignee username (default: "testuser")
-            milestone: Milestone name (default: "v1.0")
+            milestone: Milestone name (default: "v1-0")
             labels: List of label names (default: [])
             backend_name: Backend name like "github" (default: "github")
             backend_id: Native backend ID (default: 1)

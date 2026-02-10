@@ -90,8 +90,8 @@ class TestIssueBuilder:
 
     def test_builder_with_milestone(self):
         """Test setting milestone."""
-        issue = IssueBuilder().with_milestone("v1.0").build()
-        assert issue.milestone == "v1.0"
+        issue = IssueBuilder().with_milestone("v1-0").build()
+        assert issue.milestone == "v1-0"
 
     def test_builder_with_none_milestone(self):
         """Test setting milestone to None."""
@@ -210,20 +210,20 @@ class TestMilestoneBuilder:
         """Test that fluent interface methods can be chained."""
         milestone = (
             MilestoneBuilder()
-            .with_name("v1.0")
+            .with_name("v1-0")
             .with_status(MilestoneStatus.OPEN)
             .with_content("First release")
             .build()
         )
 
-        assert milestone.name == "v1.0"
+        assert milestone.name == "v1-0"
         assert milestone.status == MilestoneStatus.OPEN
         assert milestone.content == "First release"
 
     def test_builder_with_name(self):
         """Test setting custom name."""
-        milestone = MilestoneBuilder().with_name("v2.0").build()
-        assert milestone.name == "v2.0"
+        milestone = MilestoneBuilder().with_name("v2-0").build()
+        assert milestone.name == "v2-0"
 
     def test_builder_with_description(self):
         """Test setting description."""
@@ -291,15 +291,15 @@ class TestMilestoneBuilder:
     def test_builder_clone(self):
         """Test cloning a builder preserves state."""
         original = (
-            MilestoneBuilder().with_name("v1.0").with_status(MilestoneStatus.OPEN)
+            MilestoneBuilder().with_name("v1-0").with_status(MilestoneStatus.OPEN)
         )
-        cloned = original.clone().with_name("v2.0")
+        cloned = original.clone().with_name("v2-0")
 
         original_milestone = original.build()
         cloned_milestone = cloned.build()
 
-        assert original_milestone.name == "v1.0"
-        assert cloned_milestone.name == "v2.0"
+        assert original_milestone.name == "v1-0"
+        assert cloned_milestone.name == "v2-0"
         assert original_milestone.status == cloned_milestone.status
 
 
@@ -366,16 +366,16 @@ class TestProjectBuilder:
 
     def test_builder_with_milestones(self):
         """Test setting multiple milestones."""
-        milestones = ["v1.0", "v2.0", "v3.0"]
+        milestones = ["v1-0", "v2-0", "v3-0"]
         project = ProjectBuilder().with_milestones(milestones).build()
         assert project.milestones == milestones
 
     def test_builder_add_single_milestone(self):
         """Test adding milestones one at a time."""
-        project = ProjectBuilder().with_milestone("v1.0").with_milestone("v2.0").build()
+        project = ProjectBuilder().with_milestone("v1-0").with_milestone("v2-0").build()
 
-        assert "v1.0" in project.milestones
-        assert "v2.0" in project.milestones
+        assert "v1-0" in project.milestones
+        assert "v2-0" in project.milestones
         assert len(project.milestones) == 2
 
     def test_builder_with_estimated_hours(self):
@@ -454,14 +454,14 @@ class TestBuilderInteroperability:
 
     def test_issue_with_milestone_reference(self):
         """Test creating issue that references milestone."""
-        milestone = MilestoneBuilder().with_name("v1.0").build()
+        milestone = MilestoneBuilder().with_name("v1-0").build()
         issue = IssueBuilder().with_milestone(milestone.name).build()
 
         assert issue.milestone == milestone.name
 
     def test_multiple_issues_for_same_milestone(self):
         """Test creating multiple issues for same milestone."""
-        milestone = MilestoneBuilder().with_name("v1.0").build()
+        milestone = MilestoneBuilder().with_name("v1-0").build()
 
         issues = [
             IssueBuilder()
@@ -479,11 +479,11 @@ class TestBuilderInteroperability:
         project = (
             ProjectBuilder()
             .with_name("Test Project")
-            .with_milestone("v1.0")
-            .with_milestone("v2.0")
+            .with_milestone("v1-0")
+            .with_milestone("v2-0")
             .build()
         )
 
         assert len(project.milestones) == 2
-        assert "v1.0" in project.milestones
-        assert "v2.0" in project.milestones
+        assert "v1-0" in project.milestones
+        assert "v2-0" in project.milestones

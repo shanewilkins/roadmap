@@ -63,7 +63,7 @@ class TestFlagForReviewStrategy:
         [
             ("todo", "in-progress", "closed"),
             ("alice@example.com", "bob@example.com", "charlie@example.com"),
-            ("v1.0", "v2.0", "v1.5"),
+            ("v1-0", "v2-0", "v1.5"),
         ],
     )
     def test_flag_for_review_returns_none_and_flagged(self, base, local, remote):

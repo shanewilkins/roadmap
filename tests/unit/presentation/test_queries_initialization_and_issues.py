@@ -64,7 +64,7 @@ class TestGetAllIssues:
             "proj-1",  # project_id
             "mile-1",  # milestone_id
             None,  # metadata
-            "Sprint 1",  # milestone_name
+            "sprint-1",  # milestone_name
             "Project A",  # project_name
         )
 
@@ -84,7 +84,7 @@ class TestGetAllIssues:
             assert result[0]["type"] == "bug"
             assert result[0]["assignee"] == "alice"
             assert result[0]["estimate_hours"] == 8.5
-            assert result[0]["milestone_name"] == "Sprint 1"
+            assert result[0]["milestone_name"] == "sprint-1"
 
     def test_get_all_issues_with_metadata(self):
         """Test get_all_issues parses and merges metadata."""
@@ -296,7 +296,7 @@ class TestGetAllMilestones:
 
         milestone_row = (
             "mile-1",  # id
-            "Sprint 1",  # title
+            "sprint-1",  # title
             "Q1 Development",  # description
             "active",  # status
             "2024-12-31",  # due_date
@@ -316,8 +316,8 @@ class TestGetAllMilestones:
 
             assert len(result) == 1
             assert result[0]["id"] == "mile-1"
-            assert result[0]["name"] == "Sprint 1"
-            assert result[0]["title"] == "Sprint 1"
+            assert result[0]["name"] == "sprint-1"
+            assert result[0]["title"] == "sprint-1"
             assert result[0]["status"] == "active"
             assert result[0]["progress_percentage"] == 75
 

@@ -132,9 +132,9 @@ class TestCriticalPathPresenter:
     def test_format_critical_path_with_milestone(self, critical_path_result):
         """Test formatting with milestone context."""
         presenter = CriticalPathPresenter()
-        output = presenter.format_critical_path(critical_path_result, milestone="v1.0")
+        output = presenter.format_critical_path(critical_path_result, milestone="v1-0")
 
-        assert "v1.0" in output
+        assert "v1-0" in output
 
     def test_format_critical_path_empty(self):
         """Test formatting empty critical path."""
@@ -412,7 +412,7 @@ class TestCriticalPathCommand:
                 priority=Priority.MEDIUM,
                 status=Status.TODO,
                 estimated_hours=5.0,
-                milestone="v1.0",
+                milestone="v1-0",
                 depends_on=[],
             ),
             Issue(
@@ -421,7 +421,7 @@ class TestCriticalPathCommand:
                 priority=Priority.MEDIUM,
                 status=Status.TODO,
                 estimated_hours=5.0,
-                milestone="v1.1",
+                milestone="v1-1",
                 depends_on=[],
             ),
         ]
@@ -454,11 +454,11 @@ class TestCriticalPathCommand:
                         blocking_issues={},
                     )
 
-                    runner.invoke(critical_path, ["--milestone", "v1.0"])
+                    runner.invoke(critical_path, ["--milestone", "v1-0"])
 
                     # Verify milestone filter was passed to query service
                     mock_query.get_filtered_issues.assert_called_once_with(
-                        milestone="v1.0"
+                        milestone="v1-0"
                     )
 
     def test_command_export_json(self, sample_issues, tmp_path):

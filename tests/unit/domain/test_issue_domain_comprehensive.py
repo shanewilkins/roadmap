@@ -41,7 +41,7 @@ class TestIssueCreation:
         assert issue.headline == "Brief summary"
         assert issue.assignee == "user@example.com"
         assert issue.labels == ["bug", "urgent"]
-        assert issue.milestone == "v1.0"
+        assert issue.milestone == "v1-0"
         assert issue.estimated_hours == 8.0
         assert issue.progress_percentage == 50.0
 
@@ -186,9 +186,9 @@ class TestIssueMilestoneAssociation:
 
     def test_issue_with_milestone(self):
         """Issue should track assigned milestone."""
-        issue = Issue(title="Test", milestone="v1.0")
+        issue = Issue(title="Test", milestone="v1-0")
 
-        assert issue.milestone == "v1.0"
+        assert issue.milestone == "v1-0"
 
     def test_issue_with_no_milestone(self):
         """Issue milestone should default to None."""
@@ -198,15 +198,15 @@ class TestIssueMilestoneAssociation:
 
     def test_issue_milestone_can_be_changed(self):
         """Issue milestone should be mutable."""
-        issue = Issue(title="Test", milestone="v1.0")
+        issue = Issue(title="Test", milestone="v1-0")
 
-        issue.milestone = "v2.0"
+        issue.milestone = "v2-0"
 
-        assert issue.milestone == "v2.0"
+        assert issue.milestone == "v2-0"
 
     def test_issue_milestone_can_be_cleared(self):
         """Issue milestone can be set to None."""
-        issue = Issue(title="Test", milestone="v1.0")
+        issue = Issue(title="Test", milestone="v1-0")
 
         issue.milestone = None
 

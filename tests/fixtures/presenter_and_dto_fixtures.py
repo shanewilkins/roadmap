@@ -21,7 +21,7 @@ def milestone_dto():
     """Basic milestone DTO with standard fields."""
     return MilestoneDTO(
         id="m1",
-        name="v1.0.0",
+        name="v1-0-0",
         status="open",
         headline="Release version 1.0",
         due_date=datetime.now(UTC) + timedelta(days=30),
@@ -38,7 +38,7 @@ def milestone_dto_minimal():
     """Minimal milestone DTO with only required fields."""
     return MilestoneDTO(
         id="m1",
-        name="v1.0.0",
+        name="v1-0-0",
         status="closed",
         headline="",
         due_date=None,

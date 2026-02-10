@@ -72,7 +72,7 @@ class TestIssueFilterValidator:
             backlog=False,
             unassigned=False,
             next_milestone=False,
-            milestone="v1.0",
+            milestone="v1-0",
         )
 
         assert is_valid is True
@@ -127,7 +127,7 @@ class TestIssueFilterValidator:
             backlog=False,
             unassigned=False,
             next_milestone=True,
-            milestone="v1.0",
+            milestone="v1-0",
         )
 
         assert is_valid is False

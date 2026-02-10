@@ -22,12 +22,12 @@ class TestIssueExporter:
             "assignee": "testuser",
             "priority": Priority.MEDIUM,
             "estimated_hours": 8.0,
-            "milestone": "v1.0",
+            "milestone": "v1-0",
             "issue_type": IssueType.FEATURE,
             "progress_display": "50%",
             "progress_percentage": 50,
             "estimated_time_display": "1d",
-            "milestone_name": "v1.0",
+            "milestone_name": "v1-0",
             "is_backlog": False,
         }
         defaults.update(kwargs)

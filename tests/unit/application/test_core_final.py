@@ -307,17 +307,17 @@ class TestRoadmapCoreUncoveredLines:
     def test_get_issues_by_milestone_complex(self, core):
         """Test get_issues_by_milestone with complex milestone assignments."""
         # Create milestones
-        core.milestones.create("Sprint 1", "First sprint")
+        core.milestones.create("sprint-1", "First sprint")
         core.milestones.create("Sprint 2", "Second sprint")
 
         # Create issues with various assignments
         core.issues.create(title="Issue 1", priority=Priority.HIGH)
         core.issues.create(
-            title="Issue 2", priority=Priority.MEDIUM, milestone="Sprint 1"
+            title="Issue 2", priority=Priority.MEDIUM, milestone="sprint-1"
         )
         core.issues.create(title="Issue 3", priority=Priority.LOW, milestone="Sprint 2")
         core.issues.create(
-            title="Issue 4", priority=Priority.HIGH, milestone="Sprint 1"
+            title="Issue 4", priority=Priority.HIGH, milestone="sprint-1"
         )
         core.issues.create(title="Issue 5", priority=Priority.MEDIUM)  # Backlog
 
@@ -326,7 +326,7 @@ class TestRoadmapCoreUncoveredLines:
 
         # Verify grouping
         assert "Backlog" in grouped
-        assert "Sprint 1" in grouped
+        assert "sprint-1" in grouped
         assert "Sprint 2" in grouped
 
         # Verify counts
@@ -334,5 +334,5 @@ class TestRoadmapCoreUncoveredLines:
             i for i in grouped["Backlog"] if not i.milestone or i.milestone == ""
         ]
         assert len(backlog_issues) >= 2  # issue1 and issue5
-        assert len(grouped["Sprint 1"]) == 2  # issue2 and issue4
+        assert len(grouped["sprint-1"]) == 2  # issue2 and issue4
         assert len(grouped["Sprint 2"]) == 1  # issue3

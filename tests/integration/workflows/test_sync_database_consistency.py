@@ -58,7 +58,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
             issue_id: {
                 "status": "in_progress",
                 "assignee": "test_user",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "headline": "Test description",
                 "content": "Test description",
                 "labels": ["feature", "bug"],
@@ -79,7 +79,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
         saved_issue = retrieved[issue_id]
         self.assertEqual(saved_issue["status"], "in_progress")
         self.assertEqual(saved_issue["assignee"], "test_user")
-        self.assertEqual(saved_issue["milestone"], "v1.0")
+        self.assertEqual(saved_issue["milestone"], "v1-0")
         self.assertEqual(saved_issue["headline"], "Test description")
         self.assertEqual(saved_issue["content"], "Test description")
         self.assertEqual(saved_issue["labels"], ["feature", "bug"])
@@ -165,7 +165,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
             issue1.id: {
                 "status": "todo",
                 "assignee": "alice",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "headline": "First issue",
                 "content": "First issue",
                 "labels": ["bug"],
@@ -173,7 +173,7 @@ class TestSyncDatabaseConsistency(unittest.TestCase):
             issue2.id: {
                 "status": "in_progress",
                 "assignee": "bob",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "headline": "Second issue",
                 "content": "Second issue",
                 "labels": ["feature"],

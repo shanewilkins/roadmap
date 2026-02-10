@@ -28,7 +28,7 @@ class TestTodayCommandBasic:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
 
             # Create issues
             for title, priority, assignee, issue_type in [
@@ -45,7 +45,7 @@ class TestTodayCommandBasic:
                     title=title,
                     issue_type=issue_type,
                     priority=priority,
-                    milestone="v1.0",
+                    milestone="v1-0",
                     assignee=assignee,
                 )
 
@@ -65,14 +65,14 @@ class TestTodayCommandBasic:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
 
             # Create issue
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Test Task",
                 assignee="testuser",
-                milestone="v1.0",
+                milestone="v1-0",
             )
 
             result = cli_runner.invoke(
@@ -82,7 +82,7 @@ class TestTodayCommandBasic:
             )
 
             assert result.exit_code == 0
-            assert "v1.0" in result.output or "Milestone" in result.output
+            assert "v1-0" in result.output or "Milestone" in result.output
 
 
 class TestTodayCommandFiltering:
@@ -94,7 +94,7 @@ class TestTodayCommandFiltering:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
 
             for title, priority, assignee in [
                 ("Task 1", "high", "testuser"),
@@ -104,7 +104,7 @@ class TestTodayCommandFiltering:
                     cli_runner,
                     title=title,
                     priority=priority,
-                    milestone="v1.0",
+                    milestone="v1-0",
                     assignee=assignee,
                 )
 
@@ -124,16 +124,16 @@ class TestTodayCommandFiltering:
 
             # Create milestones
             for name, desc in [
-                ("v0.9", "Past milestone"),
-                ("v1.0", "Current upcoming"),
-                ("v1.1", "Future milestone"),
+                ("v0-9", "Past milestone"),
+                ("v1-0", "Current upcoming"),
+                ("v1-1", "Future milestone"),
             ]:
                 IntegrationTestBase.create_milestone(
                     cli_runner, name=name, headline=desc
                 )
 
             # Create issue in each milestone assigned to testuser
-            for milestone_name in ["v0.9", "v1.0", "v1.1"]:
+            for milestone_name in ["v0-9", "v1-0", "v1-1"]:
                 IntegrationTestBase.create_issue(
                     cli_runner,
                     title=f"Task in {milestone_name}",
@@ -155,11 +155,11 @@ class TestTodayCommandFiltering:
         with cli_runner.isolated_filesystem():
             IntegrationTestBase.init_roadmap(cli_runner)
 
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="In Progress Task",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="testuser",
             )
 
@@ -177,11 +177,11 @@ class TestTodayCommandFiltering:
         with cli_runner.isolated_filesystem():
             IntegrationTestBase.init_roadmap(cli_runner)
 
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Blocked Task",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="testuser",
             )
 
@@ -208,7 +208,7 @@ class TestTodayCommandPriorities:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
 
             for title, priority in [
                 ("Critical TODO", "critical"),
@@ -219,7 +219,7 @@ class TestTodayCommandPriorities:
                     cli_runner,
                     title=title,
                     priority=priority,
-                    milestone="v1.0",
+                    milestone="v1-0",
                     assignee="testuser",
                 )
 
@@ -243,7 +243,7 @@ class TestTodayCommandPriorities:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
 
             for title, priority in [
                 ("High Priority", "high"),
@@ -253,7 +253,7 @@ class TestTodayCommandPriorities:
                     cli_runner,
                     title=title,
                     priority=priority,
-                    milestone="v1.0",
+                    milestone="v1-0",
                     assignee="testuser",
                 )
 
@@ -276,11 +276,11 @@ class TestTodayCommandErrorHandling:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Test Task",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="testuser",
             )
 
@@ -328,11 +328,11 @@ class TestTodayCommandErrorHandling:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues assigned to different user
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Other User Task",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="otheruser",
             )
 
@@ -399,11 +399,11 @@ class TestTodayCommandVerboseMode:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Task 1",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="testuser",
             )
 
@@ -422,11 +422,11 @@ class TestTodayCommandVerboseMode:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Task 1",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="testuser",
             )
 
@@ -458,11 +458,11 @@ class TestTodayCommandOutput:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Task 1",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="testuser",
             )
 
@@ -481,17 +481,17 @@ class TestTodayCommandOutput:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Task 1",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="testuser",
             )
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Task 2",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="testuser",
             )
 
@@ -510,11 +510,11 @@ class TestTodayCommandOutput:
             IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
-            IntegrationTestBase.create_milestone(cli_runner, name="v1.0")
+            IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
             IntegrationTestBase.create_issue(
                 cli_runner,
                 title="Task 1",
-                milestone="v1.0",
+                milestone="v1-0",
                 assignee="testuser",
             )
 
@@ -554,7 +554,7 @@ class TestTodayCommandMultipleScenarios:
             # Create milestone
             result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "--title", "v1.0"],
+                ["milestone", "create", "--title", "v1-0"],
             )
             assert result.exit_code == 0
 
@@ -567,7 +567,7 @@ class TestTodayCommandMultipleScenarios:
                     "--title",
                     "My Task",
                     "--milestone",
-                    "v1.0",
+                    "v1-0",
                 ],
             )
             assert result.exit_code == 0
@@ -581,7 +581,7 @@ class TestTodayCommandMultipleScenarios:
                     "--title",
                     "Unassigned Task",
                     "--milestone",
-                    "v1.0",
+                    "v1-0",
                 ],
             )
             assert result.exit_code == 0
@@ -615,7 +615,7 @@ class TestTodayCommandMultipleScenarios:
             # Create milestone
             result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "--title", "v1.0"],
+                ["milestone", "create", "--title", "v1-0"],
             )
             assert result.exit_code == 0
 
@@ -632,7 +632,7 @@ class TestTodayCommandMultipleScenarios:
                         "--assignee",
                         "testuser",
                         "--milestone",
-                        "v1.0",
+                        "v1-0",
                         "--priority",
                         "high",
                     ],
@@ -669,7 +669,7 @@ class TestTodayCommandMultipleScenarios:
             # Create milestone
             result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "--title", "v1.0"],
+                ["milestone", "create", "--title", "v1-0"],
             )
             assert result.exit_code == 0
 
@@ -686,7 +686,7 @@ class TestTodayCommandMultipleScenarios:
                         "--priority",
                         priority,
                         "--milestone",
-                        "v1.0",
+                        "v1-0",
                     ],
                 )
                 assert result.exit_code == 0

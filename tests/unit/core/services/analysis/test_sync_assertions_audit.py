@@ -131,7 +131,7 @@ class TestAssertionQualityMilestoneStatusChanges:
         milestone = (
             MilestoneChangeTestBuilder()
             .with_number(1)
-            .with_title("v1.0")
+            .with_title("v1-0")
             .with_status_change("open", "closed")
             .build()
         )
@@ -145,7 +145,7 @@ class TestAssertionQualityMilestoneStatusChanges:
         assert result["github_state"] == "closed"
         # GOOD: Verify milestone context preserved
         assert milestone["number"] == 1
-        assert milestone["title"] == "v1.0"
+        assert milestone["title"] == "v1-0"
 
     @pytest.mark.parametrize(
         "status_enum,github_state",

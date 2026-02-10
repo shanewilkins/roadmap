@@ -45,13 +45,13 @@ class TestMilestoneEstimatedTime:
 
     def test_milestone_total_estimated_hours(self):
         """Test milestone total estimated hours calculation."""
-        milestone = MilestoneBuilder().with_name("v1.0").build()
+        milestone = MilestoneBuilder().with_name("v1-0").build()
         issues = [
-            IssueBuilder().with_milestone("v1.0").with_estimated_hours(4.0).build(),
-            IssueBuilder().with_milestone("v1.0").with_estimated_hours(8.0).build(),
-            IssueBuilder().with_milestone("v1.0").build(),  # No estimate
+            IssueBuilder().with_milestone("v1-0").with_estimated_hours(4.0).build(),
+            IssueBuilder().with_milestone("v1-0").with_estimated_hours(8.0).build(),
+            IssueBuilder().with_milestone("v1-0").build(),  # No estimate
             IssueBuilder()
-            .with_milestone("v2.0")
+            .with_milestone("v2-0")
             .with_estimated_hours(2.0)
             .build(),  # Different milestone
         ]
@@ -61,20 +61,20 @@ class TestMilestoneEstimatedTime:
 
     def test_milestone_remaining_estimated_hours(self):
         """Test milestone remaining estimated hours calculation."""
-        milestone = MilestoneBuilder().with_name("v1.0").build()
+        milestone = MilestoneBuilder().with_name("v1-0").build()
         issues = [
             IssueBuilder()
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_status(Status.CLOSED)
             .with_estimated_hours(4.0)
             .build(),
             IssueBuilder()
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_status(Status.TODO)
             .with_estimated_hours(8.0)
             .build(),
             IssueBuilder()
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .with_status(Status.IN_PROGRESS)
             .with_estimated_hours(6.0)
             .build(),
@@ -85,12 +85,12 @@ class TestMilestoneEstimatedTime:
 
     def test_milestone_estimated_time_display(self):
         """Test milestone estimated time display formatting."""
-        milestone = MilestoneBuilder().with_name("v1.0").build()
+        milestone = MilestoneBuilder().with_name("v1-0").build()
 
         # Test with no estimates
         issues_no_estimate = [
-            IssueBuilder().with_milestone("v1.0").build(),
-            IssueBuilder().with_milestone("v1.0").build(),
+            IssueBuilder().with_milestone("v1-0").build(),
+            IssueBuilder().with_milestone("v1-0").build(),
         ]
         assert (
             milestone.get_estimated_time_display(issues_no_estimate) == "Not estimated"
@@ -98,15 +98,15 @@ class TestMilestoneEstimatedTime:
 
         # Test with small estimate (hours)
         issues_hours = [
-            IssueBuilder().with_milestone("v1.0").with_estimated_hours(2.0).build(),
-            IssueBuilder().with_milestone("v1.0").with_estimated_hours(3.0).build(),
+            IssueBuilder().with_milestone("v1-0").with_estimated_hours(2.0).build(),
+            IssueBuilder().with_milestone("v1-0").with_estimated_hours(3.0).build(),
         ]
         assert milestone.get_estimated_time_display(issues_hours) == "5.0h"
 
         # Test with large estimate (days)
         issues_days = [
-            IssueBuilder().with_milestone("v1.0").with_estimated_hours(8.0).build(),
-            IssueBuilder().with_milestone("v1.0").with_estimated_hours(16.0).build(),
+            IssueBuilder().with_milestone("v1-0").with_estimated_hours(8.0).build(),
+            IssueBuilder().with_milestone("v1-0").with_estimated_hours(16.0).build(),
         ]
         assert milestone.get_estimated_time_display(issues_days) == "3.0d"
 

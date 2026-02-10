@@ -77,7 +77,7 @@ Issue content here"""
         mock_issue.title = "Test Issue"
         mock_issue.status = Status.IN_PROGRESS
         mock_issue.assignee = "john@example.com"
-        mock_issue.milestone = "v1.0"
+        mock_issue.milestone = "v1-0"
         mock_issue.labels = ["bug", "urgent"]
         mock_issue.headline = None
         mock_issue.content = "Issue content here"
@@ -166,7 +166,7 @@ class TestGetRemoteBaseline:
             priority=Priority.HIGH,
             issue_type=IssueType.BUG,
             assignee="john@example.com",
-            milestone="v1.0",
+            milestone="v1-0",
             content="Local description",
         )
 
@@ -179,7 +179,7 @@ class TestGetRemoteBaseline:
                 "title": "Test Issue",
                 "status": "open",  # Remote status
                 "assignee": "jane@example.com",  # Different assignee
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "headline": "Remote description",
                 "labels": ["bug"],
                 "updated_at": "2026-01-02T09:00:00+00:00",

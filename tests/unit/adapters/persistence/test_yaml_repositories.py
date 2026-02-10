@@ -67,7 +67,7 @@ class TestYAMLIssueRepository:
                 spec=Issue, id="1", milestone=None, status=MagicMock(value="todo")
             ),
             MagicMock(
-                spec=Issue, id="2", milestone="v1.0", status=MagicMock(value="todo")
+                spec=Issue, id="2", milestone="v1-0", status=MagicMock(value="todo")
             ),
         ]
 
@@ -84,10 +84,10 @@ class TestYAMLIssueRepository:
     def test_list_filters_by_milestone(self, repository):
         """Test list filters by milestone."""
         mock_issue1 = MagicMock(
-            spec=Issue, milestone="v1.0", status=MagicMock(value="todo")
+            spec=Issue, milestone="v1-0", status=MagicMock(value="todo")
         )
         mock_issue2 = MagicMock(
-            spec=Issue, milestone="v2.0", status=MagicMock(value="todo")
+            spec=Issue, milestone="v2-0", status=MagicMock(value="todo")
         )
 
         with patch(
@@ -95,7 +95,7 @@ class TestYAMLIssueRepository:
         ) as mock_enum:
             mock_enum.enumerate_and_parse.return_value = [mock_issue1, mock_issue2]
 
-            result = repository.list(milestone="v1.0")
+            result = repository.list(milestone="v1-0")
 
         assert len(result) == 1
         assert result[0] == mock_issue1
@@ -157,10 +157,10 @@ class TestYAMLIssueRepository:
     def test_list_all_filters_by_milestone(self, repository):
         """Test list_all_including_archived filters by milestone."""
         mock_active = MagicMock(
-            spec=Issue, milestone="v1.0", status=MagicMock(value="todo")
+            spec=Issue, milestone="v1-0", status=MagicMock(value="todo")
         )
         mock_archived = MagicMock(
-            spec=Issue, milestone="v2.0", status=MagicMock(value="closed")
+            spec=Issue, milestone="v2-0", status=MagicMock(value="closed")
         )
 
         with patch(
@@ -169,7 +169,7 @@ class TestYAMLIssueRepository:
             mock_enum.enumerate_and_parse.side_effect = [[mock_active], [mock_archived]]
 
             with patch.object(Path, "exists", return_value=True):
-                result = repository.list_all_including_archived(milestone="v1.0")
+                result = repository.list_all_including_archived(milestone="v1-0")
 
         assert len(result) == 1
         assert result[0] == mock_active
@@ -248,10 +248,10 @@ class TestYAMLIssueRepositoryIntegration:
         repo = YAMLIssueRepository(mock_db, issues_dir)
 
         mock_issue = MagicMock(
-            spec=Issue, milestone="v1.0", status=MagicMock(value="todo")
+            spec=Issue, milestone="v1-0", status=MagicMock(value="todo")
         )
         mock_other = MagicMock(
-            spec=Issue, milestone="v2.0", status=MagicMock(value="closed")
+            spec=Issue, milestone="v2-0", status=MagicMock(value="closed")
         )
 
         with patch(
@@ -260,7 +260,7 @@ class TestYAMLIssueRepositoryIntegration:
             # Return both, let filter handle filtering
             mock_enum.enumerate_and_parse.return_value = [mock_issue, mock_other]
 
-            result = repo.list(milestone="v1.0", status="todo")
+            result = repo.list(milestone="v1-0", status="todo")
 
         # Should filter to match both criteria
         assert len(result) == 1

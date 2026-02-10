@@ -1,5 +1,7 @@
 """Create milestone command."""
 
+import re
+
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
@@ -9,6 +11,36 @@ from roadmap.common.logging import (
     log_command,
     verbose_output,
 )
+
+
+def _validate_milestone_name(name: str) -> tuple[bool, str | None]:
+    """Validate milestone name against naming conventions.
+
+    Args:
+        name: The milestone name to validate
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    # Check for invalid characters
+    if not re.match(r"^[a-zA-Z0-9_\-\.]+$", name):
+        return (
+            False,
+            "Milestone name contains invalid characters. Use only: letters, numbers, hyphens, underscores, dots",
+        )
+
+    # Check for version patterns with dots (should use hyphens instead)
+    if re.match(r"^v\d+\.\d+", name):  # e.g., v1.0., v1.0.2, v2.0
+        suggested = name.replace(".", "-")
+        return (
+            False,
+            f"Version milestones should use hyphens, not dots.\n"
+            f"  Current:  {name}\n"
+            f"  Suggested: {suggested}",
+        )
+
+    # Valid milestone name
+    return True, None
 
 
 class MilestoneCreate(BaseCreate):
@@ -48,6 +80,13 @@ def create_milestone(
     project: str | None,
 ):
     """Create a new milestone."""
+    # Validate milestone name against naming conventions
+    is_valid, error_msg = _validate_milestone_name(title)
+    if not is_valid:
+        if error_msg is None:
+            error_msg = "Invalid milestone name"
+        raise click.ClickException(error_msg)
+
     core = ctx.obj["core"]
     creator = MilestoneCreate(core)
 

@@ -57,7 +57,7 @@ class TestRoadmapValidator:
     def test_validate_milestone_valid(self, validator):
         """Test validating valid milestone."""
         milestone = {
-            "name": "v1.0.0",
+            "name": "v1-0-0",
             "status": "open",
             "description": "Version 1.0.0 release",
         }

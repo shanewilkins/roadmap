@@ -73,8 +73,8 @@ class TestDuplicateMilestonesValidator:
     def test_perform_check_healthy(self):
         """Test perform_check returns HEALTHY when no duplicates found."""
         mock_core = MagicMock()
-        milestone1 = MilestoneBuilder().with_name("v1.0").build()
-        milestone2 = MilestoneBuilder().with_name("v2.0").build()
+        milestone1 = MilestoneBuilder().with_name("v1-0").build()
+        milestone2 = MilestoneBuilder().with_name("v2-0").build()
         mock_core.milestones.list.return_value = [milestone1, milestone2]
 
         with patch(

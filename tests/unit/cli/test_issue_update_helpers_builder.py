@@ -162,12 +162,12 @@ class TestIssueUpdateBuilder:
             priority=None,
             status=None,
             assignee=None,
-            milestone="v1.0",
+            milestone="v1-0",
             description=None,
             estimate=None,
         )
 
-        assert result == {"milestone": "v1.0"}
+        assert result == {"milestone": "v1-0"}
 
     def test_build_updates_with_description(self):
         """build_updates should include description when provided."""
@@ -243,7 +243,7 @@ class TestIssueUpdateBuilder:
             priority="critical",
             status="closed",
             assignee="testuser",
-            milestone="v2.0",
+            milestone="v2-0",
             description="Updated description",
             estimate=16.0,
         )
@@ -266,7 +266,7 @@ class TestIssueUpdateBuilder:
             priority="critical",
             status="closed",
             assignee="testuser",
-            milestone="v2.0",
+            milestone="v2-0",
             description="Updated description",
             estimate=16.0,
         )
@@ -288,12 +288,12 @@ class TestIssueUpdateBuilder:
             priority="critical",
             status="closed",
             assignee="testuser",
-            milestone="v2.0",
+            milestone="v2-0",
             description="Updated description",
             estimate=16.0,
         )
 
-        assert result["milestone"] == "v2.0"
+        assert result["milestone"] == "v2-0"
         assert result["description"] == "Updated description"
         assert result["estimated_hours"] == 16.0
 

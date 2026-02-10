@@ -25,7 +25,7 @@ class IssueBuilder:
             .with_title("Fix authentication bug")
             .with_priority(Priority.HIGH)
             .with_status(Status.IN_PROGRESS)
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .build())
     """
 
@@ -179,7 +179,7 @@ class MilestoneBuilder:
 
     Example:
         milestone = (MilestoneBuilder()
-            .with_name("v1.0")
+            .with_name("v1-0")
             .with_status(MilestoneStatus.IN_PROGRESS)
             .with_due_date(date)
             .build())

@@ -123,7 +123,7 @@ class TestIssueStateService:
             status="open",
             labels=["bug", "urgent"],
             assignee="alice@example.com",
-            milestone="v1.0",
+            milestone="v1-0",
             backend_name="github",
             backend_id=42,
         )
@@ -132,7 +132,7 @@ class TestIssueStateService:
 
         assert result.labels == ["bug", "urgent"]
         assert result.assignee == "alice@example.com"
-        assert result.milestone == "v1.0"
+        assert result.milestone == "v1-0"
 
     def test_issue_to_push_payload_basic(self):
         """Test converting Issue to push payload."""

@@ -349,7 +349,7 @@ def mock_milestone_entity():
 
     mock_milestone_obj = Mock(spec=Milestone)
     mock_milestone_obj.id = "milestone-1"
-    mock_milestone_obj.name = "v1.0"
+    mock_milestone_obj.name = "v1-0"
     mock_milestone_obj.status = "IN_PROGRESS"
     return mock_milestone_obj
 
@@ -624,7 +624,7 @@ def mock_milestone_factory():
     """
     from roadmap.core.domain.milestone import Milestone
 
-    def _factory(id="milestone-1", name="v1.0", status="IN_PROGRESS", **kwargs):
+    def _factory(id="milestone-1", name="v1-0", status="IN_PROGRESS", **kwargs):
         mock_milestone = Mock(spec=Milestone)
         mock_milestone.id = id
         mock_milestone.name = name

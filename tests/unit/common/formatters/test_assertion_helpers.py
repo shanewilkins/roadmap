@@ -286,7 +286,7 @@ def create_mock_milestone(**kwargs) -> Any:
     from unittest.mock import MagicMock
 
     defaults = {
-        "name": "v1.0",
+        "name": "v1-0",
         "description": "Version 1.0 release",
         "status": "open",
         "target_date": None,

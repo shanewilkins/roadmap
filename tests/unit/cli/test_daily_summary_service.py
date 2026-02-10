@@ -62,19 +62,19 @@ class TestDailySummaryServiceMilestoneSelection:
 
         milestones = [
             MilestoneBuilder()
-            .with_name("v1.0")
+            .with_name("v1-0")
             .with_headline("First release")
             .with_status(MilestoneStatus.OPEN)
             .with_due_date(today + timedelta(days=10))
             .build(),
             MilestoneBuilder()
-            .with_name("v2.0")
+            .with_name("v2-0")
             .with_headline("Second release")
             .with_status(MilestoneStatus.OPEN)
             .with_due_date(today + timedelta(days=20))
             .build(),
             MilestoneBuilder()
-            .with_name("v3.0")
+            .with_name("v3-0")
             .with_headline("Third release")
             .with_status(MilestoneStatus.CLOSED)
             .with_due_date(today + timedelta(days=5))
@@ -86,7 +86,7 @@ class TestDailySummaryServiceMilestoneSelection:
         milestone = service.get_upcoming_milestone()
 
         assert milestone is not None
-        assert milestone.name == "v1.0"
+        assert milestone.name == "v1-0"
 
     def test_get_upcoming_milestone_raises_when_no_open_milestones(self):
         """Test that ValueError is raised when no open milestones exist."""
@@ -303,7 +303,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         today = datetime.now(UTC)
         milestone = (
             MilestoneBuilder()
-            .with_name("v1.0")
+            .with_name("v1-0")
             .with_headline("First release")
             .with_status(MilestoneStatus.OPEN)
             .with_due_date(today + timedelta(days=10))
@@ -318,7 +318,7 @@ class TestDailySummaryServiceGetDailySummaryData:
             .with_status(Status.IN_PROGRESS)
             .with_assignee("alice")
             .with_priority(Priority.HIGH)
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .build()
         )
         core.issues.list.return_value = [issue]
@@ -340,7 +340,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         today = datetime.now(UTC)
         milestone = (
             MilestoneBuilder()
-            .with_name("v1.0")
+            .with_name("v1-0")
             .with_headline("First release")
             .with_status(MilestoneStatus.OPEN)
             .with_due_date(today + timedelta(days=10))
@@ -352,7 +352,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         service = DailySummaryService(core)
         data = service.get_daily_summary_data()
 
-        assert data["milestone"].name == "v1.0"
+        assert data["milestone"].name == "v1-0"
 
     def test_get_daily_summary_data_issues_structure(self):
         """Test that issues dictionary has expected structure."""
@@ -362,7 +362,7 @@ class TestDailySummaryServiceGetDailySummaryData:
         today = datetime.now(UTC)
         milestone = (
             MilestoneBuilder()
-            .with_name("v1.0")
+            .with_name("v1-0")
             .with_headline("First release")
             .with_status(MilestoneStatus.OPEN)
             .with_due_date(today + timedelta(days=10))
@@ -377,7 +377,7 @@ class TestDailySummaryServiceGetDailySummaryData:
             .with_status(Status.IN_PROGRESS)
             .with_assignee("alice")
             .with_priority(Priority.HIGH)
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .build()
         )
         core.issues.list.return_value = [issue]

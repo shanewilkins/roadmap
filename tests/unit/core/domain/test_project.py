@@ -115,25 +115,25 @@ class TestGetMilestones:
         project = (
             ProjectBuilder()
             .with_name("Project")
-            .with_milestones(["v1.0.0", "v2.0.0"])
+            .with_milestones(["v1-0-0", "v2.0.0"])
             .build()
         )
 
         milestones = [
-            MilestoneStub("v1.0.0"),
+            MilestoneStub("v1-0-0"),
             MilestoneStub("v2.0.0"),
             MilestoneStub("v3.0.0"),
         ]
 
         result = project.get_milestones(milestones)
         assert len(result) == 2
-        assert any(m.name == "v1.0.0" for m in result)
+        assert any(m.name == "v1-0-0" for m in result)
         assert any(m.name == "v2.0.0" for m in result)
 
     def test_get_milestones_empty_project(self):
         """Test getting milestones from project with none assigned."""
         project = Project(name="Project", milestones=[])
-        milestones = [MilestoneStub("v1.0.0")]
+        milestones = [MilestoneStub("v1-0-0")]
 
         result = project.get_milestones(milestones)
         assert result == []
@@ -143,12 +143,12 @@ class TestGetMilestones:
         project = (
             ProjectBuilder()
             .with_name("Project")
-            .with_milestones(["v1.0.0", "v2.0.0"])
+            .with_milestones(["v1-0-0", "v2.0.0"])
             .build()
         )
 
         milestones = [
-            MilestoneStub("v1.0.0"),
+            MilestoneStub("v1-0-0"),
             MilestoneStub("v2.0.0"),
             MilestoneStub("v3.0.0"),
         ]
@@ -169,10 +169,10 @@ class TestCalculateProgress:
     def test_progress_single_closed_milestone(self):
         """Test progress with single closed milestone."""
         project = (
-            ProjectBuilder().with_name("Project").with_milestones(["v1.0.0"]).build()
+            ProjectBuilder().with_name("Project").with_milestones(["v1-0-0"]).build()
         )
 
-        milestone = MilestoneStub("v1.0.0", status=MilestoneStatus.CLOSED)
+        milestone = MilestoneStub("v1-0-0", status=MilestoneStatus.CLOSED)
 
         progress = project.calculate_progress([milestone], [])
         assert progress == 100.0
@@ -180,11 +180,11 @@ class TestCalculateProgress:
     def test_progress_partial_completion(self):
         """Test progress with partial milestone completion."""
         project = (
-            ProjectBuilder().with_name("Project").with_milestones(["v1.0.0"]).build()
+            ProjectBuilder().with_name("Project").with_milestones(["v1-0-0"]).build()
         )
 
         milestone = MilestoneStub(
-            "v1.0.0", status=MilestoneStatus.OPEN, progress_percent=50.0
+            "v1-0-0", status=MilestoneStatus.OPEN, progress_percent=50.0
         )
 
         progress = project.calculate_progress([milestone], [])
@@ -195,13 +195,13 @@ class TestCalculateProgress:
         project = (
             ProjectBuilder()
             .with_name("Project")
-            .with_milestones(["v1.0.0", "v2.0.0"])
+            .with_milestones(["v1-0-0", "v2.0.0"])
             .build()
         )
 
         milestones = [
             MilestoneStub(
-                "v1.0.0", status=MilestoneStatus.CLOSED, estimated_hours=50.0
+                "v1-0-0", status=MilestoneStatus.CLOSED, estimated_hours=50.0
             ),
             MilestoneStub("v2.0.0", status=MilestoneStatus.OPEN, estimated_hours=50.0),
         ]
@@ -217,10 +217,10 @@ class TestUpdateAutomaticFields:
     def test_update_automatic_fields_progress(self):
         """Test that automatic fields are updated."""
         project = (
-            ProjectBuilder().with_name("Project").with_milestones(["v1.0.0"]).build()
+            ProjectBuilder().with_name("Project").with_milestones(["v1-0-0"]).build()
         )
 
-        milestone = MilestoneStub("v1.0.0", status=MilestoneStatus.CLOSED)
+        milestone = MilestoneStub("v1-0-0", status=MilestoneStatus.CLOSED)
 
         project.update_automatic_fields([milestone], [])
 
@@ -232,12 +232,12 @@ class TestUpdateAutomaticFields:
         project = (
             ProjectBuilder()
             .with_name("Project")
-            .with_milestones(["v1.0.0"])
+            .with_milestones(["v1-0-0"])
             .with_status(ProjectStatus.PLANNING)
             .build()
         )
 
-        milestone = MilestoneStub("v1.0.0", status=MilestoneStatus.CLOSED)
+        milestone = MilestoneStub("v1-0-0", status=MilestoneStatus.CLOSED)
 
         project.update_automatic_fields([milestone], [])
 
@@ -249,13 +249,13 @@ class TestUpdateAutomaticFields:
         project = (
             ProjectBuilder()
             .with_name("Project")
-            .with_milestones(["v1.0.0"])
+            .with_milestones(["v1-0-0"])
             .with_status(ProjectStatus.PLANNING)
             .build()
         )
 
         milestone = MilestoneStub(
-            "v1.0.0", status=MilestoneStatus.OPEN, progress_percent=50.0
+            "v1-0-0", status=MilestoneStatus.OPEN, progress_percent=50.0
         )
 
         project.update_automatic_fields([milestone], [])
@@ -268,12 +268,12 @@ class TestUpdateAutomaticFields:
         project = (
             ProjectBuilder()
             .with_name("Project")
-            .with_milestones(["v1.0.0"])
+            .with_milestones(["v1-0-0"])
             .with_actual_end_date(end_date)
             .build()
         )
 
-        milestone = MilestoneStub("v1.0.0", status=MilestoneStatus.CLOSED)
+        milestone = MilestoneStub("v1-0-0", status=MilestoneStatus.CLOSED)
 
         project.update_automatic_fields([milestone], [])
 

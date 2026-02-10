@@ -22,7 +22,7 @@ class TestIssueTableFormatter:
             "priority": Priority.MEDIUM,
             "assignee": "testuser",
             "estimated_hours": 8.0,
-            "milestone_name": "v1.0",
+            "milestone_name": "v1-0",
             "progress_display": "50%",
             "progress_percentage": 50,
             "estimated_time_display": "1d",
@@ -131,7 +131,7 @@ class TestMilestoneTableFormatter:
     def create_sample_milestone(self, **kwargs):
         """Create a sample milestone for testing."""
         defaults = {
-            "name": "v1.0",
+            "name": "v1-0",
             "description": "First release",
             "status": Mock(value="open"),
             "due_date": None,
@@ -154,8 +154,8 @@ class TestMilestoneTableFormatter:
     def test_milestones_to_table_data_multiple(self):
         """Test converting multiple milestones."""
         milestones = [
-            self.create_sample_milestone(name="v1.0"),
-            self.create_sample_milestone(name="v2.0"),
+            self.create_sample_milestone(name="v1-0"),
+            self.create_sample_milestone(name="v2-0"),
         ]
         table_data = MilestoneTableFormatter.milestones_to_table_data(milestones)
 

@@ -43,7 +43,7 @@ class TestDisplayErrorSummary:
     def test_multiple_error_categories(self, mock_console):
         """Test display with multiple error categories."""
         errors = {
-            "issue-1": "Milestone 'v1.0' not found",
+            "issue-1": "Milestone 'v1-0' not found",
             "issue-2": "Foreign key constraint failed",
             "issue-3": "Rate limit exceeded",
             "issue-4": "Network timeout",
@@ -62,8 +62,8 @@ class TestDisplayErrorSummary:
     def test_verbose_mode_shows_issue_ids(self, mock_console):
         """Test that verbose mode displays affected issue IDs."""
         errors = {
-            "issue-abc123": "Milestone 'v1.0' not found",
-            "issue-def456": "Milestone 'v2.0' not found",
+            "issue-abc123": "Milestone 'v1-0' not found",
+            "issue-def456": "Milestone 'v2-0' not found",
         }
         display_error_summary(errors, mock_console, verbose=True)
 

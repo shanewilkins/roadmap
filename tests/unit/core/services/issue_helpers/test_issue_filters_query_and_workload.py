@@ -91,14 +91,14 @@ class TestIssueQueryService:
     ):
         """Test getting issues for next milestone."""
         mock_milestone = Mock()
-        mock_milestone.name = "v1.0"
+        mock_milestone.name = "v1-0"
         mock_core.milestones.get_next.return_value = mock_milestone
         mock_core.issues.get_by_milestone.return_value = sample_issues
 
         issues, description = service.get_filtered_issues(next_milestone=True)
 
         assert issues == sample_issues
-        assert "next milestone" in description and "v1.0" in description
+        assert "next milestone" in description and "v1-0" in description
 
     def test_get_filtered_issues_next_milestone_not_found(self, service, mock_core):
         """Test handling when next milestone doesn't exist."""
@@ -114,11 +114,11 @@ class TestIssueQueryService:
         """Test getting issues for specific milestone."""
         mock_core.issues.get_by_milestone.return_value = sample_issues
 
-        issues, description = service.get_filtered_issues(milestone="v2.0")
+        issues, description = service.get_filtered_issues(milestone="v2-0")
 
         assert issues == sample_issues
-        assert "milestone 'v2.0'" in description
-        mock_core.issues.get_by_milestone.assert_called_once_with("v2.0")
+        assert "milestone 'v2-0'" in description
+        mock_core.issues.get_by_milestone.assert_called_once_with("v2-0")
 
     def test_get_filtered_issues_overdue(self, service, mock_core):
         """Test getting overdue issues."""

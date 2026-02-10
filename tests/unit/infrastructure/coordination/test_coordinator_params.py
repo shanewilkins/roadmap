@@ -43,7 +43,7 @@ class TestIssueCreateParams:
                     "title": "Test Issue",
                     "priority": Priority.HIGH,
                     "issue_type": IssueType.FEATURE,
-                    "milestone": "v1.0",
+                    "milestone": "v1-0",
                     "labels": ["bug", "urgent"],
                     "assignee": "john@example.com",
                     "estimated_hours": 5.5,
@@ -54,7 +54,7 @@ class TestIssueCreateParams:
                     "title": "Test Issue",
                     "priority": Priority.HIGH,
                     "issue_type": IssueType.FEATURE,
-                    "milestone": "v1.0",
+                    "milestone": "v1-0",
                     "labels": ["bug", "urgent"],
                     "assignee": "john@example.com",
                     "estimated_hours": 5.5,
@@ -66,12 +66,12 @@ class TestIssueCreateParams:
             (
                 {
                     "title": "Test Issue",
-                    "milestone": "v1.0",
+                    "milestone": "v1-0",
                     "labels": ["bug", "urgent"],
                 },
                 {
                     "title": "Test Issue",
-                    "milestone": "v1.0",
+                    "milestone": "v1-0",
                     "labels": ["bug", "urgent"],
                     "priority": Priority.MEDIUM,
                     "issue_type": IssueType.OTHER,
@@ -148,14 +148,14 @@ class TestIssueListParams:
             # All filters
             (
                 {
-                    "milestone": "v1.0",
+                    "milestone": "v1-0",
                     "status": "open",
                     "priority": Priority.HIGH,
                     "issue_type": IssueType.BUG,
                     "assignee": "john@example.com",
                 },
                 {
-                    "milestone": "v1.0",
+                    "milestone": "v1-0",
                     "status": "open",
                     "priority": Priority.HIGH,
                     "issue_type": IssueType.BUG,
@@ -210,18 +210,18 @@ class TestMilestoneCreateParams:
         [
             # Defaults
             (
-                {"name": "v1.0"},
-                {"name": "v1.0", "content": "", "due_date": None},
+                {"name": "v1-0"},
+                {"name": "v1-0", "content": "", "due_date": None},
             ),
             # All fields
             (
                 {
-                    "name": "v1.0",
+                    "name": "v1-0",
                     "content": "Release version 1.0",
                     "due_date": datetime(2025, 12, 31),
                 },
                 {
-                    "name": "v1.0",
+                    "name": "v1-0",
                     "content": "Release version 1.0",
                     "due_date": datetime(2025, 12, 31),
                 },
@@ -243,9 +243,9 @@ class TestMilestoneUpdateParams:
         [
             # Defaults
             (
-                {"name": "v1.0"},
+                {"name": "v1-0"},
                 {
-                    "name": "v1.0",
+                    "name": "v1-0",
                     "content": None,
                     "due_date": None,
                     "clear_due_date": False,
@@ -255,14 +255,14 @@ class TestMilestoneUpdateParams:
             # All fields
             (
                 {
-                    "name": "v1.0",
+                    "name": "v1-0",
                     "content": "Updated description",
                     "due_date": datetime(2025, 12, 31),
                     "clear_due_date": False,
                     "status": "completed",
                 },
                 {
-                    "name": "v1.0",
+                    "name": "v1-0",
                     "content": "Updated description",
                     "due_date": datetime(2025, 12, 31),
                     "clear_due_date": False,
@@ -272,11 +272,11 @@ class TestMilestoneUpdateParams:
             # Clear due date
             (
                 {
-                    "name": "v1.0",
+                    "name": "v1-0",
                     "clear_due_date": True,
                 },
                 {
-                    "name": "v1.0",
+                    "name": "v1-0",
                     "clear_due_date": True,
                     "due_date": None,
                     "content": None,
@@ -308,12 +308,12 @@ class TestProjectCreateParams:
                 {
                     "name": "My Project",
                     "content": "Project description",
-                    "milestones": ["v1.0", "v1.1"],
+                    "milestones": ["v1-0", "v1-1"],
                 },
                 {
                     "name": "My Project",
                     "content": "Project description",
-                    "milestones": ["v1.0", "v1.1"],
+                    "milestones": ["v1-0", "v1-1"],
                 },
             ),
         ],

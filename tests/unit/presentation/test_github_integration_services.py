@@ -261,9 +261,9 @@ class TestBatchOperations:
     def test_batch_sync_by_milestone(self):
         """Test syncing issues in specific milestone."""
         core = Mock()
-        issues = [create_mock_issue(milestone="v1.0") for _ in range(2)]
+        issues = [create_mock_issue(milestone="v1-0") for _ in range(2)]
         core.issues.list_by_milestone.return_value = issues
-        assert len(core.issues.list_by_milestone("v1.0")) == 2
+        assert len(core.issues.list_by_milestone("v1-0")) == 2
 
     def test_batch_sync_by_status(self):
         """Test syncing issues with specific status."""

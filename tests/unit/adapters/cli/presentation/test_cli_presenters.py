@@ -33,7 +33,7 @@ class TestIssuePresenter:
                 "status": "in-progress",
                 "issue_type": "feature",
                 "assignee": "Alice",
-                "milestone": "v1.0",
+                "milestone": "v1-0",
                 "estimated_hours": 5.0,
                 "progress_percentage": 50,
                 "created": datetime.datetime(2024, 1, 1, 10, 0),
@@ -99,7 +99,7 @@ class TestIssuePresenter:
                 "status": "in-progress",
                 "issue_type": "feature",
                 "assignee": "Bob",
-                "milestone": "v2.0",
+                "milestone": "v2-0",
                 "created": datetime.datetime(2024, 1, 1),
                 "updated": datetime.datetime(2024, 1, 15),
                 "labels": ["frontend", "docs"],
@@ -202,7 +202,7 @@ class TestMilestonePresenter:
         milestone_dto = MilestoneDTO.from_dict(
             {
                 "id": "milestone456",
-                "name": "v2.0",
+                "name": "v2-0",
                 "status": "todo",
                 "progress_percentage": 0,
                 "issue_count": 0,

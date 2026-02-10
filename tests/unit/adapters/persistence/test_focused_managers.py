@@ -171,7 +171,7 @@ class TestFocusedMilestoneStateManager:
     def test_create_milestone(self, mock_state_manager):
         """Test creating a milestone."""
         manager = FocusedMilestoneStateManager(mock_state_manager)
-        milestone_data = {"name": "v1.0"}
+        milestone_data = {"name": "v1-0"}
         mock_state_manager.create_milestone.return_value = "milestone-1"
 
         result = manager.create_milestone(milestone_data)
@@ -181,7 +181,7 @@ class TestFocusedMilestoneStateManager:
     def test_get_milestone(self, mock_state_manager):
         """Test getting a milestone."""
         manager = FocusedMilestoneStateManager(mock_state_manager)
-        milestone_data = {"id": "milestone-1", "name": "v1.0"}
+        milestone_data = {"id": "milestone-1", "name": "v1-0"}
         mock_state_manager.get_milestone.return_value = milestone_data
 
         result = manager.get_milestone("milestone-1")
@@ -237,7 +237,7 @@ class TestFocusedQueryStateManager:
         progress = {"total": 10, "completed": 5}
         mock_state_manager.get_milestone_progress.return_value = progress
 
-        result = manager.get_milestone_progress("v1.0")
+        result = manager.get_milestone_progress("v1-0")
 
         assert result == progress
 

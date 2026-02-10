@@ -22,7 +22,7 @@ def sample_milestone():
     """Create a sample milestone."""
     return (
         MilestoneBuilder()
-        .with_name("v1.0")
+        .with_name("v1-0")
         .with_content("First release")
         .with_due_date(datetime.now(UTC) + timedelta(days=30))
         .with_status(MilestoneStatus.OPEN)
@@ -39,28 +39,28 @@ def sample_issues():
         .with_status(Status.TODO)
         .with_priority(Priority.HIGH)
         .with_type(IssueType.FEATURE)
-        .with_milestone("v1.0")
+        .with_milestone("v1-0")
         .build(),
         IssueBuilder()
         .with_title("Feature B - In Progress")
         .with_status(Status.IN_PROGRESS)
         .with_priority(Priority.MEDIUM)
         .with_type(IssueType.FEATURE)
-        .with_milestone("v1.0")
+        .with_milestone("v1-0")
         .build(),
         IssueBuilder()
         .with_title("Bug Fix - Closed")
         .with_status(Status.CLOSED)
         .with_priority(Priority.HIGH)
         .with_type(IssueType.BUG)
-        .with_milestone("v1.0")
+        .with_milestone("v1-0")
         .build(),
         IssueBuilder()
         .with_title("Task - Blocked")
         .with_status(Status.BLOCKED)
         .with_priority(Priority.MEDIUM)
         .with_type(IssueType.FEATURE)
-        .with_milestone("v1.0")
+        .with_milestone("v1-0")
         .build(),
     ]
 
@@ -84,7 +84,7 @@ class TestMilestoneKanban:
             runner = CliRunner()
             result = runner.invoke(
                 milestone_kanban,
-                ["v1.0"],
+                ["v1-0"],
                 obj={"core": mock_core},
             )
 
@@ -129,7 +129,7 @@ class TestMilestoneKanban:
             runner = CliRunner()
             result = runner.invoke(
                 milestone_kanban,
-                ["v1.0"],
+                ["v1-0"],
                 obj={"core": mock_core},
             )
 
@@ -152,7 +152,7 @@ class TestMilestoneKanban:
             runner = CliRunner()
             result = runner.invoke(
                 milestone_kanban,
-                ["v1.0", "--compact"],
+                ["v1-0", "--compact"],
                 obj={"core": mock_core},
             )
 
@@ -175,7 +175,7 @@ class TestMilestoneKanban:
             runner = CliRunner()
             result = runner.invoke(
                 milestone_kanban,
-                ["v1.0", "--no-color"],
+                ["v1-0", "--no-color"],
                 obj={"core": mock_core},
             )
 
@@ -197,7 +197,7 @@ class TestMilestoneKanban:
             runner = CliRunner()
             result = runner.invoke(
                 milestone_kanban,
-                ["v1.0", "--compact", "--no-color"],
+                ["v1-0", "--compact", "--no-color"],
                 obj={"core": mock_core},
             )
 
@@ -216,7 +216,7 @@ class TestMilestoneKanban:
             runner = CliRunner()
             result = runner.invoke(
                 milestone_kanban,
-                ["v1.0"],
+                ["v1-0"],
                 obj={"core": mock_core},
             )
 
@@ -231,7 +231,7 @@ class TestMilestoneKanban:
             .with_status(Status.TODO)
             .with_priority(Priority.LOW)
             .with_type(IssueType.FEATURE)
-            .with_milestone("v2.0")
+            .with_milestone("v2-0")
             .build()
         )
         issues = [
@@ -240,7 +240,7 @@ class TestMilestoneKanban:
             .with_status(Status.TODO)
             .with_priority(Priority.HIGH)
             .with_type(IssueType.FEATURE)
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .build(),
             other_milestone_issue,
         ]
@@ -256,7 +256,7 @@ class TestMilestoneKanban:
             runner = CliRunner()
             result = runner.invoke(
                 milestone_kanban,
-                ["v1.0"],
+                ["v1-0"],
                 obj={"core": mock_core},
             )
 
@@ -274,7 +274,7 @@ class TestMilestoneKanban:
         """Test header display when milestone has no due date."""
         milestone = (
             MilestoneBuilder()
-            .with_name("v1.0")
+            .with_name("v1-0")
             .with_content("First release")
             .with_due_date(None)
             .with_status(MilestoneStatus.OPEN)
@@ -341,35 +341,35 @@ class TestMilestoneKanban:
             .with_status(Status.TODO)
             .with_priority(Priority.HIGH)
             .with_type(IssueType.FEATURE)
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .build(),
             IssueBuilder()
             .with_title("In Progress Issue")
             .with_status(Status.IN_PROGRESS)
             .with_priority(Priority.HIGH)
             .with_type(IssueType.FEATURE)
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .build(),
             IssueBuilder()
             .with_title("Blocked Issue")
             .with_status(Status.BLOCKED)
             .with_priority(Priority.MEDIUM)
             .with_type(IssueType.FEATURE)
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .build(),
             IssueBuilder()
             .with_title("Review Issue")
             .with_status(Status.REVIEW)
             .with_priority(Priority.MEDIUM)
             .with_type(IssueType.FEATURE)
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .build(),
             IssueBuilder()
             .with_title("Closed Issue")
             .with_status(Status.CLOSED)
             .with_priority(Priority.LOW)
             .with_type(IssueType.BUG)
-            .with_milestone("v1.0")
+            .with_milestone("v1-0")
             .build(),
         ]
         mock_core.milestones.get.return_value = sample_milestone
@@ -384,7 +384,7 @@ class TestMilestoneKanban:
             runner = CliRunner()
             result = runner.invoke(
                 milestone_kanban,
-                ["v1.0"],
+                ["v1-0"],
                 obj={"core": mock_core},
             )
 

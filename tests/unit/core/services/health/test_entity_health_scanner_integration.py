@@ -68,7 +68,7 @@ class TestEntityHealthScannerIntegration:
         issue.progress_percentage = 100
 
         milestone = mock_milestone_factory(
-            name="v1.0",
+            name="v1-0",
             status=Status.CLOSED,
         )
         milestone.content = "Release 1.0"

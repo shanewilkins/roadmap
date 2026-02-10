@@ -28,9 +28,9 @@ class TestMilestoneCreation:
 
     def test_create_with_required_fields_only(self):
         """Milestone should be creatable with only name."""
-        milestone = Milestone(name="v1.0")
+        milestone = Milestone(name="v1-0")
 
-        assert milestone.name == "v1.0"
+        assert milestone.name == "v1-0"
         assert milestone.status == MilestoneStatus.OPEN  # default
         assert milestone.headline == ""
         assert milestone.content == ""
@@ -46,7 +46,7 @@ class TestMilestoneCreation:
 
     def test_milestone_timestamps_created(self):
         """Milestone should track created and updated timestamps."""
-        milestone = Milestone(name="v1.0")
+        milestone = Milestone(name="v1-0")
 
         assert milestone.created is not None
         assert milestone.updated is not None
@@ -57,19 +57,19 @@ class TestMilestoneCreation:
     def test_milestone_with_due_date(self):
         """Milestone should track due date."""
         due = datetime(2024, 12, 31, tzinfo=UTC)
-        milestone = Milestone(name="v1.0", due_date=due)
+        milestone = Milestone(name="v1-0", due_date=due)
 
         assert milestone.due_date == due
 
     def test_milestone_with_project_id(self):
         """Milestone should track associated project."""
-        milestone = Milestone(name="v1.0", project_id="project-123")
+        milestone = Milestone(name="v1-0", project_id="project-123")
 
         assert milestone.project_id == "project-123"
 
     def test_milestone_with_github_id(self):
         """Milestone should track GitHub milestone ID."""
-        milestone = Milestone(name="v1.0", github_milestone=42)
+        milestone = Milestone(name="v1-0", github_milestone=42)
 
         assert milestone.github_milestone == 42
 
@@ -83,14 +83,14 @@ class TestMilestoneCreation:
             created_at=datetime(2024, 1, 1, tzinfo=UTC),
             updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         )
-        milestone = Milestone(name="v1.0", comments=[comment])
+        milestone = Milestone(name="v1-0", comments=[comment])
 
         assert len(milestone.comments) == 1
         assert milestone.comments[0].author == "alice"
 
     def test_milestone_comments_empty_by_default(self):
         """Comments should default to empty list."""
-        milestone = Milestone(name="v1.0")
+        milestone = Milestone(name="v1-0")
 
         assert milestone.comments == []
 
@@ -104,19 +104,19 @@ class TestMilestoneStatus:
     )
     def test_milestone_with_each_status(self, status):
         """Milestone should accept any status."""
-        milestone = Milestone(name="v1.0", status=status)
+        milestone = Milestone(name="v1-0", status=status)
 
         assert milestone.status == status
 
     def test_status_defaults_to_open(self):
         """Status should default to OPEN."""
-        milestone = Milestone(name="v1.0")
+        milestone = Milestone(name="v1-0")
 
         assert milestone.status == MilestoneStatus.OPEN
 
     def test_status_can_be_changed(self):
         """Milestone status should be mutable."""
-        milestone = Milestone(name="v1.0", status=MilestoneStatus.OPEN)
+        milestone = Milestone(name="v1-0", status=MilestoneStatus.OPEN)
 
         milestone.status = MilestoneStatus.CLOSED
 
@@ -132,19 +132,19 @@ class TestMilestoneRiskLevel:
     )
     def test_milestone_with_each_risk_level(self, risk):
         """Milestone should accept any risk level."""
-        milestone = Milestone(name="v1.0", risk_level=risk)
+        milestone = Milestone(name="v1-0", risk_level=risk)
 
         assert milestone.risk_level == risk
 
     def test_risk_defaults_to_low(self):
         """Risk level should default to LOW."""
-        milestone = Milestone(name="v1.0")
+        milestone = Milestone(name="v1-0")
 
         assert milestone.risk_level == RiskLevel.LOW
 
     def test_risk_can_be_changed(self):
         """Risk level should be mutable."""
-        milestone = Milestone(name="v1.0", risk_level=RiskLevel.LOW)
+        milestone = Milestone(name="v1-0", risk_level=RiskLevel.LOW)
 
         milestone.risk_level = RiskLevel.HIGH
 
@@ -156,26 +156,26 @@ class TestMilestoneProgressTracking:
 
     def test_milestone_with_calculated_progress(self):
         """Milestone should track calculated progress."""
-        milestone = Milestone(name="v1.0", calculated_progress=50.0)
+        milestone = Milestone(name="v1-0", calculated_progress=50.0)
 
         assert milestone.calculated_progress == 50.0
 
     def test_milestone_with_progress_update_timestamp(self):
         """Milestone should track when progress was last updated."""
         now = datetime.now(UTC)
-        milestone = Milestone(name="v1.0", last_progress_update=now)
+        milestone = Milestone(name="v1-0", last_progress_update=now)
 
         assert milestone.last_progress_update == now
 
     def test_milestone_with_completion_velocity(self):
         """Milestone should track completion velocity (issues/week)."""
-        milestone = Milestone(name="v1.0", completion_velocity=2.5)
+        milestone = Milestone(name="v1-0", completion_velocity=2.5)
 
         assert milestone.completion_velocity == 2.5
 
     def test_milestone_progress_defaults_to_none(self):
         """Progress fields should default to None."""
-        milestone = Milestone(name="v1.0")
+        milestone = Milestone(name="v1-0")
 
         assert milestone.calculated_progress is None
         assert milestone.last_progress_update is None
@@ -188,14 +188,14 @@ class TestMilestoneDates:
     def test_milestone_with_actual_start_date(self):
         """Milestone should track actual start date."""
         start = datetime(2024, 1, 1, tzinfo=UTC)
-        milestone = Milestone(name="v1.0", actual_start_date=start)
+        milestone = Milestone(name="v1-0", actual_start_date=start)
 
         assert milestone.actual_start_date == start
 
     def test_milestone_with_actual_end_date(self):
         """Milestone should track actual end date."""
         end = datetime(2024, 2, 1, tzinfo=UTC)
-        milestone = Milestone(name="v1.0", actual_end_date=end)
+        milestone = Milestone(name="v1-0", actual_end_date=end)
 
         assert milestone.actual_end_date == end
 
@@ -203,7 +203,7 @@ class TestMilestoneDates:
         """Milestone should track both start and end dates."""
         start = datetime(2024, 1, 1, tzinfo=UTC)
         end = datetime(2024, 2, 1, tzinfo=UTC)
-        milestone = Milestone(name="v1.0", actual_start_date=start, actual_end_date=end)
+        milestone = Milestone(name="v1-0", actual_start_date=start, actual_end_date=end)
 
         assert milestone.actual_start_date == start
         assert milestone.actual_end_date == end
@@ -214,26 +214,26 @@ class TestMilestoneContent:
 
     def test_milestone_with_headline(self):
         """Milestone should track headline for list views."""
-        milestone = Milestone(name="v1.0", headline="Major release")
+        milestone = Milestone(name="v1-0", headline="Major release")
 
         assert milestone.headline == "Major release"
 
     def test_milestone_with_markdown_content(self):
         """Milestone should accept markdown content."""
         content = "# Release Notes\n\nFeatures included..."
-        milestone = Milestone(name="v1.0", content=content)
+        milestone = Milestone(name="v1-0", content=content)
 
         assert milestone.content == content
 
     def test_headline_empty_by_default(self):
         """Headline should default to empty string."""
-        milestone = Milestone(name="v1.0")
+        milestone = Milestone(name="v1-0")
 
         assert milestone.headline == ""
 
     def test_content_empty_by_default(self):
         """Content should default to empty string."""
-        milestone = Milestone(name="v1.0")
+        milestone = Milestone(name="v1-0")
 
         assert milestone.content == ""
 
@@ -598,7 +598,7 @@ class TestIssueWithCommentsIntegration:
         )
 
         issue = Issue(title="Test", comments=[issue_comment])
-        milestone = Milestone(name="v1.0", comments=[milestone_comment])
+        milestone = Milestone(name="v1-0", comments=[milestone_comment])
 
         assert len(issue.comments) == 1
         assert len(milestone.comments) == 1

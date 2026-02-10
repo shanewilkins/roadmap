@@ -47,7 +47,7 @@ class TestIssueServiceCreate:
             title="Full Feature",
             priority="high",
             issue_type="feature",
-            milestone="v1.0",
+            milestone="v1-0",
             labels=["backend", "api"],
             assignee="alice@example.com",
             estimate=16.0,
@@ -61,7 +61,7 @@ class TestIssueServiceCreate:
         assert issue.title == "Full Feature"
         assert issue.priority == Priority.HIGH
         assert issue.issue_type == IssueType.FEATURE
-        assert issue.milestone == "v1.0"
+        assert issue.milestone == "v1-0"
         assert issue.labels == ["backend", "api"]
         assert issue.assignee == "alice@example.com"
         assert issue.estimated_hours == 16.0
@@ -180,10 +180,10 @@ class TestIssueServiceList:
         """Service should filter issues by milestone."""
         service = IssueService(p8_populated_issue_repository)
 
-        issues = service.list_issues(milestone="v1.0")
+        issues = service.list_issues(milestone="v1-0")
 
         assert len(issues) == 2
-        assert all(i.milestone == "v1.0" for i in issues)
+        assert all(i.milestone == "v1-0" for i in issues)
 
     def test_list_filter_by_status(self, p8_populated_issue_repository):
         """Service should filter issues by status."""
@@ -218,7 +218,7 @@ class TestIssueServiceList:
         """Service should apply multiple filters together."""
         service = IssueService(p8_populated_issue_repository)
 
-        issues = service.list_issues(milestone="v1.0", status=Status.TODO)
+        issues = service.list_issues(milestone="v1-0", status=Status.TODO)
 
         assert len(issues) == 1
         assert issues[0].id == "issue-1"
@@ -265,7 +265,7 @@ class TestIssueServiceUpdate:
             title="Test",
             priority="medium",
             issue_type="other",
-            milestone="v1.0",
+            milestone="v1-0",
         )
         created = service.create_issue(create_params)
 
@@ -294,7 +294,7 @@ class TestIssueServiceUpdate:
             title="Updated",
             priority=Priority.HIGH,
             assignee="alice@example.com",
-            milestone="v2.0",
+            milestone="v2-0",
         )
         updated = service.update_issue(update_params)
 
@@ -302,7 +302,7 @@ class TestIssueServiceUpdate:
         assert updated.title == "Updated"
         assert updated.priority == Priority.HIGH
         assert updated.assignee == "alice@example.com"
-        assert updated.milestone == "v2.0"
+        assert updated.milestone == "v2-0"
 
     def test_update_persists_to_repository(self, p8_yaml_issue_repository):
         """Updated issue should be persisted to repository."""
@@ -454,7 +454,7 @@ class TestIssueServiceWorkflows:
             title="Feature Request",
             priority="high",
             issue_type="feature",
-            milestone="v1.0",
+            milestone="v1-0",
         )
         created = service.create_issue(create_params)
 
@@ -472,7 +472,7 @@ class TestIssueServiceWorkflows:
         assert retrieved is not None
         assert retrieved.status == Status.IN_PROGRESS
         assert retrieved.assignee == "alice@example.com"
-        assert retrieved.milestone == "v1.0"
+        assert retrieved.milestone == "v1-0"
 
     def test_workflow_create_list_filter(self, p8_yaml_issue_repository):
         """Test workflow: create multiple, list and filter."""
@@ -484,7 +484,7 @@ class TestIssueServiceWorkflows:
                 title=f"Issue {i}",
                 priority="medium",
                 issue_type="other",
-                milestone="v1.0" if i < 2 else "v2.0",
+                milestone="v1-0" if i < 2 else "v2-0",
             )
             service.create_issue(params)
 
@@ -493,7 +493,7 @@ class TestIssueServiceWorkflows:
         assert len(all_issues) == 3
 
         # Filter by milestone
-        v1_issues = service.list_issues(milestone="v1.0")
+        v1_issues = service.list_issues(milestone="v1-0")
         assert len(v1_issues) == 2
 
     def test_workflow_complete_issue_lifecycle(self, p8_yaml_issue_repository):
@@ -598,7 +598,7 @@ class TestIssueServiceIntegration:
             title="Integration Test",
             priority="medium",
             issue_type="other",
-            milestone="v1.0",
+            milestone="v1-0",
         )
         created = service.create_issue(create_params)
 
@@ -630,7 +630,7 @@ class TestIssueServiceIntegration:
         assert len(issues) == 4
 
         # Filter existing
-        v1_issues = service.list_issues(milestone="v1.0")
+        v1_issues = service.list_issues(milestone="v1-0")
         assert len(v1_issues) == 2
 
         # Get existing

@@ -31,7 +31,7 @@ def roadmap_with_issues_and_milestones(cli_runner):
 
         # Create a milestone
         IntegrationTestBase.create_milestone(
-            cli_runner, name="v1.0", headline="First release"
+            cli_runner, name="v1-0", headline="First release"
         )
 
         # Create issues
@@ -213,7 +213,7 @@ class TestMilestoneArchiveRestore:
 
         result = cli_runner.invoke(
             main,
-            ["milestone", "archive", "v1.0", "--force"],
+            ["milestone", "archive", "v1-0", "--force"],
         )
 
         assert result.exit_code == 0
@@ -228,7 +228,7 @@ class TestMilestoneArchiveRestore:
 
         # Create an empty issues folder for v1.0 to simulate real scenario
         # (in production, a milestone's issues folder would exist if issues were assigned)
-        issues_dir = roadmap_dir / "issues" / "v1.0"
+        issues_dir = roadmap_dir / "issues" / "v1-0"
         issues_dir.mkdir(parents=True, exist_ok=True)
 
         # Create a dummy issue file in the folder
@@ -240,7 +240,7 @@ class TestMilestoneArchiveRestore:
         # Archive the milestone
         result = cli_runner.invoke(
             main,
-            ["milestone", "archive", "v1.0", "--force"],
+            ["milestone", "archive", "v1-0", "--force"],
         )
 
         assert result.exit_code == 0, (
@@ -263,7 +263,7 @@ class TestMilestoneArchiveRestore:
             "Issues folder should not exist in active directory after archiving"
         )
 
-        archive_issues_dir = roadmap_dir / "archive" / "issues" / "v1.0"
+        archive_issues_dir = roadmap_dir / "archive" / "issues" / "v1-0"
         assert archive_issues_dir.exists(), (
             "Issues folder should be moved to archive/issues/"
         )
@@ -281,7 +281,7 @@ class TestMilestoneArchiveRestore:
         # Archive a milestone
         result = cli_runner.invoke(
             main,
-            ["milestone", "archive", "v1.0", "--force"],
+            ["milestone", "archive", "v1-0", "--force"],
         )
         assert result.exit_code == 0
 
@@ -295,7 +295,7 @@ class TestMilestoneArchiveRestore:
 
         result = cli_runner.invoke(
             main,
-            ["milestone", "archive", "v1.0", "--dry-run", "--force"],
+            ["milestone", "archive", "v1-0", "--dry-run", "--force"],
         )
 
         assert result.exit_code == 0
@@ -307,14 +307,14 @@ class TestMilestoneArchiveRestore:
         # Archive first
         result = cli_runner.invoke(
             main,
-            ["milestone", "archive", "v1.0", "--force"],
+            ["milestone", "archive", "v1-0", "--force"],
         )
         assert result.exit_code == 0
 
         # Restore
         result = cli_runner.invoke(
             main,
-            ["milestone", "restore", "v1.0", "--force"],
+            ["milestone", "restore", "v1-0", "--force"],
         )
 
         assert result.exit_code == 0
@@ -326,7 +326,7 @@ class TestMilestoneArchiveRestore:
         # Archive
         result = cli_runner.invoke(
             main,
-            ["milestone", "archive", "v1.0", "--force"],
+            ["milestone", "archive", "v1-0", "--force"],
         )
         assert result.exit_code == 0
 

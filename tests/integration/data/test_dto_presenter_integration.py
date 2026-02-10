@@ -25,7 +25,7 @@ class TestIssueDTOPresenterIntegration:
             status=Status.IN_PROGRESS,
             issue_type=IssueType.FEATURE,
             assignee="Alice",
-            milestone="v1.0",
+            milestone="v1-0",
             due_date=datetime.datetime(2024, 3, 1),
             estimated_hours=5.0,
             actual_end_date=None,
@@ -132,7 +132,7 @@ class TestListCommandDTOFlow:
                 status=Status.TODO,
                 issue_type=IssueType.FEATURE,
                 assignee="Alice" if i % 2 == 0 else None,
-                milestone="v1.0" if i % 2 == 0 else None,
+                milestone="v1-0" if i % 2 == 0 else None,
                 due_date=None,
                 estimated_hours=5.0,
                 actual_end_date=None,
@@ -178,7 +178,7 @@ class TestListCommandDTOFlow:
         assert issue_dto.status == "blocked"
 
         assert isinstance(milestone_dto, type(milestone_dto))
-        assert milestone_dto.name == "v1.0.0"
+        assert milestone_dto.name == "v1-0-0"
 
         assert isinstance(project_dto, type(project_dto))
         assert project_dto.name == "Website Redesign"

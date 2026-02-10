@@ -74,29 +74,29 @@ class TestMilestoneDTO:
         """Test creating a MilestoneDTO."""
         due_date = datetime.now(UTC) + timedelta(days=10)
         dto = MilestoneDTO(
-            id="v1.0",
-            name="v1.0",
+            id="v1-0",
+            name="v1-0",
             status="open",
             due_date=due_date,
         )
 
-        assert dto.id == "v1.0"
-        assert dto.name == "v1.0"
+        assert dto.id == "v1-0"
+        assert dto.name == "v1-0"
         assert dto.status == "open"
         assert dto.due_date == due_date
 
     def test_milestone_dto_from_dict(self):
         """Test creating MilestoneDTO from dictionary."""
         data = {
-            "id": "v2.0",
-            "name": "v2.0",
+            "id": "v2-0",
+            "name": "v2-0",
             "status": "closed",
             "progress_percentage": 100.0,
         }
 
         dto = MilestoneDTO.from_dict(data)
 
-        assert dto.id == "v2.0"
+        assert dto.id == "v2-0"
         assert dto.progress_percentage == 100.0
 
 
@@ -150,7 +150,7 @@ class TestIssueMapper:
             priority=Priority.MEDIUM,
             status=Status.TODO,
             assignee="bob",
-            milestone="v1.0",
+            milestone="v1-0",
             due_date=now,
             estimated_hours=5.0,
             content="Description here",
@@ -172,7 +172,7 @@ class TestIssueMapper:
             priority=Priority.MEDIUM,
             status=Status.TODO,
             assignee="bob",
-            milestone="v1.0",
+            milestone="v1-0",
             due_date=now,
             estimated_hours=5.0,
             content="Description here",
@@ -181,7 +181,7 @@ class TestIssueMapper:
 
         dto = IssueMapper.domain_to_dto(issue)
 
-        assert dto.milestone == "v1.0"
+        assert dto.milestone == "v1-0"
         assert dto.due_date == now
         assert dto.estimated_hours == 5.0
 
@@ -194,7 +194,7 @@ class TestIssueMapper:
             priority=Priority.MEDIUM,
             status=Status.TODO,
             assignee="bob",
-            milestone="v1.0",
+            milestone="v1-0",
             due_date=now,
             estimated_hours=5.0,
             content="Description here",
@@ -234,7 +234,7 @@ class TestIssueMapper:
             status=Status.CLOSED,
             issue_type=IssueType.FEATURE,
             assignee="charlie",
-            milestone="v2.0",
+            milestone="v2-0",
             estimated_hours=8.0,
         )
 
@@ -256,7 +256,7 @@ class TestIssueMapper:
             status=Status.CLOSED,
             issue_type=IssueType.FEATURE,
             assignee="charlie",
-            milestone="v2.0",
+            milestone="v2-0",
             estimated_hours=8.0,
         )
 
@@ -277,7 +277,7 @@ class TestIssueMapper:
             status=Status.CLOSED,
             issue_type=IssueType.FEATURE,
             assignee="charlie",
-            milestone="v2.0",
+            milestone="v2-0",
             estimated_hours=8.0,
         )
 
@@ -296,7 +296,7 @@ class TestMilestoneMapper:
     def test_domain_to_dto_converts_status_to_string(self):
         """Test that domain_to_dto converts status enum to string."""
         milestone = Milestone(
-            name="v1.0",
+            name="v1-0",
             status=MilestoneStatus.OPEN,
             due_date=datetime.now(UTC),
         )
@@ -309,8 +309,8 @@ class TestMilestoneMapper:
     def test_dto_to_domain_converts_string_back_to_enum(self):
         """Test that dto_to_domain converts string back to enum."""
         dto = MilestoneDTO(
-            id="v1.0",
-            name="v1.0",
+            id="v1-0",
+            name="v1-0",
             status="closed",
         )
 

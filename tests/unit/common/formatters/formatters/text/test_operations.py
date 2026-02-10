@@ -223,7 +223,7 @@ class TestFormatEntityDetails:
         result = format_entity_details(
             entity_id="MILESTONE-1",
             entity_type="milestone",
-            entity_title="v1.0",
+            entity_title="v1-0",
         )
 
         assert any("Milestone" in line for line in result)

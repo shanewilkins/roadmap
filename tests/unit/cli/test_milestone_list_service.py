@@ -87,7 +87,7 @@ class TestMilestoneProgressService:
             "completed": 7,
         }
 
-        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
+        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1-0")
 
         assert result["total"] == 10
         assert result["completed"] == 7
@@ -101,7 +101,7 @@ class TestMilestoneProgressService:
             "completed": 0,
         }
 
-        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
+        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1-0")
 
         assert result["total"] == 0
         assert result["completed"] == 0
@@ -115,7 +115,7 @@ class TestMilestoneProgressService:
             "completed": 10,
         }
 
-        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
+        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1-0")
 
         assert result["percentage"] == 100.0
 
@@ -124,7 +124,7 @@ class TestMilestoneProgressService:
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.milestones.get_progress.side_effect = Exception("DB error")
 
-        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1.0")
+        result = MilestoneProgressService.get_milestone_progress(mock_core, "v1-0")
 
         assert result["total"] == 0
         assert result["completed"] == 0
@@ -135,7 +135,7 @@ class TestMilestoneProgressService:
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         def progress_side_effect(name):
-            if name == "v1.0":
+            if name == "v1-0":
                 return {"total": 10, "completed": 5}
             else:
                 return {"total": 8, "completed": 8}
@@ -143,18 +143,18 @@ class TestMilestoneProgressService:
         mock_core.milestones.get_progress.side_effect = progress_side_effect
 
         mock_ms1 = MagicMock()
-        mock_ms1.name = "v1.0"
+        mock_ms1.name = "v1-0"
         mock_ms2 = MagicMock()
-        mock_ms2.name = "v2.0"
+        mock_ms2.name = "v2-0"
 
         result = MilestoneProgressService.get_all_milestones_progress(
             mock_core, [mock_ms1, mock_ms2]
         )
 
-        assert "v1.0" in result
-        assert "v2.0" in result
-        assert result["v1.0"]["percentage"] == 50.0
-        assert result["v2.0"]["percentage"] == 100.0
+        assert "v1-0" in result
+        assert "v2-0" in result
+        assert result["v1-0"]["percentage"] == 50.0
+        assert result["v2-0"]["percentage"] == 100.0
 
 
 class TestMilestoneTimeEstimateService:
@@ -163,7 +163,7 @@ class TestMilestoneTimeEstimateService:
     def test_get_milestone_time_estimate_success(self):
         """Test getting time estimate."""
         mock_ms = MagicMock()
-        mock_ms.name = "v1.0"
+        mock_ms.name = "v1-0"
         mock_ms.get_estimated_time_display.return_value = "32 hours"
 
         result = MilestoneTimeEstimateService.get_milestone_time_estimate(mock_ms, [])
@@ -173,7 +173,7 @@ class TestMilestoneTimeEstimateService:
     def test_get_milestone_time_estimate_empty(self):
         """Test time estimate when empty."""
         mock_ms = MagicMock()
-        mock_ms.name = "v1.0"
+        mock_ms.name = "v1-0"
         mock_ms.get_estimated_time_display.return_value = None
 
         result = MilestoneTimeEstimateService.get_milestone_time_estimate(mock_ms, [])
@@ -183,7 +183,7 @@ class TestMilestoneTimeEstimateService:
     def test_get_milestone_time_estimate_exception(self):
         """Test time estimate handles exceptions."""
         mock_ms = MagicMock()
-        mock_ms.name = "v1.0"
+        mock_ms.name = "v1-0"
         mock_ms.get_estimated_time_display.side_effect = Exception("Error")
 
         result = MilestoneTimeEstimateService.get_milestone_time_estimate(mock_ms, [])
@@ -212,7 +212,7 @@ class TestMilestoneListService:
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         mock_ms = MagicMock()
-        mock_ms.name = "v1.0"
+        mock_ms.name = "v1-0"
         mock_ms.description = "First release"
         mock_ms.due_date = datetime.now(UTC) + timedelta(days=30)
         mock_ms.status.value = "open"
@@ -230,20 +230,20 @@ class TestMilestoneListService:
 
         assert result["has_data"]
         assert result["count"] == 1
-        assert "v1.0" in result["progress"]
-        assert "v1.0" in result["estimates"]
+        assert "v1-0" in result["progress"]
+        assert "v1-0" in result["estimates"]
 
     def test_get_milestones_list_data_overdue_filter(self):
         """Test getting milestone list data with overdue filter."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
 
         mock_ms_past = MagicMock()
-        mock_ms_past.name = "v0.9"
+        mock_ms_past.name = "v0-9"
         mock_ms_past.due_date = datetime.now(UTC) - timedelta(days=10)
         mock_ms_past.status.value = "open"
 
         mock_ms_future = MagicMock()
-        mock_ms_future.name = "v1.0"
+        mock_ms_future.name = "v1-0"
         mock_ms_future.due_date = datetime.now(UTC) + timedelta(days=30)
         mock_ms_future.status.value = "open"
 
@@ -258,7 +258,7 @@ class TestMilestoneListService:
         result = service.get_milestones_list_data(overdue_only=True)
 
         assert result["count"] == 1
-        assert result["milestones"][0].name == "v0.9"
+        assert result["milestones"][0].name == "v0-9"
 
     def test_get_milestone_due_date_status_no_due_date(self):
         """Test due date status with no due date."""

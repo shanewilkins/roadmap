@@ -63,7 +63,7 @@ class TestMilestoneRepositoryCreate:
         milestone_data = {
             "id": "m1",
             "project_id": "p1",
-            "title": "v1.0",
+            "title": "v1-0",
             "description": "Version 1.0",
             "status": "open",
             "due_date": "2024-12-31",
@@ -107,7 +107,7 @@ class TestMilestoneRepositoryCreate:
 
         milestone_data = {
             "project_id": "p1",
-            "title": "v1.0",
+            "title": "v1-0",
         }
 
         # safe_operation decorator wraps KeyError as CreateError
@@ -125,7 +125,7 @@ class TestMilestoneRepositoryCreate:
 
         repo = MilestoneRepository(mock_get_connection, mock_transaction)
 
-        milestone_data = {"id": "m1", "title": "v1.0"}
+        milestone_data = {"id": "m1", "title": "v1-0"}
 
         # safe_operation decorator wraps sqlite3.Error as CreateError
         with pytest.raises(CreateError):
@@ -144,7 +144,7 @@ class TestMilestoneRepositoryCreate:
 
         repo = MilestoneRepository(mock_get_connection, mock_transaction)
 
-        milestone_data = {"id": "m1", "title": "v1.0"}
+        milestone_data = {"id": "m1", "title": "v1-0"}
 
         # safe_operation decorator wraps sqlite3.IntegrityError as CreateError
         with pytest.raises(CreateError):
@@ -234,7 +234,7 @@ class TestMilestoneRepositoryCreate:
 
         milestone_data = {
             "id": "m1",
-            "title": "v1.0",
+            "title": "v1-0",
             "description": large_description,
         }
 

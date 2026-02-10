@@ -29,7 +29,7 @@ def roadmap_with_workflow_items(cli_runner):
         # Create a milestone
         IntegrationTestBase.create_milestone(
             cli_runner,
-            name="v1.0",
+            name="v1-0",
             headline="First release",
         )
 
@@ -48,7 +48,7 @@ def roadmap_with_workflow_items(cli_runner):
                 title=title,
                 priority=priority,
                 assignee="testuser",
-                milestone="v1.0",
+                milestone="v1-0",
             )
 
         yield cli_runner, core
@@ -77,7 +77,7 @@ class TestTodayCommand:
 
         IntegrationTestBase.assert_cli_success(result)
         # Should contain milestone and user info
-        assert "v1.0" in result.output or "Milestone" in result.output
+        assert "v1-0" in result.output or "Milestone" in result.output
 
     def test_today_shows_high_priority_tasks(self, roadmap_with_workflow_items):
         """Test that today command shows high priority tasks or empty state."""

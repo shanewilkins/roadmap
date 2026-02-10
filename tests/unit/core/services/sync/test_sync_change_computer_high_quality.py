@@ -37,7 +37,7 @@ def baseline_issue():
         priority=Priority.MEDIUM,
         issue_type=IssueType.FEATURE,
         assignee="alice@example.com",
-        milestone="v1.0",
+        milestone="v1-0",
         content="Baseline content",
         labels=["baseline"],
     )
@@ -53,7 +53,7 @@ def local_issue():
         priority=Priority.HIGH,
         issue_type=IssueType.FEATURE,
         assignee="bob@example.com",
-        milestone="v1.0",
+        milestone="v1-0",
         content="Local content",
         labels=["local", "updated"],
     )
@@ -68,7 +68,7 @@ def remote_issue_dict():
         "status": "blocked",
         "priority": "critical",
         "assignee": "charlie@example.com",
-        "milestone": "v2.0",
+        "milestone": "v2-0",
         "content": "Remote content",
         "labels": ["remote"],
     }

@@ -502,7 +502,7 @@ def p8_complete_issue_data(p8_valid_issue_data) -> dict[str, Any]:
         "content": "Detailed description",
         "assignee": "user@example.com",
         "labels": ["bug", "urgent"],
-        "milestone": "v1.0",
+        "milestone": "v1-0",
         "issue_type": IssueType.BUG,
         "estimated_hours": 8.0,
         "due_date": datetime(2024, 12, 31, tzinfo=UTC),
@@ -524,7 +524,7 @@ def p8_minimal_issue_data() -> dict[str, Any]:
 def p8_valid_milestone_data() -> dict[str, Any]:
     """Minimal valid milestone dictionary."""
     return {
-        "name": "v1.0",
+        "name": "v1-0",
         "status": MilestoneStatus.OPEN,
     }
 
@@ -623,19 +623,19 @@ def p8_populated_issues_dir(p8_issues_dir) -> Path:
             "id": "issue-1",
             "title": "Build feature A",
             "status": Status.TODO,
-            "milestone": "v1.0",
+            "milestone": "v1-0",
         },
         {
             "id": "issue-2",
             "title": "Fix bug B",
             "status": Status.IN_PROGRESS,
-            "milestone": "v1.0",
+            "milestone": "v1-0",
         },
         {
             "id": "issue-3",
             "title": "Documentation",
             "status": Status.TODO,
-            "milestone": "v2.0",
+            "milestone": "v2-0",
         },
         {
             "id": "issue-4",
@@ -668,8 +668,8 @@ def p8_corrupted_yaml_file(tmp_path) -> Path:
 def p8_populated_milestones_dir(p8_milestones_dir) -> Path:
     """Create directory with sample milestones as YAML files."""
     milestones_data = [
-        {"name": "v1.0", "status": MilestoneStatus.OPEN},
-        {"name": "v2.0", "status": MilestoneStatus.OPEN},
+        {"name": "v1-0", "status": MilestoneStatus.OPEN},
+        {"name": "v2-0", "status": MilestoneStatus.OPEN},
         {"name": "v0.5", "status": MilestoneStatus.CLOSED},
     ]
 

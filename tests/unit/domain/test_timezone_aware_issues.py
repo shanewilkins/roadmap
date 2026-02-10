@@ -167,7 +167,7 @@ class TestTimezoneAwareIssueCreation:
         tz_manager = TimezoneManager("UTC")
 
         issue = core.issues.create(
-            "Test Issue with TZ", priority=Priority.HIGH, milestone="v1.0"
+            "Test Issue with TZ", priority=Priority.HIGH, milestone="v1-0"
         )
 
         # Format UTC time using timezone manager

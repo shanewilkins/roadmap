@@ -28,7 +28,7 @@ def sample_data():
     """Provide sample daily summary data for testing."""
     today = datetime.now(UTC)
     milestone = Milestone(
-        name="v1.0",
+        name="v1-0",
         content="First release",
         status=MilestoneStatus.OPEN,
         due_date=today + timedelta(days=10),
@@ -40,7 +40,7 @@ def sample_data():
         status=Status.IN_PROGRESS,
         assignee="alice",
         priority=Priority.HIGH,
-        milestone="v1.0",
+        milestone="v1-0",
     )
 
     overdue_issue = Issue(
@@ -49,7 +49,7 @@ def sample_data():
         status=Status.TODO,
         assignee="alice",
         priority=Priority.CRITICAL,
-        milestone="v1.0",
+        milestone="v1-0",
         due_date=today - timedelta(days=2),
     )
 
@@ -59,7 +59,7 @@ def sample_data():
         status=Status.BLOCKED,
         assignee="alice",
         priority=Priority.HIGH,
-        milestone="v1.0",
+        milestone="v1-0",
     )
 
     todo_issue = Issue(
@@ -68,7 +68,7 @@ def sample_data():
         status=Status.TODO,
         assignee="alice",
         priority=Priority.HIGH,
-        milestone="v1.0",
+        milestone="v1-0",
     )
 
     completed_issue = Issue(
@@ -77,7 +77,7 @@ def sample_data():
         status=Status.CLOSED,
         assignee="alice",
         priority=Priority.MEDIUM,
-        milestone="v1.0",
+        milestone="v1-0",
         actual_end_date=today,
     )
 
@@ -160,7 +160,7 @@ class TestDailySummaryPresenterHeader:
     def test_render_header_includes_user_info(self, mock_console):
         """Test that header includes user information."""
         milestone = Milestone(
-            name="v1.0",
+            name="v1-0",
             content="Test milestone",
             status=MilestoneStatus.OPEN,
             due_date=datetime.now(UTC) + timedelta(days=10),
@@ -183,7 +183,7 @@ class TestDailySummaryPresenterHeader:
     def test_render_header_includes_milestone_info(self, mock_console):
         """Test that header includes milestone information."""
         milestone = MagicMock()
-        milestone.name = "v1.0"
+        milestone.name = "v1-0"
         milestone.due_date = datetime.now(UTC) + timedelta(days=10)
 
         data = {
@@ -398,7 +398,7 @@ class TestDailySummaryPresenterIntegration:
         )
 
         milestone = Milestone(
-            name="v1.0",
+            name="v1-0",
             content="Test milestone",
             status=MilestoneStatus.OPEN,
             due_date=datetime.now(UTC) + timedelta(days=10),

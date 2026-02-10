@@ -15,7 +15,7 @@ class TestProcessMilestoneFile:
     def test_process_milestone_file_orphaned_issue(self, temp_dir_context):
         """Test detecting orphaned issue in milestone folder."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            milestone_dir = Path(tmpdir) / "v1.0"
+            milestone_dir = Path(tmpdir) / "v1-0"
             milestone_dir.mkdir()
 
             issue_file = milestone_dir / "a1b2c3d4-Issue.md"
@@ -37,12 +37,12 @@ class TestProcessMilestoneFile:
 
             assert len(orphaned) == 1
             assert orphaned[0]["issue_id"] == "a1b2c3d4"
-            assert orphaned[0]["folder"] == "v1.0"
+            assert orphaned[0]["folder"] == "v1-0"
 
     def test_process_milestone_file_backup_skipped(self, temp_dir_context):
         """Test that backup files in milestone folders are skipped."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            milestone_dir = Path(tmpdir) / "v1.0"
+            milestone_dir = Path(tmpdir) / "v1-0"
             milestone_dir.mkdir()
             issue_file = milestone_dir / "a1b2c3d4-Issue.md.backup"
             issue_file.write_text("# Backup")
@@ -60,7 +60,7 @@ class TestProcessMilestoneFile:
     def test_process_milestone_file_with_milestone_assignment(self, temp_dir_context):
         """Test that correctly placed issues are not flagged."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            milestone_dir = Path(tmpdir) / "v1.0"
+            milestone_dir = Path(tmpdir) / "v1-0"
             milestone_dir.mkdir()
 
             issue_file = milestone_dir / "a1b2c3d4-Issue.md"
@@ -69,7 +69,7 @@ class TestProcessMilestoneFile:
             # Mock issue with correct milestone assignment
             mock_issue = Mock()
             mock_issue.id = "a1b2c3d4"
-            mock_issue.milestone = "v1.0"
+            mock_issue.milestone = "v1-0"
 
             core = Mock()
             core.issue_service.get_issue.return_value = mock_issue
@@ -84,7 +84,7 @@ class TestProcessMilestoneFile:
     def test_process_milestone_file_exception_handling(self, temp_dir_context):
         """Test exception handling during file processing."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            milestone_dir = Path(tmpdir) / "v1.0"
+            milestone_dir = Path(tmpdir) / "v1-0"
             milestone_dir.mkdir()
             issue_file = milestone_dir / "a1b2c3d4-Issue.md"
             issue_file.write_text("# Issue")
@@ -163,7 +163,7 @@ class TestCheckMilestoneFolders:
             issues_dir = Path(tmpdir)
 
             # Create milestone folder with orphaned issue
-            v1_dir = issues_dir / "v1.0"
+            v1_dir = issues_dir / "v1-0"
             v1_dir.mkdir()
             (v1_dir / "a1b2c3d4-Issue.md").write_text("# Issue")
 
@@ -181,7 +181,7 @@ class TestCheckMilestoneFolders:
             )
 
             assert len(orphaned) == 1
-            assert orphaned[0]["folder"] == "v1.0"
+            assert orphaned[0]["folder"] == "v1-0"
 
     def test_check_milestone_folders_multiple_milestones(self, temp_dir_context):
         """Test processing multiple milestone folders."""
@@ -189,7 +189,7 @@ class TestCheckMilestoneFolders:
             issues_dir = Path(tmpdir)
 
             # Create multiple milestone folders
-            for version in ["v1.0", "v2.0", "v3.0"]:
+            for version in ["v1-0", "v2-0", "v3-0"]:
                 version_dir = issues_dir / version
                 version_dir.mkdir()
                 (version_dir / "a1b2c3d4-Issue.md").write_text("# Issue")
@@ -232,12 +232,12 @@ class TestScanForFolderStructureIssues:
 
             # Create issue in root with milestone
             (issues_dir / "a1b2c3d4-Issue.md").write_text("# Issue")
-            (issues_dir / "v1.0").mkdir()
+            (issues_dir / "v1-0").mkdir()
 
             mock_issue = Mock()
             mock_issue.id = "a1b2c3d4"
             mock_issue.title = "Misplaced"
-            mock_issue.milestone = "v1.0"
+            mock_issue.milestone = "v1-0"
 
             core = Mock()
             core.issue_service.get_issue.return_value = mock_issue
@@ -255,7 +255,7 @@ class TestScanForFolderStructureIssues:
             issues_dir = Path(tmpdir)
 
             # Create orphaned issue in milestone folder
-            v1_dir = issues_dir / "v1.0"
+            v1_dir = issues_dir / "v1-0"
             v1_dir.mkdir()
             (v1_dir / "a1b2c3d4-Issue.md").write_text("# Issue")
 
@@ -283,7 +283,7 @@ class TestScanForFolderStructureIssues:
             (issues_dir / "a1b2c3d4-Issue1.md").write_text("# Issue 1")
 
             # Create orphaned issue in milestone
-            v1_dir = issues_dir / "v1.0"
+            v1_dir = issues_dir / "v1-0"
             v1_dir.mkdir()
             (v1_dir / "f0e1d2c3-Issue2.md").write_text("# Issue 2")
 
@@ -292,7 +292,7 @@ class TestScanForFolderStructureIssues:
                     issue = Mock()
                     issue.id = "a1b2c3d4"
                     issue.title = "Misplaced"
-                    issue.milestone = "v1.0"
+                    issue.milestone = "v1-0"
                     return issue
                 elif issue_id == "f0e1d2c3":
                     issue = Mock()
@@ -333,12 +333,12 @@ class TestScanForFolderStructureIssues:
         with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
             (issues_dir / "a1b2c3d4-Issue.md").write_text("# Issue")
-            (issues_dir / "v1.0").mkdir()
+            (issues_dir / "v1-0").mkdir()
 
             mock_issue = Mock()
             mock_issue.id = "a1b2c3d4"
             mock_issue.title = "Test Issue"
-            mock_issue.milestone = "v1.0"
+            mock_issue.milestone = "v1-0"
 
             core = Mock()
             core.issue_service.get_issue.return_value = mock_issue
@@ -358,7 +358,7 @@ class TestScanForFolderStructureIssues:
         """Test structure of orphaned issue result."""
         with tempfile.TemporaryDirectory() as tmpdir:
             issues_dir = Path(tmpdir)
-            v1_dir = issues_dir / "v1.0"
+            v1_dir = issues_dir / "v1-0"
             v1_dir.mkdir()
             (v1_dir / "a1b2c3d4-Issue.md").write_text("# Issue")
 

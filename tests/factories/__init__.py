@@ -6,7 +6,7 @@ test data creation.
 
 Example:
     >>> issue = IssueBuilder().with_title("Fix bug").with_priority(Priority.HIGH).build()
-    >>> milestone = MilestoneBuilder().with_name("v1.0").with_due_date(date).build()
+    >>> milestone = MilestoneBuilder().with_name("v1-0").with_due_date(date).build()
 
 Benefits:
     - Single source of truth for test data creation
