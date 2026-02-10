@@ -51,6 +51,7 @@ def roadmap_with_data(cli_runner):
             [
                 "project",
                 "create",
+                "--title",
                 "test-project",
                 "--description",
                 "A test project",

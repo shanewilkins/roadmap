@@ -23,7 +23,7 @@ class TestProjectCommand:
 
             # Test create command
             create_result = cli_runner.invoke(
-                main, ["project", "create", "test-project"]
+                main, ["project", "create", "--title", "test-project"]
             )
             assert create_result.exit_code == 0
 

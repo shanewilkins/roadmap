@@ -30,7 +30,9 @@ class TestIssueCommands:
                 )
                 assert init_result.exit_code == 0
 
-            result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
+            result = cli_runner.invoke(
+                main, ["issue", "create", "--title", "test-issue"]
+            )
 
             if should_succeed:
                 assert result.exit_code == 0

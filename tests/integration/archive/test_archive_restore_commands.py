@@ -165,7 +165,14 @@ class TestProjectCommands:
 
             result = cli_runner.invoke(
                 main,
-                ["project", "create", "My Project", "--description", "Test project"],
+                [
+                    "project",
+                    "create",
+                    "--title",
+                    "My Project",
+                    "--description",
+                    "Test project",
+                ],
             )
 
             assert result.exit_code == 0
@@ -190,7 +197,7 @@ class TestProjectCommands:
             # Create a project first
             result = cli_runner.invoke(
                 main,
-                ["project", "create", "Test Project"],
+                ["project", "create", "--title", "Test Project 2"],
             )
             assert result.exit_code == 0
 
@@ -243,7 +250,7 @@ class TestProjectCommands:
             # Create a project
             result = cli_runner.invoke(
                 main,
-                ["project", "create", "Test Project"],
+                ["project", "create", "--title", "Update Test Project"],
             )
             assert result.exit_code == 0
 
@@ -316,7 +323,14 @@ class TestCommentCommands:
             # Create a milestone
             result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "v1.0", "--description", "First release"],
+                [
+                    "milestone",
+                    "create",
+                    "--title",
+                    "v1.0",
+                    "--description",
+                    "First release",
+                ],
             )
             assert result.exit_code == 0, f"Milestone creation failed: {result.output}"
 
@@ -326,6 +340,7 @@ class TestCommentCommands:
                 [
                     "issue",
                     "create",
+                    "--title",
                     "Fix bug in parser",
                     "--priority",
                     "high",
@@ -369,7 +384,14 @@ class TestCommentCommands:
             # Create a milestone
             result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "v1.0", "--description", "First release"],
+                [
+                    "milestone",
+                    "create",
+                    "--title",
+                    "v1.0",
+                    "--description",
+                    "First release",
+                ],
             )
             assert result.exit_code == 0, f"Milestone creation failed: {result.output}"
 
@@ -379,6 +401,7 @@ class TestCommentCommands:
                 [
                     "issue",
                     "create",
+                    "--title",
                     "Fix bug in parser",
                     "--priority",
                     "high",

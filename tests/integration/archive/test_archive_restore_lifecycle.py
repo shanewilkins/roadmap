@@ -349,7 +349,14 @@ class TestProjectArchiveRestore:
         # Create a project
         result = cli_runner.invoke(
             main,
-            ["project", "create", "ArchiveMe", "--description", "Test project"],
+            [
+                "project",
+                "create",
+                "--title",
+                "ArchiveMe",
+                "--description",
+                "Test project",
+            ],
         )
         # Project create may have issues, so we'll skip if it fails
         if result.exit_code != 0:
@@ -370,7 +377,7 @@ class TestProjectArchiveRestore:
         # Create and archive a project
         result = cli_runner.invoke(
             main,
-            ["project", "create", "OldProject"],
+            ["project", "create", "--title", "OldProject"],
         )
         if result.exit_code != 0:
             pytest.skip("Project creation not fully supported yet")

@@ -26,7 +26,7 @@ class ProjectCreate(BaseCreate):
 
 
 @click.command("create")
-@click.argument("name")
+@click.option("--title", "-t", required=True, help="Project title")
 @click.option("--description", "-d", help="Project description")
 @click.option("--repository", "-r", help="Repository URL")
 @click.pass_context
@@ -35,7 +35,7 @@ class ProjectCreate(BaseCreate):
 @log_command("project_create", entity_type="project", track_duration=True)
 def create_project(
     ctx: click.Context,
-    name: str,
+    title: str,
     description: str,
     repository: str,
 ):
@@ -44,7 +44,7 @@ def create_project(
     creator = ProjectCreate(core)
 
     creator.execute(
-        title=name,
+        title=title,
         description=description,
         repository=repository,
     )

@@ -32,7 +32,7 @@ class MilestoneCreate(BaseCreate):
 
 
 @click.command("create")
-@click.argument("name")
+@click.option("--title", "-t", required=True, help="Milestone title")
 @click.option("--description", "-d", default="", help="Milestone description")
 @click.option("--due-date", help="Due date for milestone (YYYY-MM-DD format)")
 @click.option("--project", "-p", default=None, help="Project ID to assign milestone to")
@@ -41,7 +41,11 @@ class MilestoneCreate(BaseCreate):
 @verbose_output
 @log_command("milestone_create", entity_type="milestone", track_duration=True)
 def create_milestone(
-    ctx: click.Context, name: str, description: str, due_date: str, project: str | None
+    ctx: click.Context,
+    title: str,
+    description: str,
+    due_date: str,
+    project: str | None,
 ):
     """Create a new milestone."""
     core = ctx.obj["core"]
@@ -81,7 +85,7 @@ def create_milestone(
             # If no projects exist, that's OK - milestone can be created without a project
 
     creator.execute(
-        title=name,
+        title=title,
         description=description,
         due_date=due_date,
         project_id=project_id,

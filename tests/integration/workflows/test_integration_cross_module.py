@@ -59,7 +59,7 @@ class TestCrossModuleIntegration:
                 "test-project",
             ],
         )
-        runner.invoke(main, ["issue", "create", "Test issue"])
+        runner.invoke(main, ["issue", "create", "--title", "Test issue"])
 
         # Verify core can read what was created
         core = RoadmapCore()
@@ -91,7 +91,7 @@ class TestCrossModuleIntegration:
             ],
         )
         result = runner.invoke(
-            main, ["issue", "create", "CLI Issue", "--priority", "high"]
+            main, ["issue", "create", "--title", "CLI Issue", "--priority", "high"]
         )
 
         # Extract issue ID

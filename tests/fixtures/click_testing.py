@@ -476,17 +476,17 @@ def isolated_roadmap_cli(isolated_cli_runner, click_test_result_wrapper):
 
         def create_issue(self, title: str, **kwargs) -> ClickTestResult:
             """Convenience method to create issue."""
-            args = ["issue", "create", title]
+            args = ["issue", "create", "--title", title]
             return self.run(args, **kwargs)
 
         def create_milestone(self, name: str, **kwargs) -> ClickTestResult:
             """Convenience method to create milestone."""
-            args = ["milestone", "create", name]
+            args = ["milestone", "create", "--title", name]
             return self.run(args, **kwargs)
 
         def create_project(self, name: str, **kwargs) -> ClickTestResult:
             """Convenience method to create project."""
-            args = ["project", "create", name]
+            args = ["project", "create", "--title", name]
             return self.run(args, **kwargs)
 
         def list_issues(self, **kwargs) -> ClickTestResult:

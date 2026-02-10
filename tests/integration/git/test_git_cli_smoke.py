@@ -68,7 +68,7 @@ class TestGitIntegrationCLI:
 
         # Create an issue
         result = runner.invoke(
-            main, ["issue", "create", "Test Feature", "--type", "feature"]
+            main, ["issue", "create", "--title", "Test Feature", "--type", "feature"]
         )
         assert result.exit_code == 0, "Issue creation failed"
 
@@ -85,7 +85,7 @@ class TestGitIntegrationCLI:
 
         # Create an issue
         result = runner.invoke(
-            main, ["issue", "create", "Test Issue", "--type", "feature"]
+            main, ["issue", "create", "--title", "Test Issue", "--type", "feature"]
         )
         assert result.exit_code == 0
 

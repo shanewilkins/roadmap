@@ -196,7 +196,7 @@ class TestCLIAssigneeValidation:
 
             result = cli_runner.invoke(
                 main,
-                ["issue", "create", "Test Issue", "--assignee", "baduser"],
+                ["issue", "create", "--title", "Test Issue", "--assignee", "baduser"],
                 obj={"core": mock_core},
             )
 
@@ -237,7 +237,8 @@ class TestCLIAssigneeValidation:
             mock_core_class.return_value = mock_core
 
             result = cli_runner.invoke(
-                main, ["issue", "create", "Test Issue", "--assignee", "gooduser"]
+                main,
+                ["issue", "create", "--title", "Test Issue", "--assignee", "gooduser"],
             )
 
             assert_command_success(result)
@@ -275,7 +276,14 @@ class TestCLIAssigneeValidation:
             # Should work with any assignee when GitHub is not configured
             result = cli_runner.invoke(
                 main,
-                ["issue", "create", "Local Issue", "--assignee", "alice.local"],
+                [
+                    "issue",
+                    "create",
+                    "--title",
+                    "Local Issue",
+                    "--assignee",
+                    "alice.local",
+                ],
                 obj={"core": mock_core},
             )
 

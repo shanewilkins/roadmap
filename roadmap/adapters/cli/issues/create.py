@@ -64,7 +64,7 @@ class IssueCreate(BaseCreate):
 
 
 @click.command("create")
-@click.argument("title")
+@click.option("--title", required=True, help="Issue title")
 @click.option(
     "--priority",
     "-p",

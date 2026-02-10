@@ -369,7 +369,7 @@ class TestTodayCommandErrorHandling:
             # Create only closed/archived milestones
             result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "past-milestone"],
+                ["milestone", "create", "--title", "past-milestone"],
             )
             assert result.exit_code == 0
 
@@ -554,7 +554,7 @@ class TestTodayCommandMultipleScenarios:
             # Create milestone
             result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "v1.0"],
+                ["milestone", "create", "--title", "v1.0"],
             )
             assert result.exit_code == 0
 
@@ -564,6 +564,7 @@ class TestTodayCommandMultipleScenarios:
                 [
                     "issue",
                     "create",
+                    "--title",
                     "My Task",
                     "--milestone",
                     "v1.0",
@@ -574,7 +575,14 @@ class TestTodayCommandMultipleScenarios:
             # Create unassigned issue
             result = cli_runner.invoke(
                 main,
-                ["issue", "create", "Unassigned Task", "--milestone", "v1.0"],
+                [
+                    "issue",
+                    "create",
+                    "--title",
+                    "Unassigned Task",
+                    "--milestone",
+                    "v1.0",
+                ],
             )
             assert result.exit_code == 0
 
@@ -607,7 +615,7 @@ class TestTodayCommandMultipleScenarios:
             # Create milestone
             result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "v1.0"],
+                ["milestone", "create", "--title", "v1.0"],
             )
             assert result.exit_code == 0
 
@@ -619,6 +627,7 @@ class TestTodayCommandMultipleScenarios:
                     [
                         "issue",
                         "create",
+                        "--title",
                         title,
                         "--assignee",
                         "testuser",
@@ -660,7 +669,7 @@ class TestTodayCommandMultipleScenarios:
             # Create milestone
             result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "v1.0"],
+                ["milestone", "create", "--title", "v1.0"],
             )
             assert result.exit_code == 0
 
@@ -672,6 +681,7 @@ class TestTodayCommandMultipleScenarios:
                     [
                         "issue",
                         "create",
+                        "--title",
                         f"Task {priority}",
                         "--priority",
                         priority,

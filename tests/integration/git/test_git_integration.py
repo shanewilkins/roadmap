@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -17,12 +18,35 @@ from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.unit.common.formatters.test_assertion_helpers import assert_command_success
 
 
+def build_commit(
+    *,
+    hash: str,
+    author: str,
+    date: datetime,
+    message: str,
+    files_changed: list[str],
+    insertions: int = 0,
+    deletions: int = 0,
+) -> GitCommit:
+    """Construct GitCommit with a cast to satisfy strict type checking."""
+    commit_cls = cast(Any, GitCommit)
+    return commit_cls(
+        hash=hash,
+        author=author,
+        date=date,
+        message=message,
+        files_changed=files_changed,
+        insertions=insertions,
+        deletions=deletions,
+    )
+
+
 class TestGitCommit:
     """Test GitCommit functionality."""
 
     def test_commit_creation(self):
         """Test creating a GitCommit."""
-        commit = GitCommit(
+        commit = build_commit(
             hash="abc123def456789",
             author="Test Author",
             date=datetime.now(UTC),
@@ -60,7 +84,13 @@ class TestGitCommit:
     )
     def test_extract_roadmap_references(self, message, expected):
         """Test extracting roadmap references from commit messages."""
-        commit = GitCommit("hash", "author", datetime.now(UTC), message, [])
+        commit = build_commit(
+            hash="hash",
+            author="author",
+            date=datetime.now(UTC),
+            message=message,
+            files_changed=[],
+        )
         assert set(commit.extract_roadmap_references()) == set(expected)
 
     @pytest.mark.parametrize(
@@ -74,7 +104,13 @@ class TestGitCommit:
     )
     def test_extract_progress_info(self, message, expected):
         """Test extracting progress information from commit messages."""
-        commit = GitCommit("hash", "author", datetime.now(UTC), message, [])
+        commit = build_commit(
+            hash="hash",
+            author="author",
+            date=datetime.now(UTC),
+            message=message,
+            files_changed=[],
+        )
         assert commit.extract_progress_info() == expected
 
 
@@ -254,7 +290,7 @@ class TestGitIntegrationCLI:
 
         # First create an issue
         result = runner.invoke(
-            main, ["issue", "create", "Test Issue", "--type", "feature"]
+            main, ["issue", "create", "--title", "Test Issue", "--type", "feature"]
         )
         assert_command_success(result)
 
@@ -274,7 +310,7 @@ class TestGitIntegrationCLI:
         runner = CliRunner()
 
         # Create an issue
-        result = runner.invoke(main, ["issue", "create", "Test Issue"])
+        result = runner.invoke(main, ["issue", "create", "--title", "Test Issue"])
         assert_command_success(result)
 
         # Get the created issue from database instead of parsing output
@@ -300,6 +336,7 @@ class TestGitIntegrationCLI:
             [
                 "issue",
                 "create",
+                "--title",
                 "Test Feature",
                 "--type",
                 "feature",
@@ -317,7 +354,7 @@ class TestGitIntegrationCLI:
         _, _ = roadmap_with_git
         runner = CliRunner()
 
-        result = runner.invoke(main, ["issue", "create", "Test Issue"])
+        result = runner.invoke(main, ["issue", "create", "--title", "Test Issue"])
 
         assert result.exit_code == 0
         assert "Auto-detected assignee from Git: Test User" in result.output
@@ -407,7 +444,7 @@ class TestGitIntegrationCore:
         issue = core.issues.create(title="Test Issue", priority=Priority.MEDIUM)
 
         # Mock commit with progress info
-        mock_commit = GitCommit(
+        mock_commit = build_commit(
             hash="abc123",
             author="Test User",
             date=datetime.now(UTC),
@@ -452,7 +489,7 @@ class TestGitIntegrationErrorHandling:
     def test_malformed_commit_data(self):
         """Test handling of malformed commit data."""
         # Test that malformed input data is handled gracefully
-        commit = GitCommit(
+        commit = build_commit(
             hash="",
             author="",
             date=datetime.now(UTC),

@@ -18,7 +18,7 @@ class TestMilestoneClose:
             # Create a milestone
             create_result = cli_runner.invoke(
                 main,
-                ["milestone", "create", "v0.2.0", "--description", "desc"],
+                ["milestone", "create", "--title", "v0.2.0", "--description", "desc"],
             )
             assert create_result.exit_code == 0
 

@@ -32,7 +32,7 @@ class TestMilestoneCreate:
                 main, ["init", "-y", "--skip-github", "--skip-project"]
             )
             assert init_result.exit_code == 0
-            args = ["milestone", "create", milestone_name]
+            args = ["milestone", "create", "--title", milestone_name]
             if description:
                 args.extend(["--description", description])
             result = cli_runner.invoke(main, args)
@@ -42,7 +42,7 @@ class TestMilestoneCreate:
     def test_milestone_create_without_roadmap(self, cli_runner):
         """Test creating a milestone without initialized roadmap."""
         with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["milestone", "create", "v1.0"])
+            result = cli_runner.invoke(main, ["milestone", "create", "--title", "v1.0"])
             assert result.exit_code != 0
 
 
@@ -58,10 +58,26 @@ class TestMilestoneList:
             assert init_result.exit_code == 0
 
             cli_runner.invoke(
-                main, ["milestone", "create", "v1.0", "--description", "First release"]
+                main,
+                [
+                    "milestone",
+                    "create",
+                    "--title",
+                    "v1.0",
+                    "--description",
+                    "First release",
+                ],
             )
             cli_runner.invoke(
-                main, ["milestone", "create", "v2.0", "--description", "Second release"]
+                main,
+                [
+                    "milestone",
+                    "create",
+                    "--title",
+                    "v2.0",
+                    "--description",
+                    "Second release",
+                ],
             )
 
             result = cli_runner.invoke(main, ["milestone", "list"])
@@ -101,9 +117,19 @@ class TestMilestoneAssign:
             core = RoadmapCore(root_path=Path.cwd())
 
             cli_runner.invoke(
-                main, ["milestone", "create", "v1.0", "--description", "First release"]
+                main,
+                [
+                    "milestone",
+                    "create",
+                    "--title",
+                    "v1.0",
+                    "--description",
+                    "First release",
+                ],
             )
-            result = cli_runner.invoke(main, ["issue", "create", "test-issue"])
+            result = cli_runner.invoke(
+                main, ["issue", "create", "--title", "test-issue"]
+            )
 
             assert_command_success(result)
             issue = assert_issue_created(core, "test-issue")

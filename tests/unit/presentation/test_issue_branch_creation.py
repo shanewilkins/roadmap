@@ -21,6 +21,7 @@ class TestIssueBranchCreation:
                 [
                     "issue",
                     "create",
+                    "--title",
                     "Test branch creation",
                     "--git-branch",
                     "--no-checkout",

@@ -99,7 +99,7 @@ class IntegrationTestBase:
         Raises:
             AssertionError: If milestone creation fails
         """
-        cmd = ["milestone", "create", name]
+        cmd = ["milestone", "create", "--title", name]
         if headline:
             cmd.extend(["--description", headline])
         if due_date:
@@ -172,9 +172,9 @@ class IntegrationTestBase:
         Raises:
             AssertionError: If issue creation fails
         """
-        cmd = ["issue", "create", title]
+        cmd = ["issue", "create", "--title", title]
         if description:
-            cmd.extend(["--description", description])
+            cmd.extend(["--content", description])
         if issue_type:
             cmd.extend(["--type", issue_type])
         if priority:

@@ -246,6 +246,7 @@ class TestOverdueProjectFiltering:
                 [
                     "project",
                     "create",
+                    "--title",
                     "test-proj",
                     "--description",
                     "Test Project",
@@ -283,6 +284,7 @@ class TestOverdueProjectFiltering:
                 [
                     "project",
                     "create",
+                    "--title",
                     "proj1",
                     "--description",
                     "First Project",
@@ -295,6 +297,7 @@ class TestOverdueProjectFiltering:
                 [
                     "project",
                     "create",
+                    "--title",
                     "proj2",
                     "--description",
                     "Second Project",

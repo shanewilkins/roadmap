@@ -119,7 +119,7 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         result = runner.invoke(
-            main, ["issue", "create", "Test Issue", "--estimate", "4.5"]
+            main, ["issue", "create", "--title", "Test Issue", "--estimate", "4.5"]
         )
 
         assert_command_success(result)
@@ -131,7 +131,7 @@ class TestEstimatedTimeCLI:
         """Test creating an issue without estimated time via CLI."""
         runner, core = cli_runner_with_init
 
-        result = runner.invoke(main, ["issue", "create", "Test Issue"])
+        result = runner.invoke(main, ["issue", "create", "--title", "Test Issue"])
 
         assert_command_success(result)
         issues = core.issues.list()
@@ -144,7 +144,9 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         # Create an issue first
-        create_result = runner.invoke(main, ["issue", "create", "Test Issue"])
+        create_result = runner.invoke(
+            main, ["issue", "create", "--title", "Test Issue"]
+        )
         assert_command_success(create_result)
 
         # Get the created issue from database
@@ -167,9 +169,13 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         # Create issues with different estimates
-        runner.invoke(main, ["issue", "create", "Quick Task", "--estimate", "1.0"])
-        runner.invoke(main, ["issue", "create", "Big Feature", "--estimate", "32.0"])
-        runner.invoke(main, ["issue", "create", "No Estimate"])
+        runner.invoke(
+            main, ["issue", "create", "--title", "Quick Task", "--estimate", "1.0"]
+        )
+        runner.invoke(
+            main, ["issue", "create", "--title", "Big Feature", "--estimate", "32.0"]
+        )
+        runner.invoke(main, ["issue", "create", "--title", "No Estimate"])
 
         # List issues
         result = runner.invoke(main, ["issue", "list"])
@@ -181,8 +187,12 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         # Create issues with different estimates
-        runner.invoke(main, ["issue", "create", "Quick Task", "--estimate", "1.0"])
-        runner.invoke(main, ["issue", "create", "Big Feature", "--estimate", "32.0"])
+        runner.invoke(
+            main, ["issue", "create", "--title", "Quick Task", "--estimate", "1.0"]
+        )
+        runner.invoke(
+            main, ["issue", "create", "--title", "Big Feature", "--estimate", "32.0"]
+        )
 
         # Verify the issues were created with correct estimates in database
         issues = core.issues.list()
@@ -200,9 +210,13 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         # Create issues with different estimates
-        runner.invoke(main, ["issue", "create", "Quick Task", "--estimate", "1.0"])
-        runner.invoke(main, ["issue", "create", "Big Feature", "--estimate", "32.0"])
-        runner.invoke(main, ["issue", "create", "No Estimate"])
+        runner.invoke(
+            main, ["issue", "create", "--title", "Quick Task", "--estimate", "1.0"]
+        )
+        runner.invoke(
+            main, ["issue", "create", "--title", "Big Feature", "--estimate", "32.0"]
+        )
+        runner.invoke(main, ["issue", "create", "--title", "No Estimate"])
 
         issues = core.issues.list()
 
@@ -223,11 +237,15 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         # Create a milestone
-        runner.invoke(main, ["milestone", "create", "Test Milestone"])
+        runner.invoke(main, ["milestone", "create", "--title", "Test Milestone"])
 
         # Create issues and assign to milestone
-        runner.invoke(main, ["issue", "create", "Task 1", "--estimate", "8.0"])
-        runner.invoke(main, ["issue", "create", "Task 2", "--estimate", "16.0"])
+        runner.invoke(
+            main, ["issue", "create", "--title", "Task 1", "--estimate", "8.0"]
+        )
+        runner.invoke(
+            main, ["issue", "create", "--title", "Task 2", "--estimate", "16.0"]
+        )
 
         # Get created issues
         issues = core.issues.list()
@@ -255,11 +273,15 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         # Create a milestone
-        runner.invoke(main, ["milestone", "create", "Test Milestone"])
+        runner.invoke(main, ["milestone", "create", "--title", "Test Milestone"])
 
         # Create issues and assign to milestone
-        runner.invoke(main, ["issue", "create", "Task 1", "--estimate", "8.0"])
-        runner.invoke(main, ["issue", "create", "Task 2", "--estimate", "16.0"])
+        runner.invoke(
+            main, ["issue", "create", "--title", "Task 1", "--estimate", "8.0"]
+        )
+        runner.invoke(
+            main, ["issue", "create", "--title", "Task 2", "--estimate", "16.0"]
+        )
 
         # Get created issues
         issues = core.issues.list()
@@ -289,11 +311,15 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         # Create a milestone
-        runner.invoke(main, ["milestone", "create", "Test Milestone"])
+        runner.invoke(main, ["milestone", "create", "--title", "Test Milestone"])
 
         # Create issues and assign to milestone
-        runner.invoke(main, ["issue", "create", "Task 1", "--estimate", "8.0"])
-        runner.invoke(main, ["issue", "create", "Task 2", "--estimate", "16.0"])
+        runner.invoke(
+            main, ["issue", "create", "--title", "Task 1", "--estimate", "8.0"]
+        )
+        runner.invoke(
+            main, ["issue", "create", "--title", "Task 2", "--estimate", "16.0"]
+        )
 
         # Get created issues
         issues = core.issues.list()

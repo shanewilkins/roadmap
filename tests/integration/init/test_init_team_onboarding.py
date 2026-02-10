@@ -68,12 +68,20 @@ class TestInitProjectDetection:
 
             # Create a milestone and issue
             result_milestone = cli_runner.invoke(
-                main, ["milestone", "create", "v1.0", "--description", "First release"]
+                main,
+                [
+                    "milestone",
+                    "create",
+                    "--title",
+                    "v1.0",
+                    "--description",
+                    "First release",
+                ],
             )
             assert result_milestone.exit_code == 0
 
             result_issue = cli_runner.invoke(
-                main, ["issue", "create", "Test Issue", "-m", "v1.0"]
+                main, ["issue", "create", "--title", "Test Issue", "-m", "v1.0"]
             )
             assert result_issue.exit_code == 0
 

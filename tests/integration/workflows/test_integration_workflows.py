@@ -84,7 +84,7 @@ class TestEndToEndWorkflows:
         for i, title in enumerate(issue_titles):
             priority = ["low", "medium", "high"][i % 3]
             result = runner.invoke(
-                main, ["issue", "create", title, "--priority", priority]
+                main, ["issue", "create", "--title", title, "--priority", priority]
             )
             assert_command_success(result)
 
@@ -98,7 +98,7 @@ class TestEndToEndWorkflows:
         milestone_titles = ["Version 1.0", "Version 1.1"]
 
         for title in milestone_titles:
-            result = runner.invoke(main, ["milestone", "create", title])
+            result = runner.invoke(main, ["milestone", "create", "--title", title])
             assert_command_success(result)
 
         # Verify milestones were created by checking database
@@ -202,8 +202,8 @@ class TestEndToEndWorkflows:
                 "test-project",
             ],
         )
-        runner.invoke(main, ["issue", "create", "Test issue"])
-        runner.invoke(main, ["milestone", "create", "Test milestone"])
+        runner.invoke(main, ["issue", "create", "--title", "Test issue"])
+        runner.invoke(main, ["milestone", "create", "--title", "Test milestone"])
 
         # Verify data exists
         core = RoadmapCore()
@@ -256,7 +256,7 @@ class TestEndToEndWorkflows:
         assert isinstance(config, dict)
 
         # Test that operations work with existing config
-        result = runner.invoke(main, ["issue", "create", "Test issue"])
+        result = runner.invoke(main, ["issue", "create", "--title", "Test issue"])
         assert result.exit_code == 0
 
         # Verify config is preserved after operations
@@ -284,15 +284,15 @@ class TestEndToEndWorkflows:
         # Create issues
         from tests.fixtures.click_testing import ClickTestHelper
 
-        result = runner.invoke(main, ["issue", "create", "Issue 1"])
+        result = runner.invoke(main, ["issue", "create", "--title", "Issue 1"])
         issue1_id = ClickTestHelper.extract_issue_id(result.output)
         assert issue1_id is not None, "Failed to parse issue1_id from output"
 
-        result = runner.invoke(main, ["issue", "create", "Issue 2"])
+        result = runner.invoke(main, ["issue", "create", "--title", "Issue 2"])
         issue2_id = ClickTestHelper.extract_issue_id(result.output)
         assert issue2_id is not None, "Failed to parse issue2_id from output"
 
-        result = runner.invoke(main, ["issue", "create", "Backlog Issue"])
+        result = runner.invoke(main, ["issue", "create", "--title", "Backlog Issue"])
         backlog_issue_id = ClickTestHelper.extract_issue_id(result.output)
         assert backlog_issue_id is not None, (
             "Failed to parse backlog_issue_id from output"
@@ -300,7 +300,7 @@ class TestEndToEndWorkflows:
 
         # Create milestone
         milestone_name = "Milestone 1"
-        result = runner.invoke(main, ["milestone", "create", milestone_name])
+        result = runner.invoke(main, ["milestone", "create", "--title", milestone_name])
         assert result.exit_code == 0
 
         # Assign some issues to milestone, leave one in backlog
@@ -359,7 +359,7 @@ class TestEndToEndWorkflows:
         runner = CliRunner()
 
         # Test operations without initialization
-        result = runner.invoke(main, ["issue", "create", "Test"])
+        result = runner.invoke(main, ["issue", "create", "--title", "Test"])
         assert result.exit_code != 0
         assert "Roadmap not initialized" in result.output
 
@@ -387,7 +387,7 @@ class TestEndToEndWorkflows:
         assert result.exit_code != 0 or "Issue not found" in result.output
 
         # Try to assign to non-existent milestone
-        runner.invoke(main, ["issue", "create", "Test issue"])
+        runner.invoke(main, ["issue", "create", "--title", "Test issue"])
         result = runner.invoke(main, ["milestone", "assign", "nonexistent", "test-id"])
         # Should fail gracefully
         assert (

@@ -161,7 +161,7 @@ class TestEstimatedTimeCLI:
         runner, core = initialized_roadmap
         message = TestDataFactory.message()
 
-        cmd = ["issue", "create", message]
+        cmd = ["issue", "create", "--title", message]
         if estimate_arg:
             cmd.extend(estimate_arg)
         result = runner.invoke(main, cmd)
@@ -193,7 +193,7 @@ class TestEstimatedTimeCLI:
         message = TestDataFactory.message()
 
         # Create an issue without estimate
-        create_result = runner.invoke(main, ["issue", "create", message])
+        create_result = runner.invoke(main, ["issue", "create", "--title", message])
         assert create_result.exit_code == 0
 
         # Get the created issue
@@ -223,12 +223,28 @@ class TestEstimatedTimeCLI:
 
         # Create issues with different estimates
         runner.invoke(
-            main, ["issue", "create", TestDataFactory.message(), "--estimate", "1.0"]
+            main,
+            [
+                "issue",
+                "create",
+                "--title",
+                TestDataFactory.message(),
+                "--estimate",
+                "1.0",
+            ],
         )
         runner.invoke(
-            main, ["issue", "create", TestDataFactory.message(), "--estimate", "32.0"]
+            main,
+            [
+                "issue",
+                "create",
+                "--title",
+                TestDataFactory.message(),
+                "--estimate",
+                "32.0",
+            ],
         )
-        runner.invoke(main, ["issue", "create", TestDataFactory.message()])
+        runner.invoke(main, ["issue", "create", "--title", TestDataFactory.message()])
 
         # Verify the issues were created with correct estimates by checking core
         issues = core.issues.list()

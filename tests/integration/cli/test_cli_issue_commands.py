@@ -35,7 +35,7 @@ class TestCLIIssueCreate:
 
             result = cli_runner.invoke(
                 main,
-                ["issue", "create", title] + options,
+                ["issue", "create", "--title", title] + options,
             )
 
             if should_succeed:

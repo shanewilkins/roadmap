@@ -65,7 +65,7 @@ class TestCLIMilestoneCreate:
 
         result = cli_runner.invoke(
             main,
-            ["milestone", "create", name] + options,
+            ["milestone", "create", "--title", name] + options,
         )
 
         IntegrationTestBase.assert_cli_success(result, f"Creating milestone '{name}'")
