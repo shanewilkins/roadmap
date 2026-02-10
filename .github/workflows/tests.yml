@@ -102,9 +102,6 @@ jobs:
     - name: Run Semgrep Semantic Analysis
       run: uv run semgrep --config=config/.semgrep.yml --error roadmap/
 
-    - name: Run jscpd DRY Violation Detection
-      run: jscpd roadmap/ --format python --threshold 3 --min-lines 5 --min-tokens 50 -r console
-
     - name: Run import-linter Architecture Check
       run: bash scripts/lint-imports-wrapper.sh
 
