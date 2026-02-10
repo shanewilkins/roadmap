@@ -107,7 +107,14 @@ class SyncOrchestrator:
                 return stats
 
             # Process in dependency order: projects first, then milestones, then issues
-            for pattern in ["projects/**/*.md", "milestones/**/*.md", "issues/**/*.md"]:
+            # Note: Use simple patterns first, then recursive
+            patterns = [
+                "projects/*.md",  # Top-level projects
+                "milestones/*.md",  # Top-level milestones
+                "issues/*.md",  # Top-level issues
+            ]
+            
+            for pattern in patterns:
                 for file_path in roadmap_dir.glob(pattern):
                     stats["files_checked"] += 1
                     if self._has_file_changed(file_path):
