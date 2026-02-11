@@ -4,6 +4,7 @@ title: 'Phase 5: Health Fix Command'
 headline: '# Phase 5: Health Fix Command'
 priority: medium
 status: todo
+archived: false
 issue_type: other
 milestone: backlog
 labels:

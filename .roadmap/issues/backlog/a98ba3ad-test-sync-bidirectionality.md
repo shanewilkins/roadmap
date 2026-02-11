@@ -5,6 +5,7 @@ headline: 'Testing three-way merge sync after fixing sync_state_legacy gremlins.
   should properly handle:'
 priority: medium
 status: todo
+archived: false
 issue_type: other
 milestone: backlog
 labels:

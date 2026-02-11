@@ -4,6 +4,7 @@ title: Review Missing Critical 1.0 Functionality
 headline: '# Review Missing Critical 1.0 Functionality'
 priority: medium
 status: todo
+archived: false
 issue_type: other
 milestone: backlog
 labels:

@@ -4,6 +4,7 @@ title: Timeline and Gantt chart visualization
 headline: '# Timeline and Gantt chart visualization'
 priority: medium
 status: todo
+archived: false
 issue_type: other
 milestone: backlog
 labels:

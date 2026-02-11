@@ -4,6 +4,7 @@ title: Automated testing pipeline and quality gates
 headline: '# Automated testing pipeline and quality gates'
 priority: medium
 status: todo
+archived: false
 issue_type: other
 milestone: backlog
 labels:

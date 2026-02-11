@@ -4,6 +4,7 @@ title: test sync issue 1/5/26
 headline: '# test sync issue 1/5/26'
 priority: medium
 status: todo
+archived: false
 issue_type: other
 milestone: backlog
 labels:

@@ -4,6 +4,7 @@ title: 'chore: assign five issues to shanewilkins'
 headline: '# chore: assign five issues to shanewilkins'
 priority: medium
 status: todo
+archived: false
 issue_type: other
 milestone: backlog
 labels:
