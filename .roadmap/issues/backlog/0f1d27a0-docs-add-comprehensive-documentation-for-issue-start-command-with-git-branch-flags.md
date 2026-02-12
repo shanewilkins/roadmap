@@ -5,15 +5,16 @@ title: 'docs: add comprehensive documentation for `issue start` command with git
 headline: '# docs: add comprehensive documentation for `issue start` command with
   git-branch flags'
 priority: medium
-status: todo
+status: closed
+archived: false
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
 remote_ids:
-  github: '3683'
+  github: 3683
 created: '2026-02-05T15:17:49.737401+00:00'
-updated: '2026-02-05T15:17:49.737402+00:00'
+updated: '2026-02-11T20:23:21.641803+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -21,7 +22,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -29,7 +30,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3683'
+github_issue: 3683
 ---
 
 # docs: add comprehensive documentation for `issue start` command with git-branch flags

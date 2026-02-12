@@ -3,16 +3,16 @@ id: 78851d1c
 title: 'chore: assign five issues to shanewilkins'
 headline: '# chore: assign five issues to shanewilkins'
 priority: medium
-status: todo
+status: closed
 archived: false
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
 remote_ids:
-  github: '3726'
+  github: 3726
 created: '2026-02-05T15:17:52.317891+00:00'
-updated: '2026-02-05T15:17:52.317892+00:00'
+updated: '2026-02-11T19:54:59.557276+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -20,7 +20,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -28,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3726'
+github_issue: 3726
 ---
 
 # chore: assign five issues to shanewilkins

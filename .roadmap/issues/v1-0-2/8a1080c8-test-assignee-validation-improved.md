@@ -1,19 +1,20 @@
 ---
-id: 1007b6f2
-title: Implement AI-powered project insights and recommendations
-headline: '# Implement AI-powered project insights and recommendations'
+id: 8a1080c8
+title: Test assignee validation improved
+headline: '# Test assignee validation improved'
 priority: medium
 status: todo
+archived: false
 issue_type: other
-milestone: backlog
+milestone: v1-0-2
 labels:
-- priority:high
+- priority:low
 - status:todo
 - synced:from-github
 remote_ids:
-  github: '3716'
-created: '2026-02-05T15:17:52.564624+00:00'
-updated: '2026-02-05T15:17:52.564625+00:00'
+  github: 3689
+created: '2026-02-05T15:17:52.511586+00:00'
+updated: '2026-02-11T22:03:45.264156+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -29,10 +30,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3716'
+github_issue: 3689
 ---
 
-# Implement AI-powered project insights and recommendations
+# Test assignee validation improved
 
 ## Description
 

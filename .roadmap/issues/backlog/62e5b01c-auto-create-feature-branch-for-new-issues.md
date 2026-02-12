@@ -3,7 +3,8 @@ id: 62e5b01c
 title: Auto-create feature branch for new issues
 headline: '# Auto-create feature branch for new issues'
 priority: medium
-status: todo
+status: closed
+archived: false
 issue_type: other
 milestone: backlog
 labels:
@@ -14,9 +15,9 @@ labels:
 - workflow
 - synced:from-github
 remote_ids:
-  github: '3658'
+  github: 3658
 created: '2026-02-05T15:17:52.400753+00:00'
-updated: '2026-02-05T15:17:52.400754+00:00'
+updated: '2026-02-11T19:55:15.206537+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -24,7 +25,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -32,7 +33,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3658'
+github_issue: 3658
 ---
 
 # Auto-create feature branch for new issues

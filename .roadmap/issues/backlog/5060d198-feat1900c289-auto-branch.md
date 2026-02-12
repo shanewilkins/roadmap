@@ -3,15 +3,16 @@ id: 5060d198
 title: Feat/1900c289 auto branch
 headline: '# Feat/1900c289 auto branch'
 priority: medium
-status: todo
+status: closed
+archived: false
 issue_type: other
 milestone: backlog
 labels:
 - synced:from-github
 remote_ids:
-  github: '3664'
+  github: 3664
 created: '2026-02-05T15:17:52.471260+00:00'
-updated: '2026-02-05T15:17:52.471261+00:00'
+updated: '2026-02-11T20:23:32.754674+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -19,7 +20,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -27,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3664'
+github_issue: 3664
 ---
 
 # Feat/1900c289 auto branch

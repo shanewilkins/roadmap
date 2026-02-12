@@ -8,9 +8,7 @@ from unittest.mock import MagicMock, patch
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.health.formatter import HealthCheckFormatter
-from roadmap.adapters.cli.status import (
-    status,
-)
+from roadmap.adapters.cli.status import status
 from roadmap.core.domain.health import HealthStatus
 
 
@@ -96,34 +94,28 @@ class TestStatusCommand:
     import pytest
 
     @pytest.mark.parametrize(
-        "mock_gather_return, mock_gather_side_effect, cli_args, presenter_patch, presenter_method, presenter_arg, expected_exit",
+        "mock_snapshot_side_effect, cli_args, presenter_patch, presenter_arg, expected_exit",
         [
-            # No data, should call show_empty_state
+            # Successful snapshot rendering
             (
-                {"has_data": False, "issue_count": 0, "milestone_count": 0},
                 None,
                 [],
-                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state",
-                "show_empty_state",
                 None,
                 None,
+                0,
             ),
-            # Exception, should call show_error
+            # Exception should call show_error
             (
-                None,
                 Exception("Database error"),
                 [],
                 "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_error",
-                "show_error",
                 "Database error",
                 None,
             ),
-            # Verbose flag, should exit 0
+            # Verbose flag should still exit 0
             (
-                {"has_data": False, "issue_count": 0, "milestone_count": 0},
                 None,
                 ["--verbose"],
-                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state",
                 None,
                 None,
                 0,
@@ -132,65 +124,58 @@ class TestStatusCommand:
     )
     def test_status_param(
         self,
-        mock_gather_return,
-        mock_gather_side_effect,
+        mock_snapshot_side_effect,
         cli_args,
         presenter_patch,
-        presenter_method,
         presenter_arg,
         expected_exit,
     ):
         runner = CliRunner()
         ctx_obj = {"core": MagicMock()}
         with patch(
-            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
-        ) as mock_gather:
-            if mock_gather_side_effect:
-                mock_gather.side_effect = mock_gather_side_effect
+            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+        ) as mock_snapshot:
+            if mock_snapshot_side_effect:
+                mock_snapshot.side_effect = mock_snapshot_side_effect
             else:
-                mock_gather.return_value = mock_gather_return
-            if presenter_patch:
-                with patch(presenter_patch) as mock_presenter:
-                    with runner.isolated_filesystem():
-                        result = runner.invoke(
-                            status, cli_args, obj=ctx_obj, catch_exceptions=False
-                        )
-                    if presenter_method:
+                mock_snapshot.return_value = {}
+
+            with patch("roadmap.adapters.cli.status._render_snapshot_tables"):
+                if presenter_patch:
+                    with patch(presenter_patch) as mock_presenter:
+                        with runner.isolated_filesystem():
+                            result = runner.invoke(
+                                status, cli_args, obj=ctx_obj, catch_exceptions=False
+                            )
                         if presenter_arg is not None:
                             mock_presenter.assert_called_once_with(presenter_arg)
                         else:
                             mock_presenter.assert_called_once()
+                        if expected_exit is not None:
+                            assert result.exit_code == expected_exit
+                else:
+                    with runner.isolated_filesystem():
+                        result = runner.invoke(
+                            status, cli_args, obj=ctx_obj, catch_exceptions=False
+                        )
                     if expected_exit is not None:
                         assert result.exit_code == expected_exit
-            else:
-                with runner.isolated_filesystem():
-                    result = runner.invoke(
-                        status, cli_args, obj=ctx_obj, catch_exceptions=False
-                    )
-                if expected_exit is not None:
-                    assert result.exit_code == expected_exit
-
-    """Test status command error handling."""
 
     def test_status_no_data(self):
-        """Empty roadmap should show empty state."""
+        """Empty roadmap should still render snapshot tables."""
         runner = CliRunner()
         ctx_obj = {
             "core": MagicMock(),
         }
 
         with patch(
-            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
-        ) as mock_gather:
-            mock_gather.return_value = {
-                "has_data": False,
-                "issue_count": 0,
-                "milestone_count": 0,
-            }
+            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+        ) as mock_snapshot:
+            mock_snapshot.return_value = {}
 
             with patch(
-                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state"
-            ) as mock_empty:
+                "roadmap.adapters.cli.status._render_snapshot_tables"
+            ) as mock_render:
                 with runner.isolated_filesystem():
                     runner.invoke(
                         status,
@@ -199,7 +184,8 @@ class TestStatusCommand:
                         catch_exceptions=False,
                     )
 
-                mock_empty.assert_called_once()
+                mock_snapshot.assert_called_once_with(ctx_obj["core"])
+                mock_render.assert_called_once()
 
     def test_status_with_exception(self):
         """Exception during status gathering should show error."""
@@ -209,9 +195,9 @@ class TestStatusCommand:
         }
 
         with patch(
-            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
-        ) as mock_gather:
-            mock_gather.side_effect = Exception("Database error")
+            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+        ) as mock_snapshot:
+            mock_snapshot.side_effect = Exception("Database error")
 
             with patch(
                 "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_error"
@@ -234,17 +220,11 @@ class TestStatusCommand:
         }
 
         with patch(
-            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
-        ) as mock_gather:
-            mock_gather.return_value = {
-                "has_data": False,
-                "issue_count": 0,
-                "milestone_count": 0,
-            }
+            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+        ) as mock_snapshot:
+            mock_snapshot.return_value = {}
 
-            with patch(
-                "roadmap.adapters.cli.status.RoadmapStatusPresenter.show_empty_state"
-            ):
+            with patch("roadmap.adapters.cli.status._render_snapshot_tables"):
                 with runner.isolated_filesystem():
                     result = runner.invoke(
                         status,

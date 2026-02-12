@@ -214,48 +214,32 @@ class TestStatusEdgeCases:
             "core": MagicMock(),
         }
 
-        status_data = {
-            "has_data": True,
-            "issue_count": 0,
-            "milestone_count": 3,
-            "issues": [],
-            "milestones": [
-                {"name": "M1", "status": "open"},
-                {"name": "M2", "status": "open"},
-                {"name": "M3", "status": "open"},
-            ],
-        }
-
         with patch(
-            "roadmap.adapters.cli.status.StatusDataService.gather_status_data"
-        ) as mock_gather:
-            mock_gather.return_value = status_data
-
+            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+        ) as mock_snapshot:
+            mock_snapshot.return_value = {
+                "entities": {
+                    "columns": ["Type", "Open", "Closed", "Archived", "Total"],
+                    "rows": [
+                        ["Issues", 0, 0, 0, 0],
+                        ["Milestones", 3, 0, 0, 3],
+                        ["Projects", 0, 0, 0, 0],
+                        ["Total", 3, 0, 0, 3],
+                    ],
+                }
+            }
             with patch(
-                "roadmap.adapters.cli.status.MilestoneProgressService.get_all_milestones_progress"
-            ) as mock_milestone_progress:
-                mock_milestone_progress.return_value = {}
-
-                with patch(
-                    "roadmap.adapters.cli.status.IssueStatisticsService.get_all_status_counts"
-                ) as mock_issue_counts:
-                    mock_issue_counts.return_value = {}
-
-                    with patch(
-                        "roadmap.adapters.cli.status.MilestoneProgressPresenter.show_all_milestones"
-                    ) as mock_show_milestones:
-                        with patch(
-                            "roadmap.adapters.cli.status.IssueStatusPresenter.show_all_issue_statuses"
-                        ):
-                            with runner.isolated_filesystem():
-                                runner.invoke(
-                                    status,
-                                    [],
-                                    obj=ctx_obj,
-                                    catch_exceptions=False,
-                                )
-
-                            mock_show_milestones.assert_called()
+                "roadmap.adapters.cli.status._render_snapshot_tables"
+            ) as mock_render:
+                with runner.isolated_filesystem():
+                    runner.invoke(
+                        status,
+                        [],
+                        obj=ctx_obj,
+                        catch_exceptions=False,
+                    )
+                mock_snapshot.assert_called_once_with(ctx_obj["core"])
+                mock_render.assert_called_once()
 
     def test_formatter_with_very_long_message(self):
         """Formatter should handle very long check messages."""

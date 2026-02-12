@@ -1,6 +1,7 @@
 """Show roadmap status and system health."""
 
 import json
+from pathlib import Path
 
 import click
 from structlog import get_logger
@@ -10,24 +11,24 @@ from roadmap.adapters.cli.health.db_integrity import db_integrity
 from roadmap.adapters.cli.health.fixer import HealthFixOrchestrator
 from roadmap.adapters.cli.health.formatter import HealthCheckFormatter
 from roadmap.adapters.cli.health.scan import scan as health_scan
+from roadmap.adapters.cli.output_manager import OutputManager
 from roadmap.adapters.cli.presentation.core_initialization_presenter import (
     CoreInitializationPresenter,
 )
 from roadmap.adapters.cli.presentation.project_status_presenter import (
-    IssueStatusPresenter,
-    MilestoneProgressPresenter,
     RoadmapStatusPresenter,
 )
 from roadmap.adapters.cli.services.project_status_service import (
-    IssueStatisticsService,
-    MilestoneProgressService,
-    StatusDataService,
+    StatusSnapshotService,
 )
 from roadmap.adapters.cli.utils.click_options import (
     details_option,
     format_option,
     verbose_option,
 )
+from roadmap.common.models import TableData
+from roadmap.common.output_formatter import OutputFormatter
+from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.infrastructure.observability.health import HealthCheck
 
 logger = get_logger()
@@ -36,9 +37,24 @@ presenter = CoreInitializationPresenter()
 
 @click.command()
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(
+        ["rich", "plain", "json", "csv", "markdown"], case_sensitive=False
+    ),
+    default="rich",
+    help="Output format (rich=default, plain=POSIX, json=machine-readable, csv=analysis)",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(dir_okay=False, writable=True, path_type=Path),
+    help="Write output to file",
+)
 @click.pass_context
 @require_initialized
-def status(ctx: click.Context, verbose: bool) -> None:
+def status(ctx: click.Context, verbose: bool, format: str, output: Path | None) -> None:
     """Show the current status of the roadmap."""
     log = logger.bind(operation="status")
     log.info("starting_status")
@@ -46,45 +62,84 @@ def status(ctx: click.Context, verbose: bool) -> None:
     core = ctx.obj["core"]
 
     try:
-        RoadmapStatusPresenter.show_status_header()
+        format_name = (format or "rich").lower()
+        if format_name == "rich":
+            RoadmapStatusPresenter.show_status_header()
+        elif format_name == "plain":
+            click.echo("Roadmap Status")
 
-        # Gather status data
-        status_data = StatusDataService.gather_status_data(core)
-        log.info(
-            "status_data_retrieved",
-            issue_count=status_data["issue_count"],
-            milestone_count=status_data["milestone_count"],
+        tables_by_name = StatusSnapshotService.build_snapshot_tables(core)
+        ordered_names = ["entities", "issue_status"]
+
+        _render_snapshot_tables(
+            tables_by_name=tables_by_name,
+            ordered_names=ordered_names,
+            format_name=format_name,
+            output_path=output,
         )
-
-        if not status_data["has_data"]:
-            RoadmapStatusPresenter.show_empty_state()
-            return
-
-        # Compute milestone progress
-        milestone_progress = MilestoneProgressService.get_all_milestones_progress(
-            core, status_data["milestones"]
-        )
-        status_data["milestone_progress"] = milestone_progress
-
-        # Compute issue statistics
-        issue_counts = IssueStatisticsService.get_all_status_counts(
-            status_data["issues"]
-        )
-        status_data["issue_counts"] = issue_counts
-
-        # Show milestone progress
-        if status_data["milestones"]:
-            MilestoneProgressPresenter.show_all_milestones(
-                status_data["milestones"],
-                status_data["milestone_progress"],
-            )
-
-        # Show issues by status
-        IssueStatusPresenter.show_all_issue_statuses(status_data["issue_counts"])
 
     except Exception as e:
         log.exception("status_error", error=str(e))
         RoadmapStatusPresenter.show_error(str(e))
+
+
+def _render_snapshot_tables(
+    tables_by_name: dict[str, "TableData"],
+    ordered_names: list[str],
+    format_name: str,
+    output_path: Path | None,
+) -> None:
+    normalized = format_name.lower()
+    export_format = normalized if normalized != "rich" else "plain"
+
+    if output_path:
+        content = _format_snapshot_content(tables_by_name, ordered_names, export_format)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(content)
+        click.secho(f"✅ Saved to {output_path}", fg="green")
+        return
+
+    if normalized == "rich":
+        manager = OutputManager(format="table")
+        for index, name in enumerate(ordered_names):
+            manager.render_table(tables_by_name[name])
+            if index < len(ordered_names) - 1:
+                click.echo()
+        return
+
+    content = _format_snapshot_content(tables_by_name, ordered_names, normalized)
+    click.echo(content)
+
+
+def _format_snapshot_content(
+    tables_by_name: dict[str, "TableData"],
+    ordered_names: list[str],
+    format_name: str,
+) -> str:
+    if format_name == "json":
+        payload = {
+            "generated_at": now_utc().isoformat(),
+            "tables": {name: tables_by_name[name].to_dict() for name in ordered_names},
+        }
+        return json.dumps(payload, indent=2, default=str)
+
+    parts: list[str] = []
+    for name in ordered_names:
+        table = tables_by_name[name]
+        formatter = OutputFormatter(table)
+
+        if format_name == "plain":
+            parts.append(formatter.to_plain_text())
+        elif format_name == "csv":
+            title = table.title or name
+            parts.append(f"# {title}")
+            parts.append(formatter.to_csv().rstrip())
+        elif format_name == "markdown":
+            parts.append(formatter.to_markdown())
+        else:
+            parts.append(formatter.to_plain_text())
+
+    return "\n\n".join(part for part in parts if part)
 
 
 @click.command()

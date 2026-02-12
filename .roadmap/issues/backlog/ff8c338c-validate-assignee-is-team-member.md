@@ -3,7 +3,8 @@ id: ff8c338c
 title: Validate assignee is team member
 headline: '# Validate assignee is team member'
 priority: medium
-status: todo
+status: closed
+archived: false
 issue_type: other
 milestone: ''
 labels:
@@ -16,7 +17,7 @@ labels:
 remote_ids:
   github: 3657
 created: '2026-02-05T15:17:52.498921+00:00'
-updated: '2026-02-10T21:20:39.041945+00:00'
+updated: '2026-02-11T20:02:51.890143+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -24,7 +25,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null

@@ -4,14 +4,15 @@ title: Optimize Test Suite Performance
 headline: '# Optimize Test Suite Performance'
 priority: medium
 status: todo
+archived: false
 issue_type: other
-milestone: backlog
+milestone: v1-0-2
 labels:
 - synced:from-github
 remote_ids:
-  github: '3703'
+  github: 3703
 created: '2026-02-05T15:17:51.738318+00:00'
-updated: '2026-02-05T15:17:51.738319+00:00'
+updated: '2026-02-11T22:03:43.600753+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -27,7 +28,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3703'
+github_issue: 3703
 ---
 
 # Optimize Test Suite Performance

@@ -3,7 +3,8 @@ id: 6a608e46
 title: Test assignee validation
 headline: '# Test assignee validation'
 priority: medium
-status: todo
+status: closed
+archived: false
 issue_type: other
 milestone: backlog
 labels:
@@ -11,9 +12,9 @@ labels:
 - status:todo
 - synced:from-github
 remote_ids:
-  github: '3655'
+  github: 3655
 created: '2026-02-05T15:17:52.514621+00:00'
-updated: '2026-02-05T15:17:52.514622+00:00'
+updated: '2026-02-11T19:54:57.073528+00:00'
 assignee: null
 estimated_hours: null
 due_date: null
@@ -21,7 +22,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
@@ -29,7 +30,7 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: '3655'
+github_issue: 3655
 ---
 
 # Test assignee validation
