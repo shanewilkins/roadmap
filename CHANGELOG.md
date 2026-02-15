@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-02-15
+
+### Fixed
+
+- Restored cleanup validator compatibility by using class-based validator calls in the cleanup maintenance flow.
+- Fixed sync validator protocol parameter naming to satisfy CI vulture checks.
+- Resolved semgrep blocking findings in persistence sync coordinators by removing silent exception handling and adding required `severity` fields to error logs.
+
 ### Removed
 
 - **Unused Dependencies**: Removed openpyxl, GitPython, diskcache, aiohttp, and python-dotenv packages

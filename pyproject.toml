@@ -13,7 +13,7 @@ build-backend = "hatchling.build"
 #   Includes all dependencies including testing, linting, and documentation
 # ============================================================================
 name = "roadmap-cli"
-version = "1.0.0"
+version = "1.0.1"
 description = "Enterprise-grade command line tool for project roadmap management with GitHub integration, data visualization, and advanced analytics"
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
