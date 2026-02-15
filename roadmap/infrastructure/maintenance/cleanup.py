@@ -432,9 +432,8 @@ def _resolve_duplicates(
     presenter.present_duplicate_resolution(duplicates, roadmap_dir)
 
     files_to_delete = []
-
+    # Orchestrate deletion: keep newest, remove others
     for _issue_id, files in sorted(duplicates.items()):
-        # Sort by modification time (newest first)
         sorted_files = sorted(files, key=lambda f: f.stat().st_mtime, reverse=True)
         to_remove = sorted_files[1:]
         files_to_delete.extend(to_remove)
@@ -453,10 +452,9 @@ def _resolve_duplicates(
             console.print("❌ Cancelled.", style="yellow")
             return
 
-    # Perform deletion
+    # Perform deletion (application layer only)
     deleted_count = 0
     failed_count = 0
-
     for f in files_to_delete:
         try:
             f.unlink()
