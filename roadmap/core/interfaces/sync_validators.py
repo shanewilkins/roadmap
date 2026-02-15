@@ -62,7 +62,7 @@ class SyncPhaseOrder(Protocol):
     Implementation should enforce this ordering and fail if called out-of-order.
     """
 
-    def validate_phase_order(self, current_phase: str, next_phase: str) -> bool:
+    def validate_phase_order(self, _current_phase: str, _next_phase: str) -> bool:
         """Validate that phase transition is allowed.
 
         Args:
@@ -93,7 +93,7 @@ class PreSyncValidator(Protocol):
     Failures immediately abort sync to prevent partial state corruptions.
     """
 
-    def validate_pre_sync(self, roadmap_dir: str | None = None) -> dict[str, Any]:
+    def validate_pre_sync(self, _roadmap_dir: str | None = None) -> dict[str, Any]:
         """Validate preconditions before sync.
 
         Args:
@@ -136,7 +136,12 @@ class AtomicSyncPhase(Protocol):
         """Enter atomic sync context (start transaction)."""
         ...
 
-    def __exit__(self, exc_type: type, exc_val: Exception, exc_tb: Any) -> None:
+    def __exit__(
+        self,
+        _exc_type: type,
+        _exc_val: Exception,
+        _exc_tb: Any,
+    ) -> None:
         """Exit atomic sync context (commit or rollback)."""
         ...
 
