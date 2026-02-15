@@ -90,8 +90,13 @@ class EntitySyncCoordinator:
                 result = value.isoformat()
                 if isinstance(result, str):
                     return result
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(
+                    "isoformat_serialization_failed",
+                    error=str(e),
+                    value_type=type(value).__name__,
+                    severity="operational",
+                )
         raise TypeError(
             f"Object of type {type(value).__name__} is not JSON serializable"
         )
@@ -189,7 +194,11 @@ class MilestoneFKValidator(ForeignKeyValidator):
                 return []
 
         except Exception as e:
-            logger.error("Error checking prerequisites", error=str(e))
+            logger.error(
+                "Error checking prerequisites",
+                error=str(e),
+                severity="system_error",
+            )
             return ["unknown (database error)"]
 
 
@@ -271,7 +280,11 @@ class IssueFKValidator(ForeignKeyValidator):
                 return []
 
         except Exception as e:
-            logger.error("Error checking prerequisites", error=str(e))
+            logger.error(
+                "Error checking prerequisites",
+                error=str(e),
+                severity="system_error",
+            )
             return ["unknown (database error)"]
 
 
