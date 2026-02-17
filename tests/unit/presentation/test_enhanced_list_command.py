@@ -11,7 +11,7 @@ from roadmap.adapters.cli import main
 from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.core.domain import Milestone, MilestoneStatus, Priority, Status
 from roadmap.infrastructure.coordination.core import RoadmapCore
-from tests.common.cli_test_helpers import CLIOutputParser
+from tests.fixtures.cli_test_helpers import CLIOutputParser
 
 
 @pytest.fixture

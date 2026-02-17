@@ -1,6 +1,6 @@
 """Policy tests for CLI output contracts.
 
-Wave 0 guardrails:
+Guardrails:
 1) Prevent growth of brittle raw stdout assertions in test files.
 2) Enforce canonical stream-separation behavior for CLI runner usage.
 """

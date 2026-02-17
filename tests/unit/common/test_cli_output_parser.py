@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from tests.common.cli_test_helpers import CLIOutputParser
+from tests.fixtures.cli_test_helpers import CLIOutputParser
 
 
 class TestExtractJson:

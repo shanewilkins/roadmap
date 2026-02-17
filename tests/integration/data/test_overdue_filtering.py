@@ -6,7 +6,7 @@ Tests the overdue filtering functionality for issues, milestones, and projects.
 from datetime import UTC, datetime, timedelta
 
 from roadmap.adapters.cli import main
-from tests.common.cli_test_helpers import CLIOutputParser
+from tests.fixtures.cli_test_helpers import CLIOutputParser
 from tests.fixtures.integration_helpers import IntegrationTestBase
 
 

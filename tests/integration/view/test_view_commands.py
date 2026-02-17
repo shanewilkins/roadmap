@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from roadmap.adapters.cli import main
-from tests.common.cli_test_helpers import CLIOutputParser
+from tests.fixtures.cli_test_helpers import CLIOutputParser
 from tests.fixtures.integration_helpers import IntegrationTestBase
 
 

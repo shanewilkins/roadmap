@@ -152,7 +152,7 @@ class ClickTestHelper:
         Raises:
             ValueError: If no valid JSON found and no legacy pattern matched
         """
-        from tests.common.cli_test_helpers import CLIOutputParser
+        from tests.fixtures.cli_test_helpers import CLIOutputParser
         from tests.unit.common.formatters.test_ansi_utilities import strip_ansi
 
         # Strategy 1: Try JSON format (modern approach)
@@ -211,7 +211,7 @@ class ClickTestHelper:
         Raises:
             ValueError: If JSON not found or project not found in list
         """
-        from tests.common.cli_test_helpers import CLIOutputParser
+        from tests.fixtures.cli_test_helpers import CLIOutputParser
 
         json_output = CLIOutputParser.extract_json(output)
 
@@ -254,7 +254,7 @@ class ClickTestHelper:
         Raises:
             ValueError: If JSON not found or milestone not found in list
         """
-        from tests.common.cli_test_helpers import CLIOutputParser
+        from tests.fixtures.cli_test_helpers import CLIOutputParser
 
         json_output = CLIOutputParser.extract_json(output)
 
