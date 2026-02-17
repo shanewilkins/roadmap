@@ -22,6 +22,17 @@ def cli_runner():
 
 
 @pytest.fixture
+def cli_runner_strict_streams():
+    """Create a Click CLI test runner with strict stream separation.
+
+    This enforces a stable test contract:
+    - stdout: command payload/output
+    - stderr: diagnostics and logging
+    """
+    return CliRunner(mix_stderr=False)
+
+
+@pytest.fixture
 def temp_roadmap_dir(cli_runner):
     """Create a temporary isolated filesystem with basic roadmap structure."""
     with cli_runner.isolated_filesystem():

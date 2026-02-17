@@ -24,6 +24,7 @@ from .assertions import (
 )
 from .cli_test_fixtures import (
     cli_runner,
+    cli_runner_strict_streams,
     cli_runner_with_init,
     temp_roadmap_dir,
     temp_roadmap_team_scenario,
@@ -190,6 +191,7 @@ __all__ = [
     "assert_output",
     # Click testing fixtures
     "cli_runner",
+    "cli_runner_strict_streams",
     "cli_runner_with_init",
     "temp_roadmap_dir",
     "temp_roadmap_with_projects",

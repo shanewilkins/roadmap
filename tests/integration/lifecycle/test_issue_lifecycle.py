@@ -7,6 +7,7 @@ to ensure data integrity and validation across operations.
 import pytest
 
 from roadmap.adapters.cli import main
+from tests.common.cli_test_helpers import CLIOutputParser
 from tests.fixtures.integration_helpers import IntegrationTestBase
 
 
@@ -25,6 +26,15 @@ def roadmap_with_milestones(cli_runner):
 
 class TestIssueLifecycle:
     """Test issue creation, update, status transitions, and deletion flows."""
+
+    @staticmethod
+    def _extract_titles(output: str) -> list[str]:
+        data = CLIOutputParser.extract_json(output)
+        assert isinstance(data, dict)
+        columns = data.get("columns", [])
+        rows = data.get("rows", [])
+        title_idx = next(i for i, c in enumerate(columns) if c.get("name") == "title")
+        return [str(row[title_idx]) for row in rows if title_idx < len(row)]
 
     def test_create_issue_with_defaults(self, roadmap_with_milestones):
         """Test creating an issue with minimal parameters."""
@@ -161,10 +171,11 @@ class TestIssueLifecycle:
             )
 
         # List all issues to verify they were created
-        result = cli_runner.invoke(main, ["issue", "list"])
+        result = cli_runner.invoke(main, ["issue", "list", "--format", "json"])
         IntegrationTestBase.assert_cli_success(result)
+        titles_in_output = self._extract_titles(result.output)
         for title in titles:
-            assert title in result.output
+            assert title in titles_in_output
 
     def test_issue_with_assignee(self, roadmap_with_milestones):
         """Test creating and updating issue with assignee."""
@@ -272,8 +283,9 @@ class TestIssueLifecycle:
         for milestone in ["sprint-1", "sprint-2"]:
             result = cli_runner.invoke(
                 main,
-                ["issue", "list", "--milestone", milestone],
+                ["issue", "list", "--milestone", milestone, "--format", "json"],
             )
             IntegrationTestBase.assert_cli_success(result)
-            assert f"{milestone} Issue 1" in result.output
-            assert f"{milestone} Issue 2" in result.output
+            titles_in_output = self._extract_titles(result.output)
+            assert f"{milestone} Issue 1" in titles_in_output
+            assert f"{milestone} Issue 2" in titles_in_output

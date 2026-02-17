@@ -6,11 +6,21 @@ Tests the overdue filtering functionality for issues, milestones, and projects.
 from datetime import UTC, datetime, timedelta
 
 from roadmap.adapters.cli import main
+from tests.common.cli_test_helpers import CLIOutputParser
 from tests.fixtures.integration_helpers import IntegrationTestBase
 
 
 class TestOverdueIssueFiltering:
     """Test the --overdue flag for issue list command."""
+
+    @staticmethod
+    def _extract_titles(output: str) -> list[str]:
+        data = CLIOutputParser.extract_json(output)
+        assert isinstance(data, dict)
+        columns = data.get("columns", [])
+        rows = data.get("rows", [])
+        title_idx = next(i for i, c in enumerate(columns) if c.get("name") == "title")
+        return [str(row[title_idx]) for row in rows if title_idx < len(row)]
 
     def test_issue_list_overdue_flag_works(self, cli_runner):
         """Test that --overdue flag is accepted and executes."""
@@ -92,12 +102,15 @@ class TestOverdueIssueFiltering:
                 priority="low",
             )
 
-            result = cli_runner.invoke(main, ["issue", "list"], catch_exceptions=False)
+            result = cli_runner.invoke(
+                main, ["issue", "list", "--format", "json"], catch_exceptions=False
+            )
 
             assert result.exit_code == 0
-            assert "Overdue issue" in result.output
-            assert "Future issue" in result.output
-            assert "No due date issue" in result.output
+            titles = self._extract_titles(result.output)
+            assert "Overdue issue" in titles
+            assert "Future issue" in titles
+            assert "No due date issue" in titles
 
     def test_issue_list_overdue_with_other_filters(self, cli_runner):
         """Test that --overdue can be combined with other filters."""

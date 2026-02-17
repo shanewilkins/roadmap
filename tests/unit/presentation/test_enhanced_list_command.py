@@ -11,6 +11,7 @@ from roadmap.adapters.cli import main
 from roadmap.adapters.persistence.parser import MilestoneParser
 from roadmap.core.domain import Milestone, MilestoneStatus, Priority, Status
 from roadmap.infrastructure.coordination.core import RoadmapCore
+from tests.common.cli_test_helpers import CLIOutputParser
 
 
 @pytest.fixture
@@ -57,6 +58,22 @@ def temp_roadmap(temp_dir_context):
 class TestListAllVariants:
     """Test list command with various filters."""
 
+    @staticmethod
+    def _extract_titles_and_statuses(
+        output: str,
+    ) -> tuple[list[str], list[str], list[list]]:
+        data = CLIOutputParser.extract_json(output)
+        assert isinstance(data, dict)
+        columns = data.get("columns", [])
+        rows = data.get("rows", [])
+
+        title_idx = next(i for i, c in enumerate(columns) if c.get("name") == "title")
+        status_idx = next(i for i, c in enumerate(columns) if c.get("name") == "status")
+
+        titles = [str(row[title_idx]) for row in rows if title_idx < len(row)]
+        statuses = [str(row[status_idx]) for row in rows if status_idx < len(row)]
+        return titles, statuses, rows
+
     def test_list_all_issues_exit_code(self, temp_roadmap):
         """Test listing all issues returns success."""
         runner = CliRunner()
@@ -72,30 +89,38 @@ class TestListAllVariants:
     def test_list_all_issues_contains_statuses(self, temp_roadmap):
         """Test listing all issues includes all status categories."""
         runner = CliRunner()
-        result = runner.invoke(main, ["issue", "list"])
-        assert "Todo" in result.output
-        assert "Blocked" in result.output
-        assert "Done" in result.output
+        result = runner.invoke(main, ["issue", "list", "--format", "json"])
+        assert result.exit_code == 0
+        _, statuses, _ = self._extract_titles_and_statuses(result.output)
+        assert "todo" in statuses
+        assert "blocked" in statuses
+        assert "closed" in statuses
 
     def test_list_all_issues_contains_backlog_and_future(self, temp_roadmap):
         """Test listing all issues includes backlog and future categories."""
         runner = CliRunner()
-        result = runner.invoke(main, ["issue", "list"])
-        assert "Backlog" in result.output
-        assert "Future" in result.output
+        result = runner.invoke(main, ["issue", "list", "--format", "json"])
+        assert result.exit_code == 0
+        titles, _, _ = self._extract_titles_and_statuses(result.output)
+        assert "Backlog Issue" in titles
+        assert "Future Issue" in titles
 
     @pytest.mark.parametrize(
         "filter_flag,expected_count,should_contain,should_not_contain",
         [
-            ("--open", "4", ["Open Todo", "Blocked", "Backlog", "Future"], ["Done"]),
-            ("--blocked", "1", ["Issue"], ["Open Todo", "Done"]),
-            ("--backlog", "1", ["Issue"], ["Open Todo"]),
+            (
+                "--open",
+                "4",
+                ["Open Todo Issue", "Blocked Issue", "Backlog Issue", "Future Issue"],
+                ["Done Issue"],
+            ),
+            ("--blocked", "1", ["Blocked Issue"], ["Open Todo Issue", "Done Issue"]),
+            ("--backlog", "1", ["Backlog Issue"], ["Open Todo Issue"]),
         ],
     )
     def test_list_with_status_filters(
         self,
         temp_roadmap,
-        strip_ansi_fixture,
         filter_flag,
         expected_count,
         should_contain,
@@ -103,13 +128,14 @@ class TestListAllVariants:
     ):
         """Test listing with various status filters."""
         runner = CliRunner()
-        result = runner.invoke(main, ["issue", "list", filter_flag])
+        result = runner.invoke(main, ["issue", "list", filter_flag, "--format", "json"])
         assert result.exit_code == 0
-        clean_output = strip_ansi_fixture(result.output)
+        titles, _, rows = self._extract_titles_and_statuses(result.output)
+        assert len(rows) == int(expected_count)
         for text in should_contain:
-            assert text in clean_output
+            assert text in titles
         for text in should_not_contain:
-            assert text not in clean_output
+            assert text not in titles
 
     def test_list_unassigned_alias(self, temp_roadmap, strip_ansi_fixture):
         """Test that --unassigned is an alias for --backlog."""

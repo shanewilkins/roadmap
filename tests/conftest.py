@@ -40,6 +40,7 @@ from tests.fixtures import (
     clean_output,
     # CLI test fixtures
     cli_runner,
+    cli_runner_strict_streams,
     cli_runner_with_init,
     # Click testing fixtures
     cli_test_data,
@@ -153,6 +154,7 @@ __all__ = [
     "assert_output",
     "clean_output",
     "cli_runner",
+    "cli_runner_strict_streams",
     "cli_runner_with_init",
     "cli_test_data",
     "effort_data",
