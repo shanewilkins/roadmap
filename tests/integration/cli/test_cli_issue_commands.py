@@ -10,6 +10,7 @@ import pytest
 
 from roadmap.adapters.cli import main
 from tests.fixtures.integration_helpers import IntegrationTestBase
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestCLIIssueCreate:
@@ -50,8 +51,9 @@ class TestCLIIssueCreate:
         result = cli_runner.invoke(main, ["issue", "create", "--help"])
 
         IntegrationTestBase.assert_cli_success(result)
-        assert "create" in result.output.lower()
-        assert "title" in result.output.lower()
+        output = clean_cli_output(result.output).lower()
+        assert "create" in output
+        assert "title" in output
 
 
 class TestCLIIssueList:
@@ -139,7 +141,8 @@ class TestCLIIssueUpdate:
             )
 
             # Update should succeed (exit_code 0) or gracefully handle the update
-            assert result.exit_code == 0 or "updated" in result.output.lower()
+            output = clean_cli_output(result.output).lower()
+            assert result.exit_code == 0 or "updated" in output
 
     def test_update_nonexistent_issue(self, cli_runner):
         """Test updating non-existent issue."""
@@ -193,7 +196,8 @@ class TestCLIIssueDelete:
             )
 
             # Delete should execute without crashing
-            assert result.exit_code == 0 or "deleted" in result.output.lower()
+            output = clean_cli_output(result.output).lower()
+            assert result.exit_code == 0 or "deleted" in output
 
     def test_delete_nonexistent_issue(self, cli_runner):
         """Test deleting non-existent issue."""
@@ -235,7 +239,8 @@ class TestCLIIssueWorkflow:
             result = cli_runner.invoke(main, ["issue", "start", issue_id])
 
             # Start should succeed or handle gracefully
-            assert result.exit_code == 0 or "start" in result.output.lower()
+            output = clean_cli_output(result.output).lower()
+            assert result.exit_code == 0 or "start" in output
 
     def test_close_issue(self, cli_runner):
         """Test closing an issue."""
@@ -264,7 +269,8 @@ class TestCLIIssueWorkflow:
             result = cli_runner.invoke(main, ["issue", "close", issue_id])
 
             # Close should handle gracefully
-            assert result.exit_code == 0 or "close" in result.output.lower()
+            output = clean_cli_output(result.output).lower()
+            assert result.exit_code == 0 or "close" in output
 
     def test_update_progress(self, cli_runner):
         """Test updating issue progress."""
@@ -289,7 +295,8 @@ class TestCLIIssueWorkflow:
             result = cli_runner.invoke(main, ["issue", "progress", issue_id, "50"])
 
             # Progress update should handle gracefully
-            assert result.exit_code == 0 or "progress" in result.output.lower()
+            output = clean_cli_output(result.output).lower()
+            assert result.exit_code == 0 or "progress" in output
 
     def test_block_issue(self, cli_runner):
         """Test blocking an issue."""
@@ -317,7 +324,8 @@ class TestCLIIssueWorkflow:
             )
 
             # Block should succeed or handle gracefully
-            assert result.exit_code == 0 or "block" in result.output.lower()
+            output = clean_cli_output(result.output).lower()
+            assert result.exit_code == 0 or "block" in output
 
     def test_unblock_issue(self, cli_runner):
         """Test unblocking an issue."""
@@ -349,7 +357,8 @@ class TestCLIIssueWorkflow:
             result = cli_runner.invoke(main, ["issue", "unblock", issue_id])
 
             # Unblock should handle gracefully
-            assert result.exit_code == 0 or "unblock" in result.output.lower()
+            output = clean_cli_output(result.output).lower()
+            assert result.exit_code == 0 or "unblock" in output
 
 
 class TestCLIIssueHelp:
@@ -360,10 +369,11 @@ class TestCLIIssueHelp:
         result = cli_runner.invoke(main, ["issue", "--help"])
 
         IntegrationTestBase.assert_cli_success(result)
-        assert "issue" in result.output.lower()
+        output = clean_cli_output(result.output).lower()
+        assert "issue" in output
         # Should list subcommands
-        assert "create" in result.output.lower()
-        assert "list" in result.output.lower()
+        assert "create" in output
+        assert "list" in output
 
     @pytest.mark.parametrize(
         "subcommand",

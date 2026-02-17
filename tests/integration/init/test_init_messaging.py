@@ -8,6 +8,7 @@ Tests enhanced init messaging:
 """
 
 from roadmap.adapters.cli.core import init
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestInitMessagingEnhancements:
@@ -24,9 +25,8 @@ class TestInitMessagingEnhancements:
         # Verify init completes successfully
         assert result.exit_code == 0
         # Verify the output shows initialization
-        assert (
-            "roadmap" in result.output.lower() or "structure" in result.output.lower()
-        )
+        output = clean_cli_output(result.output).lower()
+        assert "roadmap" in output or "structure" in output
 
     def test_init_messaging_created_new_project(self, cli_runner):
         """Test messaging when creating a new project."""
@@ -39,7 +39,7 @@ class TestInitMessagingEnhancements:
 
             # Verify the output shows initialization
             assert result.exit_code == 0
-            assert "roadmap" in result.output.lower()
+            assert "roadmap" in clean_cli_output(result.output).lower()
 
     def test_init_messaging_multiple_projects(
         self, temp_roadmap_with_projects, cli_runner
@@ -51,7 +51,7 @@ class TestInitMessagingEnhancements:
 
         # Verify command succeeded
         assert result.exit_code == 0
-        assert len(result.output) > 0
+        assert len(clean_cli_output(result.output)) > 0
 
     def test_init_config_local_hint_for_new_team_members(
         self, temp_roadmap_with_config, cli_runner
@@ -91,10 +91,8 @@ class TestInitConfigLocalMessaging:
 
             assert result.exit_code == 0
             # The output should show successful init
-            assert (
-                "roadmap" in result.output.lower()
-                or "initialized" in result.output.lower()
-            )
+            output = clean_cli_output(result.output).lower()
+            assert "roadmap" in output or "initialized" in output
 
     def test_init_shows_team_config_pattern_when_joining(
         self, temp_roadmap_team_scenario, cli_runner
@@ -106,7 +104,7 @@ class TestInitConfigLocalMessaging:
 
         assert result.exit_code == 0
         # Should acknowledge that roadmap is already initialized
-        output = result.output.lower()
+        output = clean_cli_output(result.output).lower()
         assert (
             "already initialized" in output
             or "updating" in output
@@ -133,9 +131,8 @@ class TestInitContextDetectionMessaging:
         assert result.exit_code == 0
         # Context detection should work - init should succeed in a git repo
         # Just verify that initialization completes successfully
-        assert (
-            "roadmap" in result.output.lower() or "structure" in result.output.lower()
-        )
+        output = clean_cli_output(result.output).lower()
+        assert "roadmap" in output or "structure" in output
 
     def test_init_context_shows_directory_info(self, cli_runner):
         """Test that init shows directory context in initialization message."""
@@ -151,8 +148,9 @@ class TestInitContextDetectionMessaging:
 
             assert result.exit_code == 0
             # Should show directory being initialized
-            output = result.output.lower()
-            assert ".roadmap" in result.output or "roadmap" in output
+            clean_output = clean_cli_output(result.output)
+            output = clean_output.lower()
+            assert ".roadmap" in clean_output or "roadmap" in output
 
 
 class TestInitSuccessSummary:
@@ -167,7 +165,7 @@ class TestInitSuccessSummary:
 
         assert result.exit_code == 0
         # Verify init completed successfully and produced output
-        assert len(result.output) > 0
+        assert len(clean_cli_output(result.output)) > 0
 
     def test_init_summary_indicates_github_status(self, cli_runner):
         """Test that init summary shows whether GitHub is configured."""
@@ -179,7 +177,7 @@ class TestInitSuccessSummary:
 
             assert result.exit_code == 0
             # Verify init completed
-            assert len(result.output) > 0
+            assert len(clean_cli_output(result.output)) > 0
 
 
 class TestTeamOnboardingUXFlow:
@@ -200,7 +198,7 @@ class TestTeamOnboardingUXFlow:
 
             assert result.exit_code == 0
             # Alice's flow should show creation
-            output_lower = result.output.lower()
+            output_lower = clean_cli_output(result.output).lower()
             assert "created" in output_lower or "project" in output_lower
 
     def test_bob_init_flow_joins_existing_project(
@@ -213,7 +211,7 @@ class TestTeamOnboardingUXFlow:
 
         assert result.exit_code == 0
         # Bob's flow should show joining
-        output_lower = result.output.lower()
+        output_lower = clean_cli_output(result.output).lower()
         assert (
             "joined" in output_lower
             or "project" in output_lower
@@ -234,7 +232,7 @@ class TestTeamOnboardingUXFlow:
 
         assert result.exit_code == 0
         # Should show that config is being used/merged
-        output = result.output.lower()
+        output = clean_cli_output(result.output).lower()
         assert "config" in output or "initialized" in output
 
 
@@ -278,7 +276,7 @@ class TestInitHelpText:
         result = cli_runner.invoke(init, ["--help"])
 
         assert result.exit_code == 0
-        output_lower = result.output.lower()
+        output_lower = clean_cli_output(result.output).lower()
         # Help should mention init or initialization
         assert "init" in output_lower or "roadmap" in output_lower
 
@@ -296,7 +294,9 @@ class TestInitConfigLocalIntegration:
             )
 
             # The init command should execute successfully
-            assert result.exit_code in [0, 1] or len(result.output) > 0
+            assert (
+                result.exit_code in [0, 1] or len(clean_cli_output(result.output)) > 0
+            )
             # Config loading is tested in other tests, here we just verify init runs
 
     def test_init_creates_roadmap_dir_with_proper_permissions(self, cli_runner):
@@ -311,4 +311,4 @@ class TestInitConfigLocalIntegration:
             # The important thing is it doesn't crash
             assert result.exit_code in [0, 1]
             # Just verify the output contains expected content
-            assert len(result.output) > 0
+            assert len(clean_cli_output(result.output)) > 0

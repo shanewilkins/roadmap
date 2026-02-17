@@ -15,6 +15,7 @@ from roadmap.adapters.cli import main
 from roadmap.adapters.git.git import GitBranch, GitCommit, GitIntegration
 from roadmap.core.domain import IssueType, Priority
 from roadmap.infrastructure.coordination.core import RoadmapCore
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 from tests.unit.common.formatters.test_assertion_helpers import assert_command_success
 
 
@@ -280,8 +281,9 @@ class TestGitIntegrationCLI:
         result = runner.invoke(main, ["git", "status"])
 
         assert result.exit_code == 0
-        assert "Git Repository Status" in result.output
-        assert "Current branch:" in result.output
+        output = clean_cli_output(result.output)
+        assert "Git Repository Status" in output
+        assert "Current branch:" in output
 
     def test_git_branch_command(self, roadmap_with_git):
         """Test git branch command."""
@@ -345,9 +347,10 @@ class TestGitIntegrationCLI:
         )
 
         assert result.exit_code == 0
-        assert "Created issue:" in result.output
-        assert "Created Git branch:" in result.output
-        assert "Checked out branch:" in result.output
+        output = clean_cli_output(result.output)
+        assert "Created issue:" in output
+        assert "Created Git branch:" in output
+        assert "Checked out branch:" in output
 
     def test_issue_create_auto_assignee(self, roadmap_with_git):
         """Test auto-detecting assignee from Git config."""
@@ -357,8 +360,9 @@ class TestGitIntegrationCLI:
         result = runner.invoke(main, ["issue", "create", "--title", "Test Issue"])
 
         assert result.exit_code == 0
-        assert "Auto-detected assignee from Git: Test User" in result.output
-        assert "Assignee: Test User" in result.output
+        output = clean_cli_output(result.output)
+        assert "Auto-detected assignee from Git: Test User" in output
+        assert "Assignee: Test User" in output
 
 
 @pytest.fixture

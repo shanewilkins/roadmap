@@ -4,6 +4,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestCoreCommands:
@@ -14,13 +15,13 @@ class TestCoreCommands:
         runner = CliRunner()
         result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
-        assert "version" in result.output.lower()
+        assert "version" in clean_cli_output(result.output).lower()
 
     def test_cli_help(self, cli_runner):
         """Test CLI help command."""
         result = cli_runner.invoke(main, ["--help"])
         assert result.exit_code == 0
-        assert "roadmap" in result.output.lower()
+        assert "roadmap" in clean_cli_output(result.output).lower()
 
     @pytest.mark.parametrize(
         "args,expected_output",
@@ -34,7 +35,8 @@ class TestCoreCommands:
         result = cli_runner.invoke(main, args)
         assert result.exit_code in (0, 1)
         # At least one expected output should be present
-        assert any(text in result.output.lower() for text in expected_output)
+        output = clean_cli_output(result.output).lower()
+        assert any(text in output for text in expected_output)
 
     def test_init_already_initialized(self):
         """Test init command when roadmap is already initialized."""
@@ -59,11 +61,11 @@ class TestCoreCommands:
         with runner.isolated_filesystem():
             result = runner.invoke(main, ["status"])
             # Status should either succeed or fail gracefully
-            assert result.exit_code in (0, 1) or result.output
+            assert result.exit_code in (0, 1) or clean_cli_output(result.output)
 
     def test_status_no_roadmap(self):
         """Test status command without a roadmap."""
         runner = CliRunner()
         result = runner.invoke(main, ["status"])
         # Should fail or show indication
-        assert result.exit_code != 0 or result.output
+        assert result.exit_code != 0 or clean_cli_output(result.output)

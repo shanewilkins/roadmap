@@ -10,6 +10,7 @@ import pytest
 
 from roadmap.adapters.cli import main
 from tests.fixtures.integration_helpers import IntegrationTestBase
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 @pytest.fixture
@@ -77,7 +78,8 @@ class TestTodayCommand:
 
         IntegrationTestBase.assert_cli_success(result)
         # Should contain milestone and user info
-        assert "v1-0" in result.output or "Milestone" in result.output
+        output = clean_cli_output(result.output)
+        assert "v1-0" in output or "Milestone" in output
 
     def test_today_shows_high_priority_tasks(self, roadmap_with_workflow_items):
         """Test that today command shows high priority tasks or empty state."""
@@ -89,10 +91,11 @@ class TestTodayCommand:
 
         IntegrationTestBase.assert_cli_success(result)
         # Should show either high priority tasks or an empty state message
+        output = clean_cli_output(result.output)
         assert (
-            "High priority" in result.output
-            or "Critical priority" in result.output
-            or "No issues" in result.output
+            "High priority" in output
+            or "Critical priority" in output
+            or "No issues" in output
         )
 
     def test_today_shows_summary_statistics(self, roadmap_with_workflow_items):
@@ -106,7 +109,9 @@ class TestTodayCommand:
         IntegrationTestBase.assert_cli_success(result)
         # Should contain counts or statistics
         # Look for patterns like "X in progress" or numbers
-        assert re.search(r"\d+", result.output), "No statistics found in output"
+        assert re.search(r"\d+", clean_cli_output(result.output)), (
+            "No statistics found in output"
+        )
 
     def test_today_with_empty_roadmap(self, cli_runner):
         """Test today command with no upcoming milestones."""
@@ -124,5 +129,6 @@ class TestTodayCommand:
             # Should display message about no upcoming milestones or complete successfully
             # Message may be in stdout or logs, check various formats
             assert (
-                "upcoming milestones" in result.output.lower() or result.exit_code == 0
+                "upcoming milestones" in clean_cli_output(result.output).lower()
+                or result.exit_code == 0
             )

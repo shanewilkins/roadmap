@@ -11,6 +11,7 @@ import pytest
 
 from roadmap.adapters.cli import main
 from tests.fixtures.integration_helpers import IntegrationTestBase
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 @pytest.fixture
@@ -89,7 +90,7 @@ class TestIssueArchiveRestore:
 
         # Verify issue no longer in active list
         result = cli_runner.invoke(main, ["issue", "list"])
-        assert done_issue["id"] not in result.output
+        assert done_issue["id"] not in clean_cli_output(result.output)
 
     def test_archive_all_done_issues(self, roadmap_with_issues_and_milestones):
         """Test archiving all done issues."""
@@ -243,8 +244,9 @@ class TestMilestoneArchiveRestore:
             ["milestone", "archive", "v1-0", "--force"],
         )
 
+        output = clean_cli_output(result.output)
         assert result.exit_code == 0, (
-            f"Archive command failed (exit {result.exit_code}): {result.output}"
+            f"Archive command failed (exit {result.exit_code}): {output}"
         )
 
         # Verify milestone file was archived
@@ -360,7 +362,10 @@ class TestProjectArchiveRestore:
         )
         # Project create may have issues, so we'll skip if it fails
         if result.exit_code != 0:
-            pytest.skip(f"Project creation not fully supported yet: {result.output}")
+            pytest.skip(
+                "Project creation not fully supported yet: "
+                + clean_cli_output(result.output)
+            )
 
         # Archive it
         result = cli_runner.invoke(

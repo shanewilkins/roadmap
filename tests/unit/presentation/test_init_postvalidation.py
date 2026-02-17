@@ -3,6 +3,7 @@
 import pytest
 
 from roadmap.adapters.cli import main
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestPostInitValidation:
@@ -32,4 +33,4 @@ class TestPostInitValidation:
 
             assert result.exit_code == 0
             if expected_in_output:
-                assert expected_in_output not in result.output
+                assert expected_in_output not in clean_cli_output(result.output)

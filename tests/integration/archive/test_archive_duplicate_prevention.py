@@ -11,6 +11,7 @@ import pytest
 from roadmap.common.constants import Status
 from roadmap.core.domain import Priority
 from roadmap.infrastructure.coordination.core import RoadmapCore
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestArchiveDuplicatePrevention:
@@ -65,7 +66,8 @@ class TestArchiveDuplicatePrevention:
 
         runner = CliRunner()
         result = runner.invoke(main, ["issue", "archive", issue.id, "--force"])
-        assert result.exit_code == 0, f"Archive failed: {result.output}"
+        clean_output = clean_cli_output(result.output)
+        assert result.exit_code == 0, f"Archive failed: {clean_output}"
 
         # Verify it's removed from active
         active_after = self.count_active_issue_files(core)
@@ -89,7 +91,8 @@ class TestArchiveDuplicatePrevention:
 
         runner = CliRunner()
         result = runner.invoke(main, ["issue", "archive", "--all-closed", "--force"])
-        assert result.exit_code == 0, f"Archive all-closed failed: {result.output}"
+        clean_output = clean_cli_output(result.output)
+        assert result.exit_code == 0, f"Archive all-closed failed: {clean_output}"
 
         # Check that no issue ID appears in both directories
         active_ids = self.get_active_issue_ids(core)
@@ -118,7 +121,8 @@ class TestArchiveDuplicatePrevention:
 
         # Archive once
         result = runner.invoke(main, ["issue", "archive", issue.id, "--force"])
-        assert result.exit_code == 0, f"First archive failed: {result.output}"
+        clean_output = clean_cli_output(result.output)
+        assert result.exit_code == 0, f"First archive failed: {clean_output}"
 
         active_after_first = self.count_active_issue_files(core)
         archived_after_first = self.count_archived_issue_files(core)
@@ -126,7 +130,8 @@ class TestArchiveDuplicatePrevention:
         # Try to archive again (should skip since already archived)
         result = runner.invoke(main, ["issue", "archive", issue.id, "--force"])
         # This should either succeed with 0 archived or show a warning
-        assert result.exit_code == 0, f"Second archive should not fail: {result.output}"
+        clean_output = clean_cli_output(result.output)
+        assert result.exit_code == 0, f"Second archive should not fail: {clean_output}"
 
         # Verify no new files were created
         active_after_second = self.count_active_issue_files(core)

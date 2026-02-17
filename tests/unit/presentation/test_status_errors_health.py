@@ -14,6 +14,7 @@ from roadmap.adapters.cli.status import (
     status,
 )
 from roadmap.core.domain.health import HealthStatus
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestCheckHealthCommand:
@@ -200,8 +201,11 @@ class TestHealthGroup:
                         obj=ctx_obj,
                     )
 
-                # Should not raise an error about unknown command
-                assert "No such command" not in result.output or result.exit_code == 0
+                    # Should not raise an error about unknown command
+                    assert (
+                        "No such command" not in clean_cli_output(result.output)
+                        or result.exit_code == 0
+                    )
 
 
 class TestStatusEdgeCases:

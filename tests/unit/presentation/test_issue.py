@@ -3,6 +3,7 @@
 import pytest
 
 from roadmap.adapters.cli import main
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestIssueCommands:
@@ -12,7 +13,7 @@ class TestIssueCommands:
         """Test issue command help."""
         result = cli_runner.invoke(main, ["issue", "--help"])
         assert result.exit_code == 0
-        assert "Manage issues" in result.output
+        assert "Manage issues" in clean_cli_output(result.output)
 
     @pytest.mark.parametrize(
         "initialized,should_succeed",
@@ -38,7 +39,7 @@ class TestIssueCommands:
                 assert result.exit_code == 0
             else:
                 assert result.exit_code != 0
-                assert "Roadmap not initialized" in result.output
+                assert "Roadmap not initialized" in clean_cli_output(result.output)
 
     @pytest.mark.parametrize(
         "initialized,should_succeed",
@@ -62,4 +63,4 @@ class TestIssueCommands:
                 assert result.exit_code == 0
             else:
                 assert result.exit_code != 0
-                assert "❌ Roadmap not initialized" in result.output
+                assert "❌ Roadmap not initialized" in clean_cli_output(result.output)

@@ -6,6 +6,7 @@ Phase 1C refactoring: Using mock factories and CLI runner fixtures to reduce DRY
 from unittest.mock import Mock
 
 from roadmap.adapters.cli.issues import issue
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 from tests.unit.common.formatters.test_assertion_helpers import create_mock_issue
 
 # mock_core fixture provided by tests.fixtures.mocks module
@@ -90,7 +91,8 @@ def test_lookup_github_issue_invalid_id_zero(cli_runner, mock_core):
 
     # Verify
     assert result.exit_code == 1
-    assert "Invalid" in result.output or "0" in result.output
+    output = clean_cli_output(result.output)
+    assert "Invalid" in output or "0" in output
 
 
 def test_lookup_github_issue_invalid_id_negative(cli_runner, mock_core):

@@ -10,6 +10,7 @@ import pytest
 
 from roadmap.adapters.cli import main
 from tests.fixtures.integration_helpers import IntegrationTestBase
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 @pytest.fixture
@@ -118,8 +119,9 @@ class TestCLIMilestoneAssign:
         )
 
         # Should succeed or handle gracefully
-        assert result.exit_code == 0 or "assigned" in result.output.lower(), (
-            f"Exit code: {result.exit_code}, Output: {result.output}"
+        clean_output = clean_cli_output(result.output).lower()
+        assert result.exit_code == 0 or "assigned" in clean_output, (
+            f"Exit code: {result.exit_code}, Output: {clean_output}"
         )
 
     def test_assign_nonexistent_issue(self, roadmap_with_milestones):
@@ -191,7 +193,9 @@ class TestCLIMilestoneClose:
         )
 
         # Should succeed or handle gracefully
-        assert result.exit_code == 0 or "close" in result.output.lower()
+        assert (
+            result.exit_code == 0 or "close" in clean_cli_output(result.output).lower()
+        )
 
     def test_close_nonexistent_milestone(self, empty_roadmap):
         """Test closing non-existent milestone."""
@@ -219,7 +223,10 @@ class TestCLIMilestoneDelete:
         )
 
         # Should succeed or handle gracefully
-        assert result.exit_code == 0 or "deleted" in result.output.lower()
+        assert (
+            result.exit_code == 0
+            or "deleted" in clean_cli_output(result.output).lower()
+        )
 
     def test_delete_nonexistent_milestone(self, empty_roadmap):
         """Test deleting non-existent milestone."""
@@ -242,10 +249,11 @@ class TestCLIMilestoneHelp:
         result = cli_runner.invoke(main, ["milestone", "--help"])
 
         IntegrationTestBase.assert_cli_success(result)
-        assert "milestone" in result.output.lower()
+        output = clean_cli_output(result.output).lower()
+        assert "milestone" in output
         # Should list subcommands
-        assert "create" in result.output.lower()
-        assert "list" in result.output.lower()
+        assert "create" in output
+        assert "list" in output
 
     def test_all_milestone_subcommands_have_help(self, cli_runner):
         """Test that all milestone subcommands have help."""

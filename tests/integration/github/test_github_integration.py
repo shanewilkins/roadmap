@@ -13,6 +13,7 @@ the CLI integration paths rather than full database operations.
 from click.testing import CliRunner
 
 from roadmap.adapters.cli import main
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 def test_link_github_command_exists():
@@ -20,7 +21,8 @@ def test_link_github_command_exists():
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "link-github", "--help"])
     # Command should exist - either via help or via error message
-    assert "link" in result.output.lower() or "usage" in result.output.lower()
+    output = clean_cli_output(result.output).lower()
+    assert "link" in output or "usage" in output
 
 
 def test_lookup_github_command_exists():
@@ -28,7 +30,7 @@ def test_lookup_github_command_exists():
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "lookup-github", "--help"])
     assert result.exit_code == 0
-    assert "lookup" in result.output.lower()
+    assert "lookup" in clean_cli_output(result.output).lower()
 
 
 def test_list_command_show_github_ids_flag():
@@ -36,7 +38,8 @@ def test_list_command_show_github_ids_flag():
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "list", "--help"])
     assert result.exit_code == 0
-    assert "github" in result.output.lower() or "show-github-ids" in result.output
+    output = clean_cli_output(result.output)
+    assert "github" in output.lower() or "show-github-ids" in output
 
 
 def test_workflow_requires_initialization():
@@ -56,7 +59,7 @@ def test_link_github_help():
     runner = CliRunner()
     result = runner.invoke(main, ["issue", "link-github", "--help"])
     # Command should exist - help or proper error message
-    assert result.output is not None and len(result.output) > 0
+    assert result.output is not None and len(clean_cli_output(result.output)) > 0
 
 
 def test_lookup_github_help():
@@ -79,7 +82,7 @@ def test_github_integration_commands_in_help():
     result = runner.invoke(main, ["issue", "--help"])
     assert result.exit_code == 0
     # Check for GitHub-related commands
-    output_lower = result.output.lower()
+    output_lower = clean_cli_output(result.output).lower()
     assert "link" in output_lower or "github" in output_lower or "sync" in output_lower
 
 
@@ -94,9 +97,10 @@ def test_workflow_isolation():
         )
         # Verify init completed (exit code 0 means success)
         # Exit code 2 means already initialized, which is also fine
-        assert result.exit_code in [0, 2], f"init should complete: {result.output}"
+        clean_output = clean_cli_output(result.output)
+        assert result.exit_code in [0, 2], f"init should complete: {clean_output}"
         # Verify something happened (either success or indication it already exists)
-        assert "Roadmap" in result.output or result.exit_code == 2
+        assert "Roadmap" in clean_output or result.exit_code == 2
 
 
 def test_github_integration_imports():

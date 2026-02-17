@@ -11,6 +11,7 @@ from roadmap.adapters.cli.config.commands import (
     _parse_config_value,
     config,
 )
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestConfigViewIntegration:
@@ -62,7 +63,7 @@ class TestConfigViewIntegration:
 
         # Real ConfigLoader runs and prints actual data
         assert result.exit_code == 0
-        assert "config" in result.output.lower()
+        assert "config" in clean_cli_output(result.output).lower()
 
     def test_view_with_legacy_project_flag(
         self, cli_runner, config_file_with_data, monkeypatch
@@ -156,7 +157,10 @@ class TestConfigGetIntegration:
         result = cli_runner.invoke(config, ["get", missing_key])
 
         # Should either succeed with "not found" message or gracefully fail
-        assert "not found" in result.output.lower() or result.exit_code == 0
+        assert (
+            "not found" in clean_cli_output(result.output).lower()
+            or result.exit_code == 0
+        )
 
     def test_get_with_empty_config(self, cli_runner, tmp_path, monkeypatch):
         """Test get when no config exists."""
@@ -167,7 +171,10 @@ class TestConfigGetIntegration:
         result = cli_runner.invoke(config, ["get", "test.key"])
 
         # Should handle gracefully
-        assert result.exit_code == 0 or "not found" in result.output.lower()
+        assert (
+            result.exit_code == 0
+            or "not found" in clean_cli_output(result.output).lower()
+        )
 
 
 class TestConfigSetIntegration:
@@ -237,7 +244,9 @@ class TestConfigResetIntegration:
         result = cli_runner.invoke(config, ["reset"], input="y\n")
 
         # Should succeed or show appropriate message
-        assert result.exit_code == 0 or "reset" in result.output.lower()
+        assert (
+            result.exit_code == 0 or "reset" in clean_cli_output(result.output).lower()
+        )
 
     def test_reset_project_config(self, cli_runner, config_with_file, monkeypatch):
         """Test reset with --project flag."""
@@ -246,7 +255,9 @@ class TestConfigResetIntegration:
 
         result = cli_runner.invoke(config, ["reset", "--project"], input="y\n")
 
-        assert result.exit_code == 0 or "reset" in result.output.lower()
+        assert (
+            result.exit_code == 0 or "reset" in clean_cli_output(result.output).lower()
+        )
 
 
 class TestParseConfigValue:

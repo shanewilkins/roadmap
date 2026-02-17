@@ -12,6 +12,15 @@ import pytest
 
 from roadmap.adapters.cli import main
 from tests.fixtures.integration_helpers import IntegrationTestBase
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
+
+
+def _output_lower(result) -> str:
+    return clean_cli_output(result.output).lower()
+
+
+def _output(result) -> str:
+    return clean_cli_output(result.output)
 
 
 @pytest.fixture
@@ -69,8 +78,8 @@ class TestCLIInit:
                     result.exit_code == 0
                     and ".roadmap" in os.listdir(".")
                     and (
-                        "initialized" in result.output.lower()
-                        or "success" in result.output.lower()
+                        "initialized" in _output_lower(result)
+                        or "success" in _output_lower(result)
                     )
                 ),
             ),
@@ -88,8 +97,8 @@ class TestCLIInit:
                     result.exit_code == 0
                     and ".roadmap" in os.listdir(".")
                     and (
-                        "initialized" in result.output.lower()
-                        or "success" in result.output.lower()
+                        "initialized" in _output_lower(result)
+                        or "success" in _output_lower(result)
                     )
                 ),
             ),
@@ -107,8 +116,8 @@ class TestCLIInit:
                 ["init", "--help"],
                 lambda result: (
                     result.exit_code == 0
-                    and "init" in result.output.lower()
-                    and "project" in result.output.lower()
+                    and "init" in _output_lower(result)
+                    and "project" in _output_lower(result)
                 ),
             ),
         ],
@@ -131,7 +140,7 @@ class TestCLIStatus:
                 ["status"],
                 "no_init",
                 lambda result: (
-                    "not initialized" in result.output.lower() or result.exit_code != 0
+                    "not initialized" in _output_lower(result) or result.exit_code != 0
                 ),
             ),
             (
@@ -140,8 +149,8 @@ class TestCLIStatus:
                 lambda result: (
                     result.exit_code == 0
                     and (
-                        "roadmap" in result.output.lower()
-                        or "status" in result.output.lower()
+                        "roadmap" in _output_lower(result)
+                        or "status" in _output_lower(result)
                     )
                 ),
             ),
@@ -149,7 +158,7 @@ class TestCLIStatus:
                 ["status", "--help"],
                 "no_init",
                 lambda result: (
-                    result.exit_code == 0 and "status" in result.output.lower()
+                    result.exit_code == 0 and "status" in _output_lower(result)
                 ),
             ),
         ],
@@ -179,9 +188,9 @@ class TestCLIHealth:
                 lambda result: (
                     result.exit_code == 0
                     and (
-                        "health" in result.output.lower()
-                        or "status" in result.output.lower()
-                        or "ok" in result.output.lower()
+                        "health" in _output_lower(result)
+                        or "status" in _output_lower(result)
+                        or "ok" in _output_lower(result)
                     )
                 ),
             ),
@@ -224,7 +233,7 @@ class TestCLIHelpCommands:
         """Test that commands produce valid help output."""
         result = cli_runner.invoke(main, cmd_path)
         assert result.exit_code == 0
-        assert expected_keyword in result.output.lower()
+        assert expected_keyword in _output_lower(result)
 
 
 class TestCLIRootHelp:
@@ -235,7 +244,7 @@ class TestCLIRootHelp:
         result = cli_runner.invoke(main, ["--help"])
 
         assert result.exit_code == 0
-        assert "roadmap" in result.output.lower()
+        assert "roadmap" in _output_lower(result)
 
     def test_no_command_shows_help(self, cli_runner):
         """Test that running without command shows help."""
@@ -243,7 +252,8 @@ class TestCLIRootHelp:
 
         # Click may return exit code 0 (help) or 2 (missing command)
         assert result.exit_code in [0, 2]
-        assert "roadmap" in result.output.lower() or "usage" in result.output.lower()
+        output = _output_lower(result)
+        assert "roadmap" in output or "usage" in output
 
     def test_version_flag(self, cli_runner):
         """Test --version flag."""
@@ -251,7 +261,7 @@ class TestCLIRootHelp:
 
         assert result.exit_code == 0
         # Should show version info
-        assert "version" in result.output.lower() or len(result.output.strip()) > 0
+        assert "version" in _output_lower(result) or len(_output(result).strip()) > 0
 
 
 @pytest.fixture

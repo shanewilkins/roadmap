@@ -18,6 +18,7 @@ from unittest.mock import Mock, patch
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.issues.deps import add_dependency, deps
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
@@ -95,16 +96,15 @@ class TestDepsCommandIntegration:
         """Test that add command appears in deps group."""
         runner = CliRunner()
         result = runner.invoke(deps, ["--help"])
-        assert "add" in result.output.lower()
+        assert "add" in clean_cli_output(result.output).lower()
 
     def test_deps_add_shows_help(self):
         """Test add command shows help."""
         runner = CliRunner()
         result = runner.invoke(deps, ["add", "--help"])
         assert result.exit_code == 0
-        assert (
-            "dependency" in result.output.lower() or "depend" in result.output.lower()
-        )
+        output = clean_cli_output(result.output).lower()
+        assert "dependency" in output or "depend" in output
 
     def test_add_dependency_with_multiple_sequential_additions(self):
         """Test adding multiple dependencies in sequence."""

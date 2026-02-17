@@ -5,6 +5,7 @@ import pytest
 import yaml
 
 from roadmap.adapters.cli import main
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class DummyGit:
@@ -68,7 +69,7 @@ class TestIssueStartBranch:
 
             # Without --git-branch flag, branch should not be created
             assert result.exit_code == 0
-            assert "Created Git branch" not in result.output
+            assert "Created Git branch" not in clean_cli_output(result.output)
 
     def test_start_creates_branch_with_flag(self, cli_runner, fake_issue, mocked_core):
         """Test that --git-branch flag creates a Git branch."""
@@ -82,7 +83,5 @@ class TestIssueStartBranch:
             )
 
             assert result.exit_code == 0
-            assert (
-                "Created Git branch" in result.output
-                or "Not in a Git repository" in result.output
-            )
+            output = clean_cli_output(result.output)
+            assert "Created Git branch" in output or "Not in a Git repository" in output

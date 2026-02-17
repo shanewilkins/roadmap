@@ -14,6 +14,7 @@ from click.testing import CliRunner
 from roadmap.adapters.cli import main
 from roadmap.core.domain import Status
 from roadmap.infrastructure.coordination.core import RoadmapCore
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 from tests.unit.common.formatters.test_assertion_helpers import (
     assert_command_success,
     assert_issue_created,
@@ -179,13 +180,15 @@ class TestEndToEndWorkflows:
             main, ["issue", "delete", str(issue_objects_for_delete[2].id)], input="y\n"
         )
         assert result.exit_code == 0
-        assert "Deleted" in result.output or "deleted" in result.output
+        output = clean_cli_output(result.output)
+        assert "Deleted" in output or "deleted" in output
 
         # Step 10: Verify deletion
         result = runner.invoke(main, ["status"])
         assert result.exit_code == 0
         # Verify there's still content but fewer issues
-        assert "issue" in result.output.lower() or "milestone" in result.output.lower()
+        output = clean_cli_output(result.output).lower()
+        assert "issue" in output or "milestone" in output
 
     def test_roadmap_file_persistence(self, temp_workspace):
         """Test that roadmap data persists correctly across operations."""
@@ -361,11 +364,11 @@ class TestEndToEndWorkflows:
         # Test operations without initialization
         result = runner.invoke(main, ["issue", "create", "--title", "Test"])
         assert result.exit_code != 0
-        assert "Roadmap not initialized" in result.output
+        assert "Roadmap not initialized" in clean_cli_output(result.output)
 
         result = runner.invoke(main, ["status"])
         assert result.exit_code != 0
-        assert "Roadmap not initialized" in result.output
+        assert "Roadmap not initialized" in clean_cli_output(result.output)
 
         # Initialize and test invalid operations
         runner.invoke(
@@ -384,19 +387,25 @@ class TestEndToEndWorkflows:
             main, ["issue", "update", "nonexistent", "--status", "closed"]
         )
         # Should fail with non-zero exit code for error
-        assert result.exit_code != 0 or "Issue not found" in result.output
+        assert result.exit_code != 0 or "Issue not found" in clean_cli_output(
+            result.output
+        )
 
         # Try to assign to non-existent milestone
         runner.invoke(main, ["issue", "create", "--title", "Test issue"])
         result = runner.invoke(main, ["milestone", "assign", "nonexistent", "test-id"])
         # Should fail gracefully
+        output = clean_cli_output(result.output).lower()
         assert (
             result.exit_code != 0
-            or "Failed to assign" in result.output
-            or "not found" in result.output.lower()
+            or "failed to assign" in output
+            or "not found" in output
         )
 
         # Try to delete non-existent issue
         result = runner.invoke(main, ["issue", "delete", "nonexistent"], input="y\n")
         # Should fail with non-zero exit code when issue not found
-        assert result.exit_code != 0 or "not found" in result.output.lower()
+        assert (
+            result.exit_code != 0
+            or "not found" in clean_cli_output(result.output).lower()
+        )

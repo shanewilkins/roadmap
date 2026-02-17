@@ -5,6 +5,7 @@ import pytest
 from roadmap.adapters.cli.projects.view import (
     _extract_description_and_objectives,
 )
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestExtractDescriptionAndObjectives:
@@ -284,7 +285,7 @@ class TestViewProjectCommand:
             cli_runner.invoke(main, ["init", "-y", "--skip-github", "--skip-project"])
             result = cli_runner.invoke(main, ["project", "view", "nonexistent"])
             assert result.exit_code != 0
-            assert "not found" in result.output.lower()
+            assert "not found" in clean_cli_output(result.output).lower()
 
     def test_view_created_project(self, cli_runner):
         """Test viewing a successfully created project."""
@@ -305,4 +306,4 @@ class TestViewProjectCommand:
             # View the project
             view_result = cli_runner.invoke(main, ["project", "view", "test-project"])
             assert view_result.exit_code == 0
-            assert "test-project" in view_result.output
+            assert "test-project" in clean_cli_output(view_result.output)

@@ -7,6 +7,7 @@ that new team members join rather than creating new projects locally.
 from pathlib import Path
 
 from roadmap.adapters.cli import main
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestInitProjectDetection:
@@ -21,7 +22,8 @@ class TestInitProjectDetection:
             )
 
             assert result.exit_code == 0
-            assert "Created" in result.output or "✅" in result.output
+            output = clean_cli_output(result.output)
+            assert "Created" in output or "✅" in output
 
             # Verify project file was created
             projects_dir = Path(".roadmap/projects")

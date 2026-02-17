@@ -8,6 +8,7 @@ from roadmap.adapters.cli.issues.sync_status import (
     _build_aggregate_stats_table,
     _build_sync_history_table,
 )
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestBuildSyncHistoryTable:
@@ -307,7 +308,8 @@ class TestSyncStatusCommand:
 
         result = cli_runner.invoke(main, ["issue", "sync-status", "--help"])
         assert result.exit_code == 0
-        assert "sync-status" in result.output or "Sync status" in result.output
+        output = clean_cli_output(result.output)
+        assert "sync-status" in output or "Sync status" in output
 
     def test_sync_status_with_all_flag_no_issues(self, cli_runner):
         """Test sync-status --all flag with no linked issues returns appropriate message."""

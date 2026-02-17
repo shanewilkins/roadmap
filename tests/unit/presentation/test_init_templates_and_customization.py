@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from roadmap.adapters.cli import main
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestInitTemplate:
@@ -31,7 +32,8 @@ class TestInitTemplate:
                 ],
             )
 
-            assert result.exit_code == 0, result.output
+            output = clean_cli_output(result.output)
+            assert result.exit_code == 0, output
             assert Path(".roadmap").exists()
 
             # Verify project file contains custom marker

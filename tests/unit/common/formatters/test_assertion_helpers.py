@@ -4,7 +4,7 @@ This module provides utilities to refactor tests away from parsing Rich console
 output (which is incompatible with xdist) toward database-driven assertions.
 
 Pattern:
-- Instead of: assert "Created issue" in result.output
+- Instead of: checking rendered CLI text directly
 - Use: assert_issue_created(core, "Issue Title")
 
 This approach:

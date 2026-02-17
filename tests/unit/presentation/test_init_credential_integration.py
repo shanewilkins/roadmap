@@ -1,6 +1,7 @@
 """Tests for credential handling in initialization."""
 
 from roadmap.adapters.cli import main
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestInitCredential:
@@ -20,4 +21,4 @@ class TestInitCredential:
                 ],
             )
             # Command should complete without error
-            assert result.exit_code == 0, result.output
+            assert result.exit_code == 0, clean_cli_output(result.output)

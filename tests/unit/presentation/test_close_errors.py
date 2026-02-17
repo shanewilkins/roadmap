@@ -11,6 +11,7 @@ import click
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.issues.close import _parse_completion_date, close_issue
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestParseDateCompletion:
@@ -90,7 +91,7 @@ class TestCloseIssueCommand:
                             0,
                             1,
                             2,
-                        ), f"Command should complete: {result.output}"
+                        ), f"Command should complete: {clean_cli_output(result.output)}"
                         assert mock_core.issues.update.called, "Should update issue"
 
     def test_close_issue_with_reason(self):
@@ -114,7 +115,9 @@ class TestCloseIssueCommand:
                     obj={"core": mock_core},
                 )
 
-                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
+                assert result.exit_code in (0, 1, 2), (
+                    f"Command failed: {clean_cli_output(result.output)}"
+                )
 
     def test_close_issue_with_date(self):
         """Test close issue with completion date."""
@@ -138,7 +141,9 @@ class TestCloseIssueCommand:
                     obj={"core": mock_core},
                 )
 
-                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
+                assert result.exit_code in (0, 1, 2), (
+                    f"Command failed: {clean_cli_output(result.output)}"
+                )
 
     def test_close_issue_with_invalid_date(self):
         """Test close issue with invalid date."""
@@ -155,7 +160,9 @@ class TestCloseIssueCommand:
                     obj={"core": mock_core},
                 )
 
-                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
+                assert result.exit_code in (0, 1, 2), (
+                    f"Command failed: {clean_cli_output(result.output)}"
+                )
 
     def test_close_issue_record_time_current(self):
         """Test close issue recording current time."""
@@ -247,7 +254,9 @@ class TestCloseIssueDurationCalculation:
                     obj={"core": mock_core},
                 )
 
-                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
+                assert result.exit_code in (0, 1, 2), (
+                    f"Command failed: {clean_cli_output(result.output)}"
+                )
 
     def test_duration_over_estimate(self):
         """Test duration calculation when over estimate."""
@@ -271,7 +280,9 @@ class TestCloseIssueDurationCalculation:
                     obj={"core": mock_core},
                 )
 
-                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
+                assert result.exit_code in (0, 1, 2), (
+                    f"Command failed: {clean_cli_output(result.output)}"
+                )
 
     def test_duration_under_estimate(self):
         """Test duration calculation when under estimate."""
@@ -295,7 +306,9 @@ class TestCloseIssueDurationCalculation:
                     obj={"core": mock_core},
                 )
 
-                assert result.exit_code in (0, 1, 2), f"Command failed: {result.output}"
+                assert result.exit_code in (0, 1, 2), (
+                    f"Command failed: {clean_cli_output(result.output)}"
+                )
 
     def test_no_start_date(self):
         """Test when issue has no start date."""

@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 from roadmap.adapters.cli.git.commands import git
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestGitCommandGroup:
@@ -30,7 +31,7 @@ class TestSetupCommand:
         """Test setup command produces output."""
         result = cli_runner.invoke(git, ["setup"])
         # Should have some output
-        assert len(result.output) > 0 or result.exit_code != 0
+        assert len(clean_cli_output(result.output)) > 0 or result.exit_code != 0
 
 
 class TestHooksInstallCommand:

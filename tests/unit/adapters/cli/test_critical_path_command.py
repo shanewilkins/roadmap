@@ -14,6 +14,7 @@ from roadmap.core.services.utils.critical_path_calculator import (
     CriticalPathResult,
     PathNode,
 )
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 # mock_core fixture provided by tests.fixtures.mocks module
 # No local override needed - uses centralized mock_core_simple
@@ -210,7 +211,10 @@ class TestCriticalPathCommand:
             mock_get_core.return_value = None
             result = runner.invoke(critical_path, [])
             # When core is None, the command will print an error message
-            assert "initialized" in result.output.lower() or result.exit_code == 0
+            assert (
+                "initialized" in clean_cli_output(result.output).lower()
+                or result.exit_code == 0
+            )
 
     def test_command_handles_query_service_error(self):
         """Test graceful error handling when query service fails."""

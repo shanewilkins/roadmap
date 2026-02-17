@@ -5,6 +5,8 @@ and cleanup command for backup pruning.
 """
 
 from roadmap.adapters.cli import main
+from tests.common.cli_test_helpers import CLIOutputParser
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestCleanupCommand:
@@ -14,10 +16,9 @@ class TestCleanupCommand:
         """Test cleanup command help."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ["cleanup", "--help"])
+            output = clean_cli_output(result.output).lower()
             assert result.exit_code == 0
-            assert (
-                "backup" in result.output.lower() or "cleanup" in result.output.lower()
-            )
+            assert "backup" in output or "cleanup" in output
 
     def test_cleanup_no_backups(self, cli_runner):
         """Test cleanup when no backups exist."""
@@ -304,6 +305,25 @@ class TestCommentCommands:
             assert result.exit_code == 0
             assert "comment" in result.output.lower()
 
+    @staticmethod
+    def _extract_first_issue_id_from_list(cli_runner) -> str:
+        list_result = cli_runner.invoke(main, ["issue", "list", "--format", "json"])
+        assert list_result.exit_code == 0, f"Issue list failed: {list_result.output}"
+
+        json_output = CLIOutputParser.extract_json(list_result.output)
+        assert isinstance(json_output, dict), (
+            f"Expected dict JSON output, got {type(json_output).__name__}"
+        )
+
+        rows = json_output.get("rows", [])
+        columns = json_output.get("columns", [])
+        assert rows, f"No issues found in list output: {list_result.output}"
+
+        id_idx = next(
+            (i for i, col in enumerate(columns) if col.get("name") == "id"), 0
+        )
+        return str(rows[0][id_idx])
+
     def test_comment_add_to_issue(self, cli_runner):
         """Test adding a comment to an issue."""
         with cli_runner.isolated_filesystem():
@@ -349,13 +369,7 @@ class TestCommentCommands:
                 ],
             )
             assert result.exit_code == 0, f"Issue creation failed: {result.output}"
-            # Find issue ID
-            from tests.fixtures.click_testing import ClickTestHelper
-
-            issue_id = ClickTestHelper.extract_issue_id(result.output)
-            assert issue_id is not None, (
-                f"Could not find issue ID in output: {result.output}"
-            )
+            issue_id = self._extract_first_issue_id_from_list(cli_runner)
 
             result = cli_runner.invoke(
                 main,
@@ -410,13 +424,7 @@ class TestCommentCommands:
                 ],
             )
             assert result.exit_code == 0, f"Issue creation failed: {result.output}"
-            # Find issue ID
-            from tests.fixtures.click_testing import ClickTestHelper
-
-            issue_id = ClickTestHelper.extract_issue_id(result.output)
-            assert issue_id is not None, (
-                f"Could not find issue ID in output: {result.output}"
-            )
+            issue_id = self._extract_first_issue_id_from_list(cli_runner)
 
             result = cli_runner.invoke(
                 main,

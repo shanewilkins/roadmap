@@ -6,6 +6,7 @@ with projects to ensure data integrity across operations.
 
 from roadmap.adapters.cli import main
 from tests.fixtures.integration_helpers import IntegrationTestBase
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestMilestoneLifecycle:
@@ -26,7 +27,7 @@ class TestMilestoneLifecycle:
             # List milestones to verify creation
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
-            assert "sprint-1" in result.output
+            assert "sprint-1" in clean_cli_output(result.output)
 
     def test_create_multiple_milestones_for_project(self, cli_runner):
         """Test creating multiple milestones for same project."""
@@ -44,8 +45,9 @@ class TestMilestoneLifecycle:
             # List and verify all created
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
+            clean_output = clean_cli_output(result.output)
             for name in milestone_names:
-                assert name in result.output
+                assert name in clean_output
 
     def test_update_milestone_preserves_project_assignment(self, cli_runner):
         """Test that updating a milestone preserves its project assignment."""
@@ -69,7 +71,7 @@ class TestMilestoneLifecycle:
             # Verify milestone still exists
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
-            assert "v1-0" in result.output
+            assert "v1-0" in clean_cli_output(result.output)
 
     def test_milestone_with_issues(self, cli_runner):
         """Test creating milestone and assigning issues to it."""
@@ -102,8 +104,9 @@ class TestMilestoneLifecycle:
                 main, ["issue", "list", "--milestone", "sprint-1"]
             )
             IntegrationTestBase.assert_cli_success(result)
-            assert "auth" in result.output
-            assert "parser" in result.output
+            clean_output = clean_cli_output(result.output)
+            assert "auth" in clean_output
+            assert "parser" in clean_output
 
     def test_close_milestone_with_all_closed_issues(self, cli_runner):
         """Test closing a milestone when all its issues are closed."""
@@ -116,7 +119,7 @@ class TestMilestoneLifecycle:
             # Verify milestone was created
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
-            assert "v1-0" in result.output
+            assert "v1-0" in clean_cli_output(result.output)
 
     def test_close_milestone_fails_with_open_issues(self, cli_runner):
         """Test that closing milestone with open issues fails and shows guidance."""
@@ -129,7 +132,7 @@ class TestMilestoneLifecycle:
             # Verify milestone was created
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
-            assert "sprint-1" in result.output
+            assert "sprint-1" in clean_cli_output(result.output)
 
     def test_archive_milestone_when_closed(self, cli_runner):
         """Test archiving a milestone after it's closed."""
@@ -142,7 +145,7 @@ class TestMilestoneLifecycle:
             # Verify milestone was created
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
-            assert "v0-1" in result.output
+            assert "v0-1" in clean_cli_output(result.output)
 
     def test_duplicate_milestone_names_prevented(self, cli_runner):
         """Test that creating milestone with duplicate name is handled."""
@@ -172,5 +175,6 @@ class TestMilestoneLifecycle:
             # List should show all
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
+            clean_output = clean_cli_output(result.output)
             for i in range(1, 4):
-                assert f"m{i}" in result.output
+                assert f"m{i}" in clean_output

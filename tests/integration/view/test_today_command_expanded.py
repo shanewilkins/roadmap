@@ -9,6 +9,7 @@ import re
 
 from roadmap.adapters.cli import main
 from tests.fixtures.integration_helpers import IntegrationTestBase
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestTodayCommandBasic:
@@ -20,7 +21,7 @@ class TestTodayCommandBasic:
             result = cli_runner.invoke(main, ["today"])
 
             assert result.exit_code != 0
-            assert "not initialized" in result.output.lower()
+            assert "not initialized" in clean_cli_output(result.output).lower()
 
     def test_today_command_runs_successfully(self, cli_runner):
         """Test that today command executes without errors."""
@@ -57,7 +58,7 @@ class TestTodayCommandBasic:
             )
 
             assert result.exit_code == 0
-            assert result.output
+            assert clean_cli_output(result.output)
 
     def test_today_displays_milestone_info(self, cli_runner):
         """Test that today command displays milestone information."""
@@ -82,7 +83,8 @@ class TestTodayCommandBasic:
             )
 
             assert result.exit_code == 0
-            assert "v1-0" in result.output or "Milestone" in result.output
+            clean_output = clean_cli_output(result.output)
+            assert "v1-0" in clean_output or "Milestone" in clean_output
 
 
 class TestTodayCommandFiltering:
@@ -115,7 +117,7 @@ class TestTodayCommandFiltering:
             )
 
             assert result.exit_code == 0
-            assert len(result.output) > 0
+            assert len(clean_cli_output(result.output)) > 0
 
     def test_today_filters_by_milestone(self, cli_runner):
         """Test that today shows only upcoming milestone issues."""
@@ -148,7 +150,8 @@ class TestTodayCommandFiltering:
             )
 
             assert result.exit_code == 0
-            assert "Task in" in result.output or "upcoming" in result.output.lower()
+            clean_output = clean_cli_output(result.output)
+            assert "Task in" in clean_output or "upcoming" in clean_output.lower()
 
     def test_today_shows_in_progress_issues(self, cli_runner):
         """Test that today command handles in-progress issues."""
@@ -170,7 +173,7 @@ class TestTodayCommandFiltering:
             )
 
             assert result.exit_code == 0
-            assert len(result.output) > 0
+            assert len(clean_cli_output(result.output)) > 0
 
     def test_today_shows_blocked_issues(self, cli_runner):
         """Test that blocked issues are identified."""
@@ -193,8 +196,8 @@ class TestTodayCommandFiltering:
 
             assert result.exit_code == 0
             assert (
-                "Blocked" in result.output
-                or "blocked" in result.output.lower()
+                "Blocked" in clean_cli_output(result.output)
+                or "blocked" in clean_cli_output(result.output).lower()
                 or result.exit_code == 0
             )
 
@@ -231,10 +234,10 @@ class TestTodayCommandPriorities:
 
             assert result.exit_code == 0
             assert (
-                "Critical" in result.output
-                or "High" in result.output
-                or "priority" in result.output.lower()
-                or len(result.output) > 50
+                "Critical" in clean_cli_output(result.output)
+                or "High" in clean_cli_output(result.output)
+                or "priority" in clean_cli_output(result.output).lower()
+                or len(clean_cli_output(result.output)) > 50
             )
 
     def test_today_categorizes_by_priority(self, cli_runner):
@@ -264,7 +267,7 @@ class TestTodayCommandPriorities:
             )
 
             assert result.exit_code == 0
-            assert len(result.output) > 0
+            assert len(clean_cli_output(result.output)) > 0
 
 
 class TestTodayCommandErrorHandling:
@@ -290,8 +293,8 @@ class TestTodayCommandErrorHandling:
             # Should fail or show helpful message
             assert (
                 result.exit_code != 0
-                or "user" in result.output.lower()
-                or "configure" in result.output.lower()
+                or "user" in clean_cli_output(result.output).lower()
+                or "configure" in clean_cli_output(result.output).lower()
             )
 
     def test_today_with_empty_roadmap(self, cli_runner):
@@ -318,8 +321,8 @@ class TestTodayCommandErrorHandling:
             # Should handle gracefully
             assert (
                 result.exit_code == 0
-                or "upcoming" in result.output.lower()
-                or "milestone" in result.output.lower()
+                or "upcoming" in clean_cli_output(result.output).lower()
+                or "milestone" in clean_cli_output(result.output).lower()
             )
 
     def test_today_with_no_assigned_issues(self, cli_runner):
@@ -345,10 +348,10 @@ class TestTodayCommandErrorHandling:
             assert result.exit_code == 0
             # Should show empty state or friendly message
             assert (
-                "no" in result.output.lower()
-                or "none" in result.output.lower()
-                or "empty" in result.output.lower()
-                or len(result.output) > 0
+                "no" in clean_cli_output(result.output).lower()
+                or "none" in clean_cli_output(result.output).lower()
+                or "empty" in clean_cli_output(result.output).lower()
+                or len(clean_cli_output(result.output)) > 0
             )
 
     def test_today_with_only_future_milestones(self, cli_runner):
@@ -387,7 +390,10 @@ class TestTodayCommandErrorHandling:
             )
 
             # Should handle gracefully
-            assert result.exit_code == 0 or "upcoming" in result.output.lower()
+            assert (
+                result.exit_code == 0
+                or "upcoming" in clean_cli_output(result.output).lower()
+            )
 
 
 class TestTodayCommandVerboseMode:
@@ -414,7 +420,7 @@ class TestTodayCommandVerboseMode:
             )
 
             assert result.exit_code == 0
-            assert result.output
+            assert clean_cli_output(result.output)
 
     def test_today_verbose_produces_more_output(self, cli_runner):
         """Test that verbose mode may produce more detailed output."""
@@ -446,7 +452,7 @@ class TestTodayCommandVerboseMode:
 
             assert result_normal.exit_code == 0
             assert result_verbose.exit_code == 0
-            assert len(result_verbose.output) > 0
+            assert len(clean_cli_output(result_verbose.output)) > 0
 
 
 class TestTodayCommandOutput:
@@ -473,7 +479,8 @@ class TestTodayCommandOutput:
             )
 
             assert result.exit_code == 0
-            assert "testuser" in result.output or "user" in result.output.lower()
+            clean_output = clean_cli_output(result.output)
+            assert "testuser" in clean_output or "user" in clean_output.lower()
 
     def test_today_shows_numeric_summary(self, cli_runner):
         """Test that summary includes numeric information."""
@@ -502,7 +509,7 @@ class TestTodayCommandOutput:
             )
 
             assert result.exit_code == 0
-            assert re.search(r"\d+", result.output)
+            assert re.search(r"\d+", clean_cli_output(result.output))
 
     def test_today_output_is_readable(self, cli_runner):
         """Test that output has reasonable formatting."""
@@ -525,9 +532,10 @@ class TestTodayCommandOutput:
             )
 
             assert result.exit_code == 0
-            assert len(result.output) > 0
+            clean_output = clean_cli_output(result.output)
+            assert len(clean_output) > 0
             assert any(
-                keyword in result.output.lower()
+                keyword in clean_output.lower()
                 for keyword in ["task", "issue", "milestone", "progress", "summary"]
             )
 
@@ -594,7 +602,10 @@ class TestTodayCommandMultipleScenarios:
             )
 
             # Should execute without error
-            assert result.exit_code == 0 or "upcoming" in result.output.lower()
+            assert (
+                result.exit_code == 0
+                or "upcoming" in clean_cli_output(result.output).lower()
+            )
 
     def test_today_all_status_types(self, cli_runner):
         """Test today with issues in various states."""
@@ -648,7 +659,7 @@ class TestTodayCommandMultipleScenarios:
 
             assert result.exit_code == 0
             # Should handle issues without error
-            assert len(result.output) > 0
+            assert len(clean_cli_output(result.output)) > 0
 
     def test_today_all_priority_types(self, cli_runner):
         """Test today with issues at all priority levels."""
@@ -700,4 +711,4 @@ class TestTodayCommandMultipleScenarios:
 
             assert result.exit_code == 0
             # Should produce valid output
-            assert len(result.output) > 0
+            assert len(clean_cli_output(result.output)) > 0

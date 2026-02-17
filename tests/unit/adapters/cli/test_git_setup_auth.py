@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.git.commands import setup_git
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 @pytest.fixture
@@ -28,8 +29,9 @@ class TestGitSetupCommand:
         with patch("roadmap.adapters.cli.git.commands.require_initialized"):
             runner = CliRunner()
             result = runner.invoke(setup_git, ["--help"])
-            assert "--auth" in result.output
-            assert "--update-token" in result.output
+            output = clean_cli_output(result.output)
+            assert "--auth" in output
+            assert "--update-token" in output
 
     def test_setup_auth_flag_provided(self, cli_runner, mock_core):
         """Test setup with --auth flag."""

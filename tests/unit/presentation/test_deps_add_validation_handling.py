@@ -19,6 +19,7 @@ import click
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.issues.deps import add_dependency, deps
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 
@@ -40,7 +41,7 @@ class TestDepsGroupInitialization:
         runner = CliRunner()
         result = runner.invoke(deps, ["--help"])
         assert result.exit_code == 0
-        assert "dependencies" in result.output.lower()
+        assert "dependencies" in clean_cli_output(result.output).lower()
 
 
 class TestAddDependencyCommand:
@@ -442,11 +443,8 @@ class TestAddDependencyErrorHandling:
         )
 
         # Will fail because no context object provided
-        assert (
-            result.exit_code != 0
-            or "error" in result.output.lower()
-            or "failed" in result.output.lower()
-        )
+        output = clean_cli_output(result.output).lower()
+        assert result.exit_code != 0 or "error" in output or "failed" in output
 
     def test_add_dependency_with_unicode_characters(self):
         """Test add dependency with Unicode characters in issue ID."""

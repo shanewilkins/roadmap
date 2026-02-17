@@ -1,6 +1,7 @@
 """Tests for project-related CLI commands."""
 
 from roadmap.adapters.cli import main
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestProjectCommand:
@@ -10,7 +11,7 @@ class TestProjectCommand:
         """Test project command help."""
         result = cli_runner.invoke(main, ["project", "--help"])
         assert result.exit_code == 0
-        assert "project" in result.output.lower()
+        assert "project" in clean_cli_output(result.output).lower()
 
     def test_project_subcommands(self, cli_runner):
         """Test project subcommands work with initialized roadmap."""
