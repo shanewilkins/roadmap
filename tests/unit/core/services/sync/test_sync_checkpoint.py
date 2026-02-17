@@ -74,7 +74,7 @@ def test_can_resume_recent_fetch_checkpoint():
     manager = _manager()
     checkpoint = SyncCheckpoint(
         checkpoint_id="c1",
-        timestamp=(datetime.utcnow() - timedelta(minutes=10)).isoformat(),
+        timestamp=(datetime.now(UTC) - timedelta(minutes=10)).isoformat(),
         phase="fetch",
         baseline_state={},
         modified_issues=[],
@@ -93,7 +93,7 @@ def test_can_resume_rejects_old_or_non_resumable():
     manager = _manager()
     old_checkpoint = SyncCheckpoint(
         checkpoint_id="c2",
-        timestamp=(datetime.utcnow() - timedelta(hours=2)).isoformat(),
+        timestamp=(datetime.now(UTC) - timedelta(hours=2)).isoformat(),
         phase="push",
         baseline_state={},
         modified_issues=[],
@@ -105,7 +105,7 @@ def test_can_resume_rejects_old_or_non_resumable():
 
     new_complete = SyncCheckpoint(
         checkpoint_id="c3",
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         phase="complete",
         baseline_state={},
         modified_issues=[],
@@ -133,7 +133,7 @@ def test_rollback_to_checkpoint_restores_and_clears_flags(monkeypatch):
 
     checkpoint = SyncCheckpoint(
         checkpoint_id="cp",
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         phase="push",
         baseline_state={
             "A": {"title": "Restored", "status": "closed", "assignee": "sam"}

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from structlog import get_logger
@@ -72,7 +72,7 @@ class SyncCheckpointManager:
         )
 
         # Generate checkpoint ID from timestamp + phase
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(UTC).isoformat()
         checkpoint_data = f"{timestamp}-{phase}"
         checkpoint_id = hashlib.sha256(checkpoint_data.encode()).hexdigest()[:16]
 
@@ -267,7 +267,12 @@ class SyncCheckpointManager:
         # Check if checkpoint is recent (within last hour)
         try:
             checkpoint_time = datetime.fromisoformat(checkpoint.timestamp)
-            time_diff = datetime.utcnow() - checkpoint_time
+            if checkpoint_time.tzinfo is None:
+                checkpoint_time = checkpoint_time.replace(tzinfo=UTC)
+            else:
+                checkpoint_time = checkpoint_time.astimezone(UTC)
+
+            time_diff = datetime.now(UTC) - checkpoint_time
             is_recent = time_diff.total_seconds() < 3600  # 1 hour
 
             if not is_recent:

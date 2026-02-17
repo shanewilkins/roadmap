@@ -98,7 +98,11 @@ class SyncStateManager:
             if state.last_sync_time:
                 conn.execute(
                     "INSERT OR REPLACE INTO sync_metadata (key, value, updated_at) VALUES (?, ?, ?)",
-                    ("last_sync", state.last_sync_time.isoformat(), datetime.now(UTC)),
+                    (
+                        "last_sync",
+                        state.last_sync_time.isoformat(),
+                        datetime.now(UTC).isoformat(),
+                    ),
                 )
 
             # Save each base issue state
@@ -114,7 +118,7 @@ class SyncStateManager:
                         base_state.title,
                         base_state.description,
                         json.dumps(base_state.labels or []),
-                        datetime.now(UTC),
+                        datetime.now(UTC).isoformat(),
                     ),
                 )
 
