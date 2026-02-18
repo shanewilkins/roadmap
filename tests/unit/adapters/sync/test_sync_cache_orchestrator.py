@@ -2,6 +2,8 @@
 
 from unittest.mock import MagicMock, patch
 
+from roadmap.core.services.sync.sync_report import SyncReport
+
 
 class TestSyncCacheOrchestratorProgressBehavior:
     """Test progress behavior in SyncCacheOrchestrator."""
@@ -161,3 +163,102 @@ class TestSyncCacheOrchestratorIntegration:
 
                 # Should return None on error
                 assert result is None
+
+
+class TestSyncCacheOrchestratorWave1Stability:
+    """Wave 1 stability tests for core sync orchestration paths."""
+
+    def test_sync_all_issues_no_progress_passes_flags_to_parent(self):
+        """Ensure non-progress path calls parent sync with control flags."""
+        from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
+
+        orchestrator = object.__new__(SyncCacheOrchestrator)
+        orchestrator._get_baseline_with_optimization = MagicMock(return_value=None)
+
+        expected_report = SyncReport()
+        expected_report.error = None
+
+        with patch(
+            "roadmap.adapters.sync.sync_cache_orchestrator.SyncRetrievalOrchestrator.sync_all_issues",
+            return_value=expected_report,
+        ) as mock_parent_sync:
+            result = SyncCacheOrchestrator.sync_all_issues(
+                orchestrator,
+                dry_run=False,
+                force_local=True,
+                force_remote=False,
+                show_progress=False,
+                push_only=True,
+                pull_only=False,
+            )
+
+        orchestrator._get_baseline_with_optimization.assert_called_once_with(None)
+        mock_parent_sync.assert_called_once_with(
+            dry_run=False,
+            force_local=True,
+            force_remote=False,
+            push_only=True,
+            pull_only=False,
+        )
+        assert result is expected_report
+
+    def test_sync_all_issues_returns_error_report_on_baseline_failure(self):
+        """Ensure failures return a safe SyncReport with actionable error text."""
+        from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
+
+        orchestrator = object.__new__(SyncCacheOrchestrator)
+        orchestrator._get_baseline_with_optimization = MagicMock(
+            side_effect=RuntimeError("baseline boom")
+        )
+
+        report = SyncCacheOrchestrator.sync_all_issues(
+            orchestrator,
+            show_progress=False,
+        )
+
+        assert isinstance(report, SyncReport)
+        assert report.error is not None
+        assert "Optimized sync failed" in report.error
+        assert "baseline boom" in report.error
+
+    def test_sync_all_issues_progress_path_updates_progress_and_returns_report(self):
+        """Ensure progress-enabled path performs expected progress updates."""
+        from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
+
+        orchestrator = object.__new__(SyncCacheOrchestrator)
+        orchestrator._get_baseline_with_optimization = MagicMock(return_value=None)
+
+        progress = MagicMock()
+        progress.add_task.return_value = 11
+        progress_ctx = MagicMock()
+        progress_ctx.__enter__.return_value = progress
+        progress_ctx.__exit__.return_value = False
+
+        orchestrator._create_progress_context = MagicMock(return_value=progress_ctx)
+
+        expected_report = SyncReport()
+        expected_report.error = None
+
+        with patch(
+            "roadmap.adapters.sync.sync_cache_orchestrator.SyncRetrievalOrchestrator.sync_all_issues",
+            return_value=expected_report,
+        ) as mock_parent_sync:
+            result = SyncCacheOrchestrator.sync_all_issues(
+                orchestrator,
+                show_progress=True,
+            )
+
+        assert result is expected_report
+        orchestrator._get_baseline_with_optimization.assert_called_once_with(
+            progress_ctx
+        )
+        mock_parent_sync.assert_called_once()
+
+        descriptions = [
+            call.kwargs.get("description")
+            for call in progress.update.call_args_list
+            if "description" in call.kwargs
+        ]
+        assert "Analyzing local changes..." in descriptions
+        assert "Syncing with remote..." in descriptions
+        assert "Sync complete" in descriptions

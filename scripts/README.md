@@ -18,6 +18,13 @@ Measures and profiles performance of the roadmap CLI. Generates baseline metrics
 poetry run python scripts/baseline_profiler.py
 ```
 
+### `analyze_coverage_hotspots.py`
+Analyzes `coverage.json` produced by `pytest-cov` and prints the least-covered files.
+
+```bash
+uv run python scripts/analyze_coverage_hotspots.py --coverage-file coverage.json --top 20
+```
+
 ## Distribution
 
 ### `roadmap.rb` - Homebrew Formula

@@ -149,34 +149,43 @@ class TestListAllVariants:
     def test_list_milestone_issues(self, temp_roadmap, strip_ansi_fixture):
         """Test listing issues for a specific milestone."""
         runner = CliRunner()
-        result = runner.invoke(main, ["issue", "list", "--milestone", "Test Sprint"])
+        result = runner.invoke(
+            main,
+            ["issue", "list", "--milestone", "Test Sprint", "--format", "json"],
+        )
         assert result.exit_code == 0
-        clean_output = strip_ansi_fixture(result.output)
-        assert "3 milestone 'Test Sprint' issues" in clean_output
-        assert "Open Todo Issue" in clean_output
-        assert "Blocked Issue" in clean_output
-        assert "Done Issue" in clean_output
-        assert "Backlog Issue" not in clean_output
+        titles, _, rows = self._extract_titles_and_statuses(result.output)
+        assert len(rows) == 3
+        assert "Open Todo Issue" in titles
+        assert "Blocked Issue" in titles
+        assert "Done Issue" in titles
+        assert "Backlog Issue" not in titles
 
     def test_list_next_milestone_issues(self, temp_roadmap, strip_ansi_fixture):
         """Test listing issues for the next upcoming milestone."""
         runner = CliRunner()
-        result = runner.invoke(main, ["issue", "list", "--next-milestone"])
+        result = runner.invoke(
+            main,
+            ["issue", "list", "--next-milestone", "--format", "json"],
+        )
         assert result.exit_code == 0
-        clean_output = strip_ansi_fixture(result.output)
-        assert "next milestone (Future Sprint)" in clean_output
-        assert "Future Issue" in clean_output
-        assert "Open Todo Issue" not in clean_output
+        titles, _, rows = self._extract_titles_and_statuses(result.output)
+        assert len(rows) == 1
+        assert "Future Issue" in titles
+        assert "Open Todo Issue" not in titles
 
     def test_list_combined_filters(self, temp_roadmap, strip_ansi_fixture):
         """Test combining compatible filters."""
         runner = CliRunner()
-        result = runner.invoke(main, ["issue", "list", "--open", "--priority", "high"])
+        result = runner.invoke(
+            main,
+            ["issue", "list", "--open", "--priority", "high", "--format", "json"],
+        )
         assert result.exit_code == 0
-        clean_output = strip_ansi_fixture(result.output)
-        assert "all open high priority" in clean_output
-        assert "Open Todo Issue" in clean_output
-        assert "Future Issue" in clean_output
+        titles, _, rows = self._extract_titles_and_statuses(result.output)
+        assert len(rows) == 2
+        assert "Open Todo Issue" in titles
+        assert "Future Issue" in titles
 
     def test_conflicting_filters_error(self, temp_roadmap):
         """Test that conflicting filters show an error."""
