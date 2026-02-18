@@ -25,6 +25,8 @@ Module structure after Phase 5 Stage 2 refactoring:
 - helpers/: Helper functions
 """
 
+# pyright: reportUnusedImport=false
+
 from typing import TYPE_CHECKING
 
 from .baseline.baseline_retriever import BaselineRetriever

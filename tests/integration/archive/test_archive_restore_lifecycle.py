@@ -37,7 +37,7 @@ def roadmap_with_issues_and_milestones(cli_runner):
 
         # Create issues
         issues = []
-        for i, (title, status, issue_type, priority) in enumerate(
+        for _idx, (title, status, issue_type, priority) in enumerate(
             [
                 ("Fix bug in parser", "todo", "bug", "high"),
                 ("Add new feature", "in-progress", "feature", "medium"),
@@ -77,7 +77,7 @@ class TestIssueArchiveRestore:
 
     def test_archive_single_done_issue(self, roadmap_with_issues_and_milestones):
         """Test archiving a single done issue."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, issues, _temp_dir = roadmap_with_issues_and_milestones
 
         done_issue = next(i for i in issues if i["status"] == "closed")
 
@@ -94,7 +94,7 @@ class TestIssueArchiveRestore:
 
     def test_archive_all_done_issues(self, roadmap_with_issues_and_milestones):
         """Test archiving all done issues."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, _issues, _temp_dir = roadmap_with_issues_and_milestones
 
         result = cli_runner.invoke(
             main,
@@ -105,7 +105,7 @@ class TestIssueArchiveRestore:
 
     def test_archive_orphaned_issues(self, roadmap_with_issues_and_milestones):
         """Test archiving issues with no milestone."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, _issues, _temp_dir = roadmap_with_issues_and_milestones
 
         result = cli_runner.invoke(
             main,
@@ -116,7 +116,7 @@ class TestIssueArchiveRestore:
 
     def test_archive_list(self, roadmap_with_issues_and_milestones):
         """Test listing archived issues."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, issues, _temp_dir = roadmap_with_issues_and_milestones
 
         # Archive a done issue
         done_issue = next(i for i in issues if i["status"] == "closed")
@@ -132,7 +132,7 @@ class TestIssueArchiveRestore:
 
     def test_archive_dry_run(self, roadmap_with_issues_and_milestones):
         """Test archive dry-run doesn't modify anything."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, issues, _temp_dir = roadmap_with_issues_and_milestones
 
         done_issue = next(i for i in issues if i["status"] == "closed")
 
@@ -145,7 +145,7 @@ class TestIssueArchiveRestore:
 
     def test_restore_single_issue(self, roadmap_with_issues_and_milestones):
         """Test restoring a single archived issue."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, issues, _temp_dir = roadmap_with_issues_and_milestones
 
         done_issue = next(i for i in issues if i["status"] == "closed")
 
@@ -166,7 +166,7 @@ class TestIssueArchiveRestore:
 
     def test_restore_all_issues(self, roadmap_with_issues_and_milestones):
         """Test restoring all archived issues."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, _issues, _temp_dir = roadmap_with_issues_and_milestones
 
         # Archive all done issues
         result = cli_runner.invoke(
@@ -185,7 +185,7 @@ class TestIssueArchiveRestore:
 
     def test_restore_with_status_update(self, roadmap_with_issues_and_milestones):
         """Test restoring issue with status change."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, issues, _temp_dir = roadmap_with_issues_and_milestones
 
         done_issue = next(i for i in issues if i["status"] == "closed")
 
@@ -210,7 +210,7 @@ class TestMilestoneArchiveRestore:
 
     def test_archive_single_milestone(self, roadmap_with_issues_and_milestones):
         """Test archiving a single milestone."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, _issues, _temp_dir = roadmap_with_issues_and_milestones
 
         result = cli_runner.invoke(
             main,
@@ -223,7 +223,7 @@ class TestMilestoneArchiveRestore:
         self, roadmap_with_issues_and_milestones
     ):
         """Test that archiving a milestone also archives its issues folder if it exists."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, issues, temp_dir = roadmap_with_issues_and_milestones
 
         roadmap_dir = Path(temp_dir) / ".roadmap"
 
@@ -278,7 +278,7 @@ class TestMilestoneArchiveRestore:
 
     def test_archive_list_milestones(self, roadmap_with_issues_and_milestones):
         """Test listing archived milestones."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, _issues, _temp_dir = roadmap_with_issues_and_milestones
 
         # Archive a milestone
         result = cli_runner.invoke(
@@ -293,7 +293,7 @@ class TestMilestoneArchiveRestore:
 
     def test_milestone_archive_dry_run(self, roadmap_with_issues_and_milestones):
         """Test milestone archive dry-run."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, _issues, _temp_dir = roadmap_with_issues_and_milestones
 
         result = cli_runner.invoke(
             main,
@@ -304,7 +304,7 @@ class TestMilestoneArchiveRestore:
 
     def test_restore_single_milestone(self, roadmap_with_issues_and_milestones):
         """Test restoring a single archived milestone."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, _issues, _temp_dir = roadmap_with_issues_and_milestones
 
         # Archive first
         result = cli_runner.invoke(
@@ -323,7 +323,7 @@ class TestMilestoneArchiveRestore:
 
     def test_restore_all_milestones(self, roadmap_with_issues_and_milestones):
         """Test restoring all archived milestones."""
-        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, _core, _issues, _temp_dir = roadmap_with_issues_and_milestones
 
         # Archive
         result = cli_runner.invoke(
@@ -346,7 +346,7 @@ class TestProjectArchiveRestore:
 
     def test_project_archive_single(self, isolated_roadmap):
         """Test archiving a project."""
-        cli_runner, core, temp_dir = isolated_roadmap
+        cli_runner, _core, _temp_dir = isolated_roadmap
 
         # Create a project
         result = cli_runner.invoke(
@@ -377,7 +377,7 @@ class TestProjectArchiveRestore:
 
     def test_project_archive_list(self, isolated_roadmap):
         """Test listing archived projects."""
-        cli_runner, core, temp_dir = isolated_roadmap
+        cli_runner, _core, _temp_dir = isolated_roadmap
 
         # Create and archive a project
         result = cli_runner.invoke(
@@ -400,7 +400,7 @@ class TestProjectArchiveRestore:
 
     def test_project_archive_dry_run(self, isolated_roadmap):
         """Test project archive dry-run."""
-        cli_runner, core, temp_dir = isolated_roadmap
+        cli_runner, _core, _temp_dir = isolated_roadmap
 
         # Try to run dry-run archive (may not work if project doesn't exist)
         result = cli_runner.invoke(
@@ -413,7 +413,7 @@ class TestProjectArchiveRestore:
 
     def test_project_restore_single(self, isolated_roadmap):
         """Test restoring an archived project."""
-        cli_runner, core, temp_dir = isolated_roadmap
+        cli_runner, _core, _temp_dir = isolated_roadmap
 
         # Try to restore (may not exist)
         result = cli_runner.invoke(
@@ -426,7 +426,7 @@ class TestProjectArchiveRestore:
 
     def test_project_restore_all(self, isolated_roadmap):
         """Test restoring all archived projects."""
-        cli_runner, core, temp_dir = isolated_roadmap
+        cli_runner, _core, _temp_dir = isolated_roadmap
 
         # Try restore all
         result = cli_runner.invoke(
