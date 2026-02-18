@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
@@ -177,3 +178,151 @@ def test_analyze_dependencies_and_find_milestone_number() -> None:
     assert updated_report.errors["missing"] == "Issue not found on remote"
     assert ops._find_milestone_number("v1-0", remote_milestones) == 100
     assert ops._find_milestone_number("none", remote_milestones) is None
+
+
+def test_link_pulled_issue_missing_ids_returns_true() -> None:
+    backend = SimpleNamespace(
+        core=SimpleNamespace(db=SimpleNamespace(remote_links=None))
+    )
+    ops = GitHubSyncOps(backend)
+
+    assert ops._link_pulled_issue_locally(None, 7) is True
+    assert ops._link_pulled_issue_locally("A-1", None) is True
+
+
+def test_persist_issue_before_linking_creates_when_missing() -> None:
+    created_payload: dict | None = None
+
+    class _Repo:
+        def get(self, _issue_id: str):
+            return None
+
+        def create(self, payload: dict) -> None:
+            nonlocal created_payload
+            created_payload = payload
+
+    backend = SimpleNamespace(
+        core=SimpleNamespace(
+            db=SimpleNamespace(get_issue_repository=lambda: _Repo()),
+        )
+    )
+    ops = GitHubSyncOps(backend)
+    issue = SimpleNamespace(
+        id="A-1",
+        title="Title",
+        headline="Head",
+        content="Body",
+        status="todo",
+        priority="medium",
+        type="feature",
+        assignee="sam",
+        estimated_hours=3.5,
+    )
+
+    assert ops._persist_issue_before_linking(issue, "A-1") is True
+    assert created_payload is not None
+    assert created_payload["id"] == "A-1"
+
+
+def test_create_or_update_issue_locally_update_and_create_paths() -> None:
+    updates_seen: list[tuple[str, dict]] = []
+    creates_seen: list[dict] = []
+
+    class _IssueRepo:
+        def __init__(self) -> None:
+            self.existing = {"I-1": {"project_id": "P-1"}}
+
+        def get(self, issue_id: str):
+            return self.existing.get(issue_id)
+
+        def update(self, issue_id: str, updates: dict) -> None:
+            updates_seen.append((issue_id, updates))
+
+        def create(self, issue_data: dict) -> None:
+            creates_seen.append(issue_data)
+
+    class _Projects:
+        def list(self):
+            return [SimpleNamespace(id="P-2")]
+
+    backend = SimpleNamespace(
+        core=SimpleNamespace(
+            db=SimpleNamespace(
+                get_issue_repository=lambda: _IssueRepo(),
+                remote_links=SimpleNamespace(get_issue_uuid=lambda **_kwargs: None),
+            ),
+            projects=_Projects(),
+        ),
+    )
+    ops = GitHubSyncOps(backend)
+
+    local_issue = SimpleNamespace(
+        id="I-1",
+        title="Issue",
+        headline="Headline",
+        content="Body",
+        status="todo",
+        priority="medium",
+        issue_type="feature",
+        assignee="sam",
+        estimated_hours=2.0,
+    )
+
+    updated_id = ops._create_or_update_issue_locally(
+        sync_issue=SimpleNamespace(),
+        local_issue=local_issue,
+        github_id="42",
+    )
+    assert updated_id == "I-1"
+    assert updates_seen and updates_seen[0][0] == "I-1"
+
+    local_issue_2 = SimpleNamespace(
+        id="I-2",
+        title="Issue 2",
+        headline="Headline 2",
+        content="Body 2",
+        status="todo",
+        priority="medium",
+        issue_type="feature",
+        assignee=None,
+        estimated_hours=None,
+    )
+    created_id = ops._create_or_update_issue_locally(
+        sync_issue=SimpleNamespace(),
+        local_issue=local_issue_2,
+        github_id=None,
+    )
+    assert created_id == "I-2"
+    assert creates_seen and creates_seen[0]["id"] == "I-2"
+
+
+def test_pull_issues_phase_skips_when_milestone_pull_failed() -> None:
+    backend = SimpleNamespace(config={})
+    ops = GitHubSyncOps(backend)
+
+    issue = SyncIssue(id="1", title="Issue", status="open", milestone="v1-0")
+    milestone_report = SyncReport()
+    cast(Any, milestone_report.errors)[100] = "not found"
+    base_report = SyncReport()
+
+    result = ops._pull_issues_phase(
+        issues_to_pull=[("_remote_1", "1", issue)],
+        all_remote_milestones={100: SimpleNamespace(name="v1-0")},
+        milestone_pull_report=milestone_report,
+        report=base_report,
+    )
+
+    assert result.pulled == []
+    assert "_remote_1" in result.errors
+
+
+def test_pull_single_milestone_returns_core_missing_error() -> None:
+    backend = SimpleNamespace(core=None, config={})
+    ops = GitHubSyncOps(backend)
+
+    success, error = ops._pull_single_milestone(
+        SimpleNamespace(name="v1-0", backend_id=1, status="open", due_date=None)
+    )
+
+    assert success is False
+    assert error == "Core not available"

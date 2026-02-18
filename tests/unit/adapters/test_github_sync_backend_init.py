@@ -1,293 +1,251 @@
-"""Tests for GitHub sync backend initialization and error handling.
+"""Behavior-focused tests for GitHubSyncBackend."""
 
-Tests safe initialization patterns and graceful error handling when
-GitHub credentials are missing or invalid.
-"""
+from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
+from typing import Any, cast
+from unittest.mock import MagicMock
 
 import pytest
 
 from roadmap.adapters.sync.backends.github_sync_backend import GitHubSyncBackend
+from roadmap.core.domain.issue import Issue
+from roadmap.core.interfaces import SyncConflict, SyncReport
+from roadmap.core.services.sync.sync_errors import SyncErrorType
 
 
-class TestGitHubSyncBackendInitialization:
-    """Test GitHub sync backend safe initialization."""
-
-    def test_backend_initializes_with_valid_config(self):
-        """Test backend initializes successfully with valid GitHub config."""
-        mock_core = MagicMock()
-        config = {
-            "token": "valid-token-123",
-            "owner": "test-owner",
-            "repo": "test-repo",
-        }
-
-        with patch(
-            "roadmap.adapters.sync.backends.github_sync_backend.GitHubClientWrapper"
-        ):
-            backend = GitHubSyncBackend(core=mock_core, config=config)
-
-            assert backend is not None
-            assert backend.config["token"] == "valid-token-123"
-
-    def test_backend_handles_missing_token_gracefully(self):
-        """Test backend handles missing token without crashing."""
-        mock_core = MagicMock()
-        config = {
-            "owner": "test-owner",
-            "repo": "test-repo",
-        }
-
-        try:
-            backend = GitHubSyncBackend(core=mock_core, config=config)
-            # Backend creates without token, may fail on operations
-            assert backend is not None
-        except Exception as e:
-            # Operations may fail, but initialization should be safe
-            pytest.skip(f"Token validation happens at operation time: {e}")
-
-    def test_backend_initializes_with_owner_and_repo(self):
-        """Test backend stores owner and repo configuration."""
-        mock_core = MagicMock()
-        config = {"token": "test-token", "owner": "test-owner", "repo": "test-repo"}
-
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
-        ):
-            backend = GitHubSyncBackend(core=mock_core, config=config)
-
-            assert backend.config["owner"] == "test-owner"
-            assert backend.config["repo"] == "test-repo"
-
-    def test_backend_safe_initialization_pattern(self):
-        """Test safe init pattern for optional GitHub setup."""
-        mock_core = MagicMock()
-        config = {
-            "token": "test-token",
-            "owner": "test-owner",
-            "repo": "test-repo",
-        }
-
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
-        ):
-            backend = GitHubSyncBackend(core=mock_core, config=config)
-
-            # Should have _safe_init or similar pattern for optional GitHub
-            assert (
-                hasattr(backend, "_safe_init")
-                or hasattr(backend, "authenticate")
-                or hasattr(backend, "client")
-            )
-
-    def test_backend_handles_invalid_credentials(self):
-        """Test backend gracefully handles invalid credentials."""
-        mock_core = MagicMock()
-        config = {"token": "invalid-token"}
-
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
-        ) as mock_client:
-            # Simulate invalid token error
-            mock_client.side_effect = Exception("Invalid token")
-
-            try:
-                # Should not crash during init if token is validated lazily
-                GitHubSyncBackend(core=mock_core, config=config)
-            except Exception:
-                # Error handling at init time is acceptable for invalid tokens
-                pass
+def _build_backend(config: dict | None = None) -> GitHubSyncBackend:
+    repo = SimpleNamespace()
+    core = SimpleNamespace(db=SimpleNamespace(remote_links=repo))
+    return GitHubSyncBackend(
+        core=cast(Any, core),
+        config=config
+        or {
+            "token": "token",
+            "owner": "owner",
+            "repo": "repo",
+        },
+    )
 
 
-class TestGitHubSyncBackendOperations:
-    """Test GitHub sync backend operations."""
+def test_init_requires_owner_and_repo() -> None:
+    with pytest.raises(ValueError, match="owner"):
+        GitHubSyncBackend(core=cast(Any, SimpleNamespace()), config={"token": "abc"})
 
-    @pytest.fixture
-    def backend(self):
-        """Create a mock GitHub sync backend."""
-        mock_core = MagicMock()
-        config = {"token": "test-token", "owner": "test-owner", "repo": "test-repo"}
 
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
-        ):
-            backend = GitHubSyncBackend(core=mock_core, config=config)
-            backend.github_client = MagicMock()
-            return backend
+def test_authenticate_success_sets_client() -> None:
+    backend = _build_backend()
+    expected_client = MagicMock()
+    backend.github_client = None
+    cast(Any, backend)._auth_service = SimpleNamespace(
+        authenticate=lambda: True,
+        github_client=expected_client,
+    )
 
-    def test_backend_fetch_issues(self, backend):
-        """Test backend can fetch issues from GitHub."""
-        assert backend.github_client is not None
-        backend.github_client.get_issues.return_value = [
-            {"number": 1, "title": "Issue 1", "state": "open"},
-            {"number": 2, "title": "Issue 2", "state": "closed"},
+    result = backend.authenticate()
+
+    assert result.is_ok()
+    assert result.unwrap() is True
+    assert backend.github_client is expected_client
+
+
+def test_authenticate_false_returns_auth_error() -> None:
+    backend = _build_backend()
+    cast(Any, backend)._auth_service = SimpleNamespace(authenticate=lambda: False)
+
+    result = backend.authenticate()
+
+    assert result.is_err()
+    err = result.unwrap_err()
+    assert err.error_type == SyncErrorType.AUTHENTICATION_FAILED
+
+
+def test_authenticate_exception_returns_sync_error() -> None:
+    backend = _build_backend()
+
+    def _raise() -> bool:
+        raise RuntimeError("token exploded")
+
+    cast(Any, backend)._auth_service = SimpleNamespace(authenticate=_raise)
+
+    result = backend.authenticate()
+
+    assert result.is_err()
+    err = result.unwrap_err()
+    assert err.error_type == SyncErrorType.AUTHENTICATION_FAILED
+    assert "token exploded" in err.message
+
+
+def test_get_issues_requires_fetch_service_or_authenticated_client() -> None:
+    backend = _build_backend({"owner": "owner", "repo": "repo"})
+    backend.github_client = None
+    backend._fetch_service = None
+
+    result = backend.get_issues()
+
+    assert result.is_err()
+    err = result.unwrap_err()
+    assert err.error_type == SyncErrorType.AUTHENTICATION_FAILED
+
+
+def test_get_issues_uses_fetch_service_and_returns_ok(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    backend = _build_backend()
+    backend.github_client = MagicMock()
+    expected_issues = {"123": SimpleNamespace(id="123")}
+
+    class _FetchService:
+        def __init__(self, _client, _config, _helpers):
+            pass
+
+        def get_issues(self):
+            return expected_issues
+
+    monkeypatch.setattr(
+        "roadmap.adapters.sync.backends.github_sync_backend.GitHubIssueFetchService",
+        _FetchService,
+    )
+
+    result = backend.get_issues()
+
+    assert result.is_ok()
+    assert result.unwrap() == expected_issues
+
+
+def test_get_issues_wraps_exception_as_network_error() -> None:
+    backend = _build_backend()
+    cast(Any, backend)._fetch_service = SimpleNamespace(
+        get_issues=lambda: (_ for _ in ()).throw(ConnectionError("boom"))
+    )
+
+    result = backend.get_issues()
+
+    assert result.is_err()
+    err = result.unwrap_err()
+    assert err.error_type == SyncErrorType.NETWORK_ERROR
+
+
+def test_push_issue_success_and_failure_paths() -> None:
+    backend = _build_backend()
+    issue = Issue(id="A-1", title="Issue")
+
+    success_report = SyncReport()
+    success_report.pushed.append("A-1")
+    backend.push_issues = lambda _issues: SimpleNamespace(  # type: ignore[method-assign]
+        is_err=lambda: False,
+        unwrap=lambda: success_report,
+    )
+    success = backend.push_issue(issue)
+    assert success.is_ok()
+
+    failed_report = SyncReport()
+    failed_report.errors["A-1"] = "failed"
+    backend.push_issues = lambda _issues: SimpleNamespace(  # type: ignore[method-assign]
+        is_err=lambda: False,
+        unwrap=lambda: failed_report,
+    )
+    failed = backend.push_issue(issue)
+    assert failed.is_err()
+    assert failed.unwrap_err().entity_id == "A-1"
+
+
+@pytest.mark.parametrize(
+    "issue_id,expected_ok",
+    [
+        ("1", True),
+        ("_remote_42", True),
+        ("bad-id", False),
+    ],
+)
+def test_pull_issue_validates_issue_id(issue_id: str, expected_ok: bool) -> None:
+    backend = _build_backend()
+
+    result = backend.pull_issue(issue_id)
+
+    assert result.is_ok() is expected_ok
+    if not expected_ok:
+        assert result.unwrap_err().error_type == SyncErrorType.VALIDATION_ERROR
+
+
+def test_get_milestones_no_client_returns_auth_error() -> None:
+    backend = _build_backend()
+    backend.github_client = None
+
+    result = backend.get_milestones()
+
+    assert result.is_err()
+    assert result.unwrap_err().error_type == SyncErrorType.AUTHENTICATION_FAILED
+
+
+def test_get_milestones_returns_service_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    backend = _build_backend()
+    backend.github_client = MagicMock()
+
+    class _MilestoneService:
+        def __init__(self, _client, _config):
+            pass
+
+        def get_milestones(self, state: str = "all"):
+            return {"1": {"name": "v1-0"}, "2": {"name": "v2-0"}}
+
+    monkeypatch.setattr(
+        "roadmap.adapters.sync.backends.services.github_milestone_fetch_service.GitHubMilestoneFetchService",
+        _MilestoneService,
+    )
+
+    result = backend.get_milestones()
+
+    assert result.is_ok()
+    assert len(result.unwrap()) == 2
+
+
+def test_get_label_client_returns_none_without_token() -> None:
+    backend = _build_backend({"owner": "owner", "repo": "repo"})
+    assert backend.get_label_client() is None
+
+
+def test_get_conflict_options_and_resolve_conflict() -> None:
+    backend = _build_backend()
+    conflict = SyncConflict(
+        issue_id="A-1",
+        local_version=None,
+        remote_version={"id": "1"},
+        conflict_type="both_modified",
+    )
+
+    assert backend.get_conflict_resolution_options(conflict) == [
+        "use_local",
+        "use_remote",
+        "merge",
+    ]
+    assert backend.resolve_conflict(conflict, "merge") is True
+
+
+def test_post_graphql_with_backoff_retries_rate_limit(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    backend = _build_backend()
+
+    payloads = iter(
+        [
+            {"errors": [{"type": "RESOURCE_LIMITS_EXCEEDED"}]},
+            {"data": {"ok": True}},
         ]
+    )
+    sleep_calls: list[float] = []
 
-        # Should be able to call get_issues through client
-        assert backend.github_client.get_issues.return_value is not None
+    monkeypatch.setattr(
+        backend,
+        "_post_graphql",
+        lambda *_args, **_kwargs: next(payloads),
+    )
+    monkeypatch.setattr(
+        "roadmap.adapters.sync.backends.github_sync_backend.time.sleep",
+        lambda delay: sleep_calls.append(delay),
+    )
 
-    def test_backend_fetch_milestones(self, backend):
-        """Test backend can fetch milestones from GitHub."""
-        backend.github_client.get_milestones.return_value = [
-            {"number": 1, "title": "v1-0", "state": "open"},
-            {"number": 2, "title": "v2-0", "state": "closed"},
-        ]
+    result = backend._post_graphql_with_backoff("query", "token", "op")
 
-        # Should be able to call get_milestones through client
-        assert backend.github_client is not None
-        assert backend.github_client.get_milestones.return_value is not None
-
-    def test_backend_update_issue_state(self, backend):
-        """Test backend can update issue state on GitHub."""
-        backend.github_client.update_issue_state.return_value = True
-
-        # Verify update capability exists
-        assert hasattr(backend.github_client, "update_issue_state")
-
-    def test_backend_with_mocked_client(self, backend):
-        """Test backend operations with fully mocked client."""
-        # Setup mock responses
-        backend.github_client.get_issues.return_value = [
-            {"number": 1, "title": "Test", "state": "open"}
-        ]
-        backend.github_client.update_issue_state.return_value = {"state": "closed"}
-
-        # Verify we can use the backend
-        assert backend.config["owner"] == "test-owner"
-        assert backend.config["repo"] == "test-repo"
-        assert backend.github_client.get_issues() is not None
-
-    def test_delete_issues_batches_and_counts(self, backend, mocker):
-        """Test delete_issues aggregates batch deletions."""
-        node_response = {
-            "data": {
-                "issue0": {
-                    "issueOrPullRequest": {
-                        "__typename": "Issue",
-                        "id": "n1",
-                        "number": 1,
-                    }
-                },
-                "issue1": {
-                    "issueOrPullRequest": {
-                        "__typename": "Issue",
-                        "id": "n2",
-                        "number": 2,
-                    }
-                },
-                "issue2": {
-                    "issueOrPullRequest": {
-                        "__typename": "Issue",
-                        "id": "n3",
-                        "number": 3,
-                    }
-                },
-            }
-        }
-        delete_response = {
-            "data": {
-                "delete0": {"clientMutationId": "d1"},
-                "delete1": {"clientMutationId": "d2"},
-                "delete2": {"clientMutationId": "d3"},
-            }
-        }
-        mocker.patch.object(
-            backend,
-            "_post_graphql",
-            side_effect=[node_response, delete_response],
-        )
-
-        deleted = backend.delete_issues([1, 2, 3])
-
-        assert deleted == 3
-        assert backend._post_graphql.call_count == 2
-
-    def test_resolve_issue_node_ids_parses_response(self, backend, mocker):
-        """Test node ID resolution from GraphQL response."""
-        response = {
-            "data": {
-                "issue0": {
-                    "issueOrPullRequest": {
-                        "__typename": "Issue",
-                        "id": "n1",
-                        "number": 1,
-                    }
-                },
-                "issue1": {
-                    "issueOrPullRequest": {
-                        "__typename": "Issue",
-                        "id": "n2",
-                        "number": 2,
-                    }
-                },
-            }
-        }
-        mocker.patch.object(backend, "_post_graphql", return_value=response)
-
-        node_ids, skipped_prs = backend._resolve_issue_node_ids([1, 2], "o", "r", "t")
-
-        assert node_ids == {1: "n1", 2: "n2"}
-        assert skipped_prs == []
-
-
-class TestGitHubSyncBackendErrorHandling:
-    """Test GitHub sync backend error handling."""
-
-    def test_backend_handles_network_errors(self):
-        """Test backend gracefully handles network errors."""
-        mock_core = MagicMock()
-        config = {
-            "token": "test-token",
-            "owner": "test-owner",
-            "repo": "test-repo",
-        }
-
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
-        ) as mock_client_class:
-            mock_client = MagicMock()
-            mock_client.get_issues.side_effect = ConnectionError("Network error")
-            mock_client_class.return_value = mock_client
-
-            backend = GitHubSyncBackend(core=mock_core, config=config)
-            backend.github_client = mock_client
-
-            # Operations should fail gracefully, not crash the backend
-            if backend.github_client is not None:
-                try:
-                    backend.github_client.get_issues()
-                except ConnectionError:
-                    # Expected behavior - operations fail, but backend is still usable
-                    pass
-
-    def test_backend_handles_github_api_errors(self):
-        """Test backend handles GitHub API errors gracefully."""
-        mock_core = MagicMock()
-        config = {
-            "token": "test-token",
-            "owner": "test-owner",
-            "repo": "test-repo",
-        }
-
-        with patch(
-            "roadmap.core.services.github.github_issue_client.GitHubIssueClient"
-        ):
-            backend = GitHubSyncBackend(core=mock_core, config=config)
-            backend.github_client = MagicMock()
-
-            # Simulate GitHub API returning an error
-            if backend.github_client is not None:
-                backend.github_client.get_issues.side_effect = Exception(
-                    "API rate limit exceeded"
-                )
-
-                try:
-                    backend.github_client.get_issues()
-                except Exception:
-                    # Expected - caller should handle
-                    pass
-
-            # Backend should still be usable
-            assert backend is not None
-            assert backend.config["token"] == "test-token"
+    assert result == {"data": {"ok": True}}
+    assert sleep_calls == [2.0]
