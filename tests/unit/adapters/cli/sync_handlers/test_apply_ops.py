@@ -1,10 +1,20 @@
-"""Tests for sync apply_ops module, specifically error display."""
+"""Tests for sync apply_ops module."""
 
+import io
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
+from rich.console import Console
 
-from roadmap.adapters.cli.sync_handlers.apply_ops import display_error_summary
+from roadmap.adapters.cli.sync_handlers.apply_ops import (
+    confirm_and_apply,
+    display_error_summary,
+    finalize_sync,
+    perform_apply_phase,
+    present_apply_intent,
+    run_analysis_phase,
+)
 
 
 @pytest.fixture
@@ -250,3 +260,186 @@ class TestDisplayErrorSummary:
         # This is a bit tricky to test, but we can check the call count
         # Non-verbose should have fewer print calls
         assert len(mock_console.print.call_args_list) < 20
+
+
+class TestApplyPhaseBehavior:
+    """Test sync apply orchestration behavior."""
+
+    def test_present_apply_intent_true_and_false(self):
+        console = Mock()
+
+        has_changes = SimpleNamespace(
+            issues_needs_push=1,
+            issues_needs_pull=0,
+            conflicts_detected=0,
+        )
+        no_changes = SimpleNamespace(
+            issues_needs_push=0,
+            issues_needs_pull=0,
+            conflicts_detected=0,
+        )
+
+        assert present_apply_intent(has_changes, console) is True
+        assert present_apply_intent(no_changes, console) is False
+
+    def test_perform_apply_phase_exits_on_report_error(self):
+        console = Console(file=io.StringIO(), force_terminal=False)
+        orchestrator = SimpleNamespace(
+            sync_all_issues=lambda **_kwargs: SimpleNamespace(
+                error="fatal",
+                errors={},
+                issues_pushed=0,
+                issues_pulled=0,
+            )
+        )
+        analysis_report = SimpleNamespace(issues_needs_pull=0, issues_needs_push=0)
+
+        with pytest.raises(SystemExit):
+            perform_apply_phase(
+                core=SimpleNamespace(),
+                orchestrator=orchestrator,
+                console_inst=console,
+                analysis_report=analysis_report,
+                force_local=False,
+                force_remote=False,
+                push=False,
+                pull=False,
+                verbose=False,
+            )
+
+    def test_perform_apply_phase_up_to_date_and_tip_output(self):
+        buffer = io.StringIO()
+        console = Console(file=buffer, force_terminal=False)
+
+        orchestrator = SimpleNamespace(
+            sync_all_issues=lambda **_kwargs: SimpleNamespace(
+                error=None,
+                errors={},
+                issues_pushed=0,
+                issues_pulled=0,
+            )
+        )
+        analysis_report = SimpleNamespace(issues_needs_pull=1, issues_needs_push=0)
+
+        report = perform_apply_phase(
+            core=SimpleNamespace(),
+            orchestrator=orchestrator,
+            console_inst=console,
+            analysis_report=analysis_report,
+            force_local=False,
+            force_remote=False,
+            push=False,
+            pull=False,
+            verbose=False,
+        )
+
+        output = buffer.getvalue()
+        assert report.issues_pushed == 0
+        assert "Everything up-to-date" in output
+        assert "Tip:" in output
+
+    def test_confirm_and_apply_delegates_to_perform_apply_phase(self, monkeypatch):
+        expected = SimpleNamespace(ok=True)
+        monkeypatch.setattr(
+            "roadmap.adapters.cli.sync_handlers.apply_ops.perform_apply_phase",
+            lambda *_args, **_kwargs: expected,
+        )
+
+        result = confirm_and_apply(
+            core=SimpleNamespace(),
+            orchestrator=SimpleNamespace(),
+            console_inst=Mock(),
+            analysis_report=SimpleNamespace(conflicts_detected=0, changes=[]),
+            force_local=False,
+            force_remote=False,
+            push=False,
+            pull=False,
+            verbose=False,
+            interactive=False,
+        )
+
+        assert result is expected
+
+    def test_run_analysis_phase_calls_presenter(self, monkeypatch):
+        presented = {"called": False}
+
+        def _present(analysis_report, verbose=False):
+            presented["called"] = True
+            assert verbose is True
+            assert analysis_report.total_changes == 2
+
+        monkeypatch.setattr(
+            "roadmap.adapters.cli.sync_presenter.present_analysis",
+            _present,
+        )
+
+        orchestrator = SimpleNamespace(
+            analyze_all_issues=lambda **_kwargs: (
+                SimpleNamespace(plan_id="p1"),
+                SimpleNamespace(total_changes=2),
+            )
+        )
+
+        plan, analysis = run_analysis_phase(
+            orchestrator=orchestrator,
+            push=True,
+            pull=False,
+            dry_run=True,
+            verbose=True,
+            console_inst=Console(file=io.StringIO(), force_terminal=False),
+            interactive_duplicates=True,
+        )
+
+        assert plan.plan_id == "p1"
+        assert analysis.total_changes == 2
+        assert presented["called"] is True
+
+    def test_finalize_sync_sets_baseline_flag_and_displays_metrics(self, monkeypatch):
+        buffer = io.StringIO()
+        console = Console(file=buffer, force_terminal=False)
+
+        monkeypatch.setattr(
+            "roadmap.adapters.cli.sync_handlers.baseline_ops.capture_and_save_post_sync_baseline",
+            lambda *_args, **_kwargs: False,
+        )
+
+        metrics_saved = {"called": False}
+
+        class _Repo:
+            def __init__(self, _db_manager):
+                pass
+
+            def save(self, _metrics):
+                metrics_saved["called"] = True
+
+        monkeypatch.setattr(
+            "roadmap.adapters.persistence.sync_metrics_repository.SyncMetricsRepository",
+            _Repo,
+        )
+
+        displayed = {"called": False}
+        monkeypatch.setattr(
+            "roadmap.adapters.cli.sync_handlers.apply_ops._display_sync_metrics",
+            lambda *_args, **_kwargs: displayed.__setitem__("called", True),
+        )
+
+        report = SimpleNamespace(
+            baseline_update_failed=False,
+            issues_pulled=0,
+            metrics=SimpleNamespace(to_dict=lambda: {"total_duration_seconds": 1.0}),
+        )
+        core = SimpleNamespace(db_manager=SimpleNamespace())
+
+        finalize_sync(
+            core=core,
+            console_inst=console,
+            report=report,
+            pre_sync_issue_count=3,
+            verbose=False,
+            backend_type="git",
+        )
+
+        assert report.baseline_update_failed is True
+        assert metrics_saved["called"] is True
+        assert displayed["called"] is True
+        assert "Sync completed successfully" in buffer.getvalue()
