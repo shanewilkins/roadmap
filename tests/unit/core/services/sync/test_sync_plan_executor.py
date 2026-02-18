@@ -483,3 +483,141 @@ class TestSyncPlanExecutorIntegration:
                 report = executor.execute(plan, dry_run=False)
 
         assert report.error and "Test failure" in report.error
+
+
+class TestSyncPlanExecutorBehavior:
+    """Additional behavior coverage for core executor handlers."""
+
+    @pytest.fixture
+    def executor(self):
+        return SyncPlanExecutor(
+            transport_adapter=MagicMock(),
+            db_session=MagicMock(),
+            core=MagicMock(),
+            stop_on_error=False,
+        )
+
+    def test_unwrap_result_ok_passthrough(self, executor):
+        value = {"ok": True}
+        assert executor._unwrap_result(Ok(value), operation="push_issue") == value
+
+    def test_unwrap_result_err_records_and_returns_none_when_not_stopping(
+        self, executor
+    ):
+        err = SyncError(
+            error_type=SyncErrorType.VALIDATION_ERROR,
+            message="invalid",
+            entity_type="Issue",
+            entity_id="I-1",
+        )
+        result = executor._unwrap_result(Err(err), operation="push_issue")
+        assert result is None
+        assert executor._accumulated_errors["I-1"] == str(err)
+
+    def test_unwrap_result_err_raises_when_stop_on_error_true(self):
+        executor = SyncPlanExecutor(stop_on_error=True)
+        err = SyncError(
+            error_type=SyncErrorType.NETWORK_ERROR,
+            message="boom",
+            entity_type="Issue",
+            entity_id="I-2",
+        )
+
+        with pytest.raises(RuntimeError, match="boom"):
+            executor._unwrap_result(Err(err), operation="pull_issue")
+
+    def test_record_result_error_uses_operation_and_deconflicts_keys(self, executor):
+        executor._record_result_error("push_issue", "first")
+        executor._record_result_error("push_issue", "second")
+        assert "push_issue" in executor._accumulated_errors
+        assert any(
+            key.startswith("push_issue:") for key in executor._accumulated_errors
+        )
+
+    def test_handle_create_local_dry_run_caches_fake_id(self, executor):
+        action = MagicMock(payload={"remote_id": "42", "remote": {"title": "R"}})
+        created = executor._handle_create_local(action, dry_run=True)
+        assert created == "dry-42"
+        assert executor._created_local_ids["42"] == "dry-42"
+
+    def test_handle_create_local_prefers_core_issue_service(self, executor):
+        issue_obj = MagicMock(id="L-100")
+        executor.core.issue_service.create_issue.return_value = issue_obj
+        action = MagicMock(payload={"remote_id": "99", "remote": {"title": "X"}})
+
+        created = executor._handle_create_local(action, dry_run=False)
+
+        assert created == "L-100"
+        executor.core.issue_service.create_issue.assert_called_once()
+        assert executor._created_local_ids["99"] == "L-100"
+
+    def test_handle_create_local_core_exception_returns_none(self, executor):
+        executor.core.issue_service.create_issue.side_effect = RuntimeError("core fail")
+        action = MagicMock(payload={"remote_id": "77", "remote": {"title": "Y"}})
+
+        with patch("roadmap.core.services.sync.sync_plan_executor.logger"):
+            created = executor._handle_create_local(action, dry_run=False)
+
+        assert created is None
+
+    def test_handle_create_local_uses_db_session_when_core_service_missing(
+        self, executor
+    ):
+        executor.core.issue_service = None
+        executor.db_session.create_issue.return_value = "L-200"
+        action = MagicMock(payload={"remote_id": "77", "remote": {"title": "Y"}})
+
+        created = executor._handle_create_local(action, dry_run=False)
+
+        assert created == "L-200"
+        assert executor._created_local_ids["77"] == "L-200"
+
+    def test_handle_link_uses_core_repo_when_available(self, executor):
+        action = MagicMock(
+            payload={"issue_id": "L-1", "backend": "github", "remote_id": "10"}
+        )
+        with patch(
+            "roadmap.infrastructure.sync_gateway.SyncGateway.link_issue_in_database",
+            return_value=True,
+        ) as mock_link:
+            assert executor._handle_link(action, dry_run=False) is True
+            mock_link.assert_called_once_with(
+                executor.core.remote_link_repo, "L-1", "github", "10"
+            )
+
+    def test_handle_update_baseline_core_then_db_fallback(self, executor):
+        action = MagicMock(payload={"baseline": {"A": {"status": "todo"}}})
+
+        assert executor._handle_update_baseline(action, dry_run=True) is True
+
+        executor.core.db.set_sync_baseline.side_effect = RuntimeError("core db fail")
+        with patch("roadmap.core.services.sync.sync_plan_executor.logger"):
+            assert executor._handle_update_baseline(action, dry_run=False) is False
+
+    def test_handle_update_baseline_uses_db_session_when_core_missing_method(
+        self, executor
+    ):
+        action = MagicMock(payload={"baseline": {"A": {"status": "todo"}}})
+        executor.core.db = MagicMock(spec=[])
+        executor.db_session.set_sync_baseline.return_value = True
+
+        assert executor._handle_update_baseline(action, dry_run=False) is True
+
+    def test_handle_resolve_conflict_adapter_and_core_fallback(self, executor):
+        action = MagicMock(
+            payload={"issue_id": "L-3", "resolution": {"status": "closed"}}
+        )
+
+        assert executor._handle_resolve_conflict(action, dry_run=True) is True
+
+        executor.transport_adapter.resolve_conflict.side_effect = RuntimeError(
+            "adapter fail"
+        )
+        executor.core.db.apply_conflict_resolution.return_value = True
+
+        with patch("roadmap.core.services.sync.sync_plan_executor.logger"):
+            assert executor._handle_resolve_conflict(action, dry_run=False) is False
+
+        # Remove adapter method path and validate core DB fallback path
+        executor.transport_adapter = MagicMock(spec=[])
+        assert executor._handle_resolve_conflict(action, dry_run=False) is True

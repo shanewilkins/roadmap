@@ -1,183 +1,147 @@
-"""Tests for SyncMergeOrchestrator (Phase 7 coverage)."""
+"""Behavior-focused tests for SyncMergeOrchestrator analysis planning."""
+
+from types import SimpleNamespace
+from typing import Any, cast
+
+from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
 
 
-class TestSyncMergeOrchestratorImports:
-    """Test suite for SyncMergeOrchestrator imports and structure."""
+class _FakeResult:
+    def __init__(self, value=None, error=None):
+        self._value = value
+        self._error = error
 
-    def test_sync_merge_orchestrator_can_be_imported(self):
-        """Test SyncMergeOrchestrator can be imported."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
+    def is_err(self):
+        return self._error is not None
 
-        assert SyncMergeOrchestrator is not None
+    def unwrap(self):
+        return self._value
 
-    def test_sync_merge_orchestrator_is_class(self):
-        """Test SyncMergeOrchestrator is a proper class."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        assert isinstance(SyncMergeOrchestrator, type)
-
-
-class TestSyncMergeOrchestratorMethods:
-    """Test suite for SyncMergeOrchestrator key methods."""
-
-    def test_has_analyze_all_issues_method(self):
-        """Test analyze_all_issues method exists."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        assert hasattr(SyncMergeOrchestrator, "analyze_all_issues")
-        assert callable(SyncMergeOrchestrator.analyze_all_issues)
-
-    def test_has_sync_all_issues_method(self):
-        """Test sync_all_issues method exists."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        assert hasattr(SyncMergeOrchestrator, "sync_all_issues")
-        assert callable(SyncMergeOrchestrator.sync_all_issues)
-
-    def test_method_is_instance_method(self):
-        """Test analyze_all_issues is an instance method."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        method = SyncMergeOrchestrator.analyze_all_issues
-        assert callable(method)
+    def unwrap_err(self):
+        return self._error
 
 
-class TestSyncMergeOrchestratorServiceIntegration:
-    """Test suite for SyncMergeOrchestrator service integration."""
+def _change(
+    issue_id: str,
+    has_conflict: bool = False,
+    local_only: bool = False,
+    remote_only: bool = False,
+):
+    local_state = SimpleNamespace(id=issue_id, status="todo") if local_only else None
+    remote_state = {"status": "open", "backend_id": issue_id} if remote_only else {}
 
-    def test_orchestrator_initializes_with_core(self):
-        """Test orchestrator accepts core parameter."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        # Check init signature includes core
-        init_code = SyncMergeOrchestrator.__init__.__code__
-        assert "core" in init_code.co_varnames or "self" in init_code.co_varnames
-
-    def test_orchestrator_imports_services(self):
-        """Test orchestrator imports required services."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        # Check that service imports are present in module
-        init_code = SyncMergeOrchestrator.__init__.__code__
-        # Should reference services
-        assert "self" in init_code.co_varnames
-
-
-class TestSyncMergeOrchestratorEngineUsage:
-    """Test suite for SyncMergeOrchestrator engine delegation."""
-
-    def test_orchestrator_uses_merge_engine(self):
-        """Test orchestrator delegates to merge engine."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        # Check that engine references exist in code
-        for method_name in ["analyze_all_issues", "sync_all_issues"]:
-            if hasattr(SyncMergeOrchestrator, method_name):
-                method = getattr(SyncMergeOrchestrator, method_name)
-                assert callable(method)
-
-    def test_orchestrator_engine_attribute_pattern(self):
-        """Test orchestrator follows engine attribute pattern."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        # Orchestrator should initialize engine-like services
-        init_method = SyncMergeOrchestrator.__init__
-        assert (
-            "engine" in init_method.__code__.co_names
-            or init_method.__code__.co_argcount > 0
-        )
+    return SimpleNamespace(
+        issue_id=issue_id,
+        title=f"Issue {issue_id}",
+        has_conflict=has_conflict,
+        conflict_type="no_change"
+        if not (local_only or remote_only or has_conflict)
+        else "changed",
+        local_state=local_state,
+        remote_state=remote_state,
+        local_changes={"status": "closed"} if has_conflict else {},
+        is_local_only_change=lambda: local_only,
+        is_remote_only_change=lambda: remote_only,
+    )
 
 
-class TestSyncMergeOrchestratorAnalysisInterface:
-    """Test suite for SyncMergeOrchestrator analysis interface."""
-
-    def test_analyze_all_issues_callable(self):
-        """Test analyze_all_issues is callable."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        assert callable(SyncMergeOrchestrator.analyze_all_issues)
-
-    def test_sync_all_issues_callable(self):
-        """Test sync_all_issues is callable."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        assert callable(SyncMergeOrchestrator.sync_all_issues)
-
-    def test_analyze_returns_plan_and_report(self):
-        """Test analyze_all_issues should return plan and report."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        # Method signature should support returning tuple
-        method = SyncMergeOrchestrator.analyze_all_issues
-        assert callable(method)
+def _orchestrator() -> Any:
+    orchestrator: Any = object.__new__(SyncMergeOrchestrator)
+    orchestrator.backend = SimpleNamespace(authenticate=None, get_issues=None)
+    orchestrator.core = SimpleNamespace(
+        issues=SimpleNamespace(list_all_including_archived=None)
+    )
+    orchestrator.state_comparator = SimpleNamespace(analyze_three_way=None)
+    orchestrator._load_baseline_state = lambda: None
+    return cast(Any, orchestrator)
 
 
-class TestSyncMergeOrchestratorDryRunSupport:
-    """Test suite for SyncMergeOrchestrator dry-run support."""
+def test_analyze_all_issues_returns_error_on_auth_failure():
+    orchestrator = _orchestrator()
+    orchestrator.backend.authenticate = lambda: _FakeResult(error="auth failed")
 
-    def test_sync_all_issues_has_dry_run_parameter(self):
-        """Test sync_all_issues accepts dry_run parameter."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
+    plan, report = orchestrator.analyze_all_issues()
 
-        # Method should support dry_run keyword
-        method = SyncMergeOrchestrator.sync_all_issues
-        assert callable(method)
-
-    def test_orchestrator_supports_dry_run_workflow(self):
-        """Test orchestrator supports dry-run workflow."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        # Should have both analyze (dry-run) and sync (apply) methods
-        assert hasattr(SyncMergeOrchestrator, "analyze_all_issues")
-        assert hasattr(SyncMergeOrchestrator, "sync_all_issues")
+    assert plan.actions == []
+    assert report.error == "auth failed"
 
 
-class TestSyncMergeOrchestratorConflictHandling:
-    """Test suite for SyncMergeOrchestrator conflict handling."""
+def test_analyze_all_issues_returns_error_on_get_issues_failure():
+    orchestrator = _orchestrator()
+    orchestrator.backend.authenticate = lambda: _FakeResult(value=True)
+    orchestrator.backend.get_issues = lambda: _FakeResult(error="backend down")
 
-    def test_orchestrator_supports_force_flags(self):
-        """Test orchestrator supports force resolution flags."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
+    plan, report = orchestrator.analyze_all_issues()
 
-        # Should handle force_local/force_remote parameters
-        method = SyncMergeOrchestrator.sync_all_issues
-        assert callable(method)
-
-    def test_report_should_include_conflict_info(self):
-        """Test sync report includes conflict information."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
-
-        # Reports should be generated and include conflict data
-        assert hasattr(SyncMergeOrchestrator, "sync_all_issues")
+    assert plan.actions == []
+    assert report.error == "backend down"
 
 
-class TestSyncMergeOrchestratorIntegration:
-    """Integration tests for SyncMergeOrchestrator."""
+def test_analyze_all_issues_handles_local_fetch_exception():
+    orchestrator = _orchestrator()
+    orchestrator.backend.authenticate = lambda: _FakeResult(value=True)
+    orchestrator.backend.get_issues = lambda: _FakeResult(value={})
 
-    def test_orchestrator_class_hierarchy(self):
-        """Test orchestrator is properly defined."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
+    def _boom():
+        raise RuntimeError("disk unavailable")
 
-        # Should be a class with proper methods
-        assert hasattr(SyncMergeOrchestrator, "__init__")
-        assert hasattr(SyncMergeOrchestrator, "analyze_all_issues")
-        assert hasattr(SyncMergeOrchestrator, "sync_all_issues")
+    orchestrator.core.issues.list_all_including_archived = _boom
 
-    def test_orchestrator_factory_pattern(self):
-        """Test orchestrator can be instantiated with core."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
+    plan, report = orchestrator.analyze_all_issues()
 
-        # Verify init accepts core parameter
-        init_method = SyncMergeOrchestrator.__init__
-        code = init_method.__code__
-        # Should have self and core parameters (at minimum)
-        assert code.co_argcount >= 2
+    assert plan.actions == []
+    assert "Failed to fetch local issues" in (report.error or "")
 
-    def test_orchestrator_provides_analysis_capability(self):
-        """Test orchestrator provides analysis workflow."""
-        from roadmap.adapters.sync.sync_merge_orchestrator import SyncMergeOrchestrator
 
-        # Should have both analysis and sync methods for full workflow
-        methods = {m for m in dir(SyncMergeOrchestrator) if not m.startswith("_")}
-        assert "analyze_all_issues" in methods
-        assert "sync_all_issues" in methods
+def test_analyze_all_issues_builds_push_pull_conflict_actions():
+    orchestrator = _orchestrator()
+    orchestrator.backend.authenticate = lambda: _FakeResult(value=True)
+    orchestrator.backend.get_issues = lambda: _FakeResult(
+        value={"R1": {"status": "open"}}
+    )
+    orchestrator.core.issues.list_all_including_archived = lambda: [
+        SimpleNamespace(id="L1")
+    ]
+    orchestrator.state_comparator.analyze_three_way = lambda *_args, **_kwargs: [
+        _change("L1", local_only=True),
+        _change("R1", remote_only=True),
+        _change("C1", has_conflict=True),
+        _change("N1"),
+    ]
+
+    plan, report = orchestrator.analyze_all_issues()
+
+    action_types = [action.action_type for action in plan.actions]
+    assert action_types.count("push") == 1
+    assert action_types.count("pull") == 1
+    assert action_types.count("resolve_conflict") == 1
+    assert report.total_issues == 1
+    assert report.issues_needs_push == 1
+    assert report.issues_needs_pull == 1
+    assert report.conflicts_detected == 1
+    assert report.issues_up_to_date == 1
+
+
+def test_analyze_all_issues_respects_push_only_and_pull_only():
+    orchestrator = _orchestrator()
+    orchestrator.backend.authenticate = lambda: _FakeResult(value=True)
+    orchestrator.backend.get_issues = lambda: _FakeResult(
+        value={"R1": {"status": "open"}}
+    )
+    orchestrator.core.issues.list_all_including_archived = lambda: [
+        SimpleNamespace(id="L1")
+    ]
+    orchestrator.state_comparator.analyze_three_way = lambda *_args, **_kwargs: [
+        _change("L1", local_only=True),
+        _change("R1", remote_only=True),
+    ]
+
+    push_plan, _ = orchestrator.analyze_all_issues(push_only=True)
+    pull_plan, _ = orchestrator.analyze_all_issues(pull_only=True)
+
+    push_types = [action.action_type for action in push_plan.actions]
+    pull_types = [action.action_type for action in pull_plan.actions]
+    assert "pull" not in push_types
+    assert "push" in push_types
+    assert "push" not in pull_types
+    assert "pull" in pull_types
