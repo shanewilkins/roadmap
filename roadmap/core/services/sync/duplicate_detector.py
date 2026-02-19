@@ -6,7 +6,6 @@ title duplicates, and content duplicates using various similarity metrics.
 """
 
 import time
-from dataclasses import dataclass
 from difflib import SequenceMatcher
 from enum import StrEnum
 
@@ -36,7 +35,6 @@ class RecommendedAction(StrEnum):
     SKIP = "skip"  # Low confidence, likely false positive
 
 
-@dataclass
 class DuplicateMatch:
     """Represents a potential duplicate between local and remote issues.
 
@@ -56,8 +54,33 @@ class DuplicateMatch:
     recommended_action: RecommendedAction
     similarity_details: dict[str, float | str] | None = None
 
-    def __post_init__(self) -> None:
-        """Validate confidence is in valid range."""
+    def __init__(
+        self,
+        local_issue: Issue,
+        remote_issue: SyncIssue,
+        match_type: MatchType,
+        confidence: float,
+        recommended_action: RecommendedAction,
+        similarity_details: dict[str, float | str] | None = None,
+    ) -> None:
+        """Initialize a DuplicateMatch with required metadata.
+
+        Args:
+            local_issue: Local issue instance.
+            remote_issue: Remote sync issue instance.
+            match_type: The detected match type.
+            confidence: Confidence score between 0.0 and 1.0.
+            recommended_action: Suggested resolution action.
+            similarity_details: Optional extras about similarity metrics.
+        """
+        self.local_issue = local_issue
+        self.remote_issue = remote_issue
+        self.match_type = match_type
+        self.confidence = confidence
+        self.recommended_action = recommended_action
+        self.similarity_details = similarity_details
+
+        # Validate confidence is in valid range.
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError(
                 f"Confidence must be between 0.0 and 1.0, got {self.confidence}"

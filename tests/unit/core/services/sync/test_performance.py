@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from roadmap.core.domain.issue import Issue
 from roadmap.core.services.sync import performance
@@ -24,7 +24,7 @@ def test_sync_cache_get_set_and_stats() -> None:
 
 def test_sync_cache_expires_items() -> None:
     cache = performance.SyncCache(ttl_seconds=1)
-    cache._cache["k"] = ("v", datetime.utcnow() - timedelta(seconds=5))
+    cache._cache["k"] = ("v", datetime.now(UTC) - timedelta(seconds=5))
 
     assert cache.get("k") is None
     assert "k" not in cache._cache
@@ -89,7 +89,7 @@ def test_issue_indexer_stale_and_clear() -> None:
 
     issue = Issue(id="id1", title="Issue", remote_ids={}, milestone=None)
     indexer.index_issues([issue])
-    indexer._indexed_at = datetime.utcnow() - timedelta(seconds=301)
+    indexer._indexed_at = datetime.now(UTC) - timedelta(seconds=301)
     assert indexer.is_stale(max_age_seconds=300) is True
 
     indexer.clear()

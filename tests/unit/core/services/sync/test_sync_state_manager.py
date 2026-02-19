@@ -1,6 +1,7 @@
 """Behavioral tests for SyncStateManager DB and migration paths."""
 
 import sqlite3
+import weakref
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -22,6 +23,15 @@ class _DbManager:
 
 def _build_manager(tmp_path: Path) -> tuple[SyncStateManager, sqlite3.Connection]:
     conn = sqlite3.connect(":memory:")
+
+    # Create a small holder object we can weakref.finalize; sqlite3.Connection
+    # objects are not weakref-able, so wrap it and attach to manager to ensure
+    # the connection is closed when the manager is GC'd.
+    class _Holder:
+        conn: sqlite3.Connection
+
+    holder = _Holder()
+    holder.conn = conn
     conn.execute(
         "CREATE TABLE sync_metadata (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)"
     )
@@ -39,6 +49,12 @@ def _build_manager(tmp_path: Path) -> tuple[SyncStateManager, sqlite3.Connection
         """
     )
     manager = SyncStateManager(tmp_path, db_manager=_DbManager(conn))
+    # Keep holder attached to manager so it lives as long as manager; when
+    # manager is GC'd the finalize will close the sqlite connection.
+    weakref.finalize(holder, conn.close)
+    # Keep holder attached to manager so it lives as long as manager
+    # Cast to Any to satisfy static type checkers for this test-only attribute
+    cast(Any, manager)._conn_holder = holder
     return manager, conn
 
 

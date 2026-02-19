@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from functools import wraps
 from typing import TYPE_CHECKING, Any
 
@@ -44,7 +44,7 @@ class SyncCache:
             return None
 
         value, timestamp = self._cache[key]
-        if datetime.utcnow() - timestamp > timedelta(seconds=self.ttl_seconds):
+        if datetime.now(UTC) - timestamp > timedelta(seconds=self.ttl_seconds):
             # Expired
             del self._cache[key]
             self._misses += 1
@@ -60,7 +60,7 @@ class SyncCache:
             key: Cache key
             value: Value to cache
         """
-        self._cache[key] = (value, datetime.utcnow())
+        self._cache[key] = (value, datetime.now(UTC))
 
     def clear(self) -> None:
         """Clear all cached items."""
@@ -183,7 +183,7 @@ class IssueIndexer:
                     self._by_milestone[issue.milestone] = []
                 self._by_milestone[issue.milestone].append(issue)
 
-        self._indexed_at = datetime.utcnow()
+        self._indexed_at = datetime.now(UTC)
 
         logger.info(
             "issues_indexed",
@@ -239,7 +239,7 @@ class IssueIndexer:
         if self._indexed_at is None:
             return True
 
-        age = (datetime.utcnow() - self._indexed_at).total_seconds()
+        age = (datetime.now(UTC) - self._indexed_at).total_seconds()
         return age > max_age_seconds
 
     def clear(self) -> None:

@@ -164,7 +164,7 @@ class SyncConflictResolver:
                 resolved.append(resolved_issue)
             except Exception as e:
                 error_msg = f"Failed to resolve {conflict.issue_id}: {str(e)}"
-                self.logger.warning("conflict_resolution_error", message=error_msg)
+                self.logger.warning("conflict_resolution_error", reason=error_msg)
                 errors.append(error_msg)
 
         if errors:

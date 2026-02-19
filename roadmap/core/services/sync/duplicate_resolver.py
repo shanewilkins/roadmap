@@ -159,7 +159,7 @@ class DuplicateResolver:
         except ImportError:
             logger.warning(
                 "rich_not_available",
-                message="Rich library not available for interactive prompts. Skipping all matches.",
+                reason="Rich library not available for interactive prompts. Skipping all matches.",
             )
             # Fallback: skip all matches
             for match in matches:

@@ -1,12 +1,8 @@
-"""Unit tests for DuplicateResolver - updated for correct analysis-phase behavior.
+"""Unit tests for DuplicateResolver — analysis-phase behavior.
 
-During the sync analysis phase, the DuplicateResolver should:
-1. Detect duplicates between local and remote issues
-2. Return link actions (not actually merge, since remote may not exist locally)
-3. NOT call service methods that would fail on non-existent remote issues
-
-Actual merging/deletion/archiving happens later in the execution phase
-when both issues are confirmed to exist locally.
+These tests verify the resolver's behavior during the sync analysis phase:
+- it should detect duplicates and return link/skip actions (not perform merges),
+- it should avoid calling service methods during analysis.
 """
 
 from datetime import UTC, datetime
