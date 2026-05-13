@@ -34,8 +34,8 @@ Routine commands emit an unrelated warning about missing OpenTelemetry dependenc
 ## Example
 On `roadmap issue list --help`:
 ```
-[ WARNING] roadmap.common.observability.otel_init: opentelemetry_not_available | 
-detail=Tracing features will be disabled. Install with: pip install opentelemetry-exporter-jaeger 
+[ WARNING] roadmap.common.observability.otel_init: opentelemetry_not_available |
+detail=Tracing features will be disabled. Install with: pip install opentelemetry-exporter-jaeger
 error=No module named 'opentelemetry.exporter.otlp'
 ```
 
