@@ -251,3 +251,22 @@ class TestMilestoneParser:
         assert parsed_milestone.content == original_milestone.content
         assert parsed_milestone.created == original_milestone.created
         assert parsed_milestone.updated == original_milestone.updated
+
+    def test_parse_milestone_file_uses_filename_when_name_missing(self):
+        """Milestone parser should derive name from filename if missing in frontmatter."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            milestone_path = Path(temp_dir) / "sppm-semantic-completeness.md"
+            milestone_path.write_text(
+                "---\n"
+                "headline: Semantic Completeness\n"
+                "status: open\n"
+                'created: "2024-01-01T00:00:00"\n'
+                'updated: "2024-01-01T00:00:00"\n'
+                "---\n\n"
+                "Milestone body content"
+            )
+
+            milestone = MilestoneParser.parse_milestone_file(milestone_path)
+
+        assert milestone.name == "sppm-semantic-completeness"
+        assert milestone.status == MilestoneStatus.OPEN

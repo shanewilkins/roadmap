@@ -27,6 +27,11 @@ class MilestoneParser:
                     frontmatter[date_field], "file"
                 )
 
+        # Backward-compatibility: some historical files may be missing `name`.
+        # Use filename stem so list/view commands remain consistent with disk state.
+        if not frontmatter.get("name"):
+            frontmatter["name"] = file_path.stem
+
         # Convert string enums back to enum objects with validation
         if "status" in frontmatter:
             try:
