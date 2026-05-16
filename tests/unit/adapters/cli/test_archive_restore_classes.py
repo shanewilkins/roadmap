@@ -91,6 +91,36 @@ class TestIssueArchive:
         assert error is not None
         assert "not closed" in error
 
+    @patch("roadmap.adapters.cli.crud.crud_helpers.display_archive_success")
+    @patch("roadmap.adapters.cli.crud.crud_helpers.get_archive_dir")
+    def test_execute_skips_non_closed_issues_without_force(
+        self, mock_get_archive_dir, _mock_display_archive_success
+    ):
+        """Execute should archive only closed issues when force is not set."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            archive_dir = tmp_path / "archive"
+            archive_dir.mkdir(parents=True, exist_ok=True)
+            mock_get_archive_dir.return_value = archive_dir
+
+            closed_issue = MockEntity("closed-1", status="closed")
+            open_issue = MockEntity("open-1", status="in-progress")
+
+            issue_file = tmp_path / "closed-1-test.md"
+            issue_file.write_text("test")
+
+            self.archive.get_entities_to_archive = Mock(
+                return_value=[closed_issue, open_issue]
+            )
+            self.archive.find_entity_files = Mock(return_value=[issue_file])
+            self.archive.post_archive_hook = Mock()
+
+            result = self.archive.execute()
+
+            assert result is True
+            self.archive.find_entity_files.assert_called_once_with([closed_issue])
+            self.archive.post_archive_hook.assert_called_once()
+
 
 class TestIssueRestore:
     """Test IssueRestore class."""

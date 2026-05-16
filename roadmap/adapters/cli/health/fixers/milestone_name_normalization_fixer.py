@@ -79,15 +79,16 @@ class MilestoneNameNormalizationFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, _force: bool = False) -> FixResult:
+    def apply(self, force: bool = False) -> FixResult:
         """Normalize milestone names in issue metadata.
 
         Args:
-            _force: Ignored (SAFE fixers apply automatically)
+            force: Ignored (SAFE fixers apply automatically)
 
         Returns:
             FixResult with fix results
         """
+        _ = force
         mismatched = self._find_mismatched_milestone_names()
         fixed_count = 0
         failed_items = []

@@ -72,15 +72,16 @@ class OrphanedIssuesFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, _force: bool = False) -> FixResult:
+    def apply(self, force: bool = False) -> FixResult:
         """Move orphaned issues to correct folders.
 
         Args:
-            _force: Ignored (SAFE fixers apply automatically)
+            force: Ignored (SAFE fixers apply automatically)
 
         Returns:
             FixResult with move results
         """
+        _ = force
         misplaced = self._find_misplaced_issues()
         moved_count = 0
         failed_items = []

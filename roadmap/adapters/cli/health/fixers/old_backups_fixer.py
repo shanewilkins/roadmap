@@ -66,15 +66,16 @@ class OldBackupsFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, _force: bool = False) -> FixResult:
+    def apply(self, force: bool = False) -> FixResult:
         """Delete old backup files.
 
         Args:
-            _force: Ignored (SAFE fixers apply automatically)
+            force: Ignored (SAFE fixers apply automatically)
 
         Returns:
             FixResult with results of deletion
         """
+        _ = force
         old_backups = self._find_old_backups()
         deleted_count = 0
         failed_items = []

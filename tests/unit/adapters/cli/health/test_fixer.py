@@ -214,6 +214,22 @@ class TestHealthFixOrchestrator:
         assert "duplicate_issues" in review_fixers
         assert "corrupted_comments" in review_fixers
 
+    def test_apply_fix_accepts_force_keyword_for_old_backups(
+        self, core: RoadmapCore, monkeypatch
+    ):
+        """Regression: old_backups fixer should accept apply(force=...)."""
+        orchestrator = HealthFixOrchestrator(core)
+        fixer = orchestrator.get_fixer("old_backups")
+        assert fixer is not None
+
+        monkeypatch.setattr(fixer, "_find_old_backups", lambda: [])
+
+        result = orchestrator.apply_fix("old_backups", force=True)
+
+        assert result is not None
+        assert result.success is True
+        assert result.fix_type == "old_backups"
+
 
 class TestFixerInterface:
     """Tests for standard fixer interface."""

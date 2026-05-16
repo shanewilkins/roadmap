@@ -153,7 +153,8 @@ class IssueArchive(BaseArchive):
                     )
 
             if invalid_entities:
-                entities = [e for e in entities if (e, None) not in invalid_entities]
+                invalid_entity_ids = {e.id for e, _ in invalid_entities}
+                entities = [e for e in entities if e.id not in invalid_entity_ids]
                 if not entities:
                     return False
 

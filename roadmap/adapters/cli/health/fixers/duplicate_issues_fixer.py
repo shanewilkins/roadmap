@@ -73,15 +73,16 @@ class DuplicateIssuesFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, _force: bool = False) -> FixResult:
+    def apply(self, force: bool = False) -> FixResult:
         """Merge duplicate issues.
 
         Args:
-            _force: If True, apply without confirmation
+            force: Ignored (REVIEW fixers require orchestrator confirmation)
 
         Returns:
             FixResult with merge results
         """
+        _ = force
         duplicates = self._find_duplicates()
         merged_count = 0
 

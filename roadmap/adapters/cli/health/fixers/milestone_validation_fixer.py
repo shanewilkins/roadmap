@@ -83,15 +83,16 @@ class MilestoneValidationFixer(HealthFixer):
             changes_made=0,
         )
 
-    def apply(self, _force: bool = False) -> FixResult:
+    def apply(self, force: bool = False) -> FixResult:
         """Fix issues with invalid milestone references.
 
         Args:
-            _force: Ignored (SAFE fixers apply automatically)
+            force: Ignored (SAFE fixers apply automatically)
 
         Returns:
             FixResult with fix results
         """
+        _ = force
         invalid = self._find_invalid_milestones()
         fixed_count = 0
         failed_items = []
