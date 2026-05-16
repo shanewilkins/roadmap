@@ -184,7 +184,7 @@ class EntityHealthScanner:
 
         # Scan all issues
         try:
-            all_issues = self.core.issue_repository.list()
+            all_issues = self._list_entities("issues", "issue_repository")
             for issue in all_issues:
                 reports.append(self.scan_issue(issue))
         except Exception as e:
@@ -192,7 +192,7 @@ class EntityHealthScanner:
 
         # Scan all milestones
         try:
-            all_milestones = self.core.milestone_repository.list()
+            all_milestones = self._list_entities("milestones", "milestone_repository")
             for milestone in all_milestones:
                 reports.append(self.scan_milestone(milestone))
         except Exception as e:
@@ -202,7 +202,7 @@ class EntityHealthScanner:
 
         # Scan all projects
         try:
-            all_projects = self.core.project_repository.list()
+            all_projects = self._list_entities("projects", "project_repository")
             for project in all_projects:
                 reports.append(self.scan_project(project))
         except Exception as e:
@@ -211,6 +211,31 @@ class EntityHealthScanner:
             )
 
         return reports
+
+    def _list_entities(self, coordinator_attr: str, repository_attr: str) -> list[Any]:
+        """List entities using coordinator API first, with legacy fallback.
+
+        Args:
+            coordinator_attr: Coordinator attribute name on core (e.g., "issues")
+            repository_attr: Legacy repository attribute name on core
+
+        Returns:
+            List of entities
+
+        Raises:
+            AttributeError: If neither API is available
+        """
+        coordinator = getattr(self.core, coordinator_attr, None)
+        if coordinator is not None and hasattr(coordinator, "list"):
+            return coordinator.list()
+
+        repository = getattr(self.core, repository_attr, None)
+        if repository is not None and hasattr(repository, "list"):
+            return repository.list()
+
+        raise AttributeError(
+            f"Core has neither '{coordinator_attr}.list()' nor '{repository_attr}.list()'"
+        )
 
     # Private methods for individual checks
 

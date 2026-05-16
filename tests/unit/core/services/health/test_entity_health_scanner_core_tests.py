@@ -318,15 +318,15 @@ class TestEntityHealthScanner:
     def test_scan_all_with_core(self, mock_logger, scanner):
         """Test scan_all with initialized core."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
-        mock_core.issue_repository.list.return_value = []
-        mock_core.milestone_repository.list.return_value = []
-        mock_core.project_repository.list.return_value = []
+        mock_core.issues.list.return_value = []
+        mock_core.milestones.list.return_value = []
+        mock_core.projects.list.return_value = []
 
         scanner.core = mock_core
         reports = scanner.scan_all()
 
         assert reports == []
-        mock_core.issue_repository.list.assert_called_once()
+        mock_core.issues.list.assert_called_once()
 
     @patch("roadmap.core.services.health.entity_health_scanner.logger")
     def test_scan_all_with_multiple_entities(
@@ -334,9 +334,9 @@ class TestEntityHealthScanner:
     ):
         """Test scan_all with multiple entities."""
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
-        mock_core.issue_repository.list.return_value = [mock_issue]
-        mock_core.milestone_repository.list.return_value = [mock_milestone]
-        mock_core.project_repository.list.return_value = [mock_project]
+        mock_core.issues.list.return_value = [mock_issue]
+        mock_core.milestones.list.return_value = [mock_milestone]
+        mock_core.projects.list.return_value = [mock_project]
 
         scanner.core = mock_core
         reports = scanner.scan_all()

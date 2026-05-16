@@ -138,34 +138,19 @@ def scan(
         # Scan dependencies if requested
         dependency_analysis = None
         if scan_deps:
-            try:
-                analyzer = DependencyAnalyzer()
-                all_issues = core.issue_repository.list()
-                dependency_analysis = analyzer.analyze(all_issues)
-                log.info(
-                    "dependencies_analyzed",
-                    total_issues=dependency_analysis.total_issues,
-                    problems=len(dependency_analysis.problems),
-                )
-            except Exception as e:
-                log.warning("dependency_analysis_failed", error=str(e))
-                dependency_analysis = None
+            dependency_analysis = _analyze_dependencies(core, log)
 
         # Determine overall health status
         exit_code = _determine_exit_code(entity_reports, dependency_analysis)
 
         # Format and output results
-        if summary_only:
-            output_text = formatter.format_summary(entity_reports, dependency_analysis)
-        else:
-            output_text = formatter.format_entity_reports(entity_reports)
-            if scan_deps and dependency_analysis:
-                output_text += "\n" + formatter.format_dependency_analysis(
-                    dependency_analysis
-                )
-            output_text += "\n" + formatter.format_summary(
-                entity_reports, dependency_analysis
-            )
+        output_text = _format_scan_output(
+            formatter=formatter,
+            entity_reports=entity_reports,
+            dependency_analysis=dependency_analysis,
+            scan_deps=scan_deps,
+            summary_only=summary_only,
+        )
 
         click.echo(output_text)
 
@@ -179,6 +164,56 @@ def scan(
         log.exception("scan_failed", error=str(e))
         click.echo(f"Error: {str(e)}", err=True)
         sys.exit(2)
+
+
+def _get_core_issues(core) -> list:
+    """Get issue list from current coordinator API with legacy fallback."""
+    issues_coordinator = getattr(core, "issues", None)
+    if issues_coordinator is not None and hasattr(issues_coordinator, "list"):
+        return issues_coordinator.list()
+
+    issue_repository = getattr(core, "issue_repository", None)
+    if issue_repository is not None and hasattr(issue_repository, "list"):
+        return issue_repository.list()
+
+    raise AttributeError(
+        "Core has neither 'issues.list()' nor 'issue_repository.list()'"
+    )
+
+
+def _analyze_dependencies(core, log):
+    """Analyze issue dependencies and return analysis or None on failure."""
+    try:
+        analyzer = DependencyAnalyzer()
+        all_issues = _get_core_issues(core)
+        dependency_analysis = analyzer.analyze(all_issues)
+        log.info(
+            "dependencies_analyzed",
+            total_issues=dependency_analysis.total_issues,
+            problems=len(dependency_analysis.problems),
+        )
+        return dependency_analysis
+    except Exception as e:
+        log.warning("dependency_analysis_failed", error=str(e))
+        return None
+
+
+def _format_scan_output(
+    formatter,
+    entity_reports: list,
+    dependency_analysis,
+    scan_deps: bool,
+    summary_only: bool,
+) -> str:
+    """Format health scan output according to flags and analysis results."""
+    if summary_only:
+        return formatter.format_summary(entity_reports, dependency_analysis)
+
+    output_text = formatter.format_entity_reports(entity_reports)
+    if scan_deps and dependency_analysis:
+        output_text += "\n" + formatter.format_dependency_analysis(dependency_analysis)
+    output_text += "\n" + formatter.format_summary(entity_reports, dependency_analysis)
+    return output_text
 
 
 def _determine_exit_code(entity_reports: list, dependency_analysis=None) -> int:
