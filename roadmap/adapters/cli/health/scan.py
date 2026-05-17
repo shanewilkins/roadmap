@@ -260,9 +260,9 @@ def _apply_grouping(reports: list, group_by: str) -> list:
 def _log_summary(entity_reports: list, dependency_analysis, log):
     """Log summary information if verbose."""
     total_entities = len(entity_reports)
-    healthy = sum(1 for r in entity_reports if r.is_healthy)
-    degraded = sum(1 for r in entity_reports if r.is_degraded)
-    unhealthy = total_entities - healthy - degraded
+    healthy = sum(1 for r in entity_reports if r.is_healthy and not r.is_degraded)
+    degraded = sum(1 for r in entity_reports if r.is_healthy and r.is_degraded)
+    unhealthy = sum(1 for r in entity_reports if not r.is_healthy)
 
     error_count = sum(r.error_count for r in entity_reports)
     warning_count = sum(r.warning_count for r in entity_reports)

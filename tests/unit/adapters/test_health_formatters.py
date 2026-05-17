@@ -129,6 +129,39 @@ class TestPlainTextFormatter:
 
         assert "⚠" in output
 
+    def test_summary_uses_non_overlapping_health_buckets(self, sample_report):
+        """Summary counts should not overlap healthy/degraded categories."""
+        healthy_report = EntityHealthReport(
+            entity_id="issue-2",
+            entity_type=EntityType.ISSUE,
+            entity_title="Healthy Issue",
+            status="todo",
+            issues=[],
+        )
+        unhealthy_report = EntityHealthReport(
+            entity_id="issue-3",
+            entity_type=EntityType.ISSUE,
+            entity_title="Unhealthy Issue",
+            status="todo",
+            issues=[
+                HealthIssue(
+                    code="broken",
+                    message="Broken state",
+                    severity=HealthSeverity.ERROR,
+                    category="structure",
+                )
+            ],
+        )
+
+        formatter = PlainTextFormatter()
+        output = formatter.format_summary(
+            [sample_report, healthy_report, unhealthy_report]
+        )
+
+        assert "Healthy: 1" in output
+        assert "Degraded: 1" in output
+        assert "Unhealthy: 1" in output
+
 
 class TestJSONFormatter:
     """Test JSONFormatter."""
@@ -173,6 +206,23 @@ class TestJSONFormatter:
         assert "entities" in data
         assert "dependencies" in data
         assert data["summary"]["total_entities"] == 1
+
+    def test_json_summary_non_overlapping_health_buckets(self, sample_report):
+        """JSON summary should classify degraded separately from healthy."""
+        healthy_report = EntityHealthReport(
+            entity_id="issue-2",
+            entity_type=EntityType.ISSUE,
+            entity_title="Healthy Issue",
+            status="todo",
+            issues=[],
+        )
+        formatter = JSONFormatter()
+        output = formatter.format_summary([sample_report, healthy_report])
+
+        data = json.loads(output)
+        assert data["summary"]["healthy"] == 1
+        assert data["summary"]["degraded"] == 1
+        assert data["summary"]["unhealthy"] == 0
 
     def test_json_is_valid(self, sample_report):
         """Ensure JSON output is valid."""

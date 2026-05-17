@@ -139,9 +139,7 @@ class PlainTextFormatter(HealthFormatter):
 
         # Entity summary
         total_entities = len(entity_reports)
-        healthy = sum(1 for r in entity_reports if r.is_healthy)
-        degraded = sum(1 for r in entity_reports if r.is_degraded)
-        unhealthy = total_entities - healthy - degraded
+        healthy, degraded, unhealthy = _entity_health_buckets(entity_reports)
 
         output.append(f"\nEntities: {total_entities} total")
         output.append(f"  ✓ Healthy: {healthy}")
@@ -198,12 +196,12 @@ class PlainTextFormatter(HealthFormatter):
     @staticmethod
     def _status_badge(report: EntityHealthReport) -> str:
         """Get status badge for entity."""
-        if report.is_healthy:
-            return "✓"
+        if not report.is_healthy:
+            return "✗"
         elif report.is_degraded:
             return "⚠"
         else:
-            return "✗"
+            return "✓"
 
     @staticmethod
     def _severity_icon(severity: str) -> str:
@@ -254,9 +252,7 @@ class JSONFormatter(HealthFormatter):
     ) -> str:
         """Format summary as JSON."""
         total_entities = len(entity_reports)
-        healthy = sum(1 for r in entity_reports if r.is_healthy)
-        degraded = sum(1 for r in entity_reports if r.is_degraded)
-        unhealthy = total_entities - healthy - degraded
+        healthy, degraded, unhealthy = _entity_health_buckets(entity_reports)
 
         error_count = sum(r.error_count for r in entity_reports)
         warning_count = sum(r.warning_count for r in entity_reports)
@@ -360,9 +356,7 @@ class CSVFormatter(HealthFormatter):
 
         # Metadata section
         total_entities = len(entity_reports)
-        healthy = sum(1 for r in entity_reports if r.is_healthy)
-        degraded = sum(1 for r in entity_reports if r.is_degraded)
-        unhealthy = total_entities - healthy - degraded
+        healthy, degraded, unhealthy = _entity_health_buckets(entity_reports)
 
         error_count = sum(r.error_count for r in entity_reports)
         warning_count = sum(r.warning_count for r in entity_reports)
@@ -391,6 +385,16 @@ class CSVFormatter(HealthFormatter):
         if "," in value or '"' in value or "\n" in value:
             return f'"{value.replace(chr(34), chr(34) + chr(34))}"'
         return value
+
+
+def _entity_health_buckets(
+    entity_reports: list[EntityHealthReport],
+) -> tuple[int, int, int]:
+    """Return mutually exclusive counts for healthy, degraded, and unhealthy entities."""
+    healthy = sum(1 for r in entity_reports if r.is_healthy and not r.is_degraded)
+    degraded = sum(1 for r in entity_reports if r.is_healthy and r.is_degraded)
+    unhealthy = sum(1 for r in entity_reports if not r.is_healthy)
+    return healthy, degraded, unhealthy
 
 
 # Formatter factory
