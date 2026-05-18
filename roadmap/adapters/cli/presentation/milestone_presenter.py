@@ -51,7 +51,7 @@ class MilestonePresenter(BasePresenter):
 
         # Display issues if provided
         if issues is not None:
-            self._display_issues_panel(issues)
+            self._display_issues_panel(milestone_dto.name, issues)
 
         # Display description and goals if provided
         if description_content:
@@ -189,10 +189,11 @@ class MilestonePresenter(BasePresenter):
             )
         )
 
-    def _display_issues_panel(self, issues: list) -> None:
+    def _display_issues_panel(self, milestone_name: str, issues: list) -> None:
         """Display issues in a table panel.
 
         Args:
+            milestone_name: Milestone name used in follow-up guidance
             issues: List of issue objects with status, priority, etc.
         """
         if not issues:
@@ -234,13 +235,19 @@ class MilestonePresenter(BasePresenter):
             )
 
         title = (
-            f"📋 Issues (Showing 10 of {len(issues)})"
+            f"📋 Issues (First 10 of {len(issues)})"
             if len(issues) > 10
             else "📋 Issues"
         )
         self._get_console().print(
             Panel(issues_table, title=title, border_style="magenta")
         )
+
+        if len(issues) > 10:
+            self._get_console().print(
+                "[dim]Showing first 10 issues in milestone view. "
+                f"Use 'roadmap issue list -m {milestone_name}' to see all issues.[/dim]"
+            )
 
     def _display_description_and_goals(self, content: str) -> None:
         """Display description and goals sections from content.

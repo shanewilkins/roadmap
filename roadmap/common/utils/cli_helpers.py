@@ -325,7 +325,7 @@ class FilterSpecParser:
         return (
             "Filter rows (format: column=value). "
             "Operators: = != < > <= >= ~ (regex). "
-            "Example: --filter status=open --filter count>=5"
+            "Example: --filter status=todo --filter priority=high"
         )
 
 

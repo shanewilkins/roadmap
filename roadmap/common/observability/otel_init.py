@@ -57,10 +57,10 @@ def initialize_tracing(service_name: str = "roadmap-cli") -> None:
         )
 
     except ImportError as e:
-        logger.warning(
+        logger.debug(
             "opentelemetry_not_available",
             error=str(e),
-            detail="Tracing features will be disabled. Install with: pip install opentelemetry-exporter-jaeger",
+            detail="Tracing features will be disabled. Install with: pip install opentelemetry-exporter-otlp",
         )
         _tracer = None
 

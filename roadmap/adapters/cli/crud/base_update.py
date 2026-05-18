@@ -150,9 +150,16 @@ class BaseUpdate(ABC):
         Returns:
             Updated entity or None if failed
         """
-        return update_entity_by_type(
+        result = update_entity_by_type(
             self.core, self.entity_type, entity_id, update_dict
         )
+
+        # Some coordinator update methods (e.g., milestones) return bool instead
+        # of the updated entity. Normalize by fetching the entity after success.
+        if isinstance(result, bool):
+            return self._get_entity(entity_id) if result else None
+
+        return result
 
     def _display_success(self, entity: Any) -> None:
         """Display success message.

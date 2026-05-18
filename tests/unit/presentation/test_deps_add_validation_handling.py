@@ -18,7 +18,12 @@ from unittest.mock import Mock, patch
 import click
 from click.testing import CliRunner
 
-from roadmap.adapters.cli.issues.deps import add_dependency, deps
+from roadmap.adapters.cli.issues.deps import (
+    add_dependency,
+    deps,
+    remove_dependency,
+    update_dependency,
+)
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
@@ -177,6 +182,91 @@ class TestAddDependencyCommand:
         assert result.exit_code == 0
         # Should not call update if dependency already exists
         mock_core.issues.update.assert_not_called()
+
+
+class TestRemoveAndUpdateDependencyCommands:
+    """Test remove/update dependency command functionality."""
+
+    def test_remove_dependency_basic_success(self):
+        """Test successfully removing a dependency."""
+        runner = CliRunner()
+        mock_issue = Mock()
+        mock_issue.id = "123"
+        mock_issue.title = "Issue 123"
+        mock_issue.depends_on = ["456", "789"]
+
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        ctx_obj = {"core": mock_core}
+
+        with patch(
+            "roadmap.adapters.cli.issues.deps.ensure_entity_exists"
+        ) as mock_ensure:
+            mock_ensure.return_value = mock_issue
+
+            result = runner.invoke(
+                remove_dependency,
+                ["123", "456"],
+                obj=ctx_obj,
+            )
+
+        assert result.exit_code == 0
+        mock_core.issues.update.assert_called_once_with("123", depends_on=["789"])
+
+    def test_remove_dependency_not_found_does_not_update(self):
+        """Test removing non-existent dependency is a no-op with warning."""
+        runner = CliRunner()
+        mock_issue = Mock()
+        mock_issue.id = "123"
+        mock_issue.title = "Issue 123"
+        mock_issue.depends_on = ["789"]
+
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        ctx_obj = {"core": mock_core}
+
+        with patch(
+            "roadmap.adapters.cli.issues.deps.ensure_entity_exists"
+        ) as mock_ensure:
+            mock_ensure.return_value = mock_issue
+
+            result = runner.invoke(
+                remove_dependency,
+                ["123", "456"],
+                obj=ctx_obj,
+            )
+
+        assert result.exit_code == 0
+        mock_core.issues.update.assert_not_called()
+
+    def test_update_dependency_basic_success(self):
+        """Test replacing an existing dependency with a new one."""
+        runner = CliRunner()
+        mock_issue = Mock()
+        mock_issue.id = "123"
+        mock_issue.title = "Issue 123"
+        mock_issue.depends_on = ["456", "789"]
+
+        mock_new_dep = Mock()
+        mock_new_dep.id = "999"
+        mock_new_dep.title = "Issue 999"
+
+        mock_core = TestDataFactory.create_mock_core(is_initialized=True)
+        ctx_obj = {"core": mock_core}
+
+        with patch(
+            "roadmap.adapters.cli.issues.deps.ensure_entity_exists"
+        ) as mock_ensure:
+            mock_ensure.side_effect = [mock_issue, mock_new_dep]
+
+            result = runner.invoke(
+                update_dependency,
+                ["123", "456", "999"],
+                obj=ctx_obj,
+            )
+
+        assert result.exit_code == 0
+        mock_core.issues.update.assert_called_once_with(
+            "123", depends_on=["999", "789"]
+        )
 
     def test_add_dependency_with_empty_depends_on(self):
         """Test adding dependency when issue has no dependencies."""

@@ -1,16 +1,16 @@
 ---
 id: 122f1222
 title: CLI emits unnecessary OpenTelemetry warning on basic commands
-headline: ''
+headline: Routine commands emit an unrelated warning about missing OpenTelemetry dependencies.
 priority: low
-status: todo
+status: closed
 archived: false
 issue_type: bug
 milestone: backlog
 labels: []
 remote_ids: {}
 created: '2026-05-13T17:00:36.120315+00:00'
-updated: '2026-05-13T17:00:36.120318+00:00'
+updated: '2026-05-18T15:11:13.823942+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -18,7 +18,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
