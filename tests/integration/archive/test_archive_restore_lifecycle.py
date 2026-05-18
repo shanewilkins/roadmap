@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from roadmap.adapters.cli import main
+from roadmap.common.constants import ProjectStatus
 from tests.fixtures.integration_helpers import IntegrationTestBase
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
@@ -208,6 +209,30 @@ class TestIssueArchiveRestore:
 class TestMilestoneArchiveRestore:
     """Test milestone archive and restore commands."""
 
+    def test_archive_open_milestone_does_not_move_file(
+        self, roadmap_with_issues_and_milestones
+    ):
+        """Test open milestones are not archived without force."""
+        cli_runner, _core, _issues, temp_dir = roadmap_with_issues_and_milestones
+
+        roadmap_dir = Path(temp_dir) / ".roadmap"
+        active_milestones_dir = roadmap_dir / "milestones"
+        archive_milestones_dir = roadmap_dir / "archive" / "milestones"
+
+        active_before = list(active_milestones_dir.glob("*.md"))
+        assert active_before, "Expected at least one active milestone file"
+
+        result = cli_runner.invoke(
+            main,
+            ["milestone", "archive", "v1-0"],
+        )
+
+        assert result.exit_code == 0
+        assert list(active_milestones_dir.glob("*.md")) == active_before
+        assert not archive_milestones_dir.exists() or not list(
+            archive_milestones_dir.glob("*.md")
+        )
+
     def test_archive_single_milestone(self, roadmap_with_issues_and_milestones):
         """Test archiving a single milestone."""
         cli_runner, _core, _issues, _temp_dir = roadmap_with_issues_and_milestones
@@ -343,6 +368,64 @@ class TestMilestoneArchiveRestore:
 
 class TestProjectArchiveRestore:
     """Test project archive and restore commands."""
+
+    def test_project_close_keeps_file_active(self, isolated_roadmap):
+        """Test closing a project does not archive its file."""
+        cli_runner, core, temp_dir = isolated_roadmap
+
+        project = core.projects.create("Closable Project", "Test project")
+        roadmap_dir = Path(temp_dir) / ".roadmap"
+        active_path = roadmap_dir / "projects" / project.filename
+        archive_dir = roadmap_dir / "archive" / "projects"
+
+        assert active_path.exists(), "Expected active project file before close"
+
+        result = cli_runner.invoke(
+            main,
+            ["project", "close", project.id, "--force"],
+        )
+
+        output = clean_cli_output(result.output)
+        assert result.exit_code == 0, (
+            f"Project close failed (exit {result.exit_code}): {output}"
+        )
+        assert active_path.exists(), "Project close should not move the file"
+        assert not archive_dir.exists() or not list(archive_dir.rglob("*.md"))
+
+        refreshed = core.projects.get(project.id)
+        assert refreshed is not None
+        assert refreshed.status == ProjectStatus.COMPLETED
+
+    def test_project_archive_all_closed(self, isolated_roadmap):
+        """Test archiving all completed projects."""
+        cli_runner, core, temp_dir = isolated_roadmap
+
+        project_one = core.projects.create("Archive Project One", "First")
+        project_two = core.projects.create("Archive Project Two", "Second")
+
+        core.projects.update(project_one.id, status=ProjectStatus.COMPLETED)
+        core.projects.update(project_two.id, status=ProjectStatus.COMPLETED)
+
+        roadmap_dir = Path(temp_dir) / ".roadmap"
+        archive_dir = roadmap_dir / "archive" / "projects"
+
+        result = cli_runner.invoke(
+            main,
+            ["project", "archive", "--all-closed", "--force"],
+        )
+
+        output = clean_cli_output(result.output)
+        assert result.exit_code == 0, (
+            f"Project archive all-closed failed (exit {result.exit_code}): {output}"
+        )
+
+        archived_files = list(archive_dir.rglob("*.md"))
+        archived_names = {path.name for path in archived_files}
+
+        assert project_one.filename in archived_names
+        assert project_two.filename in archived_names
+        assert not (roadmap_dir / "projects" / project_one.filename).exists()
+        assert not (roadmap_dir / "projects" / project_two.filename).exists()
 
     def test_project_archive_single(self, isolated_roadmap):
         """Test archiving a project."""

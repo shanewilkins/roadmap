@@ -73,6 +73,25 @@ class TestArchiveDuplicatePrevention:
         active_after = self.count_active_issue_files(core)
         assert active_after == 0, "Closed issue should be removed from active"
 
+    def test_close_keeps_issue_active_and_out_of_archive(self, core):
+        """Ensure closing an issue does not move it into the archive tree."""
+        issue = core.issues.create("Closable Issue", priority=Priority.MEDIUM)
+
+        from click.testing import CliRunner
+
+        from roadmap.adapters.cli import main
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["issue", "close", issue.id])
+        clean_output = clean_cli_output(result.output)
+        assert result.exit_code == 0, f"Close failed: {clean_output}"
+
+        active_ids = self.get_active_issue_ids(core)
+        archived_ids = self.get_archived_issue_ids(core)
+
+        assert issue.id[:8] in active_ids, "Closed issue should remain in active files"
+        assert issue.id[:8] not in archived_ids, "Close should not archive the issue"
+
     def test_no_issue_ids_in_both_directories(self, core):
         """Ensure no issue appears in both active and archive directories."""
         # Create multiple issues and close some

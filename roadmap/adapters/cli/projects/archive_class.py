@@ -27,6 +27,13 @@ class ProjectArchive(BaseArchive):
             project = self.core.projects.get(entity_id)
             return [project] if project else []
 
+        if kwargs.get("all_closed"):
+            return [
+                project
+                for project in self.core.projects.list()
+                if getattr(project.status, "value", project.status) == "completed"
+            ]
+
         return []
 
     def validate_entity_before_archive(
@@ -41,6 +48,12 @@ class ProjectArchive(BaseArchive):
         Returns:
             Tuple of (is_valid, error_message)
         """
+        if kwargs.get("force"):
+            return True, None
+
+        status = getattr(entity.status, "value", entity.status)
+        if status != "completed":
+            return False, f"not completed (status: {status})"
         return True, None
 
     def find_entity_files(self, entities: list[Any]) -> list[Path]:

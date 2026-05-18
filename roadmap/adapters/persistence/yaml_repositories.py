@@ -17,6 +17,7 @@ from roadmap.adapters.persistence.parser import (
 )
 from roadmap.adapters.persistence.storage import StateManager
 from roadmap.common.logging import get_logger
+from roadmap.core.domain import Status
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.domain.project import Project
@@ -87,6 +88,14 @@ class YAMLIssueRepository(IssueRepository):
             IssueParser.parse_issue_file,
             id_matcher,
         )
+        if not issues:
+            archive_dir = self.issues_dir.parent / "archive" / "issues"
+            if archive_dir.exists():
+                issues = FileEnumerationService.enumerate_with_filter(
+                    archive_dir,
+                    IssueParser.parse_issue_file,
+                    id_matcher,
+                )
         return issues[0] if issues else None
 
     def list(
@@ -158,13 +167,10 @@ class YAMLIssueRepository(IssueRepository):
         Args:
             issue: Issue object to save
         """
-        # Determine target directory based on milestone
-        if issue.milestone and issue.milestone != "backlog":
-            # Save to milestone-specific directory
-            target_dir = self.issues_dir / issue.milestone
-        else:
-            # Save to backlog directory for unassigned issues
-            target_dir = self.issues_dir / "backlog"
+        archived = self._is_archived_issue(issue)
+
+        # Determine target directory based on milestone and archive state
+        target_dir = self._get_milestone_dir(issue.milestone, archived=archived)
 
         # Create directory if it doesn't exist
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -174,54 +180,27 @@ class YAMLIssueRepository(IssueRepository):
         issue_path_target = target_dir / issue.filename
         stale_files_removed = 0
 
-        # Search for any existing files with this issue ID but different filenames
-        # This handles the case where the title (and thus filename) has changed
+        # Search for any existing files with this issue ID in both active and archive
+        # trees so archive state changes do not leave duplicate copies behind.
         issue_id_prefix = issue.id
-        for subdir in self.issues_dir.glob("*"):
-            if subdir.is_dir():
-                # Look for files matching this issue ID
-                for existing_file in subdir.glob(f"{issue_id_prefix}-*.md"):
-                    # Skip the target file we're about to create
-                    if existing_file != issue_path_target:
-                        try:
-                            existing_file.unlink()
-                            stale_files_removed += 1
-                            logger.debug(
-                                "removed_stale_issue_file_by_id",
-                                issue_id=issue.id,
-                                old_filename=existing_file.name,
-                                removed_path=str(existing_file),
-                                target_path=str(issue_path_target),
-                            )
-                        except (OSError, PermissionError) as e:
-                            logger.warning(
-                                "failed_to_remove_stale_issue_file_by_id",
-                                issue_id=issue.id,
-                                old_filename=existing_file.name,
-                                path=str(existing_file),
-                                error=str(e),
-                            )
-
-        # Also check in root for backward compatibility
-        root_files = list(self.issues_dir.glob(f"{issue_id_prefix}-*.md"))
-        for root_path in root_files:
-            if root_path != issue_path_target:
+        for existing_file in self._find_issue_files_by_id(issue_id_prefix):
+            if existing_file != issue_path_target:
                 try:
-                    root_path.unlink()
+                    existing_file.unlink()
                     stale_files_removed += 1
                     logger.debug(
-                        "removed_stale_issue_file_from_root",
+                        "removed_stale_issue_file_by_id",
                         issue_id=issue.id,
-                        old_filename=root_path.name,
-                        removed_path=str(root_path),
+                        old_filename=existing_file.name,
+                        removed_path=str(existing_file),
                         target_path=str(issue_path_target),
                     )
                 except (OSError, PermissionError) as e:
                     logger.warning(
-                        "failed_to_remove_stale_issue_file_from_root",
+                        "failed_to_remove_stale_issue_file_by_id",
                         issue_id=issue.id,
-                        old_filename=root_path.name,
-                        path=str(root_path),
+                        old_filename=existing_file.name,
+                        path=str(existing_file),
                         error=str(e),
                     )
 
@@ -291,8 +270,13 @@ class YAMLIssueRepository(IssueRepository):
             issue: Updated issue object
             old_milestone: Previous milestone value
         """
-        old_path = self._get_issue_path(old_milestone, issue.filename)
-        new_path = self._get_issue_path(issue.milestone, issue.filename)
+        archived = self._is_archived_issue(issue)
+        old_path = self._get_issue_path(
+            old_milestone, issue.filename, archived=archived
+        )
+        new_path = self._get_issue_path(
+            issue.milestone, issue.filename, archived=archived
+        )
 
         # Create destination directory if needed
         new_path.parent.mkdir(parents=True, exist_ok=True)
@@ -330,7 +314,9 @@ class YAMLIssueRepository(IssueRepository):
             old_filename: Previous filename
         """
         # Get current directory for issue
-        target_dir = self._get_milestone_dir(issue.milestone)
+        target_dir = self._get_milestone_dir(
+            issue.milestone, archived=self._is_archived_issue(issue)
+        )
 
         # Remove old file from target directory
         old_path = target_dir / old_filename
@@ -352,7 +338,9 @@ class YAMLIssueRepository(IssueRepository):
         # Also check for stale copies in other directories
         self._cleanup_stale_files(old_filename, target_dir)
 
-    def _get_issue_path(self, milestone: str | None, filename: str) -> Path:
+    def _get_issue_path(
+        self, milestone: str | None, filename: str, archived: bool = False
+    ) -> Path:
         """Get the full path for an issue file.
 
         Args:
@@ -362,9 +350,9 @@ class YAMLIssueRepository(IssueRepository):
         Returns:
             Full path to issue file
         """
-        return self._get_milestone_dir(milestone) / filename
+        return self._get_milestone_dir(milestone, archived=archived) / filename
 
-    def _get_milestone_dir(self, milestone: str | None) -> Path:
+    def _get_milestone_dir(self, milestone: str | None, archived: bool = False) -> Path:
         """Get directory for a milestone.
 
         Args:
@@ -373,9 +361,33 @@ class YAMLIssueRepository(IssueRepository):
         Returns:
             Directory path
         """
+        root_dir = self._get_issue_root(archived=archived)
         if milestone and milestone != "backlog":
-            return self.issues_dir / milestone
-        return self.issues_dir / "backlog"
+            return root_dir / milestone
+        return root_dir / "backlog"
+
+    def _get_issue_root(self, archived: bool = False) -> Path:
+        """Get the root directory for active or archived issues."""
+        if archived:
+            return self.issues_dir.parent / "archive" / "issues"
+        return self.issues_dir
+
+    def _find_issue_files_by_id(self, issue_id_prefix: str) -> list[Path]:
+        """Find issue files across active and archive trees by ID prefix."""
+        issue_files: list[Path] = []
+        for root_dir in (
+            self._get_issue_root(archived=False),
+            self._get_issue_root(archived=True),
+        ):
+            if not root_dir.exists():
+                continue
+            issue_files.extend(root_dir.rglob(f"{issue_id_prefix}-*.md"))
+        return issue_files
+
+    def _is_archived_issue(self, issue: Issue) -> bool:
+        """Determine whether an issue should live under the archive tree."""
+        status = getattr(issue.status, "value", issue.status)
+        return bool(issue.archived or status == Status.ARCHIVED.value)
 
     def _cleanup_stale_files(self, filename: str, exclude_dir: Path) -> None:
         """Remove stale copies of a file from other directories.
@@ -384,14 +396,20 @@ class YAMLIssueRepository(IssueRepository):
             filename: Filename to search for
             exclude_dir: Directory to exclude from cleanup
         """
-        for subdir in self.issues_dir.glob("*"):
-            if subdir.is_dir() and subdir != exclude_dir:
-                stale_path = subdir / filename
-                if stale_path.exists():
-                    try:
-                        stale_path.unlink()
-                    except (OSError, PermissionError):
-                        pass
+        for root_dir in (
+            self._get_issue_root(archived=False),
+            self._get_issue_root(archived=True),
+        ):
+            if not root_dir.exists():
+                continue
+            for subdir in root_dir.glob("*"):
+                if subdir.is_dir() and subdir != exclude_dir:
+                    stale_path = subdir / filename
+                    if stale_path.exists():
+                        try:
+                            stale_path.unlink()
+                        except (OSError, PermissionError):
+                            pass
 
     def delete(self, issue_id: str) -> bool:
         """Delete an issue.
@@ -406,11 +424,11 @@ class YAMLIssueRepository(IssueRepository):
         if not issue:
             return False
 
-        # Determine where file is located based on milestone
-        if issue.milestone and issue.milestone != "backlog":
-            issue_path = self.issues_dir / issue.milestone / issue.filename
-        else:
-            issue_path = self.issues_dir / "backlog" / issue.filename
+        issue_path = self._get_issue_path(
+            issue.milestone,
+            issue.filename,
+            archived=self._is_archived_issue(issue),
+        )
 
         if issue_path.exists():
             try:

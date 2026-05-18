@@ -191,10 +191,13 @@ git commit -m "Progress on issue-id: 75% complete"
 **A:** Yes:
 
 ```bash
-roadmap issue update issue-id --status done --progress 100
+roadmap issue update issue-id --status closed --progress 100
 ```
 
-But if you also commit with "fixes issue-id", the auto-update will also trigger (that's fine, both set it to done).
+But if you also commit with "fixes issue-id", the auto-update will also trigger (that's fine, both set it to closed).
+
+**Note:** `roadmap` uses workflow statuses, not GitHub's `open`/`closed` query values.
+Use `--open` in list commands when you want GitHub-style "not closed" behavior.
 
 ### Q: What statuses are available?
 
@@ -204,7 +207,7 @@ But if you also commit with "fixes issue-id", the auto-update will also trigger 
 - `in-progress` - Currently being worked on
 - `blocked` - Waiting on something else
 - `review` - In code review or QA
-- `done` - Completed
+- `closed` - Completed
 
 Custom statuses coming in v1.1.
 

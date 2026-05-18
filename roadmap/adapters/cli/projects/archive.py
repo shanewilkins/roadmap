@@ -71,6 +71,10 @@ def archive_project(
     if list_archived:
         from pathlib import Path
 
+        from roadmap.adapters.cli.crud.crud_helpers import (
+            EntityType,
+            collect_archive_files,
+        )
         from roadmap.adapters.persistence.parser import ProjectParser
 
         roadmap_dir = Path.cwd() / ".roadmap"
@@ -80,7 +84,7 @@ def archive_project(
             console.print("📋 No archived projects.", style="yellow")
             return
 
-        archived_files = list(archive_dir.glob("*.md"))
+        archived_files = collect_archive_files(archive_dir, EntityType.PROJECT)
         if not archived_files:
             console.print("📋 No archived projects.", style="yellow")
             return

@@ -1,16 +1,17 @@
 ---
 id: 9d2d0c03
 title: Improve documentation of issue status values for clarity
-headline: ''
+headline: 'The CLI uses workflow states (todo, in-progress, blocked, review, closed)
+  that differ from GitHub''s '
 priority: medium
-status: todo
+status: closed
 archived: false
 issue_type: feature
 milestone: backlog
 labels: []
 remote_ids: {}
 created: '2026-05-13T17:11:21.768187+00:00'
-updated: '2026-05-13T17:11:21.768196+00:00'
+updated: '2026-05-18T16:58:32.712510+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -18,7 +19,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null

@@ -151,7 +151,7 @@ def _apply_additional_filters(
     is_flag=True,
     help="Show only unassigned issues (alias for --backlog)",
 )
-@click.option("--open", is_flag=True, help="Show only open issues (not done)")
+@click.option("--open", is_flag=True, help="Show only open issues (not closed)")
 @click.option("--blocked", is_flag=True, help="Show only blocked issues")
 @click.option(
     "--next-milestone", is_flag=True, help="Show issues for the next upcoming milestone"
@@ -162,7 +162,7 @@ def _apply_additional_filters(
     "--status",
     "-s",
     type=click.Choice(["todo", "in-progress", "blocked", "review", "closed"]),
-    help="Filter by status",
+    help="Filter by workflow status (todo|in-progress|blocked|review|closed). Use --open for non-closed issues",
 )
 @click.option(
     "--priority",

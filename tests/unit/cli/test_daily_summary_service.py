@@ -291,6 +291,44 @@ class TestDailySummaryServiceIssueCategorization:
         # Both should appear since categorize_issues doesn't filter by assignee
         assert len(result["todo_high_priority"]) == 2
 
+    def test_categorize_issues_prioritizes_dependency_blockers_in_up_next(self):
+        """Test Up Next ordering favors blockers on dependency chains."""
+        standalone = (
+            IssueBuilder()
+            .with_id("TASK-1")
+            .with_title("Standalone high-priority work")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .build()
+        )
+        blocker = (
+            IssueBuilder()
+            .with_id("TASK-2")
+            .with_title("Blocker for dependent work")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .build()
+        )
+        dependent = (
+            IssueBuilder()
+            .with_id("TASK-3")
+            .with_title("Depends on blocker")
+            .with_status(Status.TODO)
+            .with_assignee("alice")
+            .with_priority(Priority.HIGH)
+            .with_dependencies(["TASK-2"])
+            .build()
+        )
+
+        # Intentionally put standalone first to verify dependency-aware sorting.
+        service = DailySummaryService(MagicMock())
+        result = service.categorize_issues([standalone, blocker, dependent], "alice")
+
+        assert len(result["todo_high_priority"]) == 3
+        assert result["todo_high_priority"][0].id == "TASK-2"
+
 
 class TestDailySummaryServiceGetDailySummaryData:
     """Test main data aggregation method."""

@@ -132,11 +132,52 @@ class DailySummaryService:
         Returns:
             List of up to 3 high-priority TODO issues
         """
-        return [
+        candidates = [
             i
             for i in issues
             if i.status == Status.TODO and i.priority.value in ["critical", "high"]
-        ][:3]
+        ]
+
+        if not candidates:
+            return []
+
+        # Prioritize issues that unblock the largest downstream dependency chain.
+        # This helps "today" surface critical path blockers before standalone work.
+        active_issues = [i for i in issues if i.status != Status.CLOSED]
+        dependents_map: dict[str, list[str]] = {}
+        for issue in active_issues:
+            for dep_id in issue.depends_on or []:
+                dependents_map.setdefault(dep_id, []).append(issue.id)
+
+        depth_cache: dict[str, int] = {}
+
+        def dependency_depth(issue_id: str, visiting: set[str] | None = None) -> int:
+            if issue_id in depth_cache:
+                return depth_cache[issue_id]
+
+            visiting = visiting or set()
+            if issue_id in visiting:
+                # Cycle guard: don't recurse indefinitely; treat as no extra depth.
+                return 0
+
+            visiting.add(issue_id)
+            children = dependents_map.get(issue_id, [])
+            if not children:
+                depth = 0
+            else:
+                depth = 1 + max(dependency_depth(child, visiting) for child in children)
+            visiting.remove(issue_id)
+
+            depth_cache[issue_id] = depth
+            return depth
+
+        def sort_key(issue):
+            depth = dependency_depth(issue.id)
+            direct_dependents = len(dependents_map.get(issue.id, []))
+            critical_rank = 0 if issue.priority.value == "critical" else 1
+            return (-depth, -direct_dependents, critical_rank, issue.id)
+
+        return sorted(candidates, key=sort_key)[:3]
 
     def _get_completed_today_issues(self, issues: list) -> list:
         """Get issues closed today.

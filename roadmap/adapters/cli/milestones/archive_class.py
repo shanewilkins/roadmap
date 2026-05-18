@@ -126,7 +126,8 @@ class MilestoneArchive(BaseArchive):
                     )
 
             if invalid_entities:
-                entities = [e for e in entities if (e, None) not in invalid_entities]
+                invalid_entity_names = {entity.name for entity, _ in invalid_entities}
+                entities = [e for e in entities if e.name not in invalid_entity_names]
                 if not entities:
                     return False
 

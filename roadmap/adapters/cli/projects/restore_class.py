@@ -31,11 +31,11 @@ class ProjectRestore(BaseRestore):
 
         if entity_id:
             # Find specific project file by ID prefix
-            matching = list(archive_dir.glob(f"{entity_id[:8]}*.md"))
+            matching = list(archive_dir.rglob(f"{entity_id[:8]}*.md"))
             return matching if matching else []
         else:
             # Return all archived projects
-            return list(archive_dir.glob("*.md"))
+            return list(archive_dir.rglob("*.md"))
 
     def post_restore_hook(self, restored_files: list[Path], **kwargs) -> None:
         """Handle post-restore state updates.
