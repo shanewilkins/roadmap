@@ -489,6 +489,7 @@ class YAMLMilestoneRepository(MilestoneRepository):
             self.milestones_dir,
             MilestoneParser.parse_milestone_file,
             id_matcher,
+            warn_on_parse_error=True,
         )
         return milestones[0] if milestones else None
 
@@ -501,6 +502,7 @@ class YAMLMilestoneRepository(MilestoneRepository):
         return FileEnumerationService.enumerate_and_parse(
             self.milestones_dir,
             MilestoneParser.parse_milestone_file,
+            warn_on_parse_error=True,
         )
 
     def save(self, milestone: Milestone) -> None:

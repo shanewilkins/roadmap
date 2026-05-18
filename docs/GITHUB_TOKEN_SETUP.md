@@ -68,7 +68,7 @@ roadmap config set github.sync_backend github
 - **`repo`** - Full control of public and private repositories
   - Use this for private repositories or when full access needed
   - **RECOMMENDED** for roadmap CLI
-  
+
 - **`public_repo`** - Access to public repositories only
   - Use this if you only sync with public GitHub repositories
   - More restrictive, better for public use
@@ -79,7 +79,7 @@ roadmap config set github.sync_backend github
 
 **Problem**: You see `GitHub token not configured` when running sync
 
-**Solution**: 
+**Solution**:
 1. Verify token is set: `echo $GITHUB_TOKEN`
 2. If empty, export it: `export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`
 3. Or run `roadmap git setup --auth` to store the token in keychain
@@ -100,7 +100,7 @@ roadmap config set github.sync_backend github
 3. Create a new token if needed
 4. Update `GITHUB_TOKEN` environment variable
 
-### "403 Forbidden" Error  
+### "403 Forbidden" Error
 
 **Problem**: You see `403 Forbidden` when syncing
 

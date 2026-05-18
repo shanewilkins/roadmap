@@ -1,16 +1,17 @@
 ---
 id: 1586d27c
 title: Revert semantic versioning to 0.1.x to reflect actual product maturity
-headline: ''
+headline: The package is currently versioned as 1.0+, but real-world usage reveals
+  significant bugs and missin
 priority: high
 status: todo
 archived: false
 issue_type: feature
-milestone: null
+milestone: backlog
 labels: []
 remote_ids: {}
 created: '2026-05-13T17:11:31.378852+00:00'
-updated: '2026-05-13T17:11:31.378854+00:00'
+updated: '2026-05-17T13:46:58.792870+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

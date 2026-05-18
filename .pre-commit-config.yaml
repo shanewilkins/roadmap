@@ -137,7 +137,7 @@ repos:
         entry: uv run pytest -q
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
 
   # Coverage gate only on push (mirrors CI gate with 77% threshold)
   - repo: local
@@ -147,4 +147,4 @@ repos:
         entry: uv run pytest -q --cov=roadmap --cov-report=term-missing --cov-report=html --cov-fail-under=77
         language: system
         pass_filenames: false
-        stages: [push]
+        stages: [pre-push]

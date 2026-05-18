@@ -124,7 +124,7 @@ class DuplicateIssuesFixer(HealthFixer):
                         "id": issue.id,
                         "title": issue.title,
                         "status": issue.status,
-                        "created": issue.created_date or "",
+                        "created": issue.created or "",
                     }
                 )
         except Exception as e:

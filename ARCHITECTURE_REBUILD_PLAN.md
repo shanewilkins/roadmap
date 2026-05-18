@@ -11,7 +11,7 @@
 
 **What Was Deleted**: Approximately 300 lines of implementation code from:
 - `SyncMergeOrchestrator._sync_*` methods (initialization, deduplication, analysis, apply, metrics)
-- `GitHubSyncBackend` push/pull/delete operation implementations  
+- `GitHubSyncBackend` push/pull/delete operation implementations
 - Supporting helper methods across both files
 
 **Why It's Broken**: The orchestrator calls methods that exist but the underlying implementation was gutted. The structure that decides WHAT to do (orchestrator) is intact, but the HOW (backend operations and sync phases) is incomplete.
@@ -42,7 +42,7 @@ All operations use `Result[SuccessType, SyncError]` pattern (in `roadmap/common/
 - No exceptions leaked from backend operations
 - SyncError enum (from `common/errors.py`) defines error categories
 
-**Impact on Rebuild**: 
+**Impact on Rebuild**:
 - `push_issues()` → `Result[SyncReport, SyncError]`
 - `pull_issues()` → `Result[SyncReport, SyncError]`
 - `delete_remote_duplicates()` → `Result[dict, SyncError]`
@@ -202,7 +202,7 @@ class TestGitHubSyncBackend:
         # Mock API, call push_issues with new issue
         # Assert POST called, issue created
         # Assert Result.ok returned with SyncReport
-    
+
     def test_push_issues_updates_existing(self):
         # Mock API, call push_issues with existing issue (has backend_id)
         # Assert PATCH called, issue updated
@@ -213,13 +213,13 @@ class TestGitHubSyncBackend:
         # Assert GET called
         # Assert Issue created locally
         # Assert Result.ok returned
-    
+
     def test_delete_issues_via_graphql(self):
         # Mock GraphQL, call delete_issues
         # Assert mutation executed
         # Assert per-issue status tracked
         # Assert Result.ok returned
-    
+
     def test_error_handling_returns_err(self):
         # Mock API error, verify Result.err returned
         # Assert SyncError populated correctly
@@ -236,7 +236,7 @@ class TestEndToEndSync:
         # Call orchestrator.sync_all_issues()
         # Assert sync phases complete successfully
         # Assert SyncReport has success data
-    
+
     @pytest.mark.integration
     def test_sync_with_duplicates(self):
         # Setup: 99 canonical, 1728 duplicates across local+remote
@@ -245,7 +245,7 @@ class TestEndToEndSync:
         # Assert: Deleted from GitHub
         # Assert: Only 99 issues remain in sync
         # Assert: Second sync shows "no changes"
-    
+
     @pytest.mark.integration
     def test_sync_with_conflicts(self):
         # Setup: Issue edited locally AND remotely (conflict)
@@ -315,7 +315,7 @@ Options:
 
 **Decision**: Start with **Option A** (GraphQL in backend), refactor to Option B if it grows beyond 500 lines.
 
-**Rationale**: 
+**Rationale**:
 - GraphQL is GitHub-specific implementation detail
 - Belongs in platform layer with other GitHub operations
 - Keeps service layer focused on business logic (dedup, analysis, etc.)
@@ -461,7 +461,7 @@ This Rebuild (Phase A-C) → Unblocks Task 5 & 6 → Enables Task 7+ → Complet
 
 ### From Copilot Instructions (`.github/copilot-instructions.md`)
 - ✅ Use `uv` for command execution
-- ✅ Follow semantic versioning in commits  
+- ✅ Follow semantic versioning in commits
 - ✅ Include comprehensive tests alongside implementation
 - ✅ Use type hints throughout (pyright must pass)
 - ✅ Maintain POSIX compatibility
@@ -518,7 +518,7 @@ Before starting Phase A, verify:
 
 ## Next Steps
 
-1. **Read this document thoroughly** 
+1. **Read this document thoroughly**
   - Understand Phases A-D requirements
    - Review success criteria
    - Understand constraints
@@ -546,7 +546,7 @@ Before starting Phase A, verify:
 **Improvements Roadmap Context**:
 - [SYNC_IMPROVEMENTS_ROADMAP.md](SYNC_IMPROVEMENTS_ROADMAP.md) - Master strategy (Tasks 1-12)
   - Task 1: Result pattern ✅
-  - Task 2: Retry/circuit breaker ✅  
+  - Task 2: Retry/circuit breaker ✅
   - Task 3: Backend registry ✅
   - Task 4: Duplicate detection ✅
   - Task 5: Duplicate resolution 🚀 (blocked by this rebuild)

@@ -6,7 +6,7 @@ priority: medium
 status: todo
 archived: false
 issue_type: bug
-milestone: null
+milestone: backlog
 labels: []
 remote_ids: {}
 created: '2026-05-13T17:00:43.246260+00:00'

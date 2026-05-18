@@ -156,6 +156,10 @@ class MilestoneValidationFixer(HealthFixer):
                     # No milestone is valid (goes to backlog)
                     continue
 
+                # "backlog" is a valid pseudo-milestone (no file on disk)
+                if issue.milestone.lower() == "backlog":
+                    continue
+
                 # Convert milestone name to safe filename for comparison
                 safe_name = "".join(
                     c for c in issue.milestone if c.isalnum() or c in (" ", "-", "_")

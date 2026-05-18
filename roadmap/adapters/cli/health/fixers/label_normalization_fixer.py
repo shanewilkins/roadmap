@@ -104,11 +104,8 @@ class LabelNormalizationFixer(HealthFixer):
                 issue = issue_data["issue"]
                 sorted_labels = issue_data["sorted_labels"]
 
-                # Update the issue with sorted labels
-                issue.labels = sorted_labels
-
-                # Save the issue
-                self.core.issues.update(issue)
+                # Save the issue with sorted labels via the update API
+                self.core.issues.update(issue.id, labels=sorted_labels)
 
                 affected.append(f"{issue.id} ({len(sorted_labels)} labels sorted)")
                 changes += 1

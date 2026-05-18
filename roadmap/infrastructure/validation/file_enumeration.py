@@ -58,6 +58,7 @@ class FileEnumerationService:
         directory: Path,
         parser_func: Callable[[Path], Any],
         backup_filter: bool = True,
+        warn_on_parse_error: bool = False,
     ) -> list[Any]:
         """Enumerate files and parse with consistent error handling.
 
@@ -65,6 +66,9 @@ class FileEnumerationService:
             directory: Directory to enumerate
             parser_func: Parser function (e.g., IssueParser.parse_issue_file)
             backup_filter: Skip .backup files if True
+            warn_on_parse_error: If True, emit WARNING instead of DEBUG when a
+                file fails to parse. Use for entity types where a silent skip
+                would cause confusing inconsistencies (e.g., milestones).
 
         Returns:
             List of parsed objects (failed items skipped with logging)
@@ -97,12 +101,16 @@ class FileEnumerationService:
                         pass
                     results.append(obj)
             except Exception as e:
-                logger.debug(
-                    "enumerate_and_parse_skip_file",
-                    file=file_path.name,
-                    error=str(e),
-                    error_type=type(e).__name__,
-                )
+                log_event = "enumerate_and_parse_skip_file"
+                log_kwargs = {
+                    "file": str(file_path),
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                }
+                if warn_on_parse_error:
+                    logger.warning(log_event, **log_kwargs)
+                else:
+                    logger.debug(log_event, **log_kwargs)
                 continue
 
         logger.debug(
@@ -118,6 +126,7 @@ class FileEnumerationService:
         directory: Path,
         parser_func: Callable[[Path], Any],
         filter_func: Callable[[Any], bool],
+        warn_on_parse_error: bool = False,
     ) -> list[Any]:
         """Enumerate, parse, and apply filter predicate.
 
@@ -125,6 +134,7 @@ class FileEnumerationService:
             directory: Directory to enumerate
             parser_func: Parser function (e.g., IssueParser.parse_issue_file)
             filter_func: Predicate function (return True to include)
+            warn_on_parse_error: Passed through to enumerate_and_parse.
 
         Returns:
             List of parsed and filtered objects
@@ -133,7 +143,9 @@ class FileEnumerationService:
             "enumerate_with_filter_start",
             directory=str(directory),
         )
-        items = FileEnumerationService.enumerate_and_parse(directory, parser_func)
+        items = FileEnumerationService.enumerate_and_parse(
+            directory, parser_func, warn_on_parse_error=warn_on_parse_error
+        )
         filtered = [item for item in items if filter_func(item)]
 
         logger.debug(

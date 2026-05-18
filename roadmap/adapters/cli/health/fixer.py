@@ -198,6 +198,9 @@ class HealthFixOrchestrator:
         from roadmap.adapters.cli.health.fixers.milestone_naming_compliance_fixer import (
             MilestoneNamingComplianceFixer,
         )
+        from roadmap.adapters.cli.health.fixers.milestone_parse_error_fixer import (
+            MilestoneParseErrorFixer,
+        )
         from roadmap.adapters.cli.health.fixers.milestone_validation_fixer import (
             MilestoneValidationFixer,
         )
@@ -219,6 +222,7 @@ class HealthFixOrchestrator:
             MilestoneNameNormalizationFixer(self.core),
             MilestoneNamingComplianceFixer(self.core),
             MilestoneValidationFixer(self.core),
+            MilestoneParseErrorFixer(self.core),
         ]
 
         for fixer in fixers:

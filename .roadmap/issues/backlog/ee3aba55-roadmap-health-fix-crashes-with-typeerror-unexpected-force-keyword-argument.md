@@ -1,16 +1,17 @@
 ---
 id: ee3aba55
 title: 'roadmap health fix crashes with TypeError: unexpected ''force'' keyword argument'
-headline: ''
+headline: The `roadmap health fix` command fails with a TypeError instead of applying
+  fixes.
 priority: critical
-status: todo
+status: closed
 archived: false
 issue_type: bug
-milestone: null
+milestone: backlog
 labels: []
 remote_ids: {}
 created: '2026-05-13T16:59:51.025304+00:00'
-updated: '2026-05-13T16:59:51.025313+00:00'
+updated: '2026-05-17T13:59:28.296231+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -18,7 +19,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
