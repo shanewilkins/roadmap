@@ -15,6 +15,7 @@ from structlog import get_logger
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.health.formatters import get_formatter
+from roadmap.adapters.cli.utils.click_options import details_option
 from roadmap.core.services.health.entity_health_scanner import (
     EntityHealthScanner,
 )
@@ -31,6 +32,7 @@ logger = get_logger()
     default="plain",
     help="Output format (default: plain)",
 )
+@details_option
 @click.option(
     "--filter-entity",
     "-e",
@@ -79,6 +81,7 @@ logger = get_logger()
 def scan(
     ctx: click.Context,
     output: str,
+    details: bool,
     filter_entity: tuple[str],
     filter_severity: tuple[str],
     group_by: str,

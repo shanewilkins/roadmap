@@ -11,6 +11,7 @@ import click
 from structlog import get_logger
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.cli.utils.click_options import health_check_options
 from roadmap.adapters.persistence.parser.issue import IssueParser
 
 logger = get_logger(__name__)
@@ -120,6 +121,7 @@ def _print_plain_report(report: dict, show_ids: bool, limit: int) -> None:
 
 
 @click.command(name="db-integrity")
+@health_check_options
 @click.option(
     "--show-ids",
     is_flag=True,
@@ -141,7 +143,13 @@ def _print_plain_report(report: dict, show_ids: bool, limit: int) -> None:
 @click.pass_context
 @require_initialized
 def db_integrity(
-    ctx: click.Context, show_ids: bool, json_output: bool, limit: int
+    ctx: click.Context,
+    show_ids: bool,
+    json_output: bool,
+    limit: int,
+    verbose: bool,
+    details: bool,
+    format: str,
 ) -> None:
     """Check database integrity against local issue files."""
     core = ctx.obj["core"]

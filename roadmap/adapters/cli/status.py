@@ -24,9 +24,10 @@ from roadmap.adapters.cli.services.project_status_service import (
 from roadmap.adapters.cli.utils.click_options import (
     details_option,
     format_option,
+    health_check_options,
     verbose_option,
 )
-from roadmap.common.models import TableData
+from roadmap.common.models import TableData  # noqa: F401 (used in type hints)
 from roadmap.common.output_formatter import OutputFormatter
 from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.infrastructure.observability.health import HealthCheck
@@ -191,6 +192,7 @@ def check_health(ctx: click.Context, verbose: bool, details: bool, format: str) 
 
 
 @click.command()
+@health_check_options
 @click.option(
     "--fix-type",
     "-t",
@@ -225,16 +227,15 @@ def check_health(ctx: click.Context, verbose: bool, details: bool, format: str) 
     is_flag=True,
     help="Auto-accept all suggestions without prompts",
 )
-@click.option(
-    "--format",
-    "-f",
-    type=click.Choice(["plain", "json"], case_sensitive=False),
-    default="plain",
-    help="Output format (default: plain text)",
-)
 @click.pass_context
 def fix_health(
-    ctx: click.Context, fix_type: str, dry_run: bool, yes: bool, format: str
+    ctx: click.Context,
+    verbose: bool,
+    details: bool,
+    format: str,
+    fix_type: str,
+    dry_run: bool,
+    yes: bool,
 ) -> None:
     """Apply automatic fixes for health issues.
 

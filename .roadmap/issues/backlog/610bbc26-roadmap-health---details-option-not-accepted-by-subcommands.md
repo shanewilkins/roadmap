@@ -1,16 +1,17 @@
 ---
 id: 610bbc26
 title: roadmap health --details option not accepted by subcommands
-headline: ''
+headline: The top-level `roadmap health` help advertises a `--details` option, but
+  subcommands don't accept it
 priority: medium
-status: todo
+status: closed
 archived: false
 issue_type: bug
 milestone: backlog
 labels: []
 remote_ids: {}
 created: '2026-05-13T17:00:16.180547+00:00'
-updated: '2026-05-13T17:00:16.180550+00:00'
+updated: '2026-05-18T21:02:06.472722+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -18,7 +19,7 @@ depends_on: []
 blocks: []
 actual_start_date: null
 actual_end_date: null
-progress_percentage: null
+progress_percentage: 100.0
 handoff_notes: null
 previous_assignee: null
 handoff_date: null
