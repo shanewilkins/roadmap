@@ -1,17 +1,18 @@
 ---
-id: 07b21448
-title: update backend to graphql
-headline: '# update backend to graphql'
+id: 76d11a36
+title: Optimize Test Suite Performance
+headline: '# Optimize Test Suite Performance'
 priority: medium
 status: todo
 archived: false
 issue_type: other
-milestone: v1-0-2
-labels: []
+milestone: backlog
+labels:
+- synced:from-github
 remote_ids:
-  github: 3749
-created: '2026-02-10T13:45:03.757705+00:00'
-updated: '2026-02-11T22:03:39.529114+00:00'
+  github: 3703
+created: '2026-02-05T15:17:51.738318+00:00'
+updated: '2026-05-18T21:17:10.603763+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -27,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 3749
+github_issue: 3703
 ---
 
-# update backend to graphql
+# Optimize Test Suite Performance
 
 ## Description
 

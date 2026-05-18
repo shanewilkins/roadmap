@@ -1,20 +1,18 @@
 ---
-id: 1007b6f2
-title: Implement AI-powered project insights and recommendations
-headline: '# Implement AI-powered project insights and recommendations'
+id: 522d10ba
+title: Review Missing Critical 1.0 Functionality
+headline: '# Review Missing Critical 1.0 Functionality'
 priority: medium
 status: todo
 archived: false
 issue_type: other
-milestone: v1-0-2
+milestone: backlog
 labels:
-- priority:high
-- status:todo
 - synced:from-github
 remote_ids:
-  github: 3716
-created: '2026-02-05T15:17:52.564624+00:00'
-updated: '2026-02-11T22:03:41.163575+00:00'
+  github: 3746
+created: '2026-02-05T15:17:51.753194+00:00'
+updated: '2026-05-18T21:17:11.385017+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -30,10 +28,10 @@ git_branches: []
 git_commits: []
 completed_date: null
 comments: []
-github_issue: 3716
+github_issue: 3746
 ---
 
-# Implement AI-powered project insights and recommendations
+# Review Missing Critical 1.0 Functionality
 
 ## Description
 
@@ -41,10 +39,4 @@ Brief description of the issue or feature request.
 
 ## Acceptance Criteria
 
-- [ ] Criterion 1
-- [ ] Criterion 2
-- [ ] Criterion 3
-
----
-*Created by roadmap CLI*
-Assignee: @shanewilkins
+- [ ] 80% test coverage

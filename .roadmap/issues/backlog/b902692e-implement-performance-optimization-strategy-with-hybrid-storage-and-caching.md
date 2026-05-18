@@ -6,13 +6,13 @@ priority: medium
 status: todo
 archived: false
 issue_type: other
-milestone: v1-0-2
+milestone: backlog
 labels:
 - synced:from-github
 remote_ids:
   github: 3687
 created: '2026-02-05T15:17:49.860679+00:00'
-updated: '2026-02-11T22:03:44.442921+00:00'
+updated: '2026-05-18T21:17:09.806662+00:00'
 assignee: shanewilkins
 estimated_hours: null
 due_date: null

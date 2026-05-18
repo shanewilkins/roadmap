@@ -144,8 +144,13 @@ class TestGitHubAssigneeValidator:
             mock_get_client.return_value = mock_client
 
             # "ALICE" is not in cache (which has "alice")
-            github_validator.validate("ALICE")
-            mock_get_client.assert_not_called()
+            result = github_validator.validate("ALICE")
+            mock_get_client.assert_called_once_with(
+                token="test_token", org="test_owner"
+            )
+            mock_client.validate_assignee.assert_called_once_with("ALICE")
+            assert result.is_valid is False
+            assert result.message == "Case mismatch"
 
     def test_multiple_validations_with_mixed_cache(self, github_validator):
         """Test multiple validations with both cached and uncached members."""

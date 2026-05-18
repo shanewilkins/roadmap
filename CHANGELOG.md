@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-18
+
+### Changed
+
+- **BREAKING: Reverted semantic version from 1.0.2 to 0.1.0** — This release reflects the actual maturity level of the project
+  - Product is still in early development (alpha/beta phase)
+  - 10+ documented bugs and inconsistencies across core features
+  - Missing features: dependency management completeness, pagination controls, advanced filtering
+  - Development Status classifier changed from "Production/Stable" to "Beta"
+
+  **Rationale**: Versioning as 1.0+ incorrectly signaled stability and maturity. Users deserve honest expectations about the product state. This allows the project to evolve with breaking changes through 0.x releases before stabilizing at 1.0.
+
+  **Upgrade path**: Users on 1.0.2 should understand this is a reset. Future releases follow: 0.1.x (patches), 0.2.0 (next feature release with potential breaking changes), eventually 1.0.0 when truly production-ready.
+
+### Migration Guide for 1.0.2 Users
+
+- No data loss: All your issues, milestones, and configurations remain intact
+- Update command: `uv pip install --upgrade roadmap-cli==0.1.0`
+- Breaking changes: None in this release; semantics only
+- Future releases: Starting from 0.2.0, breaking changes are acceptable within 0.x versions
+
 ## [1.0.1] - 2026-02-15
 
 ### Fixed
