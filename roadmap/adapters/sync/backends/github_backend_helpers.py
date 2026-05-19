@@ -115,58 +115,22 @@ class GitHubBackendHelpers:
         status_map = {"open": Status.TODO, "closed": Status.CLOSED}
         status = status_map.get(github_state, Status.TODO)
 
-        priority = Priority.MEDIUM
+        created = self._parse_timestamp(remote_data.get("created_at")) or datetime.now(
+            UTC
+        )
+        updated = self._parse_timestamp(remote_data.get("updated_at")) or datetime.now(
+            UTC
+        )
 
-        created_at_str = remote_data.get("created_at")
-        created = self._parse_timestamp(created_at_str) or datetime.now(UTC)
-
-        updated_at_str = remote_data.get("updated_at")
-        updated = self._parse_timestamp(updated_at_str) or datetime.now(UTC)
-
-        labels = []
-        if "labels" in remote_data:
-            labels_data = remote_data.get("labels", [])
-            if isinstance(labels_data, list):
-                labels = (
-                    [
-                        label["name"] if isinstance(label, dict) else str(label)
-                        for label in labels_data
-                    ]
-                    if labels_data
-                    else []
-                )
-
-        assignee = None
-        assignees = remote_data.get("assignees", [])
-        if assignees and isinstance(assignees, list):
-            first_assignee = assignees[0]
-            assignee = (
-                first_assignee.get("login")
-                if isinstance(first_assignee, dict)
-                else str(first_assignee)
-            )
-        elif "assignee" in remote_data and remote_data["assignee"]:
-            assignee_data = remote_data["assignee"]
-            assignee = (
-                assignee_data.get("login")
-                if isinstance(assignee_data, dict)
-                else str(assignee_data)
-            )
-
-        milestone = None
-        milestone_data = remote_data.get("milestone")
-        if milestone_data:
-            milestone = (
-                milestone_data.get("title")
-                if isinstance(milestone_data, dict)
-                else str(milestone_data)
-            )
+        labels = self._extract_labels(remote_data)
+        assignee = self._extract_assignee(remote_data)
+        milestone = self._extract_milestone_title(remote_data)
 
         issue = Issue(
             id=issue_id,
             title=remote_data.get("title", ""),
             status=status,
-            priority=priority,
+            priority=Priority.MEDIUM,
             issue_type=IssueType.OTHER,
             created=created,
             updated=updated,
@@ -177,6 +141,44 @@ class GitHubBackendHelpers:
         )
 
         return issue
+
+    def _extract_labels(self, remote_data: dict[str, Any]) -> list[str]:
+        labels_data = remote_data.get("labels", [])
+        if not isinstance(labels_data, list):
+            return []
+        return [
+            label["name"] if isinstance(label, dict) else str(label)
+            for label in labels_data
+        ]
+
+    def _extract_assignee(self, remote_data: dict[str, Any]) -> str | None:
+        assignees = remote_data.get("assignees", [])
+        if isinstance(assignees, list) and assignees:
+            first_assignee = assignees[0]
+            return (
+                first_assignee.get("login")
+                if isinstance(first_assignee, dict)
+                else str(first_assignee)
+            )
+
+        assignee_data = remote_data.get("assignee")
+        if not assignee_data:
+            return None
+        return (
+            assignee_data.get("login")
+            if isinstance(assignee_data, dict)
+            else str(assignee_data)
+        )
+
+    def _extract_milestone_title(self, remote_data: dict[str, Any]) -> str | None:
+        milestone_data = remote_data.get("milestone")
+        if not milestone_data:
+            return None
+        return (
+            milestone_data.get("title")
+            if isinstance(milestone_data, dict)
+            else str(milestone_data)
+        )
 
     def _find_matching_local_issue(
         self, title: str, github_issue_number: str | int | None

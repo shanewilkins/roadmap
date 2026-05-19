@@ -6,6 +6,7 @@ Git branch creation, and formatted display of created issues.
 
 import os
 import subprocess
+from typing import Any
 
 import click
 import structlog
@@ -259,39 +260,50 @@ class IssueCreationService:
         if milestone:
             self._console.print(f"   Milestone: {milestone}", style="blue")
 
-        # Show assignee from issue object (which has the canonical/resolved value)
-        if (
-            issue.assignee
-            and not isinstance(str(issue.assignee), str)
-            or "<Mock" not in str(issue.assignee)
-        ):
+        if self._should_show_assignee(issue.assignee):
             self._console.print(f"   Assignee: {issue.assignee}", style="magenta")
 
-        if hasattr(issue, "estimated_hours") and issue.estimated_hours:
-            self._console.print(
-                f"   Estimated: {issue.estimated_time_display}", style="green"
-            )
-
-        # Only print dependencies if they're actual lists/iterables (not Mock objects)
-        if hasattr(issue, "depends_on") and issue.depends_on:
-            try:
-                if isinstance(issue.depends_on, list | tuple):
-                    self._console.print(
-                        f"   Depends on: {', '.join(issue.depends_on)}", style="orange1"
-                    )
-            except (TypeError, AttributeError):
-                pass
-
-        if hasattr(issue, "blocks") and issue.blocks:
-            try:
-                if isinstance(issue.blocks, list | tuple):
-                    self._console.print(
-                        f"   Blocks: {', '.join(issue.blocks)}", style="red1"
-                    )
-            except (TypeError, AttributeError):
-                pass
+        self._print_estimate_if_present(issue)
+        self._print_dependency_list(
+            issue, field_name="depends_on", label="Depends on", style="orange1"
+        )
+        self._print_dependency_list(
+            issue, field_name="blocks", label="Blocks", style="red1"
+        )
 
         if hasattr(issue, "filename"):
             self._console.print(
                 f"   File: .roadmap/issues/{issue.filename}", style="dim"
             )
+
+    def _should_show_assignee(self, assignee: object) -> bool:
+        """Return True when assignee should be displayed in success output."""
+        if not assignee:
+            return False
+        assignee_text = str(assignee)
+        return "<Mock" not in assignee_text
+
+    def _print_estimate_if_present(self, issue: Any) -> None:
+        """Print estimated effort if issue contains estimate information."""
+        if hasattr(issue, "estimated_hours") and issue.estimated_hours:
+            self._console.print(
+                f"   Estimated: {issue.estimated_time_display}", style="green"
+            )
+
+    def _print_dependency_list(
+        self,
+        issue: Any,
+        *,
+        field_name: str,
+        label: str,
+        style: str,
+    ) -> None:
+        """Print a dependency list field when present and well-formed."""
+        values = getattr(issue, field_name, None)
+        if not values:
+            return
+        try:
+            if isinstance(values, list | tuple):
+                self._console.print(f"   {label}: {', '.join(values)}", style=style)
+        except (TypeError, AttributeError):
+            return

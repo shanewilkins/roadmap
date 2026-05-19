@@ -653,18 +653,10 @@ class GitHubSyncBackend:
         if not issue_numbers:
             return 0
 
-        token = self.config.get("token")
-        owner = self.config.get("owner")
-        repo = self.config.get("repo")
-
-        if not token or not owner or not repo:
-            logger.warning(
-                "github_delete_issues_missing_config",
-                has_token=bool(token),
-                has_owner=bool(owner),
-                has_repo=bool(repo),
-            )
+        config = self._get_delete_issue_config()
+        if config is None:
             return 0
+        token, owner, repo = config
 
         start_time = time.time()
         logger.info(
@@ -680,59 +672,17 @@ class GitHubSyncBackend:
 
         for i in range(0, len(issue_numbers), lookup_batch_size):
             batch = issue_numbers[i : i + lookup_batch_size]
-            node_ids, skipped_prs = self._resolve_issue_node_ids(
-                batch, owner, repo, token
+            batch_deleted, batch_skipped_prs = self._process_issue_lookup_batch(
+                batch=batch,
+                owner=owner,
+                repo=repo,
+                token=token,
+                delete_batch_size=delete_batch_size,
+                inter_batch_delay_seconds=inter_batch_delay_seconds,
+                rate_limit_delay_seconds=rate_limit_delay_seconds,
             )
-            if skipped_prs:
-                skipped_pr_numbers.extend(skipped_prs)
-            if not node_ids:
-                logger.warning(
-                    "github_delete_issues_batch_skipped",
-                    batch_size=len(batch),
-                    reason="node_ids_empty",
-                )
-                continue
-
-            node_items = list(node_ids.items())
-            for j in range(0, len(node_items), delete_batch_size):
-                delete_chunk = dict(node_items[j : j + delete_batch_size])
-                batch_deleted, rate_limited, failed_numbers = self._delete_issues_batch(
-                    delete_chunk,
-                    token,
-                )
-                deleted_count += batch_deleted
-                logger.info(
-                    "github_delete_issues_batch_complete",
-                    batch_size=len(delete_chunk),
-                    deleted_count=batch_deleted,
-                )
-
-                if failed_numbers and rate_limited:
-                    logger.warning(
-                        "github_delete_issues_retrying_failed",
-                        failed_count=len(failed_numbers),
-                        delay_seconds=rate_limit_delay_seconds,
-                    )
-                    time.sleep(rate_limit_delay_seconds)
-                    retry_items = {
-                        number: node_ids[number]
-                        for number in failed_numbers
-                        if number in node_ids
-                    }
-                    if retry_items:
-                        retry_deleted, _, _ = self._delete_issues_batch(
-                            retry_items,
-                            token,
-                        )
-                        deleted_count += retry_deleted
-
-                time.sleep(inter_batch_delay_seconds)
-                if rate_limited:
-                    logger.warning(
-                        "github_delete_issues_rate_limited",
-                        delay_seconds=rate_limit_delay_seconds,
-                    )
-                    time.sleep(rate_limit_delay_seconds)
+            deleted_count += batch_deleted
+            skipped_pr_numbers.extend(batch_skipped_prs)
 
         duration = time.time() - start_time
         failed_count = max(
@@ -755,6 +705,124 @@ class GitHubSyncBackend:
         )
 
         return deleted_count
+
+    def _get_delete_issue_config(self) -> tuple[str, str, str] | None:
+        """Resolve required delete configuration or log why delete is skipped."""
+        token = self.config.get("token")
+        owner = self.config.get("owner")
+        repo = self.config.get("repo")
+        if token and owner and repo:
+            return str(token), str(owner), str(repo)
+
+        logger.warning(
+            "github_delete_issues_missing_config",
+            has_token=bool(token),
+            has_owner=bool(owner),
+            has_repo=bool(repo),
+        )
+        return None
+
+    def _process_issue_lookup_batch(
+        self,
+        *,
+        batch: list[int],
+        owner: str,
+        repo: str,
+        token: str,
+        delete_batch_size: int,
+        inter_batch_delay_seconds: float,
+        rate_limit_delay_seconds: float,
+    ) -> tuple[int, list[int]]:
+        """Resolve node IDs for a lookup batch and process delete chunks."""
+        node_ids, skipped_prs = self._resolve_issue_node_ids(batch, owner, repo, token)
+        if not node_ids:
+            logger.warning(
+                "github_delete_issues_batch_skipped",
+                batch_size=len(batch),
+                reason="node_ids_empty",
+            )
+            return 0, skipped_prs
+
+        deleted_count = self._delete_issue_node_chunks(
+            node_ids=node_ids,
+            token=token,
+            delete_batch_size=delete_batch_size,
+            inter_batch_delay_seconds=inter_batch_delay_seconds,
+            rate_limit_delay_seconds=rate_limit_delay_seconds,
+        )
+        return deleted_count, skipped_prs
+
+    def _delete_issue_node_chunks(
+        self,
+        *,
+        node_ids: dict[int, str],
+        token: str,
+        delete_batch_size: int,
+        inter_batch_delay_seconds: float,
+        rate_limit_delay_seconds: float,
+    ) -> int:
+        """Delete issues in chunked GraphQL mutations with optional retry."""
+        deleted_count = 0
+        node_items = list(node_ids.items())
+
+        for j in range(0, len(node_items), delete_batch_size):
+            delete_chunk = dict(node_items[j : j + delete_batch_size])
+            batch_deleted, rate_limited, failed_numbers = self._delete_issues_batch(
+                delete_chunk,
+                token,
+            )
+            deleted_count += batch_deleted
+            logger.info(
+                "github_delete_issues_batch_complete",
+                batch_size=len(delete_chunk),
+                deleted_count=batch_deleted,
+            )
+
+            deleted_count += self._retry_failed_rate_limited_deletes(
+                failed_numbers=failed_numbers,
+                rate_limited=rate_limited,
+                node_ids=node_ids,
+                token=token,
+                rate_limit_delay_seconds=rate_limit_delay_seconds,
+            )
+
+            time.sleep(inter_batch_delay_seconds)
+            if rate_limited:
+                logger.warning(
+                    "github_delete_issues_rate_limited",
+                    delay_seconds=rate_limit_delay_seconds,
+                )
+                time.sleep(rate_limit_delay_seconds)
+
+        return deleted_count
+
+    def _retry_failed_rate_limited_deletes(
+        self,
+        *,
+        failed_numbers: list[int],
+        rate_limited: bool,
+        node_ids: dict[int, str],
+        token: str,
+        rate_limit_delay_seconds: float,
+    ) -> int:
+        """Retry failed delete mutations when they failed under rate limiting."""
+        if not (failed_numbers and rate_limited):
+            return 0
+
+        logger.warning(
+            "github_delete_issues_retrying_failed",
+            failed_count=len(failed_numbers),
+            delay_seconds=rate_limit_delay_seconds,
+        )
+        time.sleep(rate_limit_delay_seconds)
+        retry_items = {
+            number: node_ids[number] for number in failed_numbers if number in node_ids
+        }
+        if not retry_items:
+            return 0
+
+        retry_deleted, _, _ = self._delete_issues_batch(retry_items, token)
+        return retry_deleted
 
     def _resolve_issue_node_ids(
         self,

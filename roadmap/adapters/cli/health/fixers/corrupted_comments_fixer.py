@@ -137,50 +137,44 @@ class CorruptedCommentsFixer(HealthFixer):
         Returns:
             List of dicts with entity_type, entity_id, index
         """
-        corrupted = []
+        corrupted: list[dict] = []
 
         try:
-            # Check issue comments
-            for issue in self.core.issues.list():
-                if hasattr(issue, "comments") and issue.comments:
-                    for i, comment in enumerate(issue.comments):
-                        if self._is_corrupted_json(comment):
-                            corrupted.append(
-                                {
-                                    "entity_type": "issue",
-                                    "entity_id": issue.id,
-                                    "index": i,
-                                }
-                            )
-
-            # Check milestone comments
-            for milestone in self.core.milestones.list():
-                if hasattr(milestone, "comments") and milestone.comments:
-                    for i, comment in enumerate(milestone.comments):
-                        if self._is_corrupted_json(comment):
-                            corrupted.append(
-                                {
-                                    "entity_type": "milestone",
-                                    "entity_id": milestone.id,
-                                    "index": i,
-                                }
-                            )
-
-            # Check project comments
-            for project in self.core.projects.list():
-                if hasattr(project, "comments") and project.comments:
-                    for i, comment in enumerate(project.comments):
-                        if self._is_corrupted_json(comment):
-                            corrupted.append(
-                                {
-                                    "entity_type": "project",
-                                    "entity_id": project.id,
-                                    "index": i,
-                                }
-                            )
+            corrupted.extend(
+                self._find_corrupted_for_entities("issue", self.core.issues.list())
+            )
+            corrupted.extend(
+                self._find_corrupted_for_entities(
+                    "milestone", self.core.milestones.list()
+                )
+            )
+            corrupted.extend(
+                self._find_corrupted_for_entities("project", self.core.projects.list())
+            )
         except Exception as e:
             logger.debug("comments_load_failed", error=str(e), action="load_comments")
 
+        return corrupted
+
+    def _find_corrupted_for_entities(
+        self, entity_type: str, entities: list
+    ) -> list[dict]:
+        """Collect malformed comments for a set of entities of one type."""
+        corrupted: list[dict] = []
+        for entity in entities:
+            comments = getattr(entity, "comments", None)
+            if not comments:
+                continue
+
+            for index, comment in enumerate(comments):
+                if self._is_corrupted_json(comment):
+                    corrupted.append(
+                        {
+                            "entity_type": entity_type,
+                            "entity_id": entity.id,
+                            "index": index,
+                        }
+                    )
         return corrupted
 
     def _is_corrupted_json(self, comment: dict) -> bool:

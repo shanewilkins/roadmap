@@ -246,9 +246,8 @@ def capture_and_save_post_sync_baseline(
 ) -> bool:
     """Capture local issues and save them as the post-sync baseline."""
     try:
-        baseline_dict = {}
-
         all_local_issues = core.issues.list_all_including_archived()
+        baseline_dict: dict[str, dict[str, Any]] = {}
 
         with Progress(
             SpinnerColumn(),
@@ -262,21 +261,7 @@ def capture_and_save_post_sync_baseline(
             )
 
             for idx, issue in enumerate(all_local_issues):
-                labels = issue.labels or []
-                sorted_labels = sorted(labels) if labels else []
-
-                baseline_dict[issue.id] = {
-                    "status": (
-                        issue.status.value
-                        if hasattr(issue.status, "value")
-                        else str(issue.status)
-                    ),
-                    "assignee": issue.assignee,
-                    "milestone": issue.milestone,
-                    "headline": issue.headline,
-                    "content": issue.content,
-                    "labels": sorted_labels,
-                }
+                baseline_dict[issue.id] = _build_baseline_row(issue)
 
                 progress.update(
                     task,
@@ -285,54 +270,14 @@ def capture_and_save_post_sync_baseline(
                 )
 
         post_sync_issue_count = len(baseline_dict)
-
-        try:
-            result = core.db.save_sync_baseline(baseline_dict)
-            if result:
-                console_inst.print(
-                    f"   After:  {post_sync_issue_count} issues in baseline"
-                )
-            if post_sync_issue_count != pre_sync_issue_count:
-                diff = post_sync_issue_count - pre_sync_issue_count
-                symbol = "+" if diff > 0 else ""
-                console_inst.print(
-                    f"   Change: {symbol}{diff} issue(s)",
-                    style="green" if diff > 0 else "yellow",
-                )
-            if verbose:
-                console_inst.print(
-                    "✅ Baseline updated with post-sync state", style="dim"
-                )
-            return bool(result)
-        except OSError as e:
-            logger.error(
-                "post_sync_baseline_save_exception",
-                operation="save_post_sync_baseline",
-                error_type=type(e).__name__,
-                error=str(e),
-                is_recoverable=True,
-                severity="system_error",
-                suggested_action="check_disk_space",
-            )
-            if verbose:
-                console_inst.print(
-                    f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
-                )
-            return False
-        except Exception as e:
-            logger.error(
-                "post_sync_baseline_save_exception",
-                operation="save_post_sync_baseline",
-                error_type=type(e).__name__,
-                error=str(e),
-                severity="system_error",
-                error_classification="sync_error",
-            )
-            if verbose:
-                console_inst.print(
-                    f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
-                )
-            return False
+        return _save_and_report_post_sync_baseline(
+            core,
+            console_inst,
+            baseline_dict,
+            pre_sync_issue_count,
+            post_sync_issue_count,
+            verbose,
+        )
     except Exception as e:
         logger.error(
             "post_sync_baseline_capture_exception",
@@ -347,3 +292,75 @@ def capture_and_save_post_sync_baseline(
                 f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
             )
         return False
+
+
+def _build_baseline_row(issue: Any) -> dict[str, Any]:
+    """Build serialized baseline state for a single issue."""
+    labels = issue.labels or []
+    sorted_labels = sorted(labels) if labels else []
+    return {
+        "status": issue.status.value
+        if hasattr(issue.status, "value")
+        else str(issue.status),
+        "assignee": issue.assignee,
+        "milestone": issue.milestone,
+        "headline": issue.headline,
+        "content": issue.content,
+        "labels": sorted_labels,
+    }
+
+
+def _save_and_report_post_sync_baseline(
+    core: Any,
+    console_inst: Any,
+    baseline_dict: dict[str, dict[str, Any]],
+    pre_sync_issue_count: int,
+    post_sync_issue_count: int,
+    verbose: bool,
+) -> bool:
+    """Persist post-sync baseline and print summary lines."""
+    try:
+        result = core.db.save_sync_baseline(baseline_dict)
+    except OSError as e:
+        logger.error(
+            "post_sync_baseline_save_exception",
+            operation="save_post_sync_baseline",
+            error_type=type(e).__name__,
+            error=str(e),
+            is_recoverable=True,
+            severity="system_error",
+            suggested_action="check_disk_space",
+        )
+        if verbose:
+            console_inst.print(
+                f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
+            )
+        return False
+    except Exception as e:
+        logger.error(
+            "post_sync_baseline_save_exception",
+            operation="save_post_sync_baseline",
+            error_type=type(e).__name__,
+            error=str(e),
+            severity="system_error",
+            error_classification="sync_error",
+        )
+        if verbose:
+            console_inst.print(
+                f"⚠️  Warning: Could not update baseline: {str(e)}", style="yellow"
+            )
+        return False
+
+    if result:
+        console_inst.print(f"   After:  {post_sync_issue_count} issues in baseline")
+    if post_sync_issue_count != pre_sync_issue_count:
+        diff = post_sync_issue_count - pre_sync_issue_count
+        symbol = "+" if diff > 0 else ""
+        console_inst.print(
+            f"   Change: {symbol}{diff} issue(s)",
+            style="green" if diff > 0 else "yellow",
+        )
+    if verbose:
+        console_inst.print("✅ Baseline updated with post-sync state", style="dim")
+
+    return bool(result)

@@ -189,43 +189,9 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
         Returns:
             SyncState or None if unable to construct
         """
-        # PHASE 3: Try database baseline first (fastest - ~10ms)
-        try:
-            db_baseline = self.core.db.get_sync_baseline()
-            if db_baseline:
-                logger.debug(
-                    "using_database_baseline",
-                    issue_count=len(db_baseline),
-                )
-                from datetime import datetime
-
-                from roadmap.core.services.sync.sync_state import (
-                    IssueBaseState,
-                    SyncState,
-                )
-
-                issues = {}
-                for issue_id, data in db_baseline.items():
-                    issues[issue_id] = IssueBaseState(
-                        id=issue_id,
-                        status=data.get("status", "todo"),
-                        title=data.get("title", ""),
-                        assignee=data.get("assignee"),
-                        headline=data.get("headline", ""),
-                        content=data.get("content", ""),
-                        labels=data.get("labels", []),
-                    )
-
-                return SyncState(
-                    last_sync_time=datetime.now(UTC),
-                    base_issues=issues,
-                )
-        except Exception as e:
-            logger.warning(
-                "database_baseline_load_failed",
-                error=str(e),
-                error_type=type(e).__name__,
-            )
+        db_baseline = self._try_get_database_baseline()
+        if db_baseline:
+            return db_baseline
 
         # Try to load from cache (fallback)
         cached = self._load_cached_baseline()
@@ -247,47 +213,9 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                 issue_count=len(issue_files),
             )
 
-            # Use progress builder if context available
-            if progress_ctx and self.show_progress:
-                self._progress_builder = create_progress_builder(
-                    self.issues_dir,
-                    show_progress=True,
-                )
-                if self._progress_builder:
-                    self._progress_builder.set_progress_context(progress_ctx)
-                    _updates, _deleted, metrics = (
-                        self._progress_builder.rebuild_with_progress(
-                            issue_files,
-                            cached,
-                            git_ref="HEAD~1",
-                        )
-                    )
-                    logger.info(
-                        "baseline_rebuilt_with_progress",
-                        time_ms=metrics.rebuild_time_ms,
-                    )
+            self._rebuild_baseline_with_progress(progress_ctx, issue_files, cached)
 
-            # Build baseline using optimized builder
-            baseline = SyncState(
-                last_sync_time=datetime.now(UTC),
-            )
-
-            # Reconstruct each issue from git history
-            for issue in local_issues:
-                try:
-                    issue_file = self.issues_dir / f"{issue.id}.md"
-                    if issue_file.exists():
-                        local_baseline = self.baseline_retriever.get_local_baseline(
-                            issue_file, baseline.last_sync_time or datetime.now(UTC)
-                        )
-                        if local_baseline:
-                            baseline.base_issues[issue.id] = local_baseline
-                except Exception as e:
-                    logger.warning(
-                        "baseline_issue_reconstruction_failed",
-                        issue_id=issue.id,
-                        error=str(e),
-                    )
+            baseline = self._build_baseline_from_local_issues(local_issues)
 
             # Cache the baseline
             self._save_baseline_to_cache(baseline)
@@ -305,6 +233,89 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                 error_type=type(e).__name__,
             )
             return None
+
+    def _try_get_database_baseline(self) -> SyncState | None:
+        """Try loading baseline from database and converting to SyncState."""
+        try:
+            db_baseline = self.core.db.get_sync_baseline()
+            if not db_baseline:
+                return None
+            logger.debug("using_database_baseline", issue_count=len(db_baseline))
+            return self._sync_state_from_db_baseline(db_baseline)
+        except Exception as e:
+            logger.warning(
+                "database_baseline_load_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            return None
+
+    def _sync_state_from_db_baseline(self, db_baseline: dict) -> SyncState:
+        """Convert database baseline rows into a SyncState instance."""
+        from roadmap.core.services.sync.sync_state import IssueBaseState
+
+        issues = {
+            issue_id: IssueBaseState(
+                id=issue_id,
+                status=data.get("status", "todo"),
+                title=data.get("title", ""),
+                assignee=data.get("assignee"),
+                headline=data.get("headline", ""),
+                content=data.get("content", ""),
+                labels=data.get("labels", []),
+            )
+            for issue_id, data in db_baseline.items()
+        }
+        return SyncState(last_sync_time=datetime.now(UTC), base_issues=issues)
+
+    def _rebuild_baseline_with_progress(
+        self,
+        progress_ctx: Progress | None,
+        issue_files: list,
+        cached: SyncState | None,
+    ) -> None:
+        """Rebuild baseline with progress reporting when enabled."""
+        if not (progress_ctx and self.show_progress):
+            return
+        self._progress_builder = create_progress_builder(
+            self.issues_dir,
+            show_progress=True,
+        )
+        if not self._progress_builder:
+            return
+        self._progress_builder.set_progress_context(progress_ctx)
+        _updates, _deleted, metrics = self._progress_builder.rebuild_with_progress(
+            issue_files,
+            cached,
+            git_ref="HEAD~1",
+        )
+        logger.info(
+            "baseline_rebuilt_with_progress",
+            time_ms=metrics.rebuild_time_ms,
+        )
+
+    def _build_baseline_from_local_issues(self, local_issues: list) -> SyncState:
+        """Build baseline state by reconstructing issues from local files."""
+        baseline = SyncState(last_sync_time=datetime.now(UTC))
+        baseline_time = baseline.last_sync_time or datetime.now(UTC)
+
+        for issue in local_issues:
+            try:
+                issue_file = self.issues_dir / f"{issue.id}.md"
+                if not issue_file.exists():
+                    continue
+                local_baseline = self.baseline_retriever.get_local_baseline(
+                    issue_file, baseline_time
+                )
+                if local_baseline:
+                    baseline.base_issues[issue.id] = local_baseline
+            except Exception as e:
+                logger.warning(
+                    "baseline_issue_reconstruction_failed",
+                    issue_id=issue.id,
+                    error=str(e),
+                )
+        return baseline
 
     def sync_all_issues(
         self,

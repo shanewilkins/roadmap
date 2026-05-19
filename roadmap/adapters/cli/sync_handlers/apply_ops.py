@@ -381,79 +381,109 @@ def finalize_sync(
     if hasattr(report, "baseline_update_failed"):
         report.baseline_update_failed = not baseline_updated
 
-    if (
-        backend_type
-        and backend_type.lower() == "github"
-        and getattr(report, "issues_pulled", 0) > 0
-    ):
-        try:
-            db = getattr(core, "db", None)
-            roadmap_dir = getattr(core, "roadmap_dir", None)
-            if db and roadmap_dir:
-                sync_result = db.sync_directory_incremental(roadmap_dir)
-                synced = sync_result.get("files_synced", 0)
-                console_inst.print(f"[dim]DB cache sync: {synced} file(s) synced[/dim]")
-            else:
-                logger.warning(
-                    "post_sync_db_cache_skipped",
-                    reason="missing_db_or_path",
-                    has_db=bool(db),
-                    has_roadmap_dir=bool(roadmap_dir),
-                    severity="operational",
-                )
-        except Exception as e:
-            logger.warning(
-                "post_sync_db_cache_failed",
-                error=str(e),
-                error_type=type(e).__name__,
-                severity="operational",
-            )
-
-        try:
-            from roadmap.adapters.cli.sync_context import _repair_remote_links
-
-            backend_name = str(backend_type)
-            _repair_remote_links(core, console_inst, backend_name, dry_run=False)
-        except Exception as e:
-            logger.warning(
-                "post_sync_remote_link_repair_failed",
-                error=str(e),
-                error_type=type(e).__name__,
-                severity="operational",
-            )
-
-    # Save and display sync metrics if available in report
-    if hasattr(report, "metrics") and report.metrics:
-        # Save metrics to database
-        try:
-            from roadmap.adapters.persistence.sync_metrics_repository import (
-                SyncMetricsRepository,
-            )
-
-            db_manager = getattr(core, "db_manager", None)
-            if db_manager is None and hasattr(core, "db"):
-                db_manager = getattr(core.db, "_db_manager", None)
-            if db_manager is None:
-                raise AttributeError("No database manager available")
-            metrics_repo = SyncMetricsRepository(db_manager)
-            metrics_repo.save(report.metrics)
-        except Exception as e:
-            logger.warning(
-                "failed_to_save_sync_metrics",
-                error=str(e),
-                severity="operational",
-            )
-
-        # Display metrics
-        metrics_dict = (
-            report.metrics.to_dict()
-            if hasattr(report.metrics, "to_dict")
-            else report.metrics
-        )
-        _display_sync_metrics(console_inst, metrics_dict)
+    _run_post_sync_repairs(core, console_inst, report, backend_type)
+    _save_and_display_sync_metrics(core, console_inst, report)
 
     console_inst.print()
     console_inst.print("✅ Sync completed successfully", style="bold green")
+
+
+def _should_run_post_sync_repairs(report: Any, backend_type: str | None) -> bool:
+    """Return True when GitHub-specific post-sync repairs should run."""
+    return bool(
+        backend_type
+        and backend_type.lower() == "github"
+        and getattr(report, "issues_pulled", 0) > 0
+    )
+
+
+def _sync_post_pull_cache(core: Any, console_inst: Any) -> None:
+    """Sync pulled file changes into DB cache when possible."""
+    try:
+        db = getattr(core, "db", None)
+        roadmap_dir = getattr(core, "roadmap_dir", None)
+        if db and roadmap_dir:
+            sync_result = db.sync_directory_incremental(roadmap_dir)
+            synced = sync_result.get("files_synced", 0)
+            console_inst.print(f"[dim]DB cache sync: {synced} file(s) synced[/dim]")
+            return
+
+        logger.warning(
+            "post_sync_db_cache_skipped",
+            reason="missing_db_or_path",
+            has_db=bool(db),
+            has_roadmap_dir=bool(roadmap_dir),
+            severity="operational",
+        )
+    except Exception as e:
+        logger.warning(
+            "post_sync_db_cache_failed",
+            error=str(e),
+            error_type=type(e).__name__,
+            severity="operational",
+        )
+
+
+def _repair_post_sync_remote_links(
+    core: Any,
+    console_inst: Any,
+    backend_type: str | None,
+) -> None:
+    """Repair remote links after successful pull from GitHub backend."""
+    try:
+        from roadmap.adapters.cli.sync_context import _repair_remote_links
+
+        backend_name = str(backend_type)
+        _repair_remote_links(core, console_inst, backend_name, dry_run=False)
+    except Exception as e:
+        logger.warning(
+            "post_sync_remote_link_repair_failed",
+            error=str(e),
+            error_type=type(e).__name__,
+            severity="operational",
+        )
+
+
+def _run_post_sync_repairs(
+    core: Any,
+    console_inst: Any,
+    report: Any,
+    backend_type: str | None,
+) -> None:
+    """Run GitHub-specific cache and link repair operations after sync."""
+    if not _should_run_post_sync_repairs(report, backend_type):
+        return
+    _sync_post_pull_cache(core, console_inst)
+    _repair_post_sync_remote_links(core, console_inst, backend_type)
+
+
+def _save_and_display_sync_metrics(core: Any, console_inst: Any, report: Any) -> None:
+    """Persist and display sync metrics when present in report."""
+    metrics = getattr(report, "metrics", None)
+    if not metrics:
+        return
+
+    try:
+        from roadmap.adapters.persistence.sync_metrics_repository import (
+            SyncMetricsRepository,
+        )
+
+        db_manager = getattr(core, "db_manager", None)
+        if db_manager is None and hasattr(core, "db"):
+            db_manager = getattr(core.db, "_db_manager", None)
+        if db_manager is None:
+            raise AttributeError("No database manager available")
+        metrics_repo = SyncMetricsRepository(db_manager)
+        metrics_repo.save(metrics)
+    except Exception as e:
+        logger.warning(
+            "failed_to_save_sync_metrics",
+            error=str(e),
+            severity="operational",
+        )
+
+    metrics_dict = metrics.to_dict() if hasattr(metrics, "to_dict") else metrics
+    _display_sync_metrics(console_inst, metrics_dict)
 
 
 def run_analysis_phase(

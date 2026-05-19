@@ -137,6 +137,67 @@ def _apply_additional_filters(
     return filtered_dtos, filter_description
 
 
+def _normalize_filter_type(params: IssueListParams) -> None:
+    """Normalize positional filter aliases into canonical flags."""
+    if params.filter_type and params.filter_type.lower() == "backlog":
+        params.backlog = True
+
+
+def _display_no_issues(filter_description: str) -> None:
+    """Display standard no-issues message."""
+    _get_console().print(f"📋 No {filter_description} issues found.", style="yellow")
+    _get_console().print(
+        "Create one with: roadmap issue create 'Issue title'", style="dim"
+    )
+
+
+def _print_issue_list_header(issue_count: int, filter_description: str) -> None:
+    """Print issue list summary header."""
+    header_text = (
+        f"📋 {issue_count} {filter_description} issue{'s' if issue_count != 1 else ''}"
+    )
+    _get_console().print(header_text, style="bold cyan")
+
+
+def _maybe_export_issues(
+    issues: list[IssueDTO], issue_count: int, export: bool
+) -> None:
+    """Export issue DTOs when requested."""
+    if not export:
+        return
+    export_manager = ExportManager()
+    export_data = [asdict(dto) for dto in issues]
+    _content, export_path = export_manager.export_data(export_data, "issues")
+    _get_console().print(
+        f"✅ Exported {issue_count} issues to {export_path}", style="green"
+    )
+
+
+def _maybe_display_workload_summary(
+    params: IssueListParams, domain_issues: list
+) -> None:
+    """Display workload summary for assignee-focused views."""
+    if not ((params.assignee or params.my_issues) and domain_issues):
+        return
+    assignee_name = params.assignee if params.assignee else "you"
+    workload = WorkloadCalculator.calculate_workload(domain_issues)
+    IssueTableFormatter.display_workload_summary(
+        assignee_name,
+        workload["total_hours"],
+        workload["status_breakdown"],
+    )
+
+
+def _build_list_error_context(params: IssueListParams) -> dict:
+    """Build error context for list_issues failure handling."""
+    return {
+        "backlog": params.backlog,
+        "assignee": params.assignee,
+        "my_issues": params.my_issues,
+        "filter": params.status,
+    }
+
+
 @click.command("list")
 @click.argument(
     "filter_type",
@@ -262,9 +323,7 @@ def list_issues(  # noqa: F841 - verbose is used by decorator
     )
 
     try:
-        # Handle positional filter_type argument
-        if params.filter_type and params.filter_type.lower() == "backlog":
-            params.backlog = True
+        _normalize_filter_type(params)
 
         # Validate and get issues
         issues, filter_description = _validate_and_get_issues(
@@ -300,31 +359,17 @@ def list_issues(  # noqa: F841 - verbose is used by decorator
 
         # Handle no issues found
         if not issues:
-            _get_console().print(
-                f"📋 No {filter_description} issues found.", style="yellow"
-            )
-            _get_console().print(
-                "Create one with: roadmap issue create 'Issue title'", style="dim"
-            )
+            _display_no_issues(filter_description)
             return
 
-        # Display header with count
         issue_count = len(issues)
-        header_text = f"📋 {issue_count} {filter_description} issue{'s' if issue_count != 1 else ''}"
-        _get_console().print(header_text, style="bold cyan")
+        _print_issue_list_header(issue_count, filter_description)
 
         # Convert DTOs back to domain objects for table formatter
         # (formatters still work with domain models)
         domain_issues = [IssueMapper.dto_to_domain(dto) for dto in issues]
 
-        # Handle export if requested
-        if export:
-            export_manager = ExportManager()
-            export_data = [asdict(dto) for dto in issues]
-            content, export_path = export_manager.export_data(export_data, "issues")
-            _get_console().print(
-                f"✅ Exported {issue_count} issues to {export_path}", style="green"
-            )
+        _maybe_export_issues(issues, issue_count, export)
 
         # Convert to TableData for structured output
         table_data = IssueTableFormatter.issues_to_table_data(
@@ -334,15 +379,7 @@ def list_issues(  # noqa: F841 - verbose is used by decorator
             show_github_ids=show_github_ids,
         )
 
-        # Display workload summary if applicable
-        if (params.assignee or params.my_issues) and domain_issues:
-            assignee_name = params.assignee if params.assignee else "you"
-            workload = WorkloadCalculator.calculate_workload(domain_issues)
-            IssueTableFormatter.display_workload_summary(
-                assignee_name,
-                workload["total_hours"],
-                workload["status_breakdown"],
-            )
+        _maybe_display_workload_summary(params, domain_issues)
 
         # Return TableData for decorator to handle formatting
         return table_data
@@ -353,12 +390,7 @@ def list_issues(  # noqa: F841 - verbose is used by decorator
             operation="list_issues",
             entity_type="issue",
             entity_id="all",
-            context={
-                "backlog": params.backlog,
-                "assignee": params.assignee,
-                "my_issues": params.my_issues,
-                "filter": params.status,
-            },
+            context=_build_list_error_context(params),
             fatal=True,
         )
         error_handler = ErrorHandler()

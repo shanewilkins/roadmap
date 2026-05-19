@@ -64,6 +64,69 @@ def _parse_completion_date(date_str: str) -> datetime | None:
             return None
 
 
+def _resolve_end_date(
+    record_time: bool, date: str
+) -> tuple[datetime | None, str | None]:
+    """Resolve completion datetime and validation error message, if any."""
+    if not record_time:
+        return None, None
+
+    if date:
+        end_date = _parse_completion_date(date)
+        if end_date is None:
+            return None, "❌ Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM"
+        return end_date, None
+
+    return datetime.now(UTC), None
+
+
+def _build_close_update_kwargs(end_date: datetime | None) -> dict:
+    """Build keyword arguments used for closing an issue."""
+    update_kwargs = {
+        "status": Status.CLOSED,
+        "progress_percentage": 100.0,
+    }
+    if end_date:
+        update_kwargs["actual_end_date"] = end_date
+    return update_kwargs
+
+
+def _build_close_extra_details(
+    updated_issue, reason: str, end_date: datetime | None
+) -> dict[str, str]:
+    """Build success details for close operation output."""
+    extra_details: dict[str, str] = {
+        "Status": "Closed",
+        "Progress": "100%",
+    }
+    if reason:
+        extra_details["Reason"] = reason
+    if not end_date:
+        return extra_details
+
+    extra_details["Completed"] = end_date.strftime("%Y-%m-%d %H:%M")
+    start_date = updated_issue.actual_start_date
+    if not start_date:
+        return extra_details
+
+    duration = end_date - start_date
+    hours = duration.total_seconds() / 3600
+    extra_details["Duration"] = f"{hours:.1f} hours"
+
+    if not updated_issue.estimated_hours:
+        return extra_details
+
+    diff = hours - updated_issue.estimated_hours
+    if abs(diff) <= 0.5:
+        extra_details["Variance"] = "On target"
+    elif diff > 0:
+        extra_details["Variance"] = f"Over by {diff:.1f} hours"
+    else:
+        extra_details["Variance"] = f"Under by {abs(diff):.1f} hours"
+
+    return extra_details
+
+
 @click.command("close")
 @click.argument("issue_id")
 @click.option("--reason", "-r", help="Reason for closing the issue")
@@ -94,27 +157,12 @@ def close_issue(
     core = ctx.obj["core"]
 
     try:
-        # Validate date if provided
-        end_date = None
-        if record_time:
-            if date:
-                end_date = _parse_completion_date(date)
-                if end_date is None:
-                    console.print(
-                        "❌ Invalid date format. Use YYYY-MM-DD or YYYY-MM-DD HH:MM",
-                        style="bold red",
-                    )
-                    return
-            else:
-                end_date = datetime.now(UTC)
+        end_date, date_error = _resolve_end_date(record_time, date)
+        if date_error:
+            console.print(date_error, style="bold red")
+            return
 
-        # Build update kwargs with status and progress
-        update_kwargs = {
-            "status": Status.CLOSED,
-            "progress_percentage": 100.0,
-        }
-        if end_date:
-            update_kwargs["actual_end_date"] = end_date
+        update_kwargs = _build_close_update_kwargs(end_date)
 
         # Use wrapper for status change display
         from roadmap.adapters.cli.cli_command_helpers import ensure_entity_exists
@@ -129,36 +177,7 @@ def close_issue(
             updated_issue = core.issues.update(issue_id, **update_kwargs)
 
         if updated_issue:
-            # Build extra details
-            extra_details = {
-                "Status": "Closed",
-                "Progress": "100%",
-            }
-
-            if reason:
-                extra_details["Reason"] = reason
-
-            # Add duration info if we have dates
-            if end_date:
-                extra_details["Completed"] = end_date.strftime("%Y-%m-%d %H:%M")
-                start_date = updated_issue.actual_start_date
-                if start_date:
-                    duration = end_date - start_date
-                    hours = duration.total_seconds() / 3600
-                    extra_details["Duration"] = f"{hours:.1f} hours"
-
-                    # Compare with estimate
-                    if updated_issue.estimated_hours:
-                        diff = hours - updated_issue.estimated_hours
-                        if abs(diff) > 0.5:
-                            if diff > 0:
-                                extra_details["Variance"] = f"Over by {diff:.1f} hours"
-                            else:
-                                extra_details["Variance"] = (
-                                    f"Under by {abs(diff):.1f} hours"
-                                )
-                        else:
-                            extra_details["Variance"] = "On target"
+            extra_details = _build_close_extra_details(updated_issue, reason, end_date)
 
             # Use formatter
             lines = format_operation_success(

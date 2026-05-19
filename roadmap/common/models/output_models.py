@@ -192,30 +192,10 @@ class TableData:
         Raises:
             ValueError: If column doesn't exist or value doesn't match enum values.
         """
-        # Validate column exists
-        col = next((c for c in self.columns if c.name == column), None)
-        if not col:
-            raise ValueError(f"Column '{column}' not found")
-        if not col.filterable:
-            raise ValueError(f"Column '{column}' is not filterable")
-
-        # Validate enum values if applicable
-        if col.type == ColumnType.ENUM and col.enum_values:
-            values_to_check = value if isinstance(value, list) else [value]
-            for v in values_to_check:
-                if v not in col.enum_values:
-                    raise ValueError(f"Invalid value '{v}' for enum column '{column}'")
-
-        # Find column index
-        col_index = next(i for i, c in enumerate(self.columns) if c.name == column)
-
-        # Filter rows
-        if isinstance(value, list):
-            # IN filter
-            filtered_rows = [row for row in self.rows if row[col_index] in value]
-        else:
-            # Equality filter
-            filtered_rows = [row for row in self.rows if row[col_index] == value]
+        col = self._get_filter_column(column)
+        self._validate_enum_filter_values(column, col, value)
+        col_index = self._get_column_index(column)
+        filtered_rows = self._filter_rows(column_index=col_index, value=value)
 
         # Create new TableData with updated state
         new_table = TableData(
@@ -230,6 +210,41 @@ class TableData:
             returned_count=len(filtered_rows),
         )
         return new_table
+
+    def _get_filter_column(self, column: str) -> ColumnDef:
+        """Return filter column definition or raise a validation error."""
+        col = next((c for c in self.columns if c.name == column), None)
+        if not col:
+            raise ValueError(f"Column '{column}' not found")
+        if not col.filterable:
+            raise ValueError(f"Column '{column}' is not filterable")
+        return col
+
+    def _validate_enum_filter_values(
+        self,
+        column: str,
+        col: ColumnDef,
+        value: Any,
+    ) -> None:
+        """Validate enum filter values against allowed values."""
+        if col.type != ColumnType.ENUM or not col.enum_values:
+            return
+        values_to_check = value if isinstance(value, list) else [value]
+        for candidate in values_to_check:
+            if candidate not in col.enum_values:
+                raise ValueError(
+                    f"Invalid value '{candidate}' for enum column '{column}'"
+                )
+
+    def _get_column_index(self, column: str) -> int:
+        """Return index of the named column."""
+        return next(i for i, c in enumerate(self.columns) if c.name == column)
+
+    def _filter_rows(self, *, column_index: int, value: Any) -> list[list[Any]]:
+        """Apply either equality or IN filtering to rows."""
+        if isinstance(value, list):
+            return [row for row in self.rows if row[column_index] in value]
+        return [row for row in self.rows if row[column_index] == value]
 
     def sort(self, sort_spec: str | list[tuple[str, str]]) -> "TableData":
         """Apply sorting and return new TableData.

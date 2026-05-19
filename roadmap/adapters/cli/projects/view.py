@@ -36,6 +36,81 @@ def _extract_description_and_objectives(content):
     return description, objectives
 
 
+def _get_project_or_exit(ctx: click.Context, project_id: str):
+    """Fetch project by ID or exit with a user-facing error message."""
+    core = ctx.obj["core"]
+    project = core.projects.get(project_id)
+    if project:
+        return project
+
+    get_console().print(f"❌ Project '{project_id}' not found.", style="bold red")
+    get_console().print(
+        "\n💡 Tip: Use 'roadmap project list' to see all available projects.",
+        style="dim",
+    )
+    ctx.exit(1)
+
+
+def _build_project_milestone_data(core, project) -> tuple[list | None, dict | None]:
+    """Build milestone list and progress map for a project."""
+    if not project.milestones:
+        return None, None
+
+    all_milestones = core.milestones.list()
+    milestones = [m for m in all_milestones if m.name in project.milestones]
+    milestone_progress = {
+        milestone.name: core.milestones.get_progress(milestone.name)
+        for milestone in milestones
+    }
+    return milestones, milestone_progress
+
+
+def _build_effort_data(project) -> dict[str, float | int | None] | None:
+    """Build effort payload for presenter when estimate/actual values exist."""
+    if not (project.estimated_hours or project.actual_hours):
+        return None
+    return {
+        "estimated": project.estimated_hours,
+        "actual": project.actual_hours,
+    }
+
+
+def _build_comments_text(project) -> str | None:
+    """Build formatted comments text with threaded replies for display."""
+    if not project.comments:
+        return None
+
+    from roadmap.core.services.comment.comment_service import CommentService
+
+    threads = CommentService.build_comment_threads(project.comments)
+    chunks: list[str] = []
+
+    top_level_ids = sorted([key for key in threads.keys() if key is not None])
+    for top_level_id in top_level_ids:
+        for comment in threads.get(top_level_id, []):
+            chunks.append(CommentService.format_comment_for_display(comment, indent=0))
+            for reply in threads.get(comment.id, []):
+                chunks.append(
+                    CommentService.format_comment_for_display(reply, indent=1)
+                )
+            chunks.append("")
+
+    return "\n".join(chunks).rstrip() if chunks else None
+
+
+def _render_objectives_panel(objectives: str | None) -> None:
+    """Render objectives markdown panel when objectives are available."""
+    if not objectives:
+        return
+
+    from rich.markdown import Markdown
+    from rich.panel import Panel
+
+    get_console().print(
+        Panel(Markdown(objectives), title="✅ Objectives", border_style="green")
+    )
+
+
 @click.command("view")
 @click.argument("project_id")
 @click.pass_context
@@ -50,66 +125,23 @@ def view_project(ctx: click.Context, project_id: str):
         roadmap project view abc123def
     """
     core = ctx.obj["core"]
-
-    project = core.projects.get(project_id)
-    if not project:
-        get_console().print(f"❌ Project '{project_id}' not found.", style="bold red")
-        get_console().print(
-            "\n💡 Tip: Use 'roadmap project list' to see all available projects.",
-            style="dim",
-        )
-        ctx.exit(1)
+    project = _get_project_or_exit(ctx, project_id)
 
     # Convert project to DTO
     project_dto = ProjectMapper.domain_to_dto(project)
 
     # Get milestones for display
-    milestones = None
-    milestone_progress = None
-    if project.milestones:
-        all_milestones = core.milestones.list()
-        milestones = [m for m in all_milestones if m.name in project.milestones]
-        milestone_progress = {
-            m.name: core.milestones.get_progress(m.name) for m in milestones
-        }
+    milestones, milestone_progress = _build_project_milestone_data(core, project)
 
     # Build effort data
-    effort_data = None
-    if project.estimated_hours or project.actual_hours:
-        effort_data = {
-            "estimated": project.estimated_hours,
-            "actual": project.actual_hours,
-        }
+    effort_data = _build_effort_data(project)
 
     # Extract description and objectives
     description, objectives = _extract_description_and_objectives(project.content)
     description_content = description
 
     # Prepare comments if any
-    comments_text = None
-    if project.comments:
-        from roadmap.core.services.comment.comment_service import CommentService
-
-        threads = CommentService.build_comment_threads(project.comments)
-        comment_text = ""
-
-        top_level_ids = [k for k in threads.keys() if k is not None]
-        for top_level_id in sorted(top_level_ids):
-            for comment in threads.get(top_level_id, []):
-                comment_text += (
-                    CommentService.format_comment_for_display(comment, indent=0) + "\n"
-                )
-
-                if comment.id in threads:
-                    for reply in threads[comment.id]:
-                        comment_text += (
-                            CommentService.format_comment_for_display(reply, indent=1)
-                            + "\n"
-                        )
-
-                comment_text += "\n"
-
-        comments_text = comment_text.rstrip()
+    comments_text = _build_comments_text(project)
 
     # Render using presenter
     presenter = ProjectPresenter()
@@ -122,10 +154,4 @@ def view_project(ctx: click.Context, project_id: str):
         effort_data=effort_data,
     )
 
-    # Display objectives if present
-    if objectives:
-        from rich.markdown import Markdown
-        from rich.panel import Panel
-
-        md = Markdown(objectives)
-        get_console().print(Panel(md, title="✅ Objectives", border_style="green"))
+    _render_objectives_panel(objectives)

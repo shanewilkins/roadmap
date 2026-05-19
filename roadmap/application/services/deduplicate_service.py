@@ -99,53 +99,10 @@ class DeduplicateService:
             dry_run=dry_run,
         )
 
-        # Phase 1: Deduplicate local issues within themselves
-        phase1_start = time.time()
-        try:
-            logger.debug("deduplication_phase_1_starting", dataset="local")
-            deduplicated_local = self.detector.local_self_dedup(local_issues)
-            local_dup_ids = {i.id for i in local_issues} - {
-                i.id for i in deduplicated_local
-            }
-            phase1_elapsed = time.time() - phase1_start
-            logger.debug(
-                "deduplication_phase_1_complete",
-                dataset="local",
-                duplicates_found=len(local_dup_ids),
-                duration_seconds=round(phase1_elapsed, 3),
-            )
-        except Exception as e:
-            logger.error(
-                "deduplication_phase_1_failed",
-                dataset="local",
-                error=str(e),
-                error_type=type(e).__name__,
-            )
-            raise
-
-        # Phase 2: Deduplicate remote issues within themselves
-        phase2_start = time.time()
-        try:
-            logger.debug("deduplication_phase_2_starting", dataset="remote")
-            deduplicated_remote = self.detector.remote_self_dedup(remote_issues)
-            remote_dup_ids = set(remote_issues.keys()) - set(deduplicated_remote.keys())
-            # Also track by SyncIssue.id for filtering
-            remote_dup_issue_ids = {remote_issues[k].id for k in remote_dup_ids}
-            phase2_elapsed = time.time() - phase2_start
-            logger.debug(
-                "deduplication_phase_2_complete",
-                dataset="remote",
-                duplicates_found=len(remote_dup_ids),
-                duration_seconds=round(phase2_elapsed, 3),
-            )
-        except Exception as e:
-            logger.error(
-                "deduplication_phase_2_failed",
-                dataset="remote",
-                error=str(e),
-                error_type=type(e).__name__,
-            )
-            raise
+        local_dup_ids, phase1_elapsed = self._detect_local_duplicates(local_issues)
+        remote_dup_ids, remote_dup_issue_ids, phase2_elapsed = (
+            self._detect_remote_duplicates(remote_issues)
+        )
 
         total_duplicates = len(local_dup_ids) + len(remote_dup_ids)
 
@@ -156,58 +113,13 @@ class DeduplicateService:
             total=total_duplicates,
         )
 
-        # Execute deletions if not dry run
-        deletion_start = time.time()
-        executed_count = 0
-        deletion_errors = []
-        deletion_elapsed = 0.0  # Initialize to 0.0 for dry_run case
-
-        if not dry_run and total_duplicates > 0:
-            logger.info(
-                "batch_deletion_starting",
-                total_count=total_duplicates,
-                local_count=len(local_dup_ids),
-                remote_count=len(remote_dup_issue_ids),
-            )
-
-            # Phase A: Delete local duplicates from database (batch)
-            local_deleted = self._delete_local_duplicates(
-                local_dup_ids, deletion_errors
-            )
-
-            # Phase B: Delete remote duplicates via GraphQL (batch)
-            remote_deleted = self._close_remote_duplicates(
-                remote_dup_issue_ids, remote_issues, deletion_errors
-            )
-
-            deletion_elapsed = time.time() - deletion_start
-            executed_count = local_deleted + remote_deleted
-
-            if executed_count > 0:
-                rate = executed_count / deletion_elapsed if deletion_elapsed > 0 else 0
-                logger.info(
-                    "batch_deletion_complete",
-                    deleted_count=executed_count,
-                    local_deleted=local_deleted,
-                    remote_deleted=remote_deleted,
-                    duration_seconds=round(deletion_elapsed, 3),
-                    rate_per_second=round(rate, 1),
-                )
-
-            if deletion_errors:
-                logger.warning(
-                    "batch_deletion_with_errors",
-                    successful=executed_count,
-                    failed=len(deletion_errors),
-                    errors=deletion_errors,
-                )
-            else:
-                logger.info(
-                    "duplicates_deleted_successfully",
-                    count=executed_count,
-                    local_deleted=local_deleted,
-                    remote_deleted=remote_deleted,
-                )
+        executed_count, deletion_elapsed = self._execute_duplicate_deletions(
+            dry_run=dry_run,
+            total_duplicates=total_duplicates,
+            local_dup_ids=local_dup_ids,
+            remote_dup_issue_ids=remote_dup_issue_ids,
+            remote_issues=remote_issues,
+        )
 
         # Build return data with duplicates filtered out
         all_dup_ids = local_dup_ids | remote_dup_issue_ids
@@ -261,6 +173,142 @@ class DeduplicateService:
             local_dedup_duration=phase1_elapsed,
             remote_dedup_duration=phase2_elapsed,
             deletion_duration=deletion_elapsed,
+        )
+
+    def _detect_local_duplicates(
+        self, local_issues: list[Issue]
+    ) -> tuple[set[str], float]:
+        """Detect local duplicates and return duplicate IDs with elapsed time."""
+        phase_start = time.time()
+        try:
+            logger.debug("deduplication_phase_1_starting", dataset="local")
+            deduplicated_local = self.detector.local_self_dedup(local_issues)
+            local_dup_ids = {i.id for i in local_issues} - {
+                i.id for i in deduplicated_local
+            }
+            phase_elapsed = time.time() - phase_start
+            logger.debug(
+                "deduplication_phase_1_complete",
+                dataset="local",
+                duplicates_found=len(local_dup_ids),
+                duration_seconds=round(phase_elapsed, 3),
+            )
+            return local_dup_ids, phase_elapsed
+        except Exception as e:
+            logger.error(
+                "deduplication_phase_1_failed",
+                dataset="local",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            raise
+
+    def _detect_remote_duplicates(
+        self,
+        remote_issues: dict[str, SyncIssue],
+    ) -> tuple[set[str], set[str], float]:
+        """Detect remote duplicates and return key IDs, issue IDs, and elapsed time."""
+        phase_start = time.time()
+        try:
+            logger.debug("deduplication_phase_2_starting", dataset="remote")
+            deduplicated_remote = self.detector.remote_self_dedup(remote_issues)
+            remote_dup_ids = set(remote_issues.keys()) - set(deduplicated_remote.keys())
+            remote_dup_issue_ids = {remote_issues[k].id for k in remote_dup_ids}
+            phase_elapsed = time.time() - phase_start
+            logger.debug(
+                "deduplication_phase_2_complete",
+                dataset="remote",
+                duplicates_found=len(remote_dup_ids),
+                duration_seconds=round(phase_elapsed, 3),
+            )
+            return remote_dup_ids, remote_dup_issue_ids, phase_elapsed
+        except Exception as e:
+            logger.error(
+                "deduplication_phase_2_failed",
+                dataset="remote",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            raise
+
+    def _execute_duplicate_deletions(
+        self,
+        *,
+        dry_run: bool,
+        total_duplicates: int,
+        local_dup_ids: set[str],
+        remote_dup_issue_ids: set[str],
+        remote_issues: dict[str, SyncIssue],
+    ) -> tuple[int, float]:
+        """Delete local and remote duplicates when deduplication is not a dry run."""
+        if dry_run or total_duplicates == 0:
+            return 0, 0.0
+
+        deletion_start = time.time()
+        deletion_errors: list[dict] = []
+
+        logger.info(
+            "batch_deletion_starting",
+            total_count=total_duplicates,
+            local_count=len(local_dup_ids),
+            remote_count=len(remote_dup_issue_ids),
+        )
+
+        local_deleted = self._delete_local_duplicates(local_dup_ids, deletion_errors)
+        remote_deleted = self._close_remote_duplicates(
+            remote_dup_issue_ids,
+            remote_issues,
+            deletion_errors,
+        )
+
+        deletion_elapsed = time.time() - deletion_start
+        executed_count = local_deleted + remote_deleted
+
+        self._log_deletion_outcome(
+            executed_count=executed_count,
+            local_deleted=local_deleted,
+            remote_deleted=remote_deleted,
+            deletion_elapsed=deletion_elapsed,
+            deletion_errors=deletion_errors,
+        )
+
+        return executed_count, deletion_elapsed
+
+    def _log_deletion_outcome(
+        self,
+        *,
+        executed_count: int,
+        local_deleted: int,
+        remote_deleted: int,
+        deletion_elapsed: float,
+        deletion_errors: list[dict],
+    ) -> None:
+        """Log summary details for deduplication deletion phase."""
+        if executed_count > 0:
+            rate = executed_count / deletion_elapsed if deletion_elapsed > 0 else 0
+            logger.info(
+                "batch_deletion_complete",
+                deleted_count=executed_count,
+                local_deleted=local_deleted,
+                remote_deleted=remote_deleted,
+                duration_seconds=round(deletion_elapsed, 3),
+                rate_per_second=round(rate, 1),
+            )
+
+        if deletion_errors:
+            logger.warning(
+                "batch_deletion_with_errors",
+                successful=executed_count,
+                failed=len(deletion_errors),
+                errors=deletion_errors,
+            )
+            return
+
+        logger.info(
+            "duplicates_deleted_successfully",
+            count=executed_count,
+            local_deleted=local_deleted,
+            remote_deleted=remote_deleted,
         )
 
     def _safe_delete_duplicate(

@@ -33,36 +33,16 @@ class IssueStateService:
         Raises:
             ValueError: If required fields are missing
         """
-        if not issue_id or not issue_id.strip():
-            logger.error("cannot_convert_sync_issue_empty_issue_id")
-            raise ValueError("issue_id cannot be empty")
-
-        if not sync_issue:
-            logger.error("cannot_convert_none_sync_issue")
-            raise ValueError("sync_issue cannot be None")
-
-        if not sync_issue.title or not sync_issue.title.strip():
-            logger.warning(
-                "sync_issue_missing_title",
-                issue_id=issue_id,
-                backend_name=sync_issue.backend_name,
-                backend_id=sync_issue.backend_id,
-            )
+        IssueStateService._validate_sync_issue_input(issue_id, sync_issue)
+        IssueStateService._warn_if_missing_sync_title(issue_id, sync_issue)
 
         try:
-            # Parse timestamps
-            created_at = sync_issue.created_at or datetime.now(UTC)
-            updated_at = sync_issue.updated_at or datetime.now(UTC)
-
-            # Normalize status
+            created_at, updated_at = IssueStateService._resolve_sync_timestamps(
+                sync_issue
+            )
             status = IssueStateService.normalize_status(sync_issue.status)
+            content = IssueStateService._resolve_sync_content(sync_issue)
 
-            # Prepare content
-            content = ""
-            if sync_issue.headline and sync_issue.headline.strip():
-                content = sync_issue.headline
-
-            # Create Issue object
             issue = Issue(
                 id=issue_id,
                 title=sync_issue.title or "Untitled",
@@ -76,16 +56,12 @@ class IssueStateService:
                 updated=updated_at,
             )
 
-            # Set remote_ids from sync_issue for tracking
             if sync_issue.remote_ids:
                 issue.remote_ids = sync_issue.remote_ids.copy()
 
-            # Track backend info in github_sync_metadata
-            issue.github_sync_metadata = {
-                "backend_name": sync_issue.backend_name,
-                "backend_id": sync_issue.backend_id,
-                **(sync_issue.metadata or {}),
-            }
+            issue.github_sync_metadata = IssueStateService._build_sync_metadata(
+                sync_issue
+            )
 
             logger.info(
                 "converted_sync_issue_to_issue",
@@ -113,6 +89,51 @@ class IssueStateService:
                 exc_info=True,
             )
             raise
+
+    @staticmethod
+    def _validate_sync_issue_input(issue_id: str, sync_issue: SyncIssue | None) -> None:
+        """Validate required inputs for sync issue conversion."""
+        if not issue_id or not issue_id.strip():
+            logger.error("cannot_convert_sync_issue_empty_issue_id")
+            raise ValueError("issue_id cannot be empty")
+        if not sync_issue:
+            logger.error("cannot_convert_none_sync_issue")
+            raise ValueError("sync_issue cannot be None")
+
+    @staticmethod
+    def _warn_if_missing_sync_title(issue_id: str, sync_issue: SyncIssue) -> None:
+        """Emit warning when remote issue title is missing."""
+        if sync_issue.title and sync_issue.title.strip():
+            return
+        logger.warning(
+            "sync_issue_missing_title",
+            issue_id=issue_id,
+            backend_name=sync_issue.backend_name,
+            backend_id=sync_issue.backend_id,
+        )
+
+    @staticmethod
+    def _resolve_sync_timestamps(sync_issue: SyncIssue) -> tuple[datetime, datetime]:
+        """Resolve created/updated timestamps for a sync issue."""
+        created_at = sync_issue.created_at or datetime.now(UTC)
+        updated_at = sync_issue.updated_at or datetime.now(UTC)
+        return created_at, updated_at
+
+    @staticmethod
+    def _resolve_sync_content(sync_issue: SyncIssue) -> str:
+        """Resolve normalized content from sync issue headline."""
+        if sync_issue.headline and sync_issue.headline.strip():
+            return sync_issue.headline
+        return ""
+
+    @staticmethod
+    def _build_sync_metadata(sync_issue: SyncIssue) -> dict[str, Any]:
+        """Build metadata payload persisted on local issue."""
+        return {
+            "backend_name": sync_issue.backend_name,
+            "backend_id": sync_issue.backend_id,
+            **(sync_issue.metadata or {}),
+        }
 
     @staticmethod
     def issue_to_push_payload(issue: Issue) -> dict[str, Any]:

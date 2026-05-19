@@ -22,6 +22,24 @@ class MilestoneNamingComplianceFixer(HealthFixer):
     actual safe milestone names like "v080", "future-post-v10".
     """
 
+    DISPLAY_TO_SAFE_MILESTONE = {
+        "v.0.7.0": "v070",
+        "v.0.8.0": "v080",
+        "v.0.9.0": "v090",
+        "v.1.0.0": "v100",
+        "v.0.8": "v080",
+        "v0.8": "v080",
+        "v0.8.0": "v080",
+        "v.0.7": "v070",
+        "v0.7": "v070",
+        "v.0.9": "v090",
+        "v0.9": "v090",
+        "v.1.0": "v100",
+        "v1.0": "v100",
+        "Future (Post-v1.0)": "future-post-v10",
+        "Development": "backlog",
+    }
+
     def __init__(self, core):
         """Initialize fixer with core instance."""
         super().__init__(core)
@@ -151,34 +169,12 @@ class MilestoneNamingComplianceFixer(HealthFixer):
         Returns:
             List of issue dicts with: id, title, current_milestone, safe_milestone
         """
-        issues = []
+        issues: list[dict] = []
         issues_dir = Path(".roadmap/issues").resolve()
         milestones_dir = Path(".roadmap/milestones").resolve()
 
         # Get all actual milestone files (safe names)
-        actual_milestones = set()
-        if milestones_dir.exists():
-            for f in milestones_dir.glob("*.md"):
-                actual_milestones.add(f.stem)
-
-        # Map display names to safe names
-        display_to_safe = {
-            "v.0.7.0": "v070",
-            "v.0.8.0": "v080",
-            "v.0.9.0": "v090",
-            "v.1.0.0": "v100",
-            "v.0.8": "v080",
-            "v0.8": "v080",
-            "v0.8.0": "v080",
-            "v.0.7": "v070",
-            "v0.7": "v070",
-            "v.0.9": "v090",
-            "v0.9": "v090",
-            "v.1.0": "v100",
-            "v1.0": "v100",
-            "Future (Post-v1.0)": "future-post-v10",
-            "Development": "backlog",
-        }
+        actual_milestones = self._load_actual_milestones(milestones_dir)
 
         if not issues_dir.exists():
             return issues
@@ -187,34 +183,19 @@ class MilestoneNamingComplianceFixer(HealthFixer):
             if issue_file.name.startswith("."):
                 continue
 
-            # Parse YAML frontmatter
             content = issue_file.read_text(encoding="utf-8")
-            current_milestone = None
-            title = None
-
-            for line in content.split("\n"):
-                if line.startswith("milestone:"):
-                    current_milestone = line.replace("milestone:", "").strip()
-                elif line.startswith("title:"):
-                    title = line.replace("title:", "").strip().strip("'\"")
+            current_milestone, title = self._parse_issue_frontmatter(content)
 
             if not current_milestone:
                 continue
 
-            # Check if it's already a safe name
             if current_milestone in actual_milestones:
                 continue
 
-            # Check if it's empty string or space
-            if not current_milestone or current_milestone.isspace():
-                safe_milestone = "backlog"
-            else:
-                # Check if it's a display name that needs conversion
-                safe_milestone = display_to_safe.get(current_milestone, "backlog")
-
-                # Verify safe milestone exists
-                if safe_milestone not in actual_milestones:
-                    safe_milestone = "backlog"
+            safe_milestone = self._resolve_safe_milestone(
+                current_milestone,
+                actual_milestones,
+            )
 
             if safe_milestone != current_milestone:
                 issues.append(
@@ -228,3 +209,36 @@ class MilestoneNamingComplianceFixer(HealthFixer):
                 )
 
         return issues
+
+    def _load_actual_milestones(self, milestones_dir: Path) -> set[str]:
+        """Load safe milestone names from milestone filenames."""
+        if not milestones_dir.exists():
+            return set()
+        return {milestone_file.stem for milestone_file in milestones_dir.glob("*.md")}
+
+    def _parse_issue_frontmatter(self, content: str) -> tuple[str | None, str | None]:
+        """Extract milestone and title values from issue file frontmatter lines."""
+        current_milestone = None
+        title = None
+        for line in content.split("\n"):
+            if line.startswith("milestone:"):
+                current_milestone = line.replace("milestone:", "").strip()
+            elif line.startswith("title:"):
+                title = line.replace("title:", "").strip().strip("'\"")
+        return current_milestone, title
+
+    def _resolve_safe_milestone(
+        self,
+        current_milestone: str,
+        actual_milestones: set[str],
+    ) -> str:
+        """Resolve a milestone value to a safe milestone name."""
+        if not current_milestone or current_milestone.isspace():
+            return "backlog"
+
+        safe_milestone = self.DISPLAY_TO_SAFE_MILESTONE.get(
+            current_milestone, "backlog"
+        )
+        if safe_milestone not in actual_milestones:
+            return "backlog"
+        return safe_milestone

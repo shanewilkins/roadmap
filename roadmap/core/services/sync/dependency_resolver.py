@@ -294,25 +294,8 @@ class DependencyResolver:
         Returns:
             List of (entity_type, entity_id, entity_data) tuples in dependency order.
         """
-        # Calculate in-degree for each node
-        in_degree: dict[str, int] = defaultdict(int)
-        adj_list: dict[str, list[str]] = defaultdict(list)
-
-        for entity_id, node in self._graph.items():
-            for dep_id in node.depends_on:
-                if not allow_missing and dep_id not in self._graph:
-                    # Skip nodes with missing dependencies unless allow_missing=True
-                    continue
-
-                if dep_id in self._graph:
-                    adj_list[dep_id].append(entity_id)
-                    in_degree[entity_id] += 1
-
-        # Initialize queue with nodes that have no dependencies
-        queue: deque[str] = deque()
-        for entity_id in self._graph:
-            if in_degree[entity_id] == 0:
-                queue.append(entity_id)
+        in_degree, adj_list = self._build_sort_graph(allow_missing=allow_missing)
+        queue = self._build_zero_in_degree_queue(in_degree)
 
         result: list[tuple[EntityType, str, dict[str, Any]]] = []
 
@@ -328,17 +311,57 @@ class DependencyResolver:
                 if in_degree[neighbor_id] == 0:
                     queue.append(neighbor_id)
 
-        # If allow_missing and we didn't process all nodes, still include them
-        if allow_missing and len(result) < len(self._graph):
-            processed_ids = {entity_id for _, entity_id, _ in result}
-            for entity_id, node in self._graph.items():
-                if entity_id not in processed_ids:
-                    result.append((node.entity_type, entity_id, node.entity_data))
-                    logger.warning(
-                        "entity_with_unresolved_dependencies",
-                        entity_id=entity_id,
-                        entity_type=node.entity_type.value,
-                        depends_on=list(node.depends_on),
-                    )
+        self._append_unresolved_entities_if_allowed(
+            result,
+            allow_missing=allow_missing,
+        )
 
         return result
+
+    def _build_sort_graph(
+        self,
+        *,
+        allow_missing: bool,
+    ) -> tuple[dict[str, int], dict[str, list[str]]]:
+        """Build in-degree and adjacency lists for topological sort."""
+        in_degree: dict[str, int] = defaultdict(int)
+        adj_list: dict[str, list[str]] = defaultdict(list)
+
+        for entity_id, node in self._graph.items():
+            for dep_id in node.depends_on:
+                if dep_id not in self._graph:
+                    continue
+                adj_list[dep_id].append(entity_id)
+                in_degree[entity_id] += 1
+
+        return in_degree, adj_list
+
+    def _build_zero_in_degree_queue(self, in_degree: dict[str, int]) -> deque[str]:
+        """Create queue of entities that have no remaining dependencies."""
+        queue: deque[str] = deque()
+        for entity_id in self._graph:
+            if in_degree[entity_id] == 0:
+                queue.append(entity_id)
+        return queue
+
+    def _append_unresolved_entities_if_allowed(
+        self,
+        result: list[tuple[EntityType, str, dict[str, Any]]],
+        *,
+        allow_missing: bool,
+    ) -> None:
+        """Append unresolved entities when missing dependencies are allowed."""
+        if not allow_missing or len(result) >= len(self._graph):
+            return
+
+        processed_ids = {entity_id for _, entity_id, _ in result}
+        for entity_id, node in self._graph.items():
+            if entity_id in processed_ids:
+                continue
+            result.append((node.entity_type, entity_id, node.entity_data))
+            logger.warning(
+                "entity_with_unresolved_dependencies",
+                entity_id=entity_id,
+                entity_type=node.entity_type.value,
+                depends_on=list(node.depends_on),
+            )

@@ -206,31 +206,20 @@ def _apply_auto_fix(
         dedupe: If True, remove duplicate remote IDs
     """
     missing = validation_report["missing_in_db"]
-    if not missing and not prune_extra and not dedupe:
+    if not _has_auto_fix_work(missing, prune_extra, dedupe):
         console.print("\n✅ No links need fixing", style="bold green")
         return
 
-    if missing:
-        console.print(
-            f"\n[bold cyan]🔧 Auto-fixing {len(missing)} missing links...[/bold cyan]"
-        )
-        if dry_run:
-            console.print(
-                "  (Dry-run mode - no changes will be made)", style="dim yellow"
-            )
-    if verbose and yaml_remote_ids:
-        for issue_uuid, remote_ids in yaml_remote_ids.items():
-            console.print(
-                f"  📄 {issue_uuid}: {', '.join(remote_ids.keys())}", style="cyan"
-            )
-    if prune_extra and validation_report.get("extra_in_db"):
-        console.print(
-            f"\n[bold cyan]🧹 Removing {len(validation_report['extra_in_db'])} extra links...[/bold cyan]"
-        )
-    if dedupe and validation_report.get("duplicate_remote_ids"):
-        console.print(
-            f"\n[bold cyan]🧹 Removing {len(validation_report['duplicate_remote_ids'])} duplicate remote IDs...[/bold cyan]"
-        )
+    _display_auto_fix_plan(
+        console,
+        missing,
+        yaml_remote_ids,
+        validation_report,
+        dry_run,
+        verbose,
+        prune_extra,
+        dedupe,
+    )
 
     try:
         results = core.validation.apply_remote_link_fixes(
@@ -246,6 +235,50 @@ def _apply_auto_fix(
         console.print(f"  ⚠️  Auto-fix failed: {str(e)}", style="yellow")
         return
 
+    _display_auto_fix_results(console, results, dry_run)
+
+
+def _has_auto_fix_work(missing: list[str], prune_extra: bool, dedupe: bool) -> bool:
+    return bool(missing or prune_extra or dedupe)
+
+
+def _display_auto_fix_plan(
+    console,
+    missing: list[str],
+    yaml_remote_ids: dict,
+    validation_report: dict,
+    dry_run: bool,
+    verbose: bool,
+    prune_extra: bool,
+    dedupe: bool,
+) -> None:
+    if missing:
+        console.print(
+            f"\n[bold cyan]🔧 Auto-fixing {len(missing)} missing links...[/bold cyan]"
+        )
+        if dry_run:
+            console.print(
+                "  (Dry-run mode - no changes will be made)", style="dim yellow"
+            )
+
+    if verbose and yaml_remote_ids:
+        for issue_uuid, remote_ids in yaml_remote_ids.items():
+            console.print(
+                f"  📄 {issue_uuid}: {', '.join(remote_ids.keys())}", style="cyan"
+            )
+
+    if prune_extra and validation_report.get("extra_in_db"):
+        console.print(
+            f"\n[bold cyan]🧹 Removing {len(validation_report['extra_in_db'])} extra links...[/bold cyan]"
+        )
+
+    if dedupe and validation_report.get("duplicate_remote_ids"):
+        console.print(
+            f"\n[bold cyan]🧹 Removing {len(validation_report['duplicate_remote_ids'])} duplicate remote IDs...[/bold cyan]"
+        )
+
+
+def _display_auto_fix_results(console, results: dict, dry_run: bool) -> None:
     if results.get("fixed_count"):
         console.print(
             f"\n[bold green]✅ Fixed {results['fixed_count']} missing remote links[/bold green]"

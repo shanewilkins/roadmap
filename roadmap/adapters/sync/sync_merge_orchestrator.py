@@ -1112,63 +1112,20 @@ class SyncMergeOrchestrator:
         merged_count = 0
         archived_count = 0
         skipped_count = 0
-        errors = []
+        errors: list[str] = []
 
         for action in actions:
-            # Handle both ResolutionAction and MockResolutionAction
-            action_type = getattr(action, "action_type", None)
-
-            # Skip actions that already have errors
-            if hasattr(action, "error") and action.error:
-                skipped_count += 1
-                logger.debug(
-                    "skipping_action_with_error",
-                    issue_id=getattr(action, "issue_id", None),
-                    error=action.error,
-                )
-                continue
-
-            if action_type == "delete" or action_type == "merge":
-                if dry_run:
-                    merged_count += 1
-                    continue
-
-                issue_id = getattr(action, "issue_id", None)
-                if issue_id:
-                    try:
-                        self.core.issue_service.delete_issue(issue_id)
-                        merged_count += 1
-                        logger.info("duplicate_deleted", issue_id=issue_id)
-                    except Exception as e:
-                        errors.append(str(e))
-                        logger.warning("delete_failed", issue_id=issue_id, error=str(e))
-
-            elif action_type == "archive":
-                if dry_run:
-                    archived_count += 1
-                    continue
-
-                issue_id = getattr(action, "issue_id", None)
-                if issue_id:
-                    try:
-                        issue = self.core.issue_service.get_issue(issue_id)
-                        if issue:
-                            from roadmap.common.constants import Status
-
-                            issue.status = Status.ARCHIVED
-                            self.core.issue_service.update_issue(issue)
-                            archived_count += 1
-                            logger.info("duplicate_archived", issue_id=issue_id)
-                        else:
-                            logger.warning("archive_issue_not_found", issue_id=issue_id)
-                    except Exception as e:
-                        errors.append(str(e))
-                        logger.warning(
-                            "archive_failed", issue_id=issue_id, error=str(e)
-                        )
-
+            action_result = SyncMergeOrchestrator._execute_single_resolution_action(
+                self,
+                action,
+                dry_run,
+                errors,
+            )
+            if action_result == "merged":
+                merged_count += 1
+            elif action_result == "archived":
+                archived_count += 1
             else:
-                # skip or unknown action
                 skipped_count += 1
 
         # Update report
@@ -1192,6 +1149,91 @@ class SyncMergeOrchestrator:
             logger.warning("resolution_errors", count=len(errors))
             for error in errors:
                 logger.warning("resolution_error", detail=error)
+
+    def _execute_single_resolution_action(
+        self,
+        action,
+        dry_run: bool,
+        errors: list[str],
+    ) -> str:
+        """Execute one resolution action and return merged|archived|skipped."""
+        if SyncMergeOrchestrator._action_has_preexisting_error(self, action):
+            return "skipped"
+
+        action_type = getattr(action, "action_type", None)
+        issue_id = getattr(action, "issue_id", None)
+        if not issue_id:
+            return "skipped"
+
+        if action_type in {"delete", "merge"}:
+            return SyncMergeOrchestrator._handle_delete_resolution(
+                self,
+                issue_id,
+                dry_run,
+                errors,
+            )
+        if action_type == "archive":
+            return SyncMergeOrchestrator._handle_archive_resolution(
+                self,
+                issue_id,
+                dry_run,
+                errors,
+            )
+        return "skipped"
+
+    def _action_has_preexisting_error(self, action) -> bool:
+        """Check and log when action is pre-marked with an error."""
+        if not (hasattr(action, "error") and action.error):
+            return False
+        logger.debug(
+            "skipping_action_with_error",
+            issue_id=getattr(action, "issue_id", None),
+            error=action.error,
+        )
+        return True
+
+    def _handle_delete_resolution(
+        self,
+        issue_id: str,
+        dry_run: bool,
+        errors: list[str],
+    ) -> str:
+        """Handle delete/merge resolution action."""
+        if dry_run:
+            return "merged"
+        try:
+            self.core.issue_service.delete_issue(issue_id)
+            logger.info("duplicate_deleted", issue_id=issue_id)
+            return "merged"
+        except Exception as e:
+            errors.append(str(e))
+            logger.warning("delete_failed", issue_id=issue_id, error=str(e))
+            return "skipped"
+
+    def _handle_archive_resolution(
+        self,
+        issue_id: str,
+        dry_run: bool,
+        errors: list[str],
+    ) -> str:
+        """Handle archive resolution action."""
+        if dry_run:
+            return "archived"
+        try:
+            issue = self.core.issue_service.get_issue(issue_id)
+            if not issue:
+                logger.warning("archive_issue_not_found", issue_id=issue_id)
+                return "skipped"
+            from roadmap.common.constants import Status
+
+            issue.status = Status.ARCHIVED
+            self.core.issue_service.update_issue(issue)
+            logger.info("duplicate_archived", issue_id=issue_id)
+            return "archived"
+        except Exception as e:
+            errors.append(str(e))
+            logger.warning("archive_failed", issue_id=issue_id, error=str(e))
+            return "skipped"
 
     def _sync_record_metrics(
         self,
