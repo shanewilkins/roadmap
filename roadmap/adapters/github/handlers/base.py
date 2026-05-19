@@ -1,6 +1,6 @@
 """Base handler for GitHub API operations."""
 
-from typing import Any
+from typing import Any, TypedDict
 
 import requests
 
@@ -12,6 +12,12 @@ class GitHubAPIError(Exception):
     """Exception raised for GitHub API errors."""
 
     pass
+
+
+class _ExternalLogKwargs(TypedDict):
+    service_name: str
+    operation: str
+    retry_count: int
 
 
 class BaseGitHubHandler(BasePaginatedAdapter):
@@ -52,6 +58,139 @@ class BaseGitHubHandler(BasePaginatedAdapter):
                 "Repository not set. Use set_repository() or provide owner/repo in constructor."
             )
 
+    def _raise_http_error(
+        self,
+        status_code: int,
+        response: requests.Response,
+        method: str,
+        endpoint: str,
+        e: requests.exceptions.HTTPError,
+    ) -> None:
+        """Log and raise a GitHubAPIError for the given HTTP status code."""
+        retry_count = getattr(self.session, "retry_count", 0)
+        if not isinstance(retry_count, int):
+            retry_count = 0
+
+        log_kwargs: _ExternalLogKwargs = {
+            "service_name": "GitHub API",
+            "operation": f"{method} {endpoint}",
+            "retry_count": retry_count,
+        }
+
+        if status_code == 400:
+            log_external_service_error(error=e, **log_kwargs)
+            get_logger().warning(
+                "github_api_bad_request",
+                status_code=status_code,
+                operation=f"{method} {endpoint}",
+                severity="data_error",
+            )
+            raise GitHubAPIError("Bad Request: Invalid request payload") from e
+
+        if status_code == 401:
+            log_external_service_error(error=e, **log_kwargs)
+            get_logger().warning(
+                "github_api_authentication_failed",
+                status_code=status_code,
+                severity="config",
+            )
+            raise GitHubAPIError(
+                "Authentication failed. Check your GitHub token."
+            ) from e
+
+        if status_code == 403:
+            response_message = None
+            try:
+                if response.content:
+                    response_message = response.json().get("message")
+            except Exception as parse_error:
+                get_logger().warning(
+                    "github_api_forbidden_response_parse_failed",
+                    error=str(parse_error),
+                    severity="operational",
+                )
+            get_logger().warning(
+                "github_api_access_forbidden",
+                status_code=status_code,
+                operation=f"{method} {endpoint}",
+                owner=self.owner,
+                repo=self.repo,
+                rate_limit_remaining=response.headers.get("X-RateLimit-Remaining"),
+                rate_limit_reset=response.headers.get("X-RateLimit-Reset"),
+                response_message=response_message,
+                severity="config",
+            )
+            raise GitHubAPIError(
+                "Access forbidden. Check repository permissions and token scopes."
+            ) from e
+
+        if status_code == 404:
+            log_external_service_error(error=e, **log_kwargs)
+            get_logger().warning(
+                "github_api_resource_not_found",
+                status_code=status_code,
+                operation=f"{method} {endpoint}",
+                severity="operational",
+            )
+            raise GitHubAPIError("Repository or resource not found.") from e
+
+        if status_code == 410:
+            get_logger().info(
+                "github_api_resource_gone",
+                status_code=status_code,
+                operation=f"{method} {endpoint}",
+                severity="operational",
+            )
+            raise GitHubAPIError("Resource has been deleted (410 Gone)") from e
+
+        if status_code == 422:
+            error_data = response.json() if response.content else {}
+            error_details = [
+                f"{err.get('field', 'unknown')}:{err.get('code', 'unknown')} {err.get('message', '')}"
+                for err in error_data.get("errors", [])
+                if isinstance(err, dict)
+            ]
+            error_msg = error_data.get("message", "Validation failed")
+            if error_details:
+                error_msg = f"{error_msg} - {'; '.join(error_details)}"
+            get_logger().warning(
+                "github_api_validation_error",
+                status_code=status_code,
+                validation_errors=error_details,
+                severity="data_error",
+            )
+            raise GitHubAPIError(f"Validation error: {error_msg}") from e
+
+        if status_code == 429:
+            retry_after = response.headers.get("Retry-After", "unknown")
+            get_logger().warning(
+                "github_api_rate_limited",
+                status_code=status_code,
+                retry_after=retry_after,
+                severity="operational",
+            )
+            raise GitHubAPIError("Rate limit exceeded. Please try again later.") from e
+
+        if 500 <= status_code < 600:
+            log_external_service_error(error=e, **log_kwargs)
+            get_logger().warning(
+                "github_api_server_error",
+                status_code=status_code,
+                operation=f"{method} {endpoint}",
+                severity="infrastructure",
+            )
+            raise GitHubAPIError(f"GitHub API server error ({status_code})") from e
+
+        # Unknown status code
+        log_external_service_error(error=e, **log_kwargs)
+        get_logger().warning(
+            "github_api_unknown_error",
+            status_code=status_code,
+            operation=f"{method} {endpoint}",
+            severity="operational",
+        )
+        raise GitHubAPIError(f"GitHub API error ({status_code}): {e}") from e
+
     def _make_request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
         """Make a request to the GitHub API.
 
@@ -73,174 +212,9 @@ class BaseGitHubHandler(BasePaginatedAdapter):
             response.raise_for_status()
             return response
         except requests.exceptions.HTTPError as e:
-            status_code = response.status_code
-
-            # Don't log expected/recoverable errors at ERROR level to external_service_error
-            # We'll handle logging at appropriate levels below based on status code
-
-            # Handle different HTTP status codes with specific error messages and logging
-            if status_code == 400:
-                error_msg = "Bad Request: Invalid request payload"
-                logger = get_logger()
-                # Log external service error for unexpected client errors
-                log_external_service_error(
-                    error=e,
-                    service_name="GitHub API",
-                    operation=f"{method} {endpoint}",
-                    retry_count=getattr(self.session, "retry_count", 0),
-                )
-                logger.warning(
-                    "github_api_bad_request",
-                    status_code=status_code,
-                    operation=f"{method} {endpoint}",
-                    severity="data_error",
-                )
-                raise GitHubAPIError(error_msg) from e
-
-            elif status_code == 401:
-                error_msg = "Authentication failed. Check your GitHub token."
-                logger = get_logger()
-                log_external_service_error(
-                    error=e,
-                    service_name="GitHub API",
-                    operation=f"{method} {endpoint}",
-                    retry_count=getattr(self.session, "retry_count", 0),
-                )
-                logger.warning(
-                    "github_api_authentication_failed",
-                    status_code=status_code,
-                    severity="config",
-                )
-                raise GitHubAPIError(error_msg) from e
-
-            elif status_code == 403:
-                error_msg = (
-                    "Access forbidden. Check repository permissions and token scopes."
-                )
-                logger = get_logger()
-                # 403 is often expected (token scope), don't log as external error
-                response_message = None
-                try:
-                    if response.content:
-                        response_message = response.json().get("message")
-                except Exception:
-                    response_message = None
-                logger.warning(
-                    "github_api_access_forbidden",
-                    status_code=status_code,
-                    operation=f"{method} {endpoint}",
-                    owner=self.owner,
-                    repo=self.repo,
-                    rate_limit_remaining=response.headers.get("X-RateLimit-Remaining"),
-                    rate_limit_reset=response.headers.get("X-RateLimit-Reset"),
-                    response_message=response_message,
-                    severity="config",
-                )
-                raise GitHubAPIError(error_msg) from e
-
-            elif status_code == 404:
-                error_msg = "Repository or resource not found."
-                logger = get_logger()
-                log_external_service_error(
-                    error=e,
-                    service_name="GitHub API",
-                    operation=f"{method} {endpoint}",
-                    retry_count=getattr(self.session, "retry_count", 0),
-                )
-                logger.warning(
-                    "github_api_resource_not_found",
-                    status_code=status_code,
-                    operation=f"{method} {endpoint}",
-                    severity="operational",
-                )
-                raise GitHubAPIError(error_msg) from e
-
-            elif status_code == 410:
-                # Gone - resource was deleted (expected, don't log as external error)
-                error_msg = "Resource has been deleted (410 Gone)"
-                logger = get_logger()
-                logger.info(
-                    "github_api_resource_gone",
-                    status_code=status_code,
-                    operation=f"{method} {endpoint}",
-                    severity="operational",
-                )
-                raise GitHubAPIError(error_msg) from e
-
-            elif status_code == 422:
-                # Validation error - most common for issue creation/update
-                error_data = response.json() if response.content else {}
-                # GitHub validation errors have detailed field information
-                error_details = []
-                if "errors" in error_data:
-                    for error in error_data.get("errors", []):
-                        if isinstance(error, dict):
-                            field = error.get("field", "unknown")
-                            code = error.get("code", "unknown")
-                            msg = error.get("message", "")
-                            error_details.append(f"{field}:{code} {msg}")
-                error_msg = error_data.get("message", "Validation failed")
-                if error_details:
-                    error_msg = f"{error_msg} - {'; '.join(error_details)}"
-                logger = get_logger()
-                logger.warning(
-                    "github_api_validation_error",
-                    status_code=status_code,
-                    validation_errors=error_details,
-                    severity="data_error",
-                )
-                raise GitHubAPIError(f"Validation error: {error_msg}") from e
-
-            elif status_code == 429:
-                # Rate limited (expected for heavy usage)
-                error_msg = "Rate limit exceeded. Please try again later."
-                retry_after = response.headers.get("Retry-After", "unknown")
-                logger = get_logger()
-                logger.warning(
-                    "github_api_rate_limited",
-                    status_code=status_code,
-                    retry_after=retry_after,
-                    severity="operational",
-                )
-                raise GitHubAPIError(error_msg) from e
-
-            elif 500 <= status_code < 600:
-                # Server error
-                error_msg = f"GitHub API server error ({status_code})"
-                logger = get_logger()
-                log_external_service_error(
-                    error=e,
-                    service_name="GitHub API",
-                    operation=f"{method} {endpoint}",
-                    retry_count=getattr(self.session, "retry_count", 0),
-                )
-                logger.warning(
-                    "github_api_server_error",
-                    status_code=status_code,
-                    operation=f"{method} {endpoint}",
-                    severity="infrastructure",
-                )
-                raise GitHubAPIError(error_msg) from e
-
-            else:
-                # Unknown error
-                error_msg = f"GitHub API error ({status_code}): {e}"
-                logger = get_logger()
-                log_external_service_error(
-                    error=e,
-                    service_name="GitHub API",
-                    operation=f"{method} {endpoint}",
-                    retry_count=getattr(self.session, "retry_count", 0),
-                )
-                logger.warning(
-                    "github_api_unknown_error",
-                    status_code=status_code,
-                    operation=f"{method} {endpoint}",
-                    severity="operational",
-                )
-                raise GitHubAPIError(error_msg) from e
+            self._raise_http_error(response.status_code, response, method, endpoint, e)
+            raise  # unreachable but satisfies type checkers
         except requests.exceptions.RequestException as e:
-            # Log external service error for request failures
             log_external_service_error(
                 error=e,
                 service_name="GitHub API",

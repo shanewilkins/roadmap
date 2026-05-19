@@ -70,22 +70,18 @@ class GitHubSyncOps:
         }
         return label_colors.get(name, "CCCCCC")
 
-    def _ensure_labels_exist(self, labels: list[str]) -> None:
-        if not labels or not self._sync_labels_enabled():
-            return
-
+    def _get_label_client(self):
+        """Return the label API client, or None if labels are not supported."""
         if self._label_support is False:
-            return
-
-        if hasattr(self.backend, "get_label_client"):
-            client = self.backend.get_label_client()
-        else:
-            client = self.backend.get_api_client()
-
+            return None
+        client = (
+            self.backend.get_label_client()
+            if hasattr(self.backend, "get_label_client")
+            else self.backend.get_api_client()
+        )
         if client is None:
             self._label_support = False
-            return
-
+            return None
         if self._label_support is None:
             if not (hasattr(client, "get_labels") and hasattr(client, "create_label")):
                 logger.warning(
@@ -95,31 +91,49 @@ class GitHubSyncOps:
                     severity="operational",
                 )
                 self._label_support = False
-                return
+                return None
             self._label_support = True
-        if self._label_cache is None:
-            try:
-                existing_labels = client.get_labels()
-                self._label_cache = {
-                    label["name"]
-                    for label in existing_labels
-                    if isinstance(label, dict) and label.get("name")
-                }
-            except Exception as e:
-                logger.warning(
-                    "github_labels_fetch_failed",
-                    error=str(e),
-                    error_type=type(e).__name__,
-                    severity="operational",
-                )
-                self._label_cache = set()
-                return
+        return client
 
-        missing = [label for label in labels if label not in self._label_cache]
+    def _init_label_cache(self, client) -> bool:
+        """Populate self._label_cache from GitHub. Returns False on failure."""
+        if self._label_cache is not None:
+            return True
+        try:
+            existing_labels = client.get_labels()
+            self._label_cache = {
+                label["name"]
+                for label in existing_labels
+                if isinstance(label, dict) and label.get("name")
+            }
+            return True
+        except Exception as e:
+            logger.warning(
+                "github_labels_fetch_failed",
+                error=str(e),
+                error_type=type(e).__name__,
+                severity="operational",
+            )
+            self._label_cache = set()
+            return False
+
+    def _ensure_labels_exist(self, labels: list[str]) -> None:
+        if not labels or not self._sync_labels_enabled():
+            return
+        client = self._get_label_client()
+        if client is None:
+            return
+        if not self._init_label_cache(client):
+            return
+        label_cache = self._label_cache
+        if label_cache is None:
+            return
+
+        missing = [label for label in labels if label not in label_cache]
         for label in missing:
             try:
                 client.create_label(label, self._get_label_color(label))
-                self._label_cache.add(label)
+                label_cache.add(label)
                 logger.info("github_label_created", label=label)
             except Exception as e:
                 logger.warning(

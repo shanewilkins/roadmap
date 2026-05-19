@@ -218,6 +218,93 @@ class SyncMergeEngine:
 
         return report
 
+    def _process_remote_issue(
+        self, remote_id: str, remote_issue, matcher, existing_links: dict, results: dict
+    ) -> None:
+        """Process a single remote issue: auto-link, mark as duplicate, or create locally."""
+        if remote_id in existing_links:
+            logger.debug(
+                "remote_issue_already_linked",
+                remote_id=remote_id,
+                issue_uuid=existing_links[remote_id],
+            )
+            return
+
+        matched_issue, score, match_type = matcher.find_best_match(remote_issue)
+
+        if match_type == "auto_link" and matched_issue:
+            try:
+                self.core.db.remote_links.link_issue(
+                    issue_uuid=matched_issue.id,
+                    backend_name="github",
+                    remote_id=remote_id,
+                )
+                logger.info(
+                    "remote_issue_auto_linked",
+                    remote_id=remote_id,
+                    issue_uuid=matched_issue.id,
+                    score=round(score, 3),
+                )
+                results["auto_linked"].append(remote_id)
+            except Exception as e:
+                logger.warning(
+                    "remote_link_creation_failed",
+                    remote_id=remote_id,
+                    issue_uuid=matched_issue.id,
+                    error=str(e),
+                    severity="operational",
+                )
+
+        elif match_type == "potential_duplicate" and matched_issue:
+            logger.debug(
+                "remote_issue_potential_duplicate",
+                remote_id=remote_id,
+                candidate_id=matched_issue.id,
+                score=round(score, 3),
+            )
+            results["potential_duplicates"].append(remote_id)
+
+        else:
+            logger.debug(
+                "remote_issue_no_match",
+                remote_id=remote_id,
+                best_score=round(score, 3) if score > 0 else 0,
+            )
+            try:
+                new_issue = self._create_issue_from_remote(
+                    remote_id=remote_id, remote_issue=remote_issue
+                )
+                created_issue = self.core.issues.create(
+                    title=new_issue.title,
+                    status=new_issue.status,
+                    labels=new_issue.labels,
+                    milestone=new_issue.milestone,
+                    assignee=new_issue.assignee,
+                    content=new_issue.content,
+                )
+                if not created_issue:
+                    raise Exception("Failed to create issue in repository")
+                self.core.db.remote_links.link_issue(
+                    issue_uuid=created_issue.id,
+                    backend_name="github",
+                    remote_id=remote_id,
+                )
+                logger.info(
+                    "remote_issue_created_locally",
+                    remote_id=remote_id,
+                    issue_uuid=created_issue.id,
+                    title=created_issue.title,
+                    milestone=created_issue.milestone,
+                )
+                results["new_remote"].append(remote_id)
+            except Exception as e:
+                logger.warning(
+                    "remote_issue_creation_failed",
+                    remote_id=remote_id,
+                    error=str(e),
+                    severity="operational",
+                )
+
     def _match_and_link_remote_issues(
         self, local_issues_dict: dict, remote_issues_data: dict, dry_run: bool = False
     ) -> dict[str, list[Any]]:
@@ -265,93 +352,9 @@ class SyncMergeEngine:
                 )
 
             for remote_id, remote_issue in remote_issues_data.items():
-                if remote_id in existing_links:
-                    logger.debug(
-                        "remote_issue_already_linked",
-                        remote_id=remote_id,
-                        issue_uuid=existing_links[remote_id],
-                    )
-                    continue
-
-                matched_issue, score, match_type = matcher.find_best_match(remote_issue)
-
-                if match_type == "auto_link" and matched_issue:
-                    try:
-                        self.core.db.remote_links.link_issue(
-                            issue_uuid=matched_issue.id,
-                            backend_name="github",
-                            remote_id=remote_id,
-                        )
-                        logger.info(
-                            "remote_issue_auto_linked",
-                            remote_id=remote_id,
-                            issue_uuid=matched_issue.id,
-                            score=round(score, 3),
-                        )
-                        results["auto_linked"].append(remote_id)
-                    except Exception as e:
-                        logger.warning(
-                            "remote_link_creation_failed",
-                            remote_id=remote_id,
-                            issue_uuid=matched_issue.id,
-                            error=str(e),
-                            severity="operational",
-                        )
-
-                elif match_type == "potential_duplicate" and matched_issue:
-                    logger.debug(
-                        "remote_issue_potential_duplicate",
-                        remote_id=remote_id,
-                        candidate_id=matched_issue.id,
-                        score=round(score, 3),
-                    )
-                    results["potential_duplicates"].append(remote_id)
-
-                else:
-                    logger.debug(
-                        "remote_issue_no_match",
-                        remote_id=remote_id,
-                        best_score=round(score, 3) if score > 0 else 0,
-                    )
-
-                    try:
-                        new_issue = self._create_issue_from_remote(
-                            remote_id=remote_id, remote_issue=remote_issue
-                        )
-
-                        created_issue = self.core.issues.create(
-                            title=new_issue.title,
-                            status=new_issue.status,
-                            labels=new_issue.labels,
-                            milestone=new_issue.milestone,
-                            assignee=new_issue.assignee,
-                            content=new_issue.content,
-                        )
-
-                        if not created_issue:
-                            raise Exception("Failed to create issue in repository")
-
-                        self.core.db.remote_links.link_issue(
-                            issue_uuid=created_issue.id,
-                            backend_name="github",
-                            remote_id=remote_id,
-                        )
-
-                        logger.info(
-                            "remote_issue_created_locally",
-                            remote_id=remote_id,
-                            issue_uuid=created_issue.id,
-                            title=created_issue.title,
-                            milestone=created_issue.milestone,
-                        )
-                        results["new_remote"].append(remote_id)
-                    except Exception as e:
-                        logger.warning(
-                            "remote_issue_creation_failed",
-                            remote_id=remote_id,
-                            error=str(e),
-                            severity="operational",
-                        )
+                self._process_remote_issue(
+                    remote_id, remote_issue, matcher, existing_links, results
+                )
 
             logger.info(
                 "remote_matching_complete",

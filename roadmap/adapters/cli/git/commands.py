@@ -160,6 +160,79 @@ def hooks_status(ctx: click.Context):
 
 
 @git.command("sync")
+def _load_github_config(core) -> dict:
+    """Load GitHub config and normalise to a plain dict."""
+    gh_service = GitHubIntegrationService(core, core.roadmap_dir / "config.yaml")
+    config_result = gh_service.get_github_config()
+    if isinstance(config_result, tuple):
+        token, owner, repo = config_result
+        return {"owner": owner, "repo": repo, "token": token}
+    return config_result or {}
+
+
+def _run_sync_apply(
+    orchestrator,
+    dry_run: bool,
+    verbose: bool,
+    force_local: bool,
+    force_github: bool,
+    console_inst,
+) -> None:
+    """Run a dry-run preview then, unless --dry-run, confirm and apply changes."""
+    report = orchestrator.sync_all_issues(dry_run=True)
+    if report.error:
+        console_inst.print(f"❌ Sync error: {report.error}", style="bold red")
+        sys.exit(1)
+
+    if verbose:
+        report.display_verbose()
+    else:
+        report.display_brief()
+    console_inst.print()
+
+    if dry_run:
+        console_inst.print("[dim]Dry-run mode: No changes applied[/dim]")
+        return
+
+    if report.has_conflicts():
+        if force_local:
+            console_inst.print(
+                "[yellow]⚠️  Conflicts detected - using --force-local[/yellow]"
+            )
+        elif force_github:
+            console_inst.print(
+                "[yellow]⚠️  Conflicts detected - using --force-github[/yellow]"
+            )
+        else:
+            console_inst.print(
+                "[red]❌ Conflicts detected. Use --force-local or --force-github[/red]"
+            )
+            sys.exit(1)
+
+    if report.has_changes() and not click.confirm("Apply these changes?"):
+        console_inst.print("❌ Sync cancelled", style="red")
+        return
+
+    console_inst.print("[cyan]🔄 Applying changes...[/cyan]")
+    apply_report = orchestrator.sync_all_issues(
+        dry_run=False, force_local=force_local, force_remote=force_github
+    )
+    if apply_report.error:
+        console_inst.print(
+            f"❌ Error applying sync: {apply_report.error}", style="bold red"
+        )
+        sys.exit(1)
+
+    console_inst.print()
+    console_inst.print("[green]✅ Sync complete![/green]")
+    console_inst.print(f"   • {apply_report.issues_up_to_date} up-to-date")
+    console_inst.print(f"   • {apply_report.issues_needs_push} pushed")
+    console_inst.print(f"   • {apply_report.issues_needs_pull} pulled")
+    if apply_report.conflicts_detected > 0:
+        console_inst.print(f"   • {apply_report.conflicts_detected} conflicts resolved")
+
+
+@git.command("sync")
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -215,144 +288,49 @@ def sync_git(
         # Sync with conflict resolution
         roadmap git sync --force-local
     """
-    from roadmap.adapters.cli.services.sync_service import (
-        get_sync_backend,
-    )
-    from roadmap.adapters.sync import (
-        detect_backend_from_config,
-    )
+    from roadmap.adapters.cli.services.sync_service import get_sync_backend
+    from roadmap.adapters.sync import detect_backend_from_config
 
     core = ctx.obj["core"]
     console_inst = get_console()
 
     try:
-        # Load config from both locations
-        gh_service = GitHubIntegrationService(core, core.roadmap_dir / "config.yaml")
-        config_result = gh_service.get_github_config()
-
-        # Handle both tuple (real code) and dict (mocked code) returns
-        if isinstance(config_result, tuple):
-            token, owner, repo = config_result
-            config = {
-                "owner": owner,
-                "repo": repo,
-                "token": token,
-            }
-        else:
-            config = config_result or {}
-
-        # Determine backend to use
-        if backend:
-            backend_type: Literal["github", "git"] = backend  # type: ignore[assignment]
-        else:
-            backend_type = detect_backend_from_config(config)
-
+        config = _load_github_config(core)
+        backend_type: Literal["github", "git"] = (
+            backend if backend else detect_backend_from_config(config)  # type: ignore[assignment]
+        )
         console_inst.print(
-            f"🔄 Syncing with {backend_type.upper()} backend",
-            style="bold cyan",
+            f"🔄 Syncing with {backend_type.upper()} backend", style="bold cyan"
         )
 
-        # Create backend
         sync_backend = get_sync_backend(backend_type, core, config)
         if not sync_backend:
             console_inst.print(
-                f"❌ Failed to initialize {backend_type} backend",
-                style="bold red",
+                f"❌ Failed to initialize {backend_type} backend", style="bold red"
             )
-            if backend_type == "git":
-                console_inst.print(
-                    "   Ensure you're in a Git repository",
-                    style="yellow",
-                )
-            elif backend_type == "github":
-                console_inst.print(
-                    "   GitHub config may be missing or incomplete",
-                    style="yellow",
-                )
+            hint = (
+                "   Ensure you're in a Git repository"
+                if backend_type == "git"
+                else "   GitHub config may be missing or incomplete"
+            )
+            console_inst.print(hint, style="yellow")
             sys.exit(1)
 
-        # Use generic orchestrator with the backend
         from roadmap.adapters.sync import SyncMergeOrchestrator
         from roadmap.core.services.sync.sync_conflict_resolver import (
             SyncConflictResolver,
         )
         from roadmap.core.services.sync.sync_state_comparator import SyncStateComparator
 
-        # Create service instances
-        state_comparator = SyncStateComparator()
-        conflict_resolver = SyncConflictResolver()
-
-        # Create orchestrator with services
         orchestrator = SyncMergeOrchestrator(
             core,
             sync_backend,
-            state_comparator=state_comparator,
-            conflict_resolver=conflict_resolver,
+            state_comparator=SyncStateComparator(),
+            conflict_resolver=SyncConflictResolver(),
         )
-        report = orchestrator.sync_all_issues(dry_run=True)
-
-        if report.error:
-            console_inst.print(f"❌ Sync error: {report.error}", style="bold red")
-            sys.exit(1)
-
-        # Display report
-        if verbose:
-            report.display_verbose()
-        else:
-            report.display_brief()
-
-        console_inst.print()
-
-        # If dry-run flag, stop here
-        if dry_run:
-            console_inst.print("[dim]Dry-run mode: No changes applied[/dim]")
-            return
-
-        # Handle conflicts
-        if report.has_conflicts():
-            if force_local:
-                console_inst.print(
-                    "[yellow]⚠️  Conflicts detected - using --force-local[/yellow]"
-                )
-            elif force_github:
-                console_inst.print(
-                    "[yellow]⚠️  Conflicts detected - using --force-github[/yellow]"
-                )
-            else:
-                console_inst.print(
-                    "[red]❌ Conflicts detected. Use --force-local or --force-github[/red]"
-                )
-                sys.exit(1)
-
-        # Ask for confirmation if there are changes
-        if report.has_changes():
-            if not click.confirm("Apply these changes?"):
-                console_inst.print("❌ Sync cancelled", style="red")
-                return
-
-        # Apply changes
-        console_inst.print("[cyan]🔄 Applying changes...[/cyan]")
-        apply_report = orchestrator.sync_all_issues(
-            dry_run=False, force_local=force_local, force_remote=force_github
+        _run_sync_apply(
+            orchestrator, dry_run, verbose, force_local, force_github, console_inst
         )
-
-        if apply_report.error:
-            console_inst.print(
-                f"❌ Error applying sync: {apply_report.error}", style="bold red"
-            )
-            sys.exit(1)
-
-        # Summary
-        console_inst.print()
-        console_inst.print("[green]✅ Sync complete![/green]")
-        console_inst.print(f"   • {apply_report.issues_up_to_date} up-to-date")
-        console_inst.print(f"   • {apply_report.issues_needs_push} pushed")
-        console_inst.print(f"   • {apply_report.issues_needs_pull} pulled")
-        if apply_report.conflicts_detected > 0:
-            console_inst.print(
-                f"   • {apply_report.conflicts_detected} conflicts resolved"
-            )
-
     except Exception as e:
         handle_cli_error(
             error=e,

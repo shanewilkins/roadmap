@@ -75,13 +75,10 @@ def validate_links(
     console = get_console()
 
     try:
-        # Load all issues from YAML files
         issues_dir = core.issues_dir
-
         if not issues_dir.exists():
             console.print(
-                f"❌ Issues directory not found: {issues_dir}",
-                style="bold red",
+                f"❌ Issues directory not found: {issues_dir}", style="bold red"
             )
             sys.exit(1)
 
@@ -93,8 +90,7 @@ def validate_links(
             console.print("ℹ️  No issue files found", style="yellow")
             return
 
-        # Parse and validate all issues
-        validation_report = {
+        validation_report: dict = {
             "total_files": len(issue_files),
             "files_with_remote_ids": 0,
             "database_links": 0,
@@ -103,67 +99,15 @@ def validate_links(
             "extra_in_db": [],
             "duplicate_remote_ids": {},
         }
-
         yaml_remote_ids = validation_data["yaml_remote_ids"]
         unparseable_files = validation_data["unparseable_files"]
         db_links = validation_data["db_links"]
-
         validation_report.update(
             core.validation.build_remote_link_report(yaml_remote_ids, db_links)
         )
 
-        # Display summary
-        console.print(
-            "\n[bold]Remote Links Validation Report[/bold]", style="bold cyan"
-        )
-        console.print(f"Total issue files: {validation_report['total_files']}")
-        console.print(
-            f"Files with remote_ids: {validation_report['files_with_remote_ids']}"
-        )
-        console.print(f"Database links: {validation_report['database_links']}")
+        _display_validation_summary(validation_report, unparseable_files, console)
 
-        if validation_report["missing_in_db"]:
-            console.print(
-                f"\n[bold red]❌ Missing in database: {len(validation_report['missing_in_db'])}[/bold red]"
-            )
-            for issue_uuid in validation_report["missing_in_db"][:5]:
-                console.print(f"  - {issue_uuid}")
-            if len(validation_report["missing_in_db"]) > 5:
-                console.print(
-                    f"  ... and {len(validation_report['missing_in_db']) - 5} more"
-                )
-
-        if validation_report["extra_in_db"]:
-            console.print(
-                f"\n[bold yellow]⚠️  In database but not in YAML: {len(validation_report['extra_in_db'])}[/bold yellow]"
-            )
-            console.print("  (These may be archived issues)")
-
-        if validation_report["duplicate_remote_ids"]:
-            console.print(
-                f"\n[bold yellow]⚠️  Duplicate remote IDs: {len(validation_report['duplicate_remote_ids'])}[/bold yellow]"
-            )
-            sample = list(validation_report["duplicate_remote_ids"].items())[:5]
-            for remote_id, issue_uuids in sample:
-                console.print(
-                    f"  - {remote_id}: {', '.join(issue_uuids)}",
-                    style="dim",
-                )
-            if len(validation_report["duplicate_remote_ids"]) > 5:
-                console.print(
-                    f"  ... and {len(validation_report['duplicate_remote_ids']) - 5} more"
-                )
-
-        if unparseable_files:
-            console.print(
-                f"\n[bold yellow]⚠️  Could not parse {len(unparseable_files)} files[/bold yellow]"
-            )
-            for file_path, error in unparseable_files[:3]:
-                console.print(f"  - {file_path}: {error}")
-            if len(unparseable_files) > 3:
-                console.print(f"  ... and {len(unparseable_files) - 3} more")
-
-        # Auto-fix if requested
         if auto_fix:
             _apply_auto_fix(
                 core,
@@ -176,13 +120,11 @@ def validate_links(
                 dedupe,
             )
 
-        # Exit with error if there are discrepancies and we did not apply fixes
         if validation_report["missing_in_db"] and (not auto_fix or dry_run):
             sys.exit(1)
 
         console.print(
-            "\n✅ All remote links are valid and synchronized",
-            style="bold green",
+            "\n✅ All remote links are valid and synchronized", style="bold green"
         )
 
     except Exception as e:
@@ -194,6 +136,51 @@ def validate_links(
         )
         console.print(f"❌ Validation failed: {str(e)}", style="bold red")
         sys.exit(1)
+
+
+def _display_validation_summary(
+    validation_report: dict, unparseable_files: list, console
+) -> None:
+    """Print the remote-link validation summary to the console."""
+    console.print("\n[bold]Remote Links Validation Report[/bold]", style="bold cyan")
+    console.print(f"Total issue files: {validation_report['total_files']}")
+    console.print(
+        f"Files with remote_ids: {validation_report['files_with_remote_ids']}"
+    )
+    console.print(f"Database links: {validation_report['database_links']}")
+
+    missing = validation_report["missing_in_db"]
+    if missing:
+        console.print(f"\n[bold red]❌ Missing in database: {len(missing)}[/bold red]")
+        for issue_uuid in missing[:5]:
+            console.print(f"  - {issue_uuid}")
+        if len(missing) > 5:
+            console.print(f"  ... and {len(missing) - 5} more")
+
+    if validation_report["extra_in_db"]:
+        console.print(
+            f"\n[bold yellow]⚠️  In database but not in YAML: {len(validation_report['extra_in_db'])}[/bold yellow]"
+        )
+        console.print("  (These may be archived issues)")
+
+    dup_ids = validation_report["duplicate_remote_ids"]
+    if dup_ids:
+        console.print(
+            f"\n[bold yellow]⚠️  Duplicate remote IDs: {len(dup_ids)}[/bold yellow]"
+        )
+        for remote_id, issue_uuids in list(dup_ids.items())[:5]:
+            console.print(f"  - {remote_id}: {', '.join(issue_uuids)}", style="dim")
+        if len(dup_ids) > 5:
+            console.print(f"  ... and {len(dup_ids) - 5} more")
+
+    if unparseable_files:
+        console.print(
+            f"\n[bold yellow]⚠️  Could not parse {len(unparseable_files)} files[/bold yellow]"
+        )
+        for file_path, error in unparseable_files[:3]:
+            console.print(f"  - {file_path}: {error}")
+        if len(unparseable_files) > 3:
+            console.print(f"  ... and {len(unparseable_files) - 3} more")
 
 
 def _apply_auto_fix(
@@ -219,7 +206,6 @@ def _apply_auto_fix(
         dedupe: If True, remove duplicate remote IDs
     """
     missing = validation_report["missing_in_db"]
-
     if not missing and not prune_extra and not dedupe:
         console.print("\n✅ No links need fixing", style="bold green")
         return
@@ -228,27 +214,19 @@ def _apply_auto_fix(
         console.print(
             f"\n[bold cyan]🔧 Auto-fixing {len(missing)} missing links...[/bold cyan]"
         )
-
         if dry_run:
             console.print(
                 "  (Dry-run mode - no changes will be made)", style="dim yellow"
             )
-
-    fixed_count = 0
-    removed_count = 0
-    deduped_count = 0
     if verbose and yaml_remote_ids:
         for issue_uuid, remote_ids in yaml_remote_ids.items():
             console.print(
-                f"  📄 {issue_uuid}: {', '.join(remote_ids.keys())}",
-                style="cyan",
+                f"  📄 {issue_uuid}: {', '.join(remote_ids.keys())}", style="cyan"
             )
-
     if prune_extra and validation_report.get("extra_in_db"):
         console.print(
             f"\n[bold cyan]🧹 Removing {len(validation_report['extra_in_db'])} extra links...[/bold cyan]"
         )
-
     if dedupe and validation_report.get("duplicate_remote_ids"):
         console.print(
             f"\n[bold cyan]🧹 Removing {len(validation_report['duplicate_remote_ids'])} duplicate remote IDs...[/bold cyan]"
@@ -263,34 +241,22 @@ def _apply_auto_fix(
             dedupe=dedupe,
             dry_run=dry_run,
         )
-        fixed_count = results.get("fixed_count", 0)
-        removed_count = results.get("removed_count", 0)
-        deduped_count = results.get("deduped_count", 0)
     except Exception as e:
-        logger.warning(
-            "auto_fix_failed",
-            error=str(e),
-            severity="operational",
-        )
-        console.print(
-            f"  ⚠️  Auto-fix failed: {str(e)}",
-            style="yellow",
-        )
+        logger.warning("auto_fix_failed", error=str(e), severity="operational")
+        console.print(f"  ⚠️  Auto-fix failed: {str(e)}", style="yellow")
+        return
 
-    if fixed_count:
+    if results.get("fixed_count"):
         console.print(
-            f"\n[bold green]✅ Fixed {fixed_count} missing remote links[/bold green]"
+            f"\n[bold green]✅ Fixed {results['fixed_count']} missing remote links[/bold green]"
         )
-
-    if removed_count:
+    if results.get("removed_count"):
         console.print(
-            f"[bold green]✅ Removed {removed_count} extra remote links[/bold green]"
+            f"[bold green]✅ Removed {results['removed_count']} extra remote links[/bold green]"
         )
-
-    if deduped_count:
+    if results.get("deduped_count"):
         console.print(
-            f"[bold green]✅ Removed {deduped_count} duplicate remote links[/bold green]"
+            f"[bold green]✅ Removed {results['deduped_count']} duplicate remote links[/bold green]"
         )
-
     if dry_run:
         console.print("Re-run without --dry-run to apply changes", style="dim yellow")

@@ -159,58 +159,91 @@ class ValidationCoordinator:
         if not self._core:
             raise ValueError("ValidationCoordinator requires RoadmapCore")
 
-        fixed_count = 0
-        removed_count = 0
-        deduped_count = 0
-
-        for issue_uuid in report.get("missing_in_db", []):
-            remote_ids = yaml_remote_ids.get(issue_uuid)
-            if not remote_ids:
-                continue
-            if dry_run:
-                fixed_count += 1
-                continue
-
-            for backend_key, remote_id in remote_ids.items():
-                self._core.db.remote_links.link_issue(
-                    issue_uuid,
-                    backend_key,
-                    remote_id,
-                )
-            fixed_count += 1
-
-        if prune_extra:
-            for issue_uuid in report.get("extra_in_db", []):
-                if dry_run:
-                    removed_count += 1
-                    continue
-
-                if self._core.db.remote_links.unlink_issue(issue_uuid, backend_name):
-                    removed_count += 1
-
-        if dedupe:
-            duplicates = report.get("duplicate_remote_ids", {})
-            yaml_issue_uuids = set(yaml_remote_ids.keys())
-
-            for issue_uuids in duplicates.values():
-                keep_uuid = next(
-                    (uuid for uuid in issue_uuids if uuid in yaml_issue_uuids),
-                    issue_uuids[0],
-                )
-                for issue_uuid in issue_uuids:
-                    if issue_uuid == keep_uuid:
-                        continue
-                    if dry_run:
-                        deduped_count += 1
-                        continue
-
-                    if self._core.db.remote_links.unlink_issue(
-                        issue_uuid, backend_name
-                    ):
-                        deduped_count += 1
-
+        fixed_count = self._fix_missing_links(
+            report.get("missing_in_db", []), yaml_remote_ids, dry_run
+        )
+        removed_count = (
+            self._prune_extra_links(
+                report.get("extra_in_db", []), backend_name, dry_run
+            )
+            if prune_extra
+            else 0
+        )
+        deduped_count = (
+            self._dedupe_links(
+                report.get("duplicate_remote_ids", {}),
+                set(yaml_remote_ids.keys()),
+                backend_name,
+                dry_run,
+            )
+            if dedupe
+            else 0
+        )
         return {
             "fixed_count": fixed_count,
             "removed_count": removed_count,
             "deduped_count": deduped_count,
         }
+
+    def _fix_missing_links(
+        self, missing_ids: list, yaml_remote_ids: dict, dry_run: bool
+    ) -> int:
+        core = self._core
+        if core is None:
+            raise ValueError("ValidationCoordinator requires RoadmapCore")
+
+        fixed = 0
+        for issue_uuid in missing_ids:
+            remote_ids = yaml_remote_ids.get(issue_uuid)
+            if not remote_ids:
+                continue
+            if dry_run:
+                fixed += 1
+                continue
+            for backend_key, remote_id in remote_ids.items():
+                core.db.remote_links.link_issue(issue_uuid, backend_key, remote_id)
+            fixed += 1
+        return fixed
+
+    def _prune_extra_links(
+        self, extra_ids: list, backend_name: str, dry_run: bool
+    ) -> int:
+        core = self._core
+        if core is None:
+            raise ValueError("ValidationCoordinator requires RoadmapCore")
+
+        removed = 0
+        for issue_uuid in extra_ids:
+            if dry_run:
+                removed += 1
+                continue
+            if core.db.remote_links.unlink_issue(issue_uuid, backend_name):
+                removed += 1
+        return removed
+
+    def _dedupe_links(
+        self,
+        duplicates: dict,
+        yaml_issue_uuids: set,
+        backend_name: str,
+        dry_run: bool,
+    ) -> int:
+        core = self._core
+        if core is None:
+            raise ValueError("ValidationCoordinator requires RoadmapCore")
+
+        deduped = 0
+        for issue_uuids in duplicates.values():
+            keep_uuid = next(
+                (uuid for uuid in issue_uuids if uuid in yaml_issue_uuids),
+                issue_uuids[0],
+            )
+            for issue_uuid in issue_uuids:
+                if issue_uuid == keep_uuid:
+                    continue
+                if dry_run:
+                    deduped += 1
+                    continue
+                if core.db.remote_links.unlink_issue(issue_uuid, backend_name):
+                    deduped += 1
+        return deduped

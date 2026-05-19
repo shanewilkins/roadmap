@@ -152,18 +152,11 @@ class IssueOperations:
         """
         return self.issue_service.get_issue(issue_id)
 
-    def update_issue(self, issue_id: str, **updates) -> Issue | None:
-        """Update an existing issue.
-
-        Args:
-            issue_id: The issue ID to update
-            **updates: Fields to update
-
-        Returns:
-            Updated Issue object if found, None otherwise
-        """
-        # Build params, only including fields that were explicitly provided
-        params_dict = {"issue_id": issue_id}
+    def _build_update_params(
+        self, issue_id: str, updates: dict
+    ) -> IssueUpdateServiceParams:
+        """Build IssueUpdateServiceParams from a raw updates dict."""
+        params_dict: dict = {"issue_id": issue_id}
 
         if "title" in updates:
             params_dict["title"] = updates["title"]
@@ -188,43 +181,49 @@ class IssueOperations:
         if "reason" in updates:
             params_dict["reason"] = updates["reason"]
 
-        params = IssueUpdateServiceParams(**params_dict)
+        return IssueUpdateServiceParams(**params_dict)
+
+    _HANDLED_UPDATE_FIELDS = frozenset(
+        {
+            "issue_id",
+            "title",
+            "priority",
+            "status",
+            "assignee",
+            "milestone",
+            "content",
+            "estimate",
+            "reason",
+        }
+    )
+
+    def _apply_extra_fields_to_result(self, result: Issue, updates: dict) -> None:
+        """Apply update fields not handled by the service layer, then save to file."""
+        for field, value in updates.items():
+            if field not in self._HANDLED_UPDATE_FIELDS and hasattr(result, field):
+                setattr(result, field, value)
+
+        # Save extra fields to disk when the service layer didn't already do so.
+        # Milestone updates are written by the repository's own save(); skip to avoid
+        # overwriting a potentially relocated file path.
+        if result.file_path and "milestone" not in updates:
+            IssueParser.save_issue_file(result, Path(result.file_path))
+
+    def update_issue(self, issue_id: str, **updates) -> Issue | None:
+        """Update an existing issue.
+
+        Args:
+            issue_id: The issue ID to update
+            **updates: Fields to update
+
+        Returns:
+            Updated Issue object if found, None otherwise
+        """
+        params = self._build_update_params(issue_id, updates)
         result = self.issue_service.update_issue(params)
 
-        # Apply any additional fields that weren't in the service params
-        # This allows flexibility for fields like progress_percentage, due_date, etc.
         if result is not None:
-            # List of fields already handled by service layer
-            handled_fields = {
-                "issue_id",
-                "title",
-                "priority",
-                "status",
-                "assignee",
-                "milestone",
-                "content",
-                "estimate",
-                "reason",
-            }
-
-            # Apply any additional fields directly to the issue
-            for field, value in updates.items():
-                if field not in handled_fields and hasattr(result, field):
-                    setattr(result, field, value)
-
-            # Only save additional fields if milestone wasn't updated
-            # (milestone updates are handled by the repository's save() method)
-            if result.file_path and "milestone" not in updates:
-                issue_path = Path(result.file_path)
-                IssueParser.save_issue_file(result, issue_path)
-            elif "milestone" in updates and result.file_path:
-                # If milestone was updated, still need to save any additional fields
-                # The repository should have updated the file path, but if it didn't
-                # we need to handle that case
-                pass
-
-        # Invalidate milestone cache after update
-        if result is not None:
+            self._apply_extra_fields_to_result(result, updates)
             self._milestone_cache.clear()
 
         return result

@@ -219,6 +219,115 @@ class GitHubBackendHelpers:
 
         return matching_local_issue
 
+    def _persist_remote_link(
+        self,
+        issue,
+        github_issue_number: str | int | None,
+        persist_svc,
+        link_svc,
+    ) -> None:
+        """Persist the GitHub remote link for an issue."""
+        if issue is None or github_issue_number is None:
+            return
+        persist_svc.update_issue_with_remote_id(
+            issue, "github", str(github_issue_number)
+        )
+        persist_svc.save_issue(issue, self.core)
+        link_svc.link_issue_in_database(
+            self.remote_link_repo, issue.id, "github", github_issue_number
+        )
+
+    def _update_matched_issue(
+        self,
+        matching_local_issue,
+        updates: dict,
+        github_issue_number,
+        persist_svc,
+        link_svc,
+    ) -> None:
+        """Update an issue found by title/remote-id match."""
+        self.core.issues.update(matching_local_issue.id, **updates)
+        self._persist_remote_link(
+            matching_local_issue, github_issue_number, persist_svc, link_svc
+        )
+        logger.debug(
+            "github_pull_issue_updated",
+            github_number=github_issue_number,
+            local_id=matching_local_issue.id,
+        )
+
+    def _update_issue_by_id(
+        self, issue_id: str, updates: dict, github_issue_number, persist_svc, link_svc
+    ) -> None:
+        """Update an issue found by its local ID."""
+        self.core.issues.update(issue_id, **updates)
+        local_issue = self.core.issues.get(issue_id)
+        self._persist_remote_link(
+            local_issue, github_issue_number, persist_svc, link_svc
+        )
+        logger.debug("github_pull_issue_updated", issue_id=issue_id)
+
+    def _build_domain_issue_fallback(self, issue_id: str, updates: dict):
+        """Construct a minimal DomainIssue from raw updates when no remote object exists."""
+        from roadmap.core.domain.issue import (
+            Issue as DomainIssue,
+        )
+        from roadmap.core.domain.issue import (
+            IssueType,
+            Priority,
+            Status,
+        )
+
+        return DomainIssue(
+            id=issue_id,
+            title=updates.get("title") or "Untitled",
+            content=updates.get("content") or "",
+            status=updates.get("status") or Status.TODO,
+            priority=Priority.MEDIUM,
+            issue_type=IssueType.FEATURE,
+            labels=updates.get("labels", []),
+            assignee=updates.get("assignee"),
+            milestone=updates.get("milestone"),
+        )
+
+    def _create_new_local_issue(
+        self,
+        issue_id: str,
+        updates: dict,
+        remote_issue,
+        github_issue_number,
+        persist_svc,
+        link_svc,
+    ) -> None:
+        """Create a new local issue from a remote issue or raw updates."""
+        from roadmap.core.domain.issue import IssueType, Priority, Status
+
+        issue_obj = (
+            self._convert_sync_to_issue(issue_id, remote_issue)
+            if remote_issue is not None
+            else self._build_domain_issue_fallback(issue_id, updates)
+        )
+
+        created_issue = self.core.issues.create(
+            title=issue_obj.title,
+            status=getattr(issue_obj, "status", None) or Status.TODO,
+            priority=getattr(issue_obj, "priority", None) or Priority.MEDIUM,
+            assignee=getattr(issue_obj, "assignee", None),
+            milestone=getattr(issue_obj, "milestone", None),
+            issue_type=getattr(issue_obj, "issue_type", None) or IssueType.FEATURE,
+            labels=getattr(issue_obj, "labels", []) or [],
+            content=issue_obj.content or updates.get("description") or "",
+        )
+
+        self._persist_remote_link(
+            created_issue, github_issue_number, persist_svc, link_svc
+        )
+        logger.debug(
+            "github_pull_issue_created",
+            github_number=github_issue_number,
+            local_id=created_issue.id if created_issue else "unknown",
+        )
+
     def _apply_or_create_local_issue(
         self,
         issue_id: str,
@@ -234,106 +343,29 @@ class GitHubBackendHelpers:
 
         try:
             if matching_local_issue:
-                self.core.issues.update(matching_local_issue.id, **updates)
-
-                if github_issue_number is not None:
-                    IssuePersistenceService.update_issue_with_remote_id(
-                        matching_local_issue, "github", github_issue_number
-                    )
-                    IssuePersistenceService.save_issue(matching_local_issue, self.core)
-                    SyncLinkingService.link_issue_in_database(
-                        self.remote_link_repo,
-                        matching_local_issue.id,
-                        "github",
-                        github_issue_number,
-                    )
-
-                logger.debug(
-                    "github_pull_issue_updated",
-                    github_number=github_issue_number,
-                    local_id=matching_local_issue.id,
+                self._update_matched_issue(
+                    matching_local_issue,
+                    updates,
+                    github_issue_number,
+                    IssuePersistenceService,
+                    SyncLinkingService,
                 )
-
             elif self.core.issues.get(issue_id):
-                self.core.issues.update(issue_id, **updates)
-
-                if github_issue_number is not None:
-                    local_issue = self.core.issues.get(issue_id)
-                    if local_issue:
-                        IssuePersistenceService.update_issue_with_remote_id(
-                            local_issue, "github", github_issue_number
-                        )
-                        IssuePersistenceService.save_issue(local_issue, self.core)
-                        SyncLinkingService.link_issue_in_database(
-                            self.remote_link_repo,
-                            issue_id,
-                            "github",
-                            github_issue_number,
-                        )
-
-                logger.debug("github_pull_issue_updated", issue_id=issue_id)
-
+                self._update_issue_by_id(
+                    issue_id,
+                    updates,
+                    github_issue_number,
+                    IssuePersistenceService,
+                    SyncLinkingService,
+                )
             else:
-                if remote_issue is not None:
-                    issue_obj = self._convert_sync_to_issue(issue_id, remote_issue)
-                else:
-                    from roadmap.core.domain.issue import (
-                        Issue as DomainIssue,
-                    )
-                    from roadmap.core.domain.issue import (
-                        IssueType,
-                        Priority,
-                        Status,
-                    )
-
-                    issue_obj = DomainIssue(
-                        id=issue_id,
-                        title=updates.get("title") or "Untitled",
-                        content=updates.get("content") or "",
-                        status=updates.get("status") or Status.TODO,
-                        priority=Priority.MEDIUM,
-                        issue_type=IssueType.FEATURE,
-                        labels=updates.get("labels", []),
-                        assignee=updates.get("assignee"),
-                        milestone=updates.get("milestone"),
-                    )
-
-                status_val = getattr(issue_obj, "status", None) or Status.TODO
-                priority_val = getattr(issue_obj, "priority", None) or Priority.MEDIUM
-                issue_type_val = (
-                    getattr(issue_obj, "issue_type", None) or IssueType.FEATURE
-                )
-                labels_val = getattr(issue_obj, "labels", []) or []
-                assignee_val = getattr(issue_obj, "assignee", None)
-                milestone_val = getattr(issue_obj, "milestone", None)
-
-                created_issue = self.core.issues.create(
-                    title=issue_obj.title,
-                    status=status_val,
-                    priority=priority_val,
-                    assignee=assignee_val,
-                    milestone=milestone_val,
-                    issue_type=issue_type_val,
-                    labels=labels_val,
-                    content=issue_obj.content or updates.get("description") or "",
-                )
-
-                if created_issue and github_issue_number is not None:
-                    IssuePersistenceService.update_issue_with_remote_id(
-                        created_issue, "github", str(github_issue_number)
-                    )
-                    IssuePersistenceService.save_issue(created_issue, self.core)
-                    SyncLinkingService.link_issue_in_database(
-                        self.remote_link_repo,
-                        created_issue.id,
-                        "github",
-                        github_issue_number,
-                    )
-
-                logger.debug(
-                    "github_pull_issue_created",
-                    github_number=github_issue_number,
-                    local_id=created_issue.id if created_issue else "unknown",
+                self._create_new_local_issue(
+                    issue_id,
+                    updates,
+                    remote_issue,
+                    github_issue_number,
+                    IssuePersistenceService,
+                    SyncLinkingService,
                 )
         except Exception as e:
             log_error_with_context(

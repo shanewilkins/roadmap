@@ -19,49 +19,38 @@ class MissingHeadlinesValidator(BaseValidator):
         return "missing_headlines"
 
     @staticmethod
+    def _collect_missing_headline_ids(list_callable, missing_list: list) -> None:
+        """Append IDs of entities with empty headlines to *missing_list*."""
+        try:
+            for entity in list_callable():
+                if not entity.headline or entity.headline.strip() == "":
+                    missing_list.append(entity.id)
+        except (AttributeError, TypeError):
+            pass
+
+    @staticmethod
     def check_missing_headlines(core) -> tuple[str, str]:
         """Check for entities with missing or empty headlines.
 
         Returns:
             Tuple of (status, message) describing the health check result
         """
-        missing_entities = {
+        missing_entities: dict[str, list] = {
             "issues": [],
             "milestones": [],
             "projects": [],
         }
 
         try:
-            # Check issues
-            try:
-                all_issues = core.issue_service.list_issues()
-                for issue in all_issues:
-                    if not issue.headline or issue.headline.strip() == "":
-                        missing_entities["issues"].append(issue.id)
-            except (AttributeError, TypeError):
-                # Mock or unavailable service
-                pass
-
-            # Check milestones
-            try:
-                all_milestones = core.milestone_service.list_milestones()
-                for milestone in all_milestones:
-                    if not milestone.headline or milestone.headline.strip() == "":
-                        missing_entities["milestones"].append(milestone.id)
-            except (AttributeError, TypeError):
-                # Mock or unavailable service
-                pass
-
-            # Check projects
-            try:
-                all_projects = core.project_service.list_projects()
-                for project in all_projects:
-                    if not project.headline or project.headline.strip() == "":
-                        missing_entities["projects"].append(project.id)
-            except (AttributeError, TypeError):
-                # Mock or unavailable service
-                pass
-
+            MissingHeadlinesValidator._collect_missing_headline_ids(
+                core.issue_service.list_issues, missing_entities["issues"]
+            )
+            MissingHeadlinesValidator._collect_missing_headline_ids(
+                core.milestone_service.list_milestones, missing_entities["milestones"]
+            )
+            MissingHeadlinesValidator._collect_missing_headline_ids(
+                core.project_service.list_projects, missing_entities["projects"]
+            )
         except Exception as e:
             logger.debug("error_checking_headlines", error=str(e))
             return (

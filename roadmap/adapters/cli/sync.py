@@ -815,6 +815,85 @@ def _handle_resume(console_inst, core) -> bool:
         return False
 
 
+def _fetch_remote_for_dedup(core, console_inst, verbose, get_sync_backend):
+    """Initialise sync backend and return (backend, remote_issues_dict).
+
+    Returns (None, {}) if the backend cannot be authenticated or issues cannot be fetched.
+    """
+    from roadmap.adapters.cli.sync_context import _resolve_backend_and_init
+
+    sync_backend = None
+    remote_issues: dict = {}
+    try:
+        _, sync_backend = _resolve_backend_and_init(core, None, get_sync_backend)
+        if sync_backend:
+            auth_result = sync_backend.authenticate()
+            if not auth_result.is_ok():
+                console_inst.print(
+                    "[yellow]⚠️  Backend authentication failed, skipping remote deduplication[/yellow]"
+                )
+                return None, {}
+            issues_result = sync_backend.get_issues()
+            if issues_result.is_ok():
+                remote_issues = issues_result.unwrap() or {}
+                console_inst.print(f"   📋 Loaded {len(remote_issues)} remote issues")
+                if len(remote_issues) > 1000:
+                    console_inst.print(
+                        "[dim]ℹ️  Large dataset detected - remote deletion will be slow (respecting GitHub rate limits)[/dim]"
+                    )
+            else:
+                console_inst.print(
+                    "[yellow]⚠️  Failed to fetch remote issues, skipping remote deduplication[/yellow]"
+                )
+    except Exception as e:
+        console_inst.print(f"[yellow]⚠️  Could not initialize backend: {e}[/yellow]")
+        if verbose:
+            logger.exception("backend_init_failed")
+    return sync_backend, remote_issues
+
+
+def _run_and_display_dedup(
+    dedup_service,
+    local_issues: list,
+    remote_issues: dict,
+    dry_run: bool,
+    console_inst,
+    verbose: bool,
+) -> None:
+    """Run the deduplication service and display results."""
+    import time
+
+    start_time = time.time()
+    try:
+        response = dedup_service.execute(
+            local_issues=local_issues,
+            remote_issues=remote_issues,
+            dry_run=dry_run,
+        )
+        elapsed = time.time() - start_time
+        console_inst.print()
+        console_inst.print("[bold cyan]✨ Deduplication Results[/bold cyan]")
+        console_inst.print(f"   🗑️  Deleted: {response.duplicates_removed} duplicates")
+        local_remaining = len(response.local_issues)
+        remote_remaining = len(response.remote_issues)
+        console_inst.print(
+            f"   📊 Remaining: {local_remaining} local + {remote_remaining} remote"
+        )
+        total_before = len(local_issues) + len(remote_issues)
+        if total_before > 0:
+            total_after = local_remaining + remote_remaining
+            reduction_pct = ((total_before - total_after) / total_before) * 100
+            console_inst.print(f"   📉 Reduction: {reduction_pct:.1f}%")
+        console_inst.print(f"   ⏱️  Time: {elapsed:.2f}s")
+        console_inst.print()
+        console_inst.print("[green]✅ Deduplication complete[/green]")
+    except Exception as e:
+        console_inst.print(f"❌ Deduplication failed: {e}", style="bold red")
+        if verbose:
+            raise
+        sys.exit(1)
+
+
 def _execute_dedup_only(
     core,
     console_inst,
@@ -844,10 +923,7 @@ def _execute_dedup_only(
         fuzzy: If True, enable fuzzy matching (slower but catches more duplicates)
         dry_run: If True, preview duplicates without actually deleting
     """
-    import time
-
     from roadmap.adapters.cli.services.sync_service import get_sync_backend
-    from roadmap.adapters.cli.sync_context import _resolve_backend_and_init
     from roadmap.application.services.deduplicate_service import DeduplicateService
     from roadmap.core.services.sync.duplicate_detector import DuplicateDetector
 
@@ -862,9 +938,6 @@ def _execute_dedup_only(
         console_inst.print("[yellow]⚠️  Fuzzy matching ENABLED (slower)[/yellow]")
     console_inst.print("[dim]Fetching issues and detecting duplicates...[/dim]\n")
 
-    start_time = time.time()
-
-    # Fetch local issues
     try:
         local_issues = core.issue_service.list_all_including_archived() or []
         console_inst.print(f"   📋 Loaded {len(local_issues)} local issues")
@@ -872,89 +945,24 @@ def _execute_dedup_only(
         console_inst.print(f"❌ Failed to load local issues: {e}", style="bold red")
         return
 
-    # Initialize backend for remote issue fetching
-    sync_backend = None
-    remote_issues = {}
-    try:
-        _, sync_backend = _resolve_backend_and_init(core, None, get_sync_backend)
-        if sync_backend:
-            # Authenticate with backend
-            auth_result = sync_backend.authenticate()
-            if not auth_result.is_ok():
-                console_inst.print(
-                    "[yellow]⚠️  Backend authentication failed, skipping remote deduplication[/yellow]"
-                )
-                sync_backend = None
-            else:
-                # Fetch remote issues
-                issues_result = sync_backend.get_issues()
-                if issues_result.is_ok():
-                    remote_issues = issues_result.unwrap() or {}
-                    console_inst.print(
-                        f"   📋 Loaded {len(remote_issues)} remote issues"
-                    )
-                    # Note: Remote deletion uses small batches (5 per call) with delays
-                    # to respect GitHub's rate limits (2,000 points/minute on GraphQL)
-                    if len(remote_issues) > 1000:
-                        console_inst.print(
-                            "[dim]ℹ️  Large dataset detected - remote deletion will be slow (respecting GitHub rate limits)[/dim]"
-                        )
-                else:
-                    console_inst.print(
-                        "[yellow]⚠️  Failed to fetch remote issues, skipping remote deduplication[/yellow]"
-                    )
-    except Exception as e:
-        console_inst.print(f"[yellow]⚠️  Could not initialize backend: {e}[/yellow]")
-        if verbose:
-            logger.exception("backend_init_failed")
+    sync_backend, remote_issues = _fetch_remote_for_dedup(
+        core, console_inst, verbose, get_sync_backend
+    )
 
-    # Create duplicate detector with configured thresholds
     detector = DuplicateDetector(
         title_similarity_threshold=duplicate_title_threshold or 0.90,
         content_similarity_threshold=duplicate_content_threshold or 0.85,
         auto_resolve_threshold=duplicate_auto_resolve_threshold or 0.95,
         enable_fuzzy_matching=fuzzy,
     )
-
-    # Run deduplication with backend for remote deletion
-    try:
-        dedup_service = DeduplicateService(
-            issue_repo=core.issue_service.repository,
-            duplicate_detector=detector,
-            backend=sync_backend,  # Include backend for remote deletion via GraphQL
-        )
-
-        response = dedup_service.execute(
-            local_issues=local_issues,
-            remote_issues=remote_issues,  # Include remote issues for deduplication
-            dry_run=dry_run,  # Use passed parameter
-        )
-
-        elapsed = time.time() - start_time
-
-        # Display results
-        console_inst.print()
-        console_inst.print("[bold cyan]✨ Deduplication Results[/bold cyan]")
-        console_inst.print(f"   🗑️  Deleted: {response.duplicates_removed} duplicates")
-        local_remaining = len(response.local_issues)
-        remote_remaining = len(response.remote_issues)
-        console_inst.print(
-            f"   📊 Remaining: {local_remaining} local + {remote_remaining} remote"
-        )
-        if len(local_issues) + len(remote_issues) > 0:
-            total_before = len(local_issues) + len(remote_issues)
-            total_after = local_remaining + remote_remaining
-            reduction_pct = ((total_before - total_after) / total_before) * 100
-            console_inst.print(f"   📉 Reduction: {reduction_pct:.1f}%")
-        console_inst.print(f"   ⏱️  Time: {elapsed:.2f}s")
-        console_inst.print()
-        console_inst.print("[green]✅ Deduplication complete[/green]")
-
-    except Exception as e:
-        console_inst.print(f"❌ Deduplication failed: {e}", style="bold red")
-        if verbose:
-            raise
-        sys.exit(1)
+    dedup_service = DeduplicateService(
+        issue_repo=core.issue_service.repository,
+        duplicate_detector=detector,
+        backend=sync_backend,
+    )
+    _run_and_display_dedup(
+        dedup_service, local_issues, remote_issues, dry_run, console_inst, verbose
+    )
 
 
 def _execute_sync_workflow(
