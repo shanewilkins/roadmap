@@ -29,7 +29,7 @@ def cli_runner_strict_streams():
     - stdout: command payload/output
     - stderr: diagnostics and logging
     """
-    return CliRunner(mix_stderr=False)
+    return CliRunner()
 
 
 @pytest.fixture

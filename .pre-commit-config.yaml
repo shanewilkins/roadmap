@@ -108,13 +108,11 @@ repos:
         pass_filenames: false
         always_run: true
 
-  # Semantic error handling validation (Phase 7)
-  # Semgrep uses AST-based pattern matching for semantic analysis
+  # Semantic error handling validation
+  # Semgrep runs in its own isolated pre-commit env (not pulled into project deps).
   # Enforces: missing severity fields, exception handling patterns, structured logging
-  # STATUS: NOW ENABLED - blocking enforcement with rich downgrade to 13.5.2
-  # Dependency fix: Downgraded rich 14.2 → 13.5.2, import-linter 2.9 → 2.6
   - repo: https://github.com/returntocorp/semgrep
-    rev: v1.45.0
+    rev: v1.163.0
     hooks:
       - id: semgrep
         name: semgrep - semantic error pattern detection

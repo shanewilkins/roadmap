@@ -22,7 +22,7 @@ class TestCliSmoke:
     )
     def test_command_help(self, cli_runner, cmd):
         """Ensure top-level commands print help and exit correctly."""
-        args = [] if cmd == "--help" else [cmd, "--help"]
+        args = [cmd] if cmd == "--help" else [cmd, "--help"]
         result = cli_runner.invoke(main, args)
         # In Click 8.1+, both root --help and subcommand help exit with 0
         # This changed from older Click versions which used exit code 2 for root help

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.24"]
 build-backend = "hatchling.build"
 
 [project]
@@ -51,48 +51,47 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-    "click>=8.0.0,<9.0.0",
-    "rich>=13.5.2,<13.6.0",
-    "pydantic>=2.0.0,<3.0.0",
-    "pyyaml>=6.0.0,<7.0.0",
-    "requests>=2.28.0,<3.0.0",
-    "keyring>=23.0.0,<26.0.0",
-    "toml>=0.10.0,<1.0.0",
-    "structlog>=23.0.0,<24.0.0",
-    "dynaconf>=3.2.0,<4.0.0",
-    "asyncclick>=8.1.0,<9.0.0",
-    "tabulate>=0.9.0,<1.0.0",
-    "opentelemetry-api>=1.20.0,<2.0.0",
-    "opentelemetry-sdk>=1.20.0,<2.0.0",
-    "opentelemetry-exporter-otlp>=1.20.0,<2.0.0",
-    "import-linter>=2.6.0,<2.7.0",
+    "click>=8.4.0,<9.0.0",
+    "rich>=15.0.0,<16.0.0",
+    "pydantic>=2.13.4,<3.0.0",
+    "pyyaml>=6.0.3,<7.0.0",
+    "requests>=2.34.2,<3.0.0",
+    "keyring>=25.7.0,<26.0.0",
+    "toml>=0.10.2,<1.0.0",
+    "structlog>=25.5.0,<26.0.0",
+    "dynaconf>=3.2.13,<4.0.0",
+    "asyncclick>=8.3.0.7,<9.0.0",
+    "tabulate>=0.10.0,<1.0.0",
+    "opentelemetry-api>=1.42.0,<2.0.0",
+    "opentelemetry-sdk>=1.42.0,<2.0.0",
+    "opentelemetry-exporter-otlp>=1.42.0,<2.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.4.2",
-    "pytest-cov>=7.0.0",
-    "pytest-asyncio>=0.23.0",
-    "pytest-aiohttp>=1.0.0",
-    "ruff==0.15.0",
-    "pre-commit>=4.3.0",
-    "vulture>=2.14",
-    "bandit[toml]>=1.9.2",
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "pytest-asyncio>=1.3.0",
+    "pytest-aiohttp>=1.1.0",
+    "ruff==0.15.13",
+    "pre-commit>=4.6.0",
+    "vulture>=2.16",
+    "bandit[toml]>=1.9.4",
     "pydocstyle>=6.3.0",
     "radon>=6.0.1",
-    "pytest-xdist>=3.5.0",
-    "pytest-benchmark>=4.0.0",
-    "pyright>=1.1.350",
-    "pylint>=3.0.0",
-    "sphinx>=8.0.0",
-    "sphinx-rtd-theme>=3.0.0",
-    "sphinx-click>=6.0.0",
-    "mkdocs>=1.6.0",
-    "mkdocs-material>=9.5.0",
-    "mkdocs-click>=0.8.0",
-    "myst-parser>=4.0.0",
+    "pytest-xdist>=3.8.0",
+    "pytest-benchmark>=5.2.3",
+    "pyright>=1.1.409",
+    "pylint>=4.0.5",
+    "sphinx>=9.1.0",
+    "sphinx-rtd-theme>=3.1.0",
+    "sphinx-click>=6.2.0",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocs-click>=0.9.0",
+    "myst-parser>=5.1.0",
     "pytest-mock>=3.15.1",
-    "semgrep>=1.45.0,<2.0.0",
+    "import-linter>=2.11,<3.0.0",
 ]
 
 [project.urls]
@@ -103,8 +102,32 @@ Documentation = "https://roadmap-cli.readthedocs.io"
 [project.scripts]
 roadmap = "roadmap.adapters.cli:main"
 
+[tool.hatch.build]
+exclude = [
+    "/.venv",
+    "/.venv/**",
+    "/.venv_release",
+    "/.venv_release/**",
+    "/venv",
+    "/venv/**",
+    "/build/**",
+    "/dist/**",
+    "/htmlcov/**",
+    "/.roadmap/**",
+    "/.import_linter_cache/**",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["roadmap"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/roadmap/**",
+    "/README.md",
+    "/LICENSE.md",
+    "/CHANGELOG.md",
+    "/pyproject.toml",
+]
 
 # Tool configurations have been moved to config/ directory:
 # - ruff.toml: Linting and formatting rules

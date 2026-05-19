@@ -259,17 +259,20 @@ class GitHubClient(BaseGitHubHandler):
                 "updated_at": data.get("updated_at"),
             }
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 404:
+            resp = e.response
+            if resp is None:
+                raise GitHubAPIError(f"GitHub API error: {e}") from e
+            if resp.status_code == 404:
                 raise GitHubAPIError(
                     f"GitHub issue #{issue_number} not found in {self.owner}/{self.repo}"
                 ) from e
-            elif e.response.status_code == 401:
+            elif resp.status_code == 401:
                 raise GitHubAPIError(
                     "GitHub authentication failed - invalid token"
                 ) from e
             else:
                 raise GitHubAPIError(
-                    f"GitHub API error: {e.response.status_code} {e.response.reason}"
+                    f"GitHub API error: {resp.status_code} {resp.reason}"
                 ) from e
         except requests.exceptions.RequestException as e:
             raise GitHubAPIError(f"GitHub API connection error: {str(e)}") from e
@@ -291,10 +294,13 @@ class GitHubClient(BaseGitHubHandler):
             else:
                 return False, f"Token validation failed: {response.status_code}"
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 401:
+            resp = e.response
+            if resp is None:
+                return False, f"GitHub API error: {e}"
+            if resp.status_code == 401:
                 return False, "GitHub token is invalid or expired"
             else:
-                return False, f"GitHub API error: {e.response.status_code}"
+                return False, f"GitHub API error: {resp.status_code}"
         except requests.exceptions.RequestException as e:
             return False, f"GitHub API connection error: {str(e)}"
 
@@ -343,9 +349,12 @@ class GitHubClient(BaseGitHubHandler):
                 return False, f"GitHub API error: {response.status_code}"
 
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 404:
+            resp = e.response
+            if resp is None:
+                return False, f"GitHub API error: {e}"
+            if resp.status_code == 404:
                 return False, f"GitHub user '{assignee}' not found"
             else:
-                return False, f"GitHub API error: {e.response.status_code}"
+                return False, f"GitHub API error: {resp.status_code}"
         except requests.exceptions.RequestException as e:
             return False, f"GitHub API connection error: {str(e)}"

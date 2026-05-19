@@ -100,7 +100,7 @@ jobs:
       run: uv run vulture roadmap --min-confidence=80 --exclude=tests
 
     - name: Run Semgrep Semantic Analysis
-      run: uv run semgrep --config=config/.semgrep.yml --error roadmap/
+      run: uvx semgrep --config=config/.semgrep.yml --error roadmap/
 
     - name: Run import-linter Architecture Check
       run: bash scripts/lint-imports-wrapper.sh
