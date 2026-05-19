@@ -293,118 +293,124 @@ class DatabaseManager:
         # Run migrations
         self._run_migrations()
 
+    def _migration_archive_columns(self, cursor) -> list[str]:
+        """Migration 1: add archived/archived_at to projects, milestones, issues."""
+        result = []
+        for table in ("projects", "milestones", "issues"):
+            cursor.execute(f"PRAGMA table_info({table})")  # noqa: S608
+            if "archived" not in [col[1] for col in cursor.fetchall()]:
+                result.append(
+                    f"ALTER TABLE {table} ADD COLUMN archived INTEGER DEFAULT 0;\n"
+                    f"ALTER TABLE {table} ADD COLUMN archived_at TIMESTAMP NULL;"
+                )
+        return result
+
+    def _migration_sync_base_state(self, cursor) -> list[str]:
+        """Migration 2: create sync_base_state table."""
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_base_state'"
+        )
+        if cursor.fetchone():
+            return []
+        return [
+            """
+            CREATE TABLE sync_base_state (
+                issue_id TEXT PRIMARY KEY,
+                status TEXT NOT NULL,
+                assignee TEXT,
+                milestone TEXT,
+                description TEXT,
+                labels TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX idx_sync_base_state_synced_at ON sync_base_state (synced_at);
+        """
+        ]
+
+    def _migration_issue_remote_links(self, cursor) -> list[str]:
+        """Migration 3: create issue_remote_links table."""
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='issue_remote_links'"
+        )
+        if cursor.fetchone():
+            return []
+        return [
+            """
+            CREATE TABLE issue_remote_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                issue_uuid TEXT NOT NULL,
+                backend_name TEXT NOT NULL,
+                remote_id TEXT NOT NULL,
+                linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(issue_uuid, backend_name),
+                FOREIGN KEY (issue_uuid) REFERENCES issues (id) ON DELETE CASCADE
+            );
+            CREATE INDEX idx_issue_remote_links_backend ON issue_remote_links (backend_name);
+            CREATE INDEX idx_issue_remote_links_issue_uuid ON issue_remote_links (issue_uuid);
+        """
+        ]
+
+    def _migration_headline_column(self, cursor) -> list[str]:
+        """Migration 4: add headline column to issues table."""
+        cursor.execute("PRAGMA table_info(issues)")
+        issue_columns = (
+            [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
+        )
+        if "headline" in issue_columns:
+            return []
+        return ["ALTER TABLE issues ADD COLUMN headline TEXT DEFAULT '';"]
+
+    def _migration_sync_base_state_columns(self, cursor) -> list[str]:
+        """Migration 5: add headline and content columns to sync_base_state."""
+        cursor.execute("PRAGMA table_info(sync_base_state)")
+        columns = [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
+        if "headline" in columns or "content" in columns:
+            return []
+        return [
+            """
+            ALTER TABLE sync_base_state ADD COLUMN headline TEXT DEFAULT '';
+            ALTER TABLE sync_base_state ADD COLUMN content TEXT DEFAULT '';
+        """
+        ]
+
+    def _migration_sync_metrics(self, cursor) -> list[str]:
+        """Migration 6: create sync_metrics table."""
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_metrics'"
+        )
+        if cursor.fetchone():
+            return []
+        return [
+            """
+            CREATE TABLE sync_metrics (
+                id TEXT PRIMARY KEY,
+                operation_id TEXT NOT NULL UNIQUE,
+                backend_type TEXT NOT NULL,
+                duration_seconds REAL NOT NULL DEFAULT 0.0,
+                metrics_json TEXT NOT NULL,  -- Full SyncMetrics.to_dict() as JSON
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_sync_metrics_backend_type ON sync_metrics (backend_type);
+            CREATE INDEX IF NOT EXISTS idx_sync_metrics_created_at ON sync_metrics (created_at);
+            CREATE INDEX IF NOT EXISTS idx_sync_metrics_operation_id ON sync_metrics (operation_id);
+        """
+        ]
+
     def _run_migrations(self):
         """Run database migrations for schema updates."""
         conn = self._get_connection()
         cursor = conn.cursor()
 
-        # Get current schema version (use pragma to check if columns exist)
-        migrations = []
-
-        # Migration 1: Add archive columns
-        cursor.execute("PRAGMA table_info(projects)")
-        project_columns = [col[1] for col in cursor.fetchall()]
-        if "archived" not in project_columns:
-            migrations.append("""
-                ALTER TABLE projects ADD COLUMN archived INTEGER DEFAULT 0;
-                ALTER TABLE projects ADD COLUMN archived_at TIMESTAMP NULL;
-            """)
-
-        cursor.execute("PRAGMA table_info(milestones)")
-        milestone_columns = [col[1] for col in cursor.fetchall()]
-        if "archived" not in milestone_columns:
-            migrations.append("""
-                ALTER TABLE milestones ADD COLUMN archived INTEGER DEFAULT 0;
-                ALTER TABLE milestones ADD COLUMN archived_at TIMESTAMP NULL;
-            """)
-
-        cursor.execute("PRAGMA table_info(issues)")
-        issue_columns = [col[1] for col in cursor.fetchall()]
-        if "archived" not in issue_columns:
-            migrations.append("""
-                ALTER TABLE issues ADD COLUMN archived INTEGER DEFAULT 0;
-                ALTER TABLE issues ADD COLUMN archived_at TIMESTAMP NULL;
-            """)
-
-        # Migration 2: Create sync_base_state table if it doesn't exist
-        # Note: issue_id does NOT have a foreign key constraint because sync baseline
-        # can be saved before issues are persisted to the database (during sync operations)
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_base_state'"
+        migrations = (
+            self._migration_archive_columns(cursor)
+            + self._migration_sync_base_state(cursor)
+            + self._migration_issue_remote_links(cursor)
+            + self._migration_headline_column(cursor)
+            + self._migration_sync_base_state_columns(cursor)
+            + self._migration_sync_metrics(cursor)
         )
-        if not cursor.fetchone():
-            migrations.append("""
-                CREATE TABLE sync_base_state (
-                    issue_id TEXT PRIMARY KEY,
-                    status TEXT NOT NULL,
-                    assignee TEXT,
-                    milestone TEXT,
-                    description TEXT,
-                    labels TEXT,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-                CREATE INDEX idx_sync_base_state_synced_at ON sync_base_state (synced_at);
-            """)
 
-        # Migration 3: Create issue_remote_links table for tracking remote backend IDs
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='issue_remote_links'"
-        )
-        if not cursor.fetchone():
-            migrations.append("""
-                CREATE TABLE issue_remote_links (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    issue_uuid TEXT NOT NULL,
-                    backend_name TEXT NOT NULL,
-                    remote_id TEXT NOT NULL,
-                    linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(issue_uuid, backend_name),
-                    FOREIGN KEY (issue_uuid) REFERENCES issues (id) ON DELETE CASCADE
-                );
-                CREATE INDEX idx_issue_remote_links_backend ON issue_remote_links (backend_name);
-                CREATE INDEX idx_issue_remote_links_issue_uuid ON issue_remote_links (issue_uuid);
-            """)
-
-        # Migration 4: Add headline column to issues table
-        cursor.execute("PRAGMA table_info(issues)")
-        issue_columns = (
-            [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
-        )
-        if "headline" not in issue_columns:
-            migrations.append("""
-                ALTER TABLE issues ADD COLUMN headline TEXT DEFAULT '';
-            """)
-
-        # Migration 5: Add headline and content columns to sync_base_state
-        cursor.execute("PRAGMA table_info(sync_base_state)")
-        columns = [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
-        if "headline" not in columns and "content" not in columns:
-            migrations.append("""
-                ALTER TABLE sync_base_state ADD COLUMN headline TEXT DEFAULT '';
-                ALTER TABLE sync_base_state ADD COLUMN content TEXT DEFAULT '';
-            """)
-
-        # Migration 6: Create sync_metrics table for storing sync operation metrics
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_metrics'"
-        )
-        if not cursor.fetchone():
-            migrations.append("""
-                CREATE TABLE sync_metrics (
-                    id TEXT PRIMARY KEY,
-                    operation_id TEXT NOT NULL UNIQUE,
-                    backend_type TEXT NOT NULL,
-                    duration_seconds REAL NOT NULL DEFAULT 0.0,
-                    metrics_json TEXT NOT NULL,  -- Full SyncMetrics.to_dict() as JSON
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-                CREATE INDEX IF NOT EXISTS idx_sync_metrics_backend_type ON sync_metrics (backend_type);
-                CREATE INDEX IF NOT EXISTS idx_sync_metrics_created_at ON sync_metrics (created_at);
-                CREATE INDEX IF NOT EXISTS idx_sync_metrics_operation_id ON sync_metrics (operation_id);
-            """)
-
-        # Execute migrations
         for migration_sql in migrations:
             try:
                 conn.executescript(migration_sql)

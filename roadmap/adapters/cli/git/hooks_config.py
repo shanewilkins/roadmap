@@ -14,6 +14,75 @@ from roadmap.core.services.git.git_hook_auto_sync_service import (
 console = get_console()
 
 
+def _any_sync_flag_set(
+    enable_auto_sync: bool,
+    disable_auto_sync: bool,
+    sync_on_commit: bool,
+    no_sync_on_commit: bool,
+    sync_on_checkout: bool,
+    no_sync_on_checkout: bool,
+    sync_on_merge: bool,
+    no_sync_on_merge: bool,
+    confirm: bool | None,
+    force_local: bool,
+    force_github: bool,
+) -> bool:
+    """Return True if any config-changing flag was explicitly provided."""
+    return any(
+        [
+            enable_auto_sync,
+            disable_auto_sync,
+            sync_on_commit,
+            no_sync_on_commit,
+            sync_on_checkout,
+            no_sync_on_checkout,
+            sync_on_merge,
+            no_sync_on_merge,
+            confirm is not None,
+            force_local,
+            force_github,
+        ]
+    )
+
+
+def _build_new_sync_config(
+    current_config: "GitHookAutoSyncConfig",
+    enable_auto_sync: bool,
+    disable_auto_sync: bool,
+    sync_on_commit: bool,
+    no_sync_on_commit: bool,
+    sync_on_checkout: bool,
+    no_sync_on_checkout: bool,
+    sync_on_merge: bool,
+    no_sync_on_merge: bool,
+    confirm: bool | None,
+    force_local: bool,
+    force_github: bool,
+) -> "GitHookAutoSyncConfig":
+    """Build a new config by merging explicit flags onto the existing config."""
+    return GitHookAutoSyncConfig(
+        auto_sync_enabled=(
+            enable_auto_sync
+            or (not disable_auto_sync and current_config.auto_sync_enabled)
+        ),
+        sync_on_commit=(
+            sync_on_commit or (not no_sync_on_commit and current_config.sync_on_commit)
+        ),
+        sync_on_checkout=(
+            sync_on_checkout
+            or (not no_sync_on_checkout and current_config.sync_on_checkout)
+        ),
+        sync_on_merge=(
+            sync_on_merge or (not no_sync_on_merge and current_config.sync_on_merge)
+        ),
+        confirm_before_sync=(
+            confirm if confirm is not None else current_config.confirm_before_sync
+        ),
+        force_local=force_local or current_config.force_local,
+        force_github=force_github or current_config.force_github,
+    )
+
+
 @click.command(name="hooks-config")
 @click.option(
     "--enable-auto-sync",
@@ -123,20 +192,19 @@ def hooks_config(
     current_config = service.get_config()
 
     # Build new config from options
-    new_config = GitHookAutoSyncConfig(
-        auto_sync_enabled=enable_auto_sync
-        or (not disable_auto_sync and current_config.auto_sync_enabled),
-        sync_on_commit=sync_on_commit
-        or (not no_sync_on_commit and current_config.sync_on_commit),
-        sync_on_checkout=sync_on_checkout
-        or (not no_sync_on_checkout and current_config.sync_on_checkout),
-        sync_on_merge=sync_on_merge
-        or (not no_sync_on_merge and current_config.sync_on_merge),
-        confirm_before_sync=(
-            confirm if confirm is not None else current_config.confirm_before_sync
-        ),
-        force_local=force_local or current_config.force_local,
-        force_github=force_github or current_config.force_github,
+    new_config = _build_new_sync_config(
+        current_config,
+        enable_auto_sync,
+        disable_auto_sync,
+        sync_on_commit,
+        no_sync_on_commit,
+        sync_on_checkout,
+        no_sync_on_checkout,
+        sync_on_merge,
+        no_sync_on_merge,
+        confirm,
+        force_local,
+        force_github,
     )
 
     # Handle conflicts in resolution options
@@ -148,40 +216,25 @@ def hooks_config(
     service.set_config(new_config)
 
     # Save config to file if any settings changed
-    if any(
-        [
-            enable_auto_sync,
-            disable_auto_sync,
-            sync_on_commit,
-            no_sync_on_commit,
-            sync_on_checkout,
-            no_sync_on_checkout,
-            sync_on_merge,
-            no_sync_on_merge,
-            confirm is not None,
-            force_local,
-            force_github,
-        ]
-    ):
+    any_flag = _any_sync_flag_set(
+        enable_auto_sync,
+        disable_auto_sync,
+        sync_on_commit,
+        no_sync_on_commit,
+        sync_on_checkout,
+        no_sync_on_checkout,
+        sync_on_merge,
+        no_sync_on_merge,
+        confirm,
+        force_local,
+        force_github,
+    )
+    if any_flag:
         if service.save_config_to_file(config_path):
             console.print("[dim]Config saved to .roadmap/config.json[/dim]")
 
     # Show configuration
-    if show_config or not any(
-        [
-            enable_auto_sync,
-            disable_auto_sync,
-            sync_on_commit,
-            no_sync_on_commit,
-            sync_on_checkout,
-            no_sync_on_checkout,
-            sync_on_merge,
-            no_sync_on_merge,
-            confirm is not None,
-            force_local,
-            force_github,
-        ]
-    ):
+    if show_config or not any_flag:
         _display_config(new_config, service)
     else:
         console.print("[green]✅ Configuration updated[/green]")

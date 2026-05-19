@@ -187,6 +187,134 @@ def _build_aggregate_stats_table(stats):
     return table
 
 
+def _handle_sync_statistics(
+    core, console_inst, metadata_service: "SyncMetadataService"
+) -> None:
+    """Display aggregate sync statistics across all GitHub-linked issues."""
+    all_issues = core.issues.all()
+    github_issues = [i for i in all_issues if getattr(i, "github_issue", None)]
+    if not github_issues:
+        console_inst.print("[yellow]⚠️  No GitHub-linked issues found[/yellow]")
+        return
+    stats = metadata_service.get_statistics(github_issues)
+    panel = Panel(
+        _build_aggregate_stats_table(stats),
+        title="[bold cyan]GitHub Sync Statistics[/bold cyan]",
+        expand=False,
+    )
+    console_inst.print(panel)
+
+
+def _handle_all_issues_status(
+    core, console_inst, metadata_service: "SyncMetadataService"
+) -> None:
+    """Display a brief sync-status overview for every GitHub-linked issue."""
+    all_issues = core.issues.all()
+    github_issues = [i for i in all_issues if getattr(i, "github_issue", None)]
+    if not github_issues:
+        console_inst.print("[yellow]⚠️  No GitHub-linked issues found[/yellow]")
+        return
+
+    table = Table(
+        title=f"GitHub Sync Status ({len(github_issues)} issues)",
+        show_header=True,
+        header_style="bold cyan",
+    )
+    table.add_column("Issue ID", style="cyan")
+    table.add_column("GitHub", width=10)
+    table.add_column("Title", width=35)
+    table.add_column("Status", width=12)
+    table.add_column("Last Sync", width=20)
+    table.add_column("Success %", width=12)
+
+    status_color_map = {
+        "success": "green",
+        "conflict": "yellow",
+        "error": "red",
+        "never": "dim",
+    }
+    for issue in github_issues:
+        metadata = metadata_service.get_metadata(issue)
+        status_color = status_color_map.get(metadata.last_sync_status, "white")
+        last_sync = (
+            _format_timestamp(metadata.last_sync_time)
+            if metadata.last_sync_time
+            else "Never"
+        )
+        success_rate = (
+            f"{metadata.get_success_rate():.0f}%" if metadata.sync_count > 0 else "—"
+        )
+        table.add_row(
+            issue.id,
+            f"#{metadata.github_issue_id}",
+            issue.title[:32],
+            f"[{status_color}]{metadata.last_sync_status}[/{status_color}]",
+            last_sync,
+            success_rate,
+        )
+    console_inst.print(table)
+
+
+def _handle_single_issue_status(
+    issue_id: str,
+    show_history: bool,
+    core,
+    console_inst,
+    metadata_service: "SyncMetadataService",
+) -> None:
+    """Display full sync status detail for a single GitHub-linked issue."""
+    if not issue_id:
+        console_inst.print(
+            "[red]❌ Must provide ISSUE_ID or use --all or --statistics[/red]"
+        )
+        sys.exit(1)
+
+    issue = ensure_entity_exists(core.issues, issue_id, "Issue")
+    if not issue:
+        return
+
+    if not getattr(issue, "github_issue", None):
+        console_inst.print(
+            f"[yellow]⚠️  Issue #{issue_id} is not linked to GitHub[/yellow]"
+        )
+        return
+
+    metadata = metadata_service.get_metadata(issue)
+
+    console_inst.print()
+    console_inst.print(Panel(_build_sync_status_header(issue, metadata), expand=False))
+    console_inst.print()
+    console_inst.print(
+        Panel(
+            _build_sync_metadata_table(issue, metadata),
+            title="[bold cyan]Sync Statistics[/bold cyan]",
+            expand=False,
+        )
+    )
+    console_inst.print()
+
+    if metadata.sync_history:
+        history_records = list(reversed(metadata.sync_history))
+        if not show_history:
+            history_records = history_records[:5]
+        console_inst.print(_build_sync_history_table(history_records))
+        if not show_history and len(metadata.sync_history) > 5:
+            console_inst.print(
+                f"\n[dim]... showing last 5 of {len(metadata.sync_history)} syncs. "
+                f"Use --history to see all[/dim]"
+            )
+    else:
+        console_inst.print(
+            Panel(
+                "[dim]No sync history recorded yet[/dim]",
+                title="[bold cyan]Sync History[/bold cyan]",
+                expand=False,
+            )
+        )
+
+    console_inst.print()
+
+
 @click.command(name="sync-status")
 @click.argument("issue_id", default="", required=False)
 @click.option("--history", "show_history", is_flag=True, help="Show full sync history")
@@ -233,155 +361,14 @@ def sync_status(
     """
     core = ctx.obj
     console_inst = get_console()
-
-    # Initialize metadata service
     metadata_service = SyncMetadataService(core)
 
-    # Handle different modes
     if show_statistics:
-        # Show aggregate statistics across all issues
-        all_issues = core.issues.all()
-        github_issues = [
-            issue for issue in all_issues if getattr(issue, "github_issue", None)
-        ]
-
-        if not github_issues:
-            console_inst.print("[yellow]⚠️  No GitHub-linked issues found[/yellow]")
-            return
-
-        stats = metadata_service.get_statistics(github_issues)
-
-        # Display statistics
-        panel = Panel(
-            _build_aggregate_stats_table(stats),
-            title="[bold cyan]GitHub Sync Statistics[/bold cyan]",
-            expand=False,
-        )
-        console_inst.print(panel)
+        _handle_sync_statistics(core, console_inst, metadata_service)
         return
-
     if show_all_issues:
-        # Show status for all linked issues (brief overview)
-        all_issues = core.issues.all()
-        github_issues = [
-            issue for issue in all_issues if getattr(issue, "github_issue", None)
-        ]
-
-        if not github_issues:
-            console_inst.print("[yellow]⚠️  No GitHub-linked issues found[/yellow]")
-            return
-
-        # Create summary table
-        table = Table(
-            title=f"GitHub Sync Status ({len(github_issues)} issues)",
-            show_header=True,
-            header_style="bold cyan",
-        )
-        table.add_column("Issue ID", style="cyan")
-        table.add_column("GitHub", width=10)
-        table.add_column("Title", width=35)
-        table.add_column("Status", width=12)
-        table.add_column("Last Sync", width=20)
-        table.add_column("Success %", width=12)
-
-        for issue in github_issues:
-            metadata = metadata_service.get_metadata(issue)
-            status_color_map = {
-                "success": "green",
-                "conflict": "yellow",
-                "error": "red",
-                "never": "dim",
-            }
-            status_color = status_color_map.get(metadata.last_sync_status, "white")
-
-            last_sync = (
-                _format_timestamp(metadata.last_sync_time)
-                if metadata.last_sync_time
-                else "Never"
-            )
-
-            success_rate = (
-                f"{metadata.get_success_rate():.0f}%"
-                if metadata.sync_count > 0
-                else "—"
-            )
-
-            table.add_row(
-                issue.id,
-                f"#{metadata.github_issue_id}",
-                issue.title[:32],
-                f"[{status_color}]{metadata.last_sync_status}[/{status_color}]",
-                last_sync,
-                success_rate,
-            )
-
-        console_inst.print(table)
+        _handle_all_issues_status(core, console_inst, metadata_service)
         return
-
-    # Single issue sync status (default)
-    if not issue_id:
-        console_inst.print(
-            "[red]❌ Must provide ISSUE_ID or use --all or --statistics[/red]"
-        )
-        sys.exit(1)
-
-    # Get the issue
-    issue = ensure_entity_exists(core.issues, issue_id, "Issue")
-    if not issue:
-        return
-
-    # Check if linked to GitHub
-    if not getattr(issue, "github_issue", None):
-        console_inst.print(
-            f"[yellow]⚠️  Issue #{issue_id} is not linked to GitHub[/yellow]"
-        )
-        return
-
-    # Get sync metadata
-    metadata = metadata_service.get_metadata(issue)
-
-    # Display header with issue title
-    console_inst.print()
-    header_panel = Panel(
-        _build_sync_status_header(issue, metadata),
-        expand=False,
+    _handle_single_issue_status(
+        issue_id, show_history, core, console_inst, metadata_service
     )
-    console_inst.print(header_panel)
-    console_inst.print()
-
-    # Display sync statistics
-    stats_panel = Panel(
-        _build_sync_metadata_table(issue, metadata),
-        title="[bold cyan]Sync Statistics[/bold cyan]",
-        expand=False,
-    )
-    console_inst.print(stats_panel)
-    console_inst.print()
-
-    # Display sync history if available
-    if metadata.sync_history:
-        if show_history:
-            # Show all history
-            history_records = list(reversed(metadata.sync_history))
-        else:
-            # Show last 5 syncs
-            history_records = list(reversed(metadata.sync_history))[:5]
-
-        history_table = _build_sync_history_table(history_records)
-        console_inst.print(history_table)
-
-        if not show_history and len(metadata.sync_history) > 5:
-            console_inst.print(
-                f"\n[dim]... showing last 5 of {len(metadata.sync_history)} syncs. "
-                f"Use --history to see all[/dim]"
-            )
-    else:
-        console_inst.print(
-            Panel(
-                "[dim]No sync history recorded yet[/dim]",
-                title="[bold cyan]Sync History[/bold cyan]",
-                expand=False,
-            )
-        )
-
-    console_inst.print()

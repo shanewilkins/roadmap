@@ -143,11 +143,11 @@ class DependencyAnalyzer:
             )
             raise
 
-    def _check_issue_dependencies(self, issue: Issue, result: DependencyAnalysisResult):
-        """Check dependencies for a single issue."""
-        # Check depends_on
+    def _check_depends_on_links(
+        self, issue: Issue, result: DependencyAnalysisResult
+    ) -> None:
+        """Check the depends_on list for self-deps, broken refs, and missing bidirectional links."""
         for dep_id in issue.depends_on or []:
-            # Check for self-dependency
             if dep_id == issue.id:
                 result.problems.append(
                     DependencyIssue(
@@ -158,8 +158,6 @@ class DependencyAnalyzer:
                     )
                 )
                 continue
-
-            # Check for broken dependency
             if dep_id not in self._issue_map:
                 result.problems.append(
                     DependencyIssue(
@@ -170,11 +168,8 @@ class DependencyAnalyzer:
                     )
                 )
                 continue
-
-            # Check for missing bidirectional link
             dep_issue = self._issue_map[dep_id]
             if issue.id not in (dep_issue.blocks or []):
-                # This is a warning, not an error, as one-way deps are valid
                 result.problems.append(
                     DependencyIssue(
                         issue_id=issue.id,
@@ -184,9 +179,11 @@ class DependencyAnalyzer:
                     )
                 )
 
-        # Check blocks
+    def _check_blocks_links(
+        self, issue: Issue, result: DependencyAnalysisResult
+    ) -> None:
+        """Check the blocks list for self-blocks, orphaned refs, and missing bidirectional links."""
         for blocked_id in issue.blocks or []:
-            # Check for self-block
             if blocked_id == issue.id:
                 result.problems.append(
                     DependencyIssue(
@@ -197,8 +194,6 @@ class DependencyAnalyzer:
                     )
                 )
                 continue
-
-            # Check for orphaned blocker
             if blocked_id not in self._issue_map:
                 result.problems.append(
                     DependencyIssue(
@@ -209,8 +204,6 @@ class DependencyAnalyzer:
                     )
                 )
                 continue
-
-            # Check for missing bidirectional link
             blocked_issue = self._issue_map[blocked_id]
             if issue.id not in (blocked_issue.depends_on or []):
                 result.problems.append(
@@ -222,37 +215,45 @@ class DependencyAnalyzer:
                     )
                 )
 
-        # Check for deep chains
-        if issue.depends_on:
-            max_depth = self._find_max_chain_depth(issue.id, set(), 0)
-            if max_depth > 5:
-                result.problems.append(
-                    DependencyIssue(
-                        issue_id=issue.id,
-                        issue_type=DependencyIssueType.DEEP_CHAIN,
-                        message=f"Deep dependency chain ({max_depth} levels)",
-                        affected_issues=issue.depends_on,
-                        chain_length=max_depth,
-                    )
+    def _check_chain_and_cycles(
+        self, issue: Issue, result: DependencyAnalysisResult
+    ) -> None:
+        """Check for deep dependency chains and circular dependencies."""
+        if not issue.depends_on:
+            return
+        max_depth = self._find_max_chain_depth(issue.id, set(), 0)
+        if max_depth > 5:
+            result.problems.append(
+                DependencyIssue(
+                    issue_id=issue.id,
+                    issue_type=DependencyIssueType.DEEP_CHAIN,
+                    message=f"Deep dependency chain ({max_depth} levels)",
+                    affected_issues=issue.depends_on,
+                    chain_length=max_depth,
                 )
-
-        # Check for circular dependencies
-        if issue.depends_on:
-            for dep_id in issue.depends_on:
-                cycle = self._find_cycle_from(dep_id, issue.id, set())
-                if cycle:
-                    # Convert set to sorted list for consistent output
-                    cycle_list = sorted(list(cycle) + [issue.id])
-                    if cycle_list not in result.circular_chains:
-                        result.circular_chains.append(cycle_list)
-                        result.problems.append(
-                            DependencyIssue(
-                                issue_id=issue.id,
-                                issue_type=DependencyIssueType.CIRCULAR,
-                                message=f"Circular dependency detected: {' → '.join(cycle_list)} → {issue.id}",
-                                affected_issues=cycle_list,
-                            )
+            )
+        for dep_id in issue.depends_on:
+            cycle = self._find_cycle_from(dep_id, issue.id, set())
+            if cycle:
+                cycle_list = sorted(list(cycle) + [issue.id])
+                if cycle_list not in result.circular_chains:
+                    result.circular_chains.append(cycle_list)
+                    result.problems.append(
+                        DependencyIssue(
+                            issue_id=issue.id,
+                            issue_type=DependencyIssueType.CIRCULAR,
+                            message=f"Circular dependency detected: {' → '.join(cycle_list)} → {issue.id}",
+                            affected_issues=cycle_list,
                         )
+                    )
+
+    def _check_issue_dependencies(
+        self, issue: Issue, result: DependencyAnalysisResult
+    ) -> None:
+        """Check all dependency relationships for a single issue."""
+        self._check_depends_on_links(issue, result)
+        self._check_blocks_links(issue, result)
+        self._check_chain_and_cycles(issue, result)
 
     def _find_cycle_from(
         self, current_id: str, target_id: str, visited: set[str]
