@@ -7,6 +7,15 @@ from typing import Any
 
 from structlog import get_logger
 
+from roadmap.adapters.sync.backends.services.github_issue_dependency_service import (
+    GitHubIssueDependencyService,
+)
+from roadmap.adapters.sync.backends.services.github_label_sync_service import (
+    GitHubLabelSyncService,
+)
+from roadmap.adapters.sync.backends.services.github_local_issue_sync_service import (
+    GitHubLocalIssueSyncService,
+)
 from roadmap.common.logging import log_error_with_context
 from roadmap.common.services.retry import API_RETRY
 from roadmap.common.utils.timezone_utils import now_utc
@@ -28,8 +37,25 @@ class GitHubSyncOps:
         self._create_lock = threading.Lock()
         self._last_create_time = 0.0
         self._create_min_interval_seconds = self._get_create_min_interval_seconds()
-        self._label_cache: set[str] | None = None
-        self._label_support: bool | None = None
+        self._label_service = GitHubLabelSyncService(backend)
+        self._dependency_service = GitHubIssueDependencyService()
+        self._local_issue_service = GitHubLocalIssueSyncService(backend)
+
+    @property
+    def _label_cache(self) -> set[str] | None:
+        return self._label_service.label_cache
+
+    @_label_cache.setter
+    def _label_cache(self, value: set[str] | None) -> None:
+        self._label_service.label_cache = value
+
+    @property
+    def _label_support(self) -> bool | None:
+        return self._label_service.label_support
+
+    @_label_support.setter
+    def _label_support(self, value: bool | None) -> None:
+        self._label_service.label_support = value
 
     def _get_create_min_interval_seconds(self) -> float:
         """Get minimum interval between issue creations to avoid secondary limits."""
@@ -50,99 +76,21 @@ class GitHubSyncOps:
         return 1.0
 
     def _sync_labels_enabled(self) -> bool:
-        config = getattr(self.backend, "config", {}) or {}
-        sync_settings = (
-            config.get("sync_settings", {}) if isinstance(config, dict) else {}
-        )
-        return bool(sync_settings.get("sync_labels", True))
+        return self._label_service.sync_labels_enabled()
 
     def _get_label_color(self, name: str) -> str:
-        label_colors = {
-            "priority:critical": "FF0000",
-            "priority:high": "FF9900",
-            "priority:medium": "FFFF00",
-            "priority:low": "00FF00",
-            "status:todo": "CCCCCC",
-            "status:in-progress": "0366D6",
-            "status:blocked": "D73A49",
-            "status:review": "A371F7",
-            "status:done": "28A745",
-        }
-        return label_colors.get(name, "CCCCCC")
+        return self._label_service.get_label_color(name)
 
     def _get_label_client(self):
         """Return the label API client, or None if labels are not supported."""
-        if self._label_support is False:
-            return None
-        client = (
-            self.backend.get_label_client()
-            if hasattr(self.backend, "get_label_client")
-            else self.backend.get_api_client()
-        )
-        if client is None:
-            self._label_support = False
-            return None
-        if self._label_support is None:
-            if not (hasattr(client, "get_labels") and hasattr(client, "create_label")):
-                logger.warning(
-                    "github_label_client_missing_methods",
-                    has_get_labels=hasattr(client, "get_labels"),
-                    has_create_label=hasattr(client, "create_label"),
-                    severity="operational",
-                )
-                self._label_support = False
-                return None
-            self._label_support = True
-        return client
+        return self._label_service.get_label_client()
 
     def _init_label_cache(self, client) -> bool:
         """Populate self._label_cache from GitHub. Returns False on failure."""
-        if self._label_cache is not None:
-            return True
-        try:
-            existing_labels = client.get_labels()
-            self._label_cache = {
-                label["name"]
-                for label in existing_labels
-                if isinstance(label, dict) and label.get("name")
-            }
-            return True
-        except Exception as e:
-            logger.warning(
-                "github_labels_fetch_failed",
-                error=str(e),
-                error_type=type(e).__name__,
-                severity="operational",
-            )
-            self._label_cache = set()
-            return False
+        return self._label_service.init_label_cache(client)
 
     def _ensure_labels_exist(self, labels: list[str]) -> None:
-        if not labels or not self._sync_labels_enabled():
-            return
-        client = self._get_label_client()
-        if client is None:
-            return
-        if not self._init_label_cache(client):
-            return
-        label_cache = self._label_cache
-        if label_cache is None:
-            return
-
-        missing = [label for label in labels if label not in label_cache]
-        for label in missing:
-            try:
-                client.create_label(label, self._get_label_color(label))
-                label_cache.add(label)
-                logger.info("github_label_created", label=label)
-            except Exception as e:
-                logger.warning(
-                    "github_label_create_failed",
-                    label=label,
-                    error=str(e),
-                    error_type=type(e).__name__,
-                    severity="operational",
-                )
+        self._label_service.ensure_labels_exist(labels)
 
     def _throttle_issue_creation(self) -> None:
         """Throttle issue creation to reduce secondary rate limit errors."""
@@ -171,45 +119,7 @@ class GitHubSyncOps:
         Returns:
             True if persist succeeded or was skipped, False on hard error
         """
-        if not hasattr(self.backend, "core") or not self.backend.core:
-            return True
-
-        try:
-            issue_repo = self.backend.core.db.get_issue_repository()
-            existing = issue_repo.get(issue_id)
-
-            if not existing:
-                issue_data = {
-                    "id": issue_id,
-                    "title": issue.title,
-                    "headline": getattr(issue, "headline", ""),
-                    "description": issue.content or "",
-                    "status": str(issue.status),
-                    "priority": str(issue.priority),
-                    "issue_type": str(issue.type) if hasattr(issue, "type") else "task",
-                    "assignee": issue.assignee,
-                    "estimate_hours": issue.estimated_hours
-                    if hasattr(issue, "estimated_hours")
-                    else None,
-                    "due_date": None,
-                    "project_id": None,
-                }
-                issue_repo.create(issue_data)
-                logger.info(
-                    "persisted_issue_for_linking",
-                    issue_id=issue_id,
-                    title=issue.title,
-                )
-        except Exception as e:
-            logger.warning(
-                "failed_to_persist_issue_before_linking",
-                issue_id=issue_id,
-                error=str(e),
-                severity="operational",
-            )
-            # Continue with linking even if persist fails
-
-        return True
+        return self._local_issue_service.persist_issue_before_linking(issue, issue_id)
 
     def _link_issue_to_github(
         self, issue_uuid: str, github_number: int
@@ -223,30 +133,7 @@ class GitHubSyncOps:
         Returns:
             Tuple of (success: bool, error_message: str | None)
         """
-        if not hasattr(self.backend, "core") or not self.backend.core:
-            return True, None
-
-        try:
-            self.backend.core.db.remote_links.link_issue(
-                issue_uuid=issue_uuid,
-                backend_name="github",
-                remote_id=str(github_number),
-            )
-            logger.info(
-                "github_issue_linked",
-                issue_id=issue_uuid,
-                github_number=github_number,
-            )
-            return True, None
-        except Exception as e:
-            logger.warning(
-                "github_issue_link_failed",
-                issue_id=issue_uuid,
-                github_number=github_number,
-                error=str(e),
-                severity="operational",
-            )
-            return False, str(e)
+        return self._local_issue_service.link_issue_to_github(issue_uuid, github_number)
 
     def _handle_push_error(self, issue: Any, error_msg: str) -> tuple[bool, str]:
         """Handle and categorize push errors.
@@ -427,19 +314,7 @@ class GitHubSyncOps:
         Returns:
             Project ID or None
         """
-        if not hasattr(self.backend, "core") or not self.backend.core:
-            return None
-
-        try:
-            projects = list(self.backend.core.projects.list())
-            return projects[0].id if projects else None
-        except Exception as e:
-            logger.warning(
-                "failed_to_get_projects_for_issue",
-                error=str(e),
-                severity="operational",
-            )
-            return None
+        return self._local_issue_service.get_project_id_for_synced_issue()
 
     def _resolve_local_issue_id(
         self, github_id: str | int | None, local_issue: Any
@@ -448,27 +323,7 @@ class GitHubSyncOps:
 
         Prefers an existing remote link mapping; falls back to the local issue ID.
         """
-        if github_id is None:
-            return local_issue.id
-
-        if not hasattr(self.backend, "core") or not self.backend.core:
-            return local_issue.id
-
-        try:
-            issue_uuid = self.backend.core.db.remote_links.get_issue_uuid(
-                backend_name="github", remote_id=github_id
-            )
-            if issue_uuid:
-                return issue_uuid
-        except Exception as e:
-            logger.warning(
-                "github_remote_link_lookup_failed",
-                github_number=github_id,
-                error=str(e),
-                severity="operational",
-            )
-
-        return local_issue.id
+        return self._local_issue_service.resolve_local_issue_id(github_id, local_issue)
 
     def _create_or_update_issue_locally(
         self, sync_issue: Any, local_issue: Any, github_id: str | int | None
@@ -483,63 +338,11 @@ class GitHubSyncOps:
         Returns:
             Local issue ID if successful
         """
-        if not hasattr(self.backend, "core") or not self.backend.core:
-            return local_issue.id
-
-        issue_repo = self.backend.core.db.get_issue_repository()
-        local_issue_id = self._resolve_local_issue_id(github_id, local_issue)
-        existing = issue_repo.get(local_issue_id)
-        project_id = (
-            existing.get("project_id")
-            if existing
-            else self._get_project_id_for_synced_issue()
+        return self._local_issue_service.create_or_update_issue_locally(
+            sync_issue,
+            local_issue,
+            github_id,
         )
-
-        if existing:
-            updates = {
-                "title": local_issue.title,
-                "headline": local_issue.headline,
-                "description": local_issue.content or "",
-                "status": str(local_issue.status),
-                "priority": str(local_issue.priority),
-                "issue_type": str(local_issue.issue_type),
-                "assignee": local_issue.assignee,
-                "estimate_hours": local_issue.estimated_hours,
-                "due_date": None,
-            }
-            if project_id:
-                updates["project_id"] = project_id
-
-            issue_repo.update(local_issue_id, updates)
-            logger.info(
-                "github_issue_updated_locally",
-                issue_id=local_issue_id,
-                github_number=github_id,
-                title=local_issue.title,
-            )
-        else:
-            issue_data = {
-                "id": local_issue_id,
-                "title": local_issue.title,
-                "headline": local_issue.headline,
-                "description": local_issue.content or "",
-                "status": str(local_issue.status),
-                "priority": str(local_issue.priority),
-                "issue_type": str(local_issue.issue_type),
-                "project_id": project_id,
-                "assignee": local_issue.assignee,
-                "estimate_hours": local_issue.estimated_hours,
-                "due_date": None,
-            }
-            issue_repo.create(issue_data)
-            logger.info(
-                "github_issue_created_locally",
-                issue_id=local_issue_id,
-                github_number=github_id,
-                title=local_issue.title,
-            )
-
-        return local_issue_id
 
     def _link_pulled_issue_locally(
         self, local_issue_id: str | None, github_id: str | int | None
@@ -552,39 +355,10 @@ class GitHubSyncOps:
         Returns:
             True if linking succeeded or was skipped
         """
-        if not hasattr(self.backend, "core") or not self.backend.core:
-            return True
-
-        if not local_issue_id or github_id is None:
-            logger.warning(
-                "github_issue_link_skipped_missing_ids",
-                issue_id=local_issue_id,
-                github_number=github_id,
-                severity="data_error",
-            )
-            return True
-
-        try:
-            self.backend.core.db.remote_links.link_issue(
-                issue_uuid=local_issue_id,
-                backend_name="github",
-                remote_id=str(github_id),
-            )
-            logger.info(
-                "github_issue_linked_locally",
-                issue_id=local_issue_id,
-                github_number=github_id,
-            )
-            return True
-        except Exception as e:
-            logger.warning(
-                "github_issue_link_failed",
-                issue_id=local_issue_id,
-                github_number=github_id,
-                error=str(e),
-                severity="operational",
-            )
-            return True  # Don't fail the pull on link errors
+        return self._local_issue_service.link_pulled_issue_locally(
+            local_issue_id,
+            github_id,
+        )
 
     def _handle_pull_error(self, sync_issue: Any, error_msg: str) -> tuple[bool, str]:
         """Handle and categorize pull errors.
@@ -764,35 +538,12 @@ class GitHubSyncOps:
         report: SyncReport,
     ) -> tuple[list, set, SyncReport]:
         """Build list of issues to pull and their milestone dependencies."""
-        issues_to_pull = []
-        milestones_needed = set()
-
-        for issue_id in issue_ids:
-            # Strip _remote_ prefix if present
-            lookup_id = issue_id[8:] if issue_id.startswith("_remote_") else issue_id
-
-            if lookup_id not in all_remote_issues:
-                report.errors[issue_id] = "Issue not found on remote"
-                continue
-
-            sync_issue = all_remote_issues[lookup_id]
-            issues_to_pull.append((issue_id, lookup_id, sync_issue))
-
-            # Check if issue references a milestone
-            if sync_issue.milestone:
-                for milestone_num, sync_milestone in all_remote_milestones.items():
-                    if sync_milestone.name == sync_issue.milestone:
-                        milestones_needed.add(milestone_num)
-                        break
-
-        logger.info(
-            "dependency_analysis_complete",
-            issues_requested=len(issue_ids),
-            issues_found=len(issues_to_pull),
-            milestones_needed=len(milestones_needed),
+        return self._dependency_service.analyze_issue_dependencies(
+            issue_ids,
+            all_remote_issues,
+            all_remote_milestones,
+            report,
         )
-
-        return issues_to_pull, milestones_needed, report
 
     def _pull_milestone_dependencies(self, milestones_needed: set) -> SyncReport:
         """Pull milestone dependencies first."""
@@ -881,10 +632,10 @@ class GitHubSyncOps:
         self, milestone_name: str, all_remote_milestones: dict
     ) -> int | None:
         """Find milestone number by name."""
-        for milestone_num, sync_milestone in all_remote_milestones.items():
-            if sync_milestone.name == milestone_name:
-                return milestone_num
-        return None
+        return self._dependency_service.find_milestone_number(
+            milestone_name,
+            all_remote_milestones,
+        )
 
     def pull_milestones(self, milestone_ids: list[str]) -> SyncReport:
         """Pull milestones from GitHub backend by IDs.
