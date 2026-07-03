@@ -3,7 +3,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -158,3 +158,97 @@ def test_build_baseline_from_remote_issues_maps_fields():
     assert state.status == "in_progress"
     assert state.assignee == "dev"
     assert state.labels == ["sync"]
+
+
+def test_ensure_baseline_routes_to_remote_strategy():
+    orchestrator = _orchestrator()
+    orchestrator.has_baseline = Mock(return_value=False)
+    orchestrator._create_baseline_from_remote = Mock(return_value=True)
+
+    ok = orchestrator.ensure_baseline(strategy=BaselineStrategy.REMOTE)
+
+    assert ok is True
+    orchestrator._create_baseline_from_remote.assert_called_once()
+
+
+def test_create_baseline_from_remote_returns_false_on_auth_failure():
+    orchestrator = _orchestrator()
+    orchestrator._authenticate_for_baseline = Mock(return_value=False)
+
+    assert orchestrator._create_baseline_from_remote() is False
+
+
+def test_create_baseline_from_remote_saves_baseline_dict():
+    orchestrator = _orchestrator()
+    orchestrator._authenticate_for_baseline = Mock(return_value=True)
+    orchestrator._fetch_remote_issues_for_baseline = Mock(
+        return_value={
+            "A": SyncIssue(id="A", title="Remote", status="todo", labels=["x"])
+        }
+    )
+
+    ok = orchestrator._create_baseline_from_remote()
+
+    assert ok is True
+    orchestrator.core.db.save_sync_baseline.assert_called_once()
+    saved = orchestrator.core.db.save_sync_baseline.call_args.args[0]
+    assert saved["A"]["status"] == "todo"
+    assert saved["A"]["labels"] == ["x"]
+
+
+def test_find_issue_file_searches_backlog_root_and_milestone(tmp_path):
+    orchestrator = object.__new__(SyncRetrievalOrchestrator)
+    orchestrator.core = Mock()
+    orchestrator.core.roadmap_dir = tmp_path / ".roadmap"
+    issues_dir = orchestrator.issues_dir
+    (issues_dir / "backlog").mkdir(parents=True)
+    (issues_dir / "m1").mkdir(parents=True)
+
+    backlog_file = issues_dir / "backlog" / "ABC-1.md"
+    backlog_file.write_text("x")
+
+    found = orchestrator._find_issue_file("ABC")
+    assert found == backlog_file
+
+
+def test_get_baseline_state_returns_db_converted_syncstate():
+    orchestrator = _orchestrator()
+    orchestrator.core.db.get_sync_baseline.return_value = {
+        "I1": {
+            "status": "in_progress",
+            "assignee": "alice",
+            "description": "desc",
+            "labels": ["l1"],
+        }
+    }
+
+    state = orchestrator.get_baseline_state()
+
+    assert state is not None
+    assert state.base_issues["I1"].status == "in_progress"
+    assert state.base_issues["I1"].assignee == "alice"
+    assert state.base_issues["I1"].description == "desc"
+
+
+def test_sync_all_issues_uses_git_baseline_and_restores_loader():
+    orchestrator = _orchestrator()
+    orchestrator.get_baseline_state = Mock(
+        return_value=SyncState(base_issues={"A": IssueBaseState(id="A", status="todo")})
+    )
+
+    original = orchestrator.state_manager.load_sync_state
+    with patch(
+        "roadmap.adapters.sync.sync_retrieval_orchestrator.SyncMergeOrchestrator.sync_all_issues",
+        return_value="ok",
+    ) as mock_parent:
+        result = orchestrator.sync_all_issues(dry_run=False, push_only=True)
+
+    assert result == "ok"
+    mock_parent.assert_called_once_with(
+        dry_run=False,
+        force_local=False,
+        force_remote=False,
+        push_only=True,
+        pull_only=False,
+    )
+    assert orchestrator.state_manager.load_sync_state is original

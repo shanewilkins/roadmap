@@ -6,6 +6,8 @@ which cannot be effectively tested as executable code.
 """
 
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -208,3 +210,113 @@ class TestConfigPathEdgeCases:
 
         assert home1 == home2
         assert home1.exists()
+
+
+class TestSettingsHelpers:
+    """Test executable helper functions in settings module."""
+
+    def test_get_database_path_expands_home(self, monkeypatch):
+        """Database path with tilde should be expanded."""
+        fake_settings = SimpleNamespace(
+            database=SimpleNamespace(path="~/.roadmap/test.db")
+        )
+        monkeypatch.setattr(settings, "settings", fake_settings)
+
+        db_path = settings.get_database_path()
+        assert isinstance(db_path, Path)
+        assert str(db_path).endswith(".roadmap/test.db")
+
+    def test_get_log_directory_expands_home(self, monkeypatch):
+        """Log directory with tilde should be expanded."""
+        fake_settings = SimpleNamespace(
+            logging=SimpleNamespace(log_dir="~/.roadmap/test-logs")
+        )
+        monkeypatch.setattr(settings, "settings", fake_settings)
+
+        log_dir = settings.get_log_directory()
+        assert isinstance(log_dir, Path)
+        assert str(log_dir).endswith(".roadmap/test-logs")
+
+    def test_is_github_enabled_requires_both_flag_and_token(self, monkeypatch):
+        """GitHub should be enabled only when flag is true and token present."""
+        monkeypatch.setattr(
+            settings,
+            "settings",
+            SimpleNamespace(github=SimpleNamespace(enabled=True, token="abc")),
+        )
+        assert settings.is_github_enabled() is True
+
+        monkeypatch.setattr(
+            settings,
+            "settings",
+            SimpleNamespace(github=SimpleNamespace(enabled=True, token="")),
+        )
+        assert settings.is_github_enabled() is False
+
+    def test_get_github_and_export_config_mappings(self, monkeypatch):
+        """Helper accessors should return structured config dictionaries."""
+        monkeypatch.setattr(
+            settings,
+            "settings",
+            SimpleNamespace(
+                github=SimpleNamespace(
+                    enabled=True,
+                    token="tok",
+                    repo="owner/repo",
+                    sync_labels=False,
+                ),
+                export=SimpleNamespace(
+                    default_format="json",
+                    include_metadata=True,
+                    date_format="%d-%m-%Y",
+                ),
+            ),
+        )
+
+        github_cfg = settings.get_github_config()
+        export_cfg = settings.get_export_settings()
+
+        assert github_cfg == {
+            "enabled": True,
+            "token": "tok",
+            "repo": "owner/repo",
+            "sync_labels": False,
+        }
+        assert export_cfg == {
+            "default_format": "json",
+            "include_metadata": True,
+            "date_format": "%d-%m-%Y",
+        }
+
+    def test_switch_environment_success_and_failure(self, monkeypatch):
+        """Environment switch should set env and call setenv, handling errors."""
+        fake_settings = MagicMock()
+        monkeypatch.setattr(settings, "settings", fake_settings)
+
+        assert settings.switch_environment("testing") is True
+        fake_settings.setenv.assert_called_once_with("testing")
+
+        fake_settings.setenv.side_effect = RuntimeError("fail")
+        assert settings.switch_environment("production") is False
+
+    def test_create_default_config_force_writes_files(self, tmp_path, monkeypatch):
+        """create_default_config(force=True) should write config and secrets files."""
+        global_config = tmp_path / "settings.toml"
+        global_secrets = tmp_path / "secrets.toml"
+        monkeypatch.setattr(
+            settings,
+            "get_config_paths",
+            lambda: {
+                "global_config": global_config,
+                "global_secrets": global_secrets,
+                "local_config": tmp_path / "local_settings.toml",
+                "local_secrets": tmp_path / "local_secrets.toml",
+            },
+        )
+
+        result = settings.create_default_config(force=True)
+
+        assert result is True
+        assert global_config.exists()
+        assert global_secrets.exists()
+        assert "[default]" in global_config.read_text()

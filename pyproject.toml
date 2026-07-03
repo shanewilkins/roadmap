@@ -68,6 +68,8 @@ dependencies = [
     "roadmap>=0.1",
     "pydocstyle>=6.3.0",
     "pytest>=9.1.1",
+    "pytest-xdist>=3.8.0",
+    "pyright>=1.1.411",
 ]
 
 [project.optional-dependencies]
@@ -201,6 +203,15 @@ markers = [
 filterwarnings = [
     "ignore::DeprecationWarning:dynaconf.base",
     "ignore::pytest_benchmark.logger.PytestBenchmarkWarning"
+]
+
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=1.4.0",
+    "pytest-benchmark>=5.2.3",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.15.1",
+    "pytest-xdist>=3.8.0",
 ]
 
 # Coverage configuration moved to config/.coveragerc

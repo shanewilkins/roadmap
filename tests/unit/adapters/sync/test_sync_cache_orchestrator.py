@@ -262,3 +262,133 @@ class TestSyncCacheOrchestratorWave1Stability:
         assert "Analyzing local changes..." in descriptions
         assert "Syncing with remote..." in descriptions
         assert "Sync complete" in descriptions
+
+
+class TestSyncCacheOrchestratorAdditionalCoverage:
+    """Additional branch coverage for cache persistence and post-sync capture."""
+
+    def test_save_baseline_to_cache_inserts_row(self, tmp_path):
+        """Baseline save should persist one row into sync_base_state table."""
+        import sqlite3
+        from datetime import UTC, datetime
+
+        from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
+        from roadmap.core.services.sync.sync_state import SyncState
+
+        orchestrator = object.__new__(SyncCacheOrchestrator)
+        orchestrator.core = MagicMock()
+        orchestrator.core.db_dir = tmp_path / ".roadmap" / "db"
+
+        db_path = orchestrator.core.db_dir / "state.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path))
+        conn.execute(
+            """
+            CREATE TABLE sync_base_state (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                last_sync TEXT,
+                data TEXT,
+                created_at TEXT
+            )
+            """
+        )
+        conn.commit()
+        conn.close()
+
+        baseline = SyncState(last_sync_time=datetime.now(UTC), base_issues={})
+        SyncCacheOrchestrator._save_baseline_to_cache(orchestrator, baseline)
+
+        conn = sqlite3.connect(str(db_path))
+        row = conn.execute("SELECT COUNT(*) FROM sync_base_state").fetchone()
+        conn.close()
+        assert row is not None
+        assert row[0] == 1
+
+    def test_sync_state_from_db_baseline_maps_fields(self):
+        """Database baseline conversion should map expected issue fields."""
+        from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
+
+        orchestrator = object.__new__(SyncCacheOrchestrator)
+        state = SyncCacheOrchestrator._sync_state_from_db_baseline(
+            orchestrator,
+            {
+                "iss-1": {
+                    "status": "todo",
+                    "title": "Title",
+                    "assignee": "alice",
+                    "headline": "Head",
+                    "content": "Body",
+                    "labels": ["x"],
+                }
+            },
+        )
+
+        issue = state.base_issues["iss-1"]
+        assert issue.id == "iss-1"
+        assert issue.title == "Title"
+        assert issue.assignee == "alice"
+        assert issue.labels == ["x"]
+
+    def test_capture_post_sync_baseline_returns_none_on_failure(self):
+        """Capture should return None when listing issues raises."""
+        from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
+
+        orchestrator = object.__new__(SyncCacheOrchestrator)
+        orchestrator.core = MagicMock()
+        orchestrator.core.issues.list_all_including_archived.side_effect = RuntimeError(
+            "fail"
+        )
+
+        result = SyncCacheOrchestrator.capture_post_sync_baseline(orchestrator)
+        assert result is None
+
+    def test_rebuild_baseline_with_progress_noop_when_builder_unavailable(self):
+        """Method should no-op safely when progress builder factory returns None."""
+        from pathlib import Path
+
+        from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
+
+        orchestrator = object.__new__(SyncCacheOrchestrator)
+        orchestrator.show_progress = True
+        orchestrator.core = MagicMock()
+        orchestrator.core.roadmap_dir = Path("/tmp/roadmap")
+
+        with patch(
+            "roadmap.adapters.sync.sync_cache_orchestrator.create_progress_builder",
+            return_value=None,
+        ):
+            SyncCacheOrchestrator._rebuild_baseline_with_progress(
+                orchestrator,
+                progress_ctx=MagicMock(),
+                issue_files=[],
+                cached=None,
+            )
+
+        assert orchestrator._progress_builder is None
+
+    def test_get_baseline_with_optimization_prefers_db_baseline(self):
+        """Database baseline should short-circuit cache and reconstruction paths."""
+        from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
+
+        orchestrator = object.__new__(SyncCacheOrchestrator)
+        expected = MagicMock()
+        orchestrator._try_get_database_baseline = MagicMock(return_value=expected)
+        orchestrator._load_cached_baseline = MagicMock()
+        orchestrator._rebuild_baseline_with_progress = MagicMock()
+
+        result = SyncCacheOrchestrator._get_baseline_with_optimization(orchestrator)
+
+        assert result is expected
+        orchestrator._load_cached_baseline.assert_not_called()
+        orchestrator._rebuild_baseline_with_progress.assert_not_called()
+
+    def test_try_get_database_baseline_handles_exception(self):
+        """Database load exceptions should degrade to None."""
+        from roadmap.adapters.sync.sync_cache_orchestrator import SyncCacheOrchestrator
+
+        orchestrator = object.__new__(SyncCacheOrchestrator)
+        orchestrator.core = MagicMock()
+        orchestrator.core.db.get_sync_baseline.side_effect = RuntimeError("fail")
+
+        result = SyncCacheOrchestrator._try_get_database_baseline(orchestrator)
+        assert result is None

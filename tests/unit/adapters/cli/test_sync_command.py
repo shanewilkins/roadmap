@@ -13,7 +13,9 @@ from roadmap.adapters.cli.sync import (
     _display_issue_lists,
     _display_local_only_issues,
     _display_remote_only_issues,
+    _execute_dedup_only,
     _execute_sync_workflow,
+    _fetch_remote_for_dedup,
     _handle_resume,
     sync,
 )
@@ -417,3 +419,77 @@ def test_execute_sync_workflow_show_metrics_renders_panel(monkeypatch):
     )
 
     assert console.print.call_count >= 2
+
+
+def test_sync_rejects_push_and_pull_together(runner, mock_core):
+    """CLI should error when both directional flags are requested."""
+    result = runner.invoke(
+        sync,
+        ["--push", "--pull"],
+        obj={"core": mock_core},
+    )
+
+    assert result.exit_code != 0
+    assert "Cannot use both --push and --pull together" in clean_cli_output(
+        result.output
+    )
+
+
+def test_sync_short_circuits_when_pre_sync_action_handled(
+    runner, mock_core, monkeypatch
+):
+    """If a pre-sync action handles request, workflow should not execute."""
+    monkeypatch.setattr(
+        "roadmap.adapters.cli.sync._handle_pre_sync_actions",
+        lambda *_a, **_k: True,
+    )
+
+    called = {"workflow": False}
+
+    def _workflow(*_a, **_k):
+        called["workflow"] = True
+
+    monkeypatch.setattr("roadmap.adapters.cli.sync._execute_sync_workflow", _workflow)
+
+    result = runner.invoke(sync, ["--base"], obj={"core": mock_core})
+
+    assert result.exit_code == 0
+    assert called["workflow"] is False
+
+
+def test_fetch_remote_for_dedup_handles_failed_auth(monkeypatch):
+    """Failed backend auth should return no backend and no remote issues."""
+    console = Mock()
+    core = Mock()
+    backend = Mock()
+    backend.authenticate.return_value = SimpleNamespace(is_ok=lambda: False)
+
+    monkeypatch.setattr(
+        "roadmap.adapters.cli.sync_context._resolve_backend_and_init",
+        lambda *_a, **_k: ("github", backend),
+    )
+
+    result_backend, remote = _fetch_remote_for_dedup(core, console, False, Mock())
+
+    assert result_backend is None
+    assert remote == {}
+
+
+def test_execute_dedup_only_exits_when_detection_disabled():
+    """Dedup-only should no-op when duplicate detection flag is disabled."""
+    console = Mock()
+    _execute_dedup_only(
+        core=Mock(),
+        console_inst=console,
+        verbose=False,
+        detect_duplicates=False,
+        duplicate_title_threshold=None,
+        duplicate_content_threshold=None,
+        duplicate_auto_resolve_threshold=None,
+        interactive_duplicates=False,
+        fuzzy=False,
+        dry_run=False,
+    )
+
+    rendered = " ".join(str(c) for c in console.print.call_args_list)
+    assert "Duplicate detection is disabled" in rendered

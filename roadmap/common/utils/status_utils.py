@@ -11,6 +11,7 @@ Eliminates duplicate status counting logic from:
 """
 
 from collections import Counter
+from collections.abc import Mapping, Sequence
 from enum import Enum
 
 
@@ -47,7 +48,7 @@ class StatusSummary:
     """
 
     @staticmethod
-    def count_by_status(items: list[tuple[str, Enum]]) -> dict[str, int]:
+    def count_by_status(items: Sequence[tuple[str, Enum]]) -> dict[str, int]:
         """Count items by status enum value.
 
         Args:
@@ -70,7 +71,7 @@ class StatusSummary:
 
     @staticmethod
     def summarize_checks(
-        checks: dict[str, tuple[Enum, str]], status_enum_class=None
+        checks: Mapping[str, tuple[Enum, str]], status_enum_class=None
     ) -> dict[str, int]:
         """Get summary counts from checks dict with generic status enum.
 
@@ -107,7 +108,7 @@ class StatusSummary:
             #     "unhealthy": 1,
             # }
         """
-        statuses = [status for _, (status, _) in checks.items()]
+        statuses = [status for status, _ in checks.values()]
 
         total = len(statuses)
         counts = {"total": total}

@@ -144,12 +144,12 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
-  # Coverage gate only on push (mirrors CI gate with 77% threshold)
+  # Coverage gate only on push (mirrors CI gate with 81% threshold)
   - repo: local
     hooks:
       - id: pytest-coverage-gate
         name: pytest (coverage gate - push only)
-        entry: uv run pytest -q --cov=roadmap --cov-report=term-missing --cov-report=html --cov-fail-under=77
+        entry: uv run pytest -q --cov=roadmap --cov-report=term-missing --cov-report=html --cov-fail-under=81
         language: system
         pass_filenames: false
         stages: [pre-push]
