@@ -31,7 +31,7 @@ jobs:
         version: "latest"
 
     - name: Cache uv dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v6
       with:
         path: .venv
         key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock') }}
@@ -71,7 +71,7 @@ jobs:
         version: "latest"
 
     - name: Cache uv dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v6
       with:
         path: .venv
         key: ${{ runner.os }}-uv-3.14-${{ hashFiles('**/uv.lock') }}
