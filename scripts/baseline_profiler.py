@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Performance baseline measurement using the built-in profiler.
 
 This script measures current CLI performance using the official profiling system.

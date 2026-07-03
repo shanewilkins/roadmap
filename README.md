@@ -209,6 +209,12 @@ roadmap today --filter priority=critical
 | **[Security](docs/developer_notes/SECURITY.md)** | Privacy & safety | 10 min |
 | **[Future Features](docs/developer_notes/FUTURE_FEATURES.md)** | Roadmap (v1.1+) | 5 min |
 
+## Community & Governance
+
+- [Contributing Guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security Policy](SECURITY.md)
+
 ## Compare to Other Tools
 
 | Tool | Model | Data | Good For | Bad For |

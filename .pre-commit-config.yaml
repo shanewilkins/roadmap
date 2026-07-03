@@ -45,16 +45,22 @@ repos:
         additional_dependencies: ['bandit[toml]']
         types: [python]
 
-  # Run complexity and file length checks using radon
-  # Threshold: Functions must be B-grade or better (CC <= 10)
-  # Fails only if any function is D-grade or worse (CC > 30)
+  # Run complexity checks using radon
+  # Threshold: Fail on any function/method with CC > 15
   - repo: local
     hooks:
       - id: radon
-        name: radon - complexity checking (no D/E/F grades)
-        entry: bash -c 'poetry run radon cc roadmap --exclude=tests --min D 2>&1 | grep -q . && exit 1 || exit 0'
+        name: radon - complexity checking (CC <= 15)
+        entry: bash scripts/check-radon-complexity.sh
         language: system
         types: [python]
+        pass_filenames: false
+        always_run: true
+
+      - id: long-file-warning
+        name: file length warning (>500 lines, non-blocking)
+        entry: bash scripts/warn-long-files.sh
+        language: system
         pass_filenames: false
         always_run: true
 
