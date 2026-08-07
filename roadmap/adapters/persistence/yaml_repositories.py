@@ -209,7 +209,7 @@ class YAMLIssueRepository(IssueRepository):
         logger.debug(
             "issue_saved",
             issue_id=issue.id,
-            filename=issue.filename,
+            issue_filename=issue.filename,
             milestone=issue.milestone,
             target_directory=str(target_dir),
             stale_files_removed=stale_files_removed,
