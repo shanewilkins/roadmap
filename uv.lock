@@ -1848,7 +1848,7 @@ requires-dist = [
     { name = "sphinx", marker = "extra == 'dev'", specifier = ">=9.1.0" },
     { name = "sphinx-click", marker = "extra == 'dev'", specifier = ">=6.2.0" },
     { name = "sphinx-rtd-theme", marker = "extra == 'dev'", specifier = ">=3.1.0" },
-    { name = "structlog", specifier = ">=25.5.0,<26.0.0" },
+    { name = "structlog", specifier = ">=25.5.0,<27.0.0" },
     { name = "tabulate", specifier = ">=0.10.0,<1.0.0" },
     { name = "toml", specifier = ">=0.10.2,<1.0.0" },
     { name = "vulture", marker = "extra == 'dev'", specifier = ">=2.16" },
