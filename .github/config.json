@@ -1,0 +1,7 @@
+{
+  "backend": "github",
+  "github": {
+    "owner": "shanewilkins",
+    "repo": "roadmap"
+  }
+}

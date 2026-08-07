@@ -1,0 +1,26 @@
+# Pylint configuration for roadmap project
+# Focus on DRY violation detection
+
+[MASTER]
+# Ignore test files for duplicate code detection to reduce noise
+ignore=tests
+
+[DESIGN]
+# Minimum lines of duplication to flag (reduce false positives)
+# Default is 4 lines, we'll use 5 to catch meaningful duplicates
+min-similarity-lines=5
+
+# Ignore certain patterns for duplicate detection
+# You can add specific function/method names to exclude from duplication checks
+# ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+
+[DUPLICATE_CODE]
+# Disable docstring/comment comparison for duplicates (noisy)
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+
+[MESSAGES CONTROL]
+# Only enable duplicate-code check
+disable=all
+enable=duplicate-code

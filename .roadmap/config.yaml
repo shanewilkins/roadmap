@@ -1,5 +1,5 @@
 user:
-  name: Test User
+  name: shanewilkins
   email: null
 paths:
   roadmap_dir: .roadmap
@@ -7,9 +7,9 @@ paths:
   db_dir: .roadmap/db
 github:
   owner: shanewilkins
-  repo: null
-  enabled: false
-  sync_enabled: false
+  repo: roadmap
+  enabled: true
+  sync_enabled: true
   sync_backend: github
   webhook_secret: null
   sync_settings:
@@ -25,4 +25,4 @@ behavior:
   confirm_destructive: true
   show_tips: true
   include_closed_in_critical_path: false
-  default_project_id: 1bc2a722
+  default_project_id: 99d80769

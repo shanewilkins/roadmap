@@ -1,0 +1,5 @@
+[tool.bandit]
+exclude_dirs = ["tests"]
+# Skip assert_used: we use asserts in tests (B101)
+# Skip try_except_pass: intentional in cleanup/cleanup handlers (B110)
+skips = ["B101", "B110"]

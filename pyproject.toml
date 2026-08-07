@@ -1,0 +1,219 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+# ============================================================================
+# ROADMAP CLI - Enterprise Project Management Tool
+# ============================================================================
+# PRODUCTION INSTALLATION: uv sync
+#   Installs runtime dependencies (0 known CVEs)
+#
+# DEVELOPMENT INSTALLATION: uv sync
+#   Includes all dependencies including testing, linting, and documentation
+# ============================================================================
+name = "roadmap-cli"
+version = "0.1.0"
+description = "Enterprise-grade command line tool for project roadmap management with GitHub integration, data visualization, and advanced analytics"
+readme = "README.md"
+requires-python = ">=3.13,<4.0"
+license = {text = "MIT"}
+authors = [{name = "Roadmap CLI Team", email = "contact@roadmap-cli.com"}]
+keywords = [
+    "cli",
+    "roadmap",
+    "planning",
+    "project-management",
+    "github",
+    "agile",
+    "scrum",
+    "milestone",
+    "issue-tracking",
+    "analytics",
+    "visualization",
+    "productivity"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Bug Tracking",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Topic :: Office/Business :: Scheduling",
+    "Topic :: Utilities",
+    "Environment :: Console",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "click>=8.4.0,<9.0.0",
+    "rich>=15.0.0,<16.0.0",
+    "pydantic>=2.13.4,<3.0.0",
+    "pyyaml>=6.0.3,<7.0.0",
+    "requests>=2.34.2,<3.0.0",
+    "keyring>=25.7.0,<26.0.0",
+    "toml>=0.10.2,<1.0.0",
+    "structlog>=25.5.0,<26.0.0",
+    "dynaconf>=3.2.13,<4.0.0",
+    "asyncclick>=8.3.0.7,<9.0.0",
+    "tabulate>=0.10.0,<1.0.0",
+    "opentelemetry-api>=1.42.0,<2.0.0",
+    "opentelemetry-sdk>=1.42.0,<2.0.0",
+    "opentelemetry-exporter-otlp>=1.42.0,<2.0.0",
+    "roadmap>=0.1",
+    "pydocstyle>=6.3.0",
+    "pytest>=9.1.1",
+    "pytest-xdist>=3.8.0",
+    "pyright>=1.1.411",
+    "ruff>=0.15.13",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "pytest-asyncio>=1.3.0",
+    "pytest-aiohttp>=1.1.0",
+    "ruff==0.15.20",
+    "pre-commit>=4.6.0",
+    "vulture>=2.16",
+    "bandit[toml]>=1.9.4",
+    "pydocstyle>=6.3.0",
+    "radon>=6.0.1",
+    "pytest-xdist>=3.8.0",
+    "pytest-benchmark>=5.2.3",
+    "pyright>=1.1.409",
+    "pylint>=4.0.5",
+    "sphinx>=9.1.0",
+    "sphinx-rtd-theme>=3.1.0",
+    "sphinx-click>=6.2.0",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocs-click>=0.9.0",
+    "myst-parser>=5.1.0",
+    "pytest-mock>=3.15.1",
+    "import-linter>=2.11,<3.0.0",
+]
+
+[project.urls]
+Homepage = "https://roadmap-cli.readthedocs.io"
+Repository = "https://github.com/roadmap-cli/roadmap"
+Documentation = "https://roadmap-cli.readthedocs.io"
+
+[project.scripts]
+roadmap = "roadmap.adapters.cli:main"
+
+[tool.hatch.build]
+exclude = [
+    "/.venv",
+    "/.venv/**",
+    "/.venv_release",
+    "/.venv_release/**",
+    "/venv",
+    "/venv/**",
+    "/build/**",
+    "/dist/**",
+    "/htmlcov/**",
+    "/.roadmap/**",
+    "/.import_linter_cache/**",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["roadmap"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/roadmap/**",
+    "/README.md",
+    "/LICENSE.md",
+    "/CHANGELOG.md",
+    "/pyproject.toml",
+]
+
+# Tool configurations have been moved to config/ directory:
+# - ruff.toml: Linting and formatting rules
+# - bandit.toml: Security scanning configuration
+# - .coveragerc: Test coverage thresholds and exclusions
+# - import-linter.ini: Architecture boundary enforcement
+# - pyrightconfig.json: Type checking configuration
+# - .vultureignore: Dead code detection whitelist
+
+# Dead code detection configuration for Vulture
+[tool.vulture]
+ignore_names = [
+    # Function parameters (public API)
+    "include_traceback", "filters", "log_level", "log_file", "force",
+    # Protocol/Interface methods (contract definitions)
+    "authenticate", "get_backend_name", "get_issues", "push_issues", "push_issue",
+    "pull_issues", "pull_issue", "get_conflict_resolution_options", "resolve_conflict",
+    "get_milestones", "get_projects", "create_backend", "list_supported_backends",
+    "get_default_backend", "validate_credentials", "parse_issue_content",
+    "parse_milestone_content", "parse_project_content", "list_files_in_directory",
+    "bulk_update", "find_by_milestone", "find_by_status", "get_current", "get_status",
+    "save_sync_state", "clear_sync_state", "get_last_sync_time", "update_last_sync_time",
+    "link_issues", "unlink_issue", "get_linked_remote_id", "get_linked_local_id",
+    "cache_remote_issue", "get_cached_remote_issue", "invalidate_cache", "is_cache_fresh",
+    "delete_token", "is_available",
+    # Interface attributes & parameters
+    "conflicts", "error", "local_issues", "issue_ids", "conflict", "resolution",
+    # Backends implementing SyncBackendInterface (polymorphic)
+    "SyncBackendInterface", "GitHubSyncBackend", "VanillaGitSyncBackend",
+    # Click command handlers (decorator-registered)
+    "main", "cli", "setup_git", "hooks_status", "sync_git", "git_status", "git_link",
+    "sync", "validate_links", "view", "get_cmd", "set_cmd", "generate_report",
+    "edit_comment", "delete_comment", "add_dependency", "handle_archive_parse_error",
+    "handle_restore_parse_error", "confirm_action", "check_entity_exists",
+    # CLI helper functions
+    "_detect_project_context", "_validate_branch_environment", "_get_and_validate_issue",
+    "_show_baseline", "_reset_baseline", "_capture_and_save_post_sync_baseline",
+    "_perform_apply_phase", "_clear_baseline", "_show_conflicts", "_handle_link_unlink",
+    # CLI decorator factories
+    "add_output_flags", "health_check_options",
+    # Exception/error handlers
+    "with_exception_handler", "setup_cli_exception_handling", "handle_exception",
+    # Provider/factory functions
+    "get_settings", "get_database_path", "get_log_directory", "is_github_enabled",
+    "get_export_settings", "switch_environment", "create_output_manager",
+    # Test patterns
+    "Test",
+]
+min_confidence = 60  # Lowered from 80 to catch more dead code
+
+# Type checking is now handled by Pyright
+# Configuration is in pyrightconfig.json
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "--tb=short --strict-markers -n auto --maxfail=3 --strict-config -ra"
+markers = [
+    "unit: Unit tests (fast, no filesystem operations)",
+    "integration: Integration tests (slower, with filesystem operations)",
+    "filesystem: Tests that require real filesystem operations",
+    "slow: Slow tests that may be skipped in CI",
+    "performance: Performance-focused tests",
+    "mock_scanning: Tests with mocked repository scanning operations",
+    "no_xdist: Tests that should not run in parallel (disables xdist parallelization)"
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:dynaconf.base",
+    "ignore::pytest_benchmark.logger.PytestBenchmarkWarning"
+]
+
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=1.4.0",
+    "pytest-benchmark>=5.2.3",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.15.1",
+    "pytest-xdist>=3.8.0",
+]
+
+# Coverage configuration moved to config/.coveragerc
+# Import linter configuration moved to config/import-linter.ini
