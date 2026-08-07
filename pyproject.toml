@@ -71,6 +71,7 @@ dependencies = [
     "pytest-xdist>=3.8.0",
     "pyright>=1.1.411",
     "ruff>=0.15.13",
+    "radon>=6.0.1",
 ]
 
 [project.optional-dependencies]
