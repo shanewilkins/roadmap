@@ -68,20 +68,16 @@ Use factory fixtures that create fresh, independent test objects.
 @pytest.fixture
 def issue_factory():
     """Factory for creating test Issue objects."""
+
     def _create(
         id: str = "TEST-1",
         title: str = "Test Issue",
         content: str = "Test content",
         status: str = "open",
-        **kwargs
+        **kwargs,
     ) -> Issue:
-        return Issue(
-            id=id,
-            title=title,
-            content=content,
-            status=status,
-            **kwargs
-        )
+        return Issue(id=id, title=title, content=content, status=status, **kwargs)
+
     return _create
 
 
@@ -147,6 +143,7 @@ Use Click's `isolated_filesystem()` context manager.
 ```python
 from click.testing import CliRunner
 
+
 def test_create_roadmap():
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -183,6 +180,7 @@ def cache_context():
     yield cache
     cache.clear()
 
+
 def test_something(cache_context):
     cache_context.set("key", "value")  # Clean before and after
     # ... test code
@@ -200,13 +198,11 @@ Mock external dependencies using `unittest.mock` or `pytest-mock`.
 ```python
 def test_fetch_remote_issue(monkeypatch):
     """Mock GitHub API instead of making real calls."""
+
     def mock_fetch(org, repo, issue_num):
         return {"id": "123", "title": "Test"}
 
-    monkeypatch.setattr(
-        "roadmap.adapters.github_adapter.fetch_issue",
-        mock_fetch
-    )
+    monkeypatch.setattr("roadmap.adapters.github_adapter.fetch_issue", mock_fetch)
 
     # Test uses mock instead of real API
     result = fetch_remote_issue("org", "repo", 1)
@@ -304,6 +300,7 @@ Result: `_session_cache` global persisted between tests → flakiness
 @pytest.fixture(autouse=True)
 def clear_session_cache_between_tests():
     from roadmap.common.cache import clear_session_cache
+
     clear_session_cache()
     yield
     clear_session_cache()

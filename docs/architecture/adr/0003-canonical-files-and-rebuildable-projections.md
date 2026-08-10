@@ -111,10 +111,11 @@ should not depend on repeatedly parsing the entire working set.
 - ADR-0005 defines atomic writes and projection refresh ordering.
 - ADR-0007 defines schema compatibility and migration obligations.
 - ADR-0008 prevents lifecycle state from changing canonical file location.
+- ADR-0009 defines the ownership and loading of canonical project configuration.
+- ADR-0010 fixes the canonical entity directory and ID layout.
 
 ## Migration boundary
 
 This ADR does not select the final projection implementation or change current
-files. The target file schema, migration tooling, and projection rebuild path
-require separately scoped implementation work.
-
+files. ADR-0010 selects the target entity layout; migration tooling and the
+projection rebuild path remain separately scoped implementation work.

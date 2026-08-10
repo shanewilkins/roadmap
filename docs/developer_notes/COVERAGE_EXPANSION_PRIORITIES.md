@@ -126,11 +126,14 @@ To reach 85%, would need:
 ### For Sync Services
 Use mocking and parametrization:
 ```python
-@pytest.mark.parametrize("change_type,expected", [
-    ("local_only", True),
-    ("remote_only", False),
-    ("conflict", None),
-])
+@pytest.mark.parametrize(
+    "change_type,expected",
+    [
+        ("local_only", True),
+        ("remote_only", False),
+        ("conflict", None),
+    ],
+)
 def test_filter_changes(change_type, expected, sync_factory):
     """Test change filtering logic."""
 ```
@@ -142,6 +145,7 @@ Mock GitHub API, test error paths:
 def remote_fetcher_mock():
     with patch("roadmap.core.services.utils.remote_fetcher.GitHubAPI") as mock:
         yield mock
+
 
 def test_fetch_with_retry(remote_fetcher_mock):
     """Test fetch retry mechanism."""

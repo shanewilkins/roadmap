@@ -108,9 +108,9 @@ Python application without resolving ownership.
 - ADR-0001 defines the zones that own each validation category.
 - ADR-0004 defines aggregate and cross-aggregate rule boundaries.
 - ADR-0007 identifies stable public error behavior.
+- ADR-0009 assigns configuration parsing and scope validation to the boundary.
 
 ## Migration boundary
 
 This ADR does not select final class names. The refactor must inventory existing
 validators and error types before consolidating them.
-

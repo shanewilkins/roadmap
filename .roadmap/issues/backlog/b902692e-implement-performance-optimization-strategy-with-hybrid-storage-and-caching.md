@@ -73,9 +73,9 @@ roadmap milestone status v090              # Relationship traversal
 # Hybrid storage layer
 class HybridStorage:
     def __init__(self):
-        self.file_store = FileStore()           # Current implementation
-        self.index_db = SQLiteIndex()           # New performance layer
-        self.cache = InMemoryCache()            # Fast access cache
+        self.file_store = FileStore()  # Current implementation
+        self.index_db = SQLiteIndex()  # New performance layer
+        self.cache = InMemoryCache()  # Fast access cache
 
     def list_issues(self, filters):
         # Fast: Query SQLite index
@@ -140,14 +140,14 @@ CREATE TABLE roadmaps (
 #### Index Management
 ```python
 class SQLiteIndex:
-    def __init__(self, db_path='.roadmap/index.db'):
+    def __init__(self, db_path=".roadmap/index.db"):
         self.db_path = db_path
         self.conn = sqlite3.connect(db_path)
         self.init_schema()
 
     def sync_from_files(self):
         """Full rebuild from all files"""
-        for file_path in glob('.roadmap/issues/*.md'):
+        for file_path in glob(".roadmap/issues/*.md"):
             self.update_from_file(file_path)
 
     def update_from_file(self, file_path):
@@ -155,13 +155,16 @@ class SQLiteIndex:
         metadata = parse_yaml_header(file_path)
         mtime = os.path.getmtime(file_path)
 
-        self.conn.execute("""
+        self.conn.execute(
+            """
             INSERT OR REPLACE INTO issues
             (id, title, status, priority, assignee, milestone,
              estimated_hours, progress_percentage, created_date,
              updated_date, file_path, file_mtime)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (metadata['id'], metadata['title'], ...))
+        """,
+            (metadata["id"], metadata["title"], ...),
+        )
 
     def is_stale(self, file_path):
         """Check if index needs update"""
@@ -200,12 +203,12 @@ class FileWatcher:
         """Watch .roadmap directory for changes"""
         handler = FileSystemEventHandler()
         handler.on_modified = self.on_file_changed
-        self.observer.schedule(handler, '.roadmap', recursive=True)
+        self.observer.schedule(handler, ".roadmap", recursive=True)
         self.observer.start()
 
     def on_file_changed(self, event):
         """Update index when files change"""
-        if event.src_path.endswith('.md'):
+        if event.src_path.endswith(".md"):
             self.storage.index_db.update_from_file(event.src_path)
             self.storage.cache.invalidate_file(event.src_path)
 ```
@@ -230,11 +233,11 @@ class LazyIssue:
     # Fast access to indexed fields
     @property
     def status(self):
-        return self._metadata['status']
+        return self._metadata["status"]
 
     @property
     def assignee(self):
-        return self._metadata['assignee']
+        return self._metadata["assignee"]
 ```
 
 #### Batch Operations
@@ -245,9 +248,11 @@ class BatchOperations:
         with self.storage.index_db.transaction():
             for issue_id in issue_ids:
                 # Update file
-                self.storage.file_store.update_metadata(issue_id, {'status': new_status})
+                self.storage.file_store.update_metadata(
+                    issue_id, {"status": new_status}
+                )
                 # Update index
-                self.storage.index_db.update_field(issue_id, 'status', new_status)
+                self.storage.index_db.update_field(issue_id, "status", new_status)
 
     def bulk_assign_milestone(self, issue_ids, milestone):
         """Assign multiple issues to milestone"""
@@ -309,7 +314,7 @@ def migrate_to_hybrid_storage():
     index.sync_from_files()
 
     # Update configuration
-    config.set('storage.use_index', True)
+    config.set("storage.use_index", True)
 
     print("✅ Migration complete!")
 ```
@@ -319,6 +324,7 @@ def migrate_to_hybrid_storage():
 class PerformanceMonitor:
     def time_operation(self, operation_name):
         """Decorator to monitor operation performance"""
+
         def decorator(func):
             def wrapper(*args, **kwargs):
                 start = time.time()
@@ -326,10 +332,14 @@ class PerformanceMonitor:
                 duration = time.time() - start
 
                 if duration > 1.0:  # Log slow operations
-                    logger.warning(f"Slow operation: {operation_name} took {duration:.2f}s")
+                    logger.warning(
+                        f"Slow operation: {operation_name} took {duration:.2f}s"
+                    )
 
                 return result
+
             return wrapper
+
         return decorator
 ```
 

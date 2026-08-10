@@ -76,7 +76,7 @@ for item in items:
             operation="batch_process",
             item_id=item.id,
             error=str(e),
-            severity="operational"
+            severity="operational",
         )
         continue
 ```
@@ -85,10 +85,12 @@ for item in items:
 ```python
 # FIX THIS:
 import logging
+
 logger = logging.getLogger(__name__)
 
 # DO THIS:
 from structlog import get_logger
+
 logger = get_logger()
 ```
 

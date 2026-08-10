@@ -53,8 +53,8 @@ Lifecycle: visible <-> archived -> purged
 - If filesystem scaling requires sharding, the shard derives from stable ID
   data rather than lifecycle or organization.
 
-The exact ID-based layout is selected during persistence migration, but the
-stability rule is fixed by this decision.
+ADR-0010 selects the exact flat ID-based layout. The stability rule is fixed by
+this decision and applies after the versioned migration.
 
 ### Query behavior
 
@@ -130,10 +130,10 @@ rebuildable projection supplies efficient selection.
 - ADR-0004 defines stable identity and relationship behavior.
 - ADR-0005 defines transaction guarantees for lifecycle mutations and migration.
 - ADR-0007 defines compatibility obligations for the archive-layout migration.
+- ADR-0010 defines the target canonical paths and entity ID format.
 
 ## Migration boundary
 
 This ADR does not move current archive files or alter archive commands. A
 versioned migration must reconcile active/archive duplicates, preserve IDs and
 workflow status, and establish one stable path per retained entity.
-

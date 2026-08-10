@@ -21,6 +21,7 @@ The new `IntegrationTestBase` class provides utilities to write integration test
 ```python
 from tests.fixtures import IntegrationTestBase
 
+
 def test_create_issue(cli_runner):
     """Test creating an issue."""
     # Setup: Initialize roadmap
@@ -176,7 +177,7 @@ def test_create_issue(cli_runner):
     result = cli_runner.invoke(main, ["issue", "create", "Task"])
     assert result.exit_code == 0
     assert "Created issue" in result.output  # ← Breaks on UI changes
-    assert "Task" in result.output           # ← Brittle parsing
+    assert "Task" in result.output  # ← Brittle parsing
 ```
 
 **NEW (Robust - tests actual behavior):**
@@ -214,7 +215,7 @@ def test_milestone_workflow(cli_runner):
     for i in range(3):
         IntegrationTestBase.create_issue(
             cli_runner,
-            title=f"Feature {i+1}",
+            title=f"Feature {i + 1}",
             milestone="Beta",
         )
 
@@ -268,6 +269,7 @@ def test_duplicate_milestone_error(cli_runner):
 
 ```python
 import pytest
+
 
 @pytest.mark.parametrize(
     "priority,priority_value",
@@ -434,6 +436,7 @@ def test_a(cli_runner):
     IntegrationTestBase.init_roadmap(cli_runner)
     # ...
 
+
 def test_b(cli_runner):
     IntegrationTestBase.init_roadmap(cli_runner)  # Fresh start
     # ...
@@ -461,10 +464,11 @@ def roadmap_with_multiple_milestones(cli_runner):
     for i in range(3):
         IntegrationTestBase.create_milestone(
             cli_runner,
-            name=f"Sprint {i+1}",
+            name=f"Sprint {i + 1}",
         )
 
     return IntegrationTestBase.get_roadmap_core()
+
 
 def test_with_fixture(roadmap_with_multiple_milestones):
     """Test using pre-configured roadmap."""

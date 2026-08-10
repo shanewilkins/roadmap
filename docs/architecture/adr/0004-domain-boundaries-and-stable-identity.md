@@ -107,9 +107,9 @@ not portable across repositories or integrations.
 - ADR-0001 defines the Domain and Application dependency boundary.
 - ADR-0003 defines canonical entity documents.
 - ADR-0008 defines lifecycle state without identity or path changes.
+- ADR-0010 defines the persisted ID and canonical path contract.
 
 ## Migration boundary
 
 This ADR does not finalize every field or workflow transition. A target domain
 model and mapping inventory must precede production module movement.
-

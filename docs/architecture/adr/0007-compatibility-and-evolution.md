@@ -99,10 +99,11 @@ or make rollback difficult.
 - ADR-0003 defines canonical schema authority.
 - ADR-0005 supplies transactional migration guarantees.
 - ADR-0006 distinguishes stable error categories from presentation prose.
+- ADR-0009 defines configuration scope and schema evolution.
+- ADR-0010 defines the versioned canonical path and ID migration.
 
 ## Migration boundary
 
 This ADR does not promise compatibility for an interface that has never been
 documented as public. A compatibility inventory and release plan precede the
 production refactor.
-

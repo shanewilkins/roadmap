@@ -109,9 +109,9 @@ the application graph.
 - An executable entry point asks Composition for a fully constructed inbound
   adapter or use case rather than constructing dependencies itself.
 
-The target namespace is `roadmap.bootstrap`. A different final name may be
-chosen during migration, but there will be one composition root and its
-responsibility will not change.
+The composition-root namespace is `roadmap.bootstrap`. This is the final target
+name. There will be one composition root and its responsibility will not change
+during migration.
 
 ### No `common` or `infrastructure` layer
 
@@ -201,5 +201,5 @@ and provider concerns from entering business behavior.
 
 This ADR selects the destination and its enforcement rules. It does not move,
 rename, or delete production modules. A package map, initial violation baseline,
-and sequence of vertical migrations require separate work.
-
+and sequence of vertical migrations are defined in the approved
+`../refactor-implementation.md` specification.

@@ -18,3 +18,9 @@ Implementation changes require separate, explicitly scoped work.
 - [ADR-0006: Assign validation and error ownership by boundary](adr/0006-validation-and-error-ownership.md)
 - [ADR-0007: Define the compatibility and evolution contract](adr/0007-compatibility-and-evolution.md)
 - [ADR-0008: Separate entity lifecycle from physical storage](adr/0008-lifecycle-independent-of-storage.md)
+- [ADR-0009: Assign configuration ownership and scope](adr/0009-configuration-ownership-and-scope.md)
+- [ADR-0010: Use stable ID-based canonical paths](adr/0010-stable-id-based-canonical-paths.md)
+
+## Approved implementation specification
+
+- [Refactor implementation](refactor-implementation.md)

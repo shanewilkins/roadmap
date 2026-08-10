@@ -343,7 +343,6 @@ except ValidationError as e:
 6. **Sample high-volume logs**: Don't overwhelm logs with repetitive information
    ```python
    if should_sample(0.01):  # 1% sampling
-
        logger.debug("Iteration progress", ...)
    ```
 

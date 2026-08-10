@@ -70,17 +70,17 @@ Reusable test fixtures use the **p8_** prefix to indicate they are part of the c
 
 ```python
 # Domain model data
-p8_valid_issue_data         # Dict with required fields
-p8_complete_issue_data      # Dict with all fields
-p8_issue                    # Issue object with defaults
+p8_valid_issue_data  # Dict with required fields
+p8_complete_issue_data  # Dict with all fields
+p8_issue  # Issue object with defaults
 
 # Persistence fixtures
-p8_yaml_issue_repository    # Real repository with tmp_path
+p8_yaml_issue_repository  # Real repository with tmp_path
 p8_populated_issue_repository  # Pre-populated with test data
 
 # Supporting fixtures
-p8_issues_dir               # Temporary directory for issues
-p8_mock_state_manager       # Mock state manager for testing
+p8_issues_dir  # Temporary directory for issues
+p8_mock_state_manager  # Mock state manager for testing
 ```
 
 Note: The p8_ prefix refers to the test infrastructure generation, not any "Phase" concept.

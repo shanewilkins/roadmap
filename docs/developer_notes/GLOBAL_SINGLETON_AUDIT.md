@@ -79,6 +79,7 @@ def get_profiler() -> PerformanceProfiler:
     """Get the global profiler instance."""
     return _profiler
 
+
 # PerformanceProfiler class has:
 def clear(self) -> None:
     """Clear all recorded operations."""
@@ -173,15 +174,19 @@ class MyCache:
         """Clear all cached state."""
         ...
 
+
 _my_cache = MyCache()
+
 
 def get_cache() -> MyCache:
     return _my_cache
+
 
 # AND THIS (in tests/conftest.py):
 @pytest.fixture(autouse=True)
 def clear_my_cache_between_tests():
     from roadmap.common.cache import get_cache
+
     get_cache().clear()
     yield
     get_cache().clear()

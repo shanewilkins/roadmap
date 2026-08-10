@@ -175,6 +175,7 @@ def fresh_cache():
     yield cache
     cache.clear()
 
+
 def test_something(fresh_cache):
     fresh_cache.set("key", "value")
 ```

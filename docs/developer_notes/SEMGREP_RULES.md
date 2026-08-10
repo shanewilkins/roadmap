@@ -93,7 +93,7 @@ except ValueError as e:
         "config_parse_failed",
         operation="load_config",
         error=str(e),
-        severity="config_error"
+        severity="config_error",
     )
     pass  # Now it's OK - error is logged
 ```
@@ -161,6 +161,7 @@ def process_item(item):
     except KeyError as e:
         return None
 
+
 # AFTER:
 def process_item(item):
     try:
@@ -171,7 +172,7 @@ def process_item(item):
             operation="transform_item",
             item_id=item.get("id"),
             error=str(e),
-            severity="operational"
+            severity="operational",
         )
         return None
 ```
@@ -189,7 +190,7 @@ def process_item(item):
             operation="transform_item",
             item_id=item.get("id"),
             error=str(e),
-            severity="operational"
+            severity="operational",
         )
         return None  # Failure - now logged
 ```
@@ -250,7 +251,7 @@ for item in items:
             item_id=item.get("id"),
             error=str(e),
             action="skipped",
-            severity="operational"
+            severity="operational",
         )
         continue
 ```
@@ -263,11 +264,7 @@ for item in items:
     try:
         process(item)
     except ValueError as e:
-        logger.debug(
-            "item_failed",
-            item_id=item.get("id"),
-            error=str(e)
-        )
+        logger.debug("item_failed", item_id=item.get("id"), error=str(e))
         skipped_items.append((item, e))
 
 if skipped_items:
@@ -276,7 +273,7 @@ if skipped_items:
         operation="batch_process",
         total_items=len(items),
         skipped_count=len(skipped_items),
-        severity="operational"
+        severity="operational",
     )
 ```
 
@@ -313,11 +310,13 @@ logger.error("something")
 ```python
 # BEFORE:
 import logging
+
 logger = logging.getLogger(__name__)
 logger.error("operation_failed")
 
 # AFTER:
 from structlog import get_logger
+
 logger = get_logger()
 logger.error("operation_failed", operation="...", error="...")
 ```
@@ -350,9 +349,11 @@ When using logger in type hints, use structlog types:
 def handler(logger: logging.Logger | None = None):
     self.logger = logger or logging.getLogger(__name__)
 
+
 # AFTER:
 from structlog.typing import FilteringBoundLogger
 from structlog import get_logger
+
 
 def handler(logger: FilteringBoundLogger | None = None):
     self.logger = logger or get_logger()
@@ -399,11 +400,7 @@ except ValueError as e:
 try:
     operation()
 except ValueError as e:
-    logger.error(
-        "operation_failed",
-        operation="load_config",
-        error=str(e)
-    )
+    logger.error("operation_failed", operation="load_config", error=str(e))
 
 # AFTER - Option 2 (with stack trace):
 try:
@@ -413,18 +410,14 @@ except ValueError as e:
         "operation_failed",
         operation="load_config",
         error=str(e),
-        exc_info=True  # Includes full stack trace
+        exc_info=True,  # Includes full stack trace
     )
 
 # AFTER - Option 3 (exception object):
 try:
     operation()
 except ValueError as e:
-    logger.error(
-        "operation_failed",
-        operation="load_config",
-        exception=e
-    )
+    logger.error("operation_failed", operation="load_config", exception=e)
 ```
 
 **When to use which:**
@@ -485,7 +478,7 @@ logger.error(
     "config_parse_failed",
     operation="load_config",
     error=str(e),
-    severity="config_error"  # ← REQUIRED
+    severity="config_error",  # ← REQUIRED
 )
 
 # For Data errors:
@@ -493,7 +486,7 @@ logger.error(
     "validation_failed",
     field="email",
     value=provided_value,
-    severity="data_error"  # ← REQUIRED
+    severity="data_error",  # ← REQUIRED
 )
 
 # For System errors:
@@ -501,7 +494,7 @@ logger.error(
     "permission_denied",
     operation="write_file",
     path="/protected/file",
-    severity="system_error"  # ← REQUIRED
+    severity="system_error",  # ← REQUIRED
 )
 ```
 
@@ -514,7 +507,7 @@ logger.warning(
     operation="load_config",
     filename=path,
     user_action="Please provide valid file path",
-    severity="operational"  # ← REQUIRED
+    severity="operational",  # ← REQUIRED
 )
 ```
 
@@ -576,7 +569,7 @@ logger.error()
 logger.error(
     "operation_failed",  # ← Event name (first positional arg)
     operation="sync",
-    error=str(e)
+    error=str(e),
 )
 ```
 
@@ -642,11 +635,7 @@ except:
 try:
     operation()
 except (ValueError, KeyError) as e:
-    logger.error(
-        "operation_failed",
-        error=str(e),
-        severity="data_error"
-    )
+    logger.error("operation_failed", error=str(e), severity="data_error")
 ```
 
 **For different exception types:**

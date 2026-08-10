@@ -105,9 +105,9 @@ not serialize concurrent Roadmap processes inside one working tree.
 
 - ADR-0003 defines canonical documents and rebuildable projections.
 - ADR-0008 removes routine archive and restore file moves from lifecycle changes.
+- ADR-0010 applies these guarantees to the canonical layout migration.
 
 ## Migration boundary
 
 This ADR defines guarantees, not a specific lock or journal implementation.
 Implementation must begin with failure-injection and concurrency contract tests.
-
