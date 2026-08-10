@@ -377,7 +377,7 @@ Getting Help
 
 - Check :doc:`setup` for environment setup
 - Read :doc:`testing` for test guidelines
-- Review :doc:`../architecture/overview` for architecture
+- Review the `architecture decisions <../../../architecture/README.md>`_
 - Look at existing code for patterns
 - Ask in GitHub discussions
 
@@ -396,4 +396,4 @@ See Also
 
 - :doc:`setup` - Development environment setup
 - :doc:`testing` - Testing guidelines and examples
-- :doc:`../architecture/overview` - Architecture overview
+- `Architecture decisions <../../../architecture/README.md>`_ - Accepted system design

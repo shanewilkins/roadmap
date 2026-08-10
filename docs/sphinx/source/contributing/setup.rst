@@ -353,5 +353,5 @@ See Also
 
 - :doc:`development` - Development workflow and patterns
 - :doc:`testing` - Testing guidelines and examples
-- :doc:`../architecture/overview` - Architecture overview
+- `Architecture decisions <../../../architecture/README.md>`_ - Accepted system design
 - GitHub Issues - Contribution ideas

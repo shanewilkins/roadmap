@@ -206,7 +206,7 @@ roadmap sync push --issues
 ## Next Steps
 
 - **[Full Workflows Guide](WORKFLOWS.md)** - Team collaboration patterns
-- **[Architecture Guide](../developer_notes/ARCHITECTURE.md)** - Understanding the file structure
+- **[Architecture decisions](../architecture/README.md)** - Accepted system design
 - **[FAQ](FAQ.md)** - Common questions
 - **[Installation Guide](INSTALLATION.md)** - Advanced setup options
 

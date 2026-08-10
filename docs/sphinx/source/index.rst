@@ -28,15 +28,6 @@ GitHub integration, data visualization, and advanced analytics.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Architecture & Design
-   :hidden:
-
-   architecture/overview
-   architecture/design-decisions
-   architecture/performance
-
-.. toctree::
-   :maxdepth: 2
    :caption: API Reference
    :hidden:
 
@@ -73,6 +64,7 @@ Quick Links
 * `GitHub Repository <https://github.com/roadmap-cli/roadmap>`_
 * `PyPI Package <https://pypi.org/project/roadmap-cli/>`_
 * `Issue Tracker <https://github.com/roadmap-cli/roadmap/issues>`_
+* `Architecture decisions <../../architecture/README.md>`_
 
 Indices and Tables
 ==================

@@ -36,8 +36,7 @@ Existing project policies remain authoritative in their specific areas:
 | [CONTRIBUTING.md](../../CONTRIBUTING.md) | Contribution workflow and local checks. |
 | [CODE_OF_CONDUCT.md](../../CODE_OF_CONDUCT.md) | Community behavior and enforcement. |
 | [SECURITY.md](../../SECURITY.md) | Private vulnerability reporting and response. |
-| [Architecture](../developer_notes/ARCHITECTURE.md) | System design and dependency direction. |
-| [Design decisions](../sphinx/source/architecture/design-decisions.rst) | Significant architectural decisions and rationale. |
+| [Architecture decisions](../architecture/README.md) | Accepted system design and dependency decisions. |
 | [Naming conventions](../NAMING_CONVENTIONS.md) | Stable milestone naming rules. |
 | [User requirements](../requirements/user-requirements.csv) | User outcomes and acceptance criteria. |
 | [Technical requirements](../requirements/technical-requirements.csv) | Engineering constraints and verification methods. |

@@ -2,7 +2,7 @@
 
 This directory is the product and engineering input to the development
 roadmap. The initial rows inventory requirements visible in the current code
-and documentation; every row remains `Draft` until it is deliberately reviewed.
+and documentation; a row remains `Draft` until it is deliberately reviewed.
 
 ## Files
 

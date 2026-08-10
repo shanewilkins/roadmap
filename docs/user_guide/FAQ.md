@@ -373,5 +373,5 @@ Or just restore from backup in `.roadmap/.backups/`.
 
 - Check [QUICK_START.md](QUICK_START.md) for getting started
 - See [WORKFLOWS.md](WORKFLOWS.md) for real-world patterns
-- Read [ARCHITECTURE.md](../developer_notes/ARCHITECTURE.md) for technical details
+- Read the [architecture decisions](../architecture/README.md) for technical details
 - File an issue on GitHub

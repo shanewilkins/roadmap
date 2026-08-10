@@ -378,6 +378,6 @@ jobs:
 
 ## Next Steps
 
-- **[Architecture Guide](../developer_notes/ARCHITECTURE.md)** - Understand the file structure
+- **[Architecture decisions](../architecture/README.md)** - Accepted system design
 - **[FAQ](FAQ.md)** - Common questions about workflows
 - **[Quick Start](QUICK_START.md)** - Get running in 5 minutes

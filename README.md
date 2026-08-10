@@ -208,7 +208,7 @@ roadmap today --filter priority=critical
 | **[GitHub Sync Setup](docs/user_guide/GITHUB_SYNC_SETUP.md)** | GitHub integration | 10 min |
 | **[Milestone Syncing](docs/user_guide/MILESTONE_SYNC.md)** | Milestone dependencies & sync | 15 min |
 | **[FAQ](docs/user_guide/FAQ.md)** | Questions & comparisons | 15 min |
-| **[Architecture](docs/developer_notes/ARCHITECTURE.md)** | Technical details | 20 min |
+| **[Architecture decisions](docs/architecture/README.md)** | Technical decisions | 20 min |
 | **[Installation](docs/user_guide/INSTALLATION.md)** | Setup & troubleshooting | varies |
 | **[Security](docs/developer_notes/SECURITY.md)** | Privacy & safety | 10 min |
 | **[Future Features](docs/developer_notes/FUTURE_FEATURES.md)** | Roadmap (v1.1+) | 5 min |

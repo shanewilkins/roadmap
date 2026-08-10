@@ -17,13 +17,10 @@ Submodules
    roadmap.file_locking
    roadmap.git_hooks
    roadmap.git_integration
-   roadmap.github_client
    roadmap.models
    roadmap.parser
-   roadmap.performance_sync
    roadmap.persistence
    roadmap.predictive
-   roadmap.sync
 
 Module contents
 ---------------

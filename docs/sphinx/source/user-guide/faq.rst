@@ -323,4 +323,4 @@ See Also
 ========
 
 - :doc:`troubleshooting` - Troubleshooting guide
-- :doc:`../architecture/overview` - Architecture overview
+- `Architecture decisions <../../../architecture/README.md>`_ - Accepted system design
