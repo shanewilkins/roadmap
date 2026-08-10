@@ -6,11 +6,11 @@ from importlib.metadata import PackageNotFoundError, version
 # Keep a source-checkout fallback for direct imports. Installed wheels and sdists
 # obtain the authoritative version from their distribution metadata because the
 # repository-level pyproject.toml is not part of an installed wheel.
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 try:
     __version__ = version("roadmap-cli")
 except PackageNotFoundError:
-    __version__ = "0.1.0"
+    __version__ = "0.1.1"
 
 # Now import cli (which will import __version__ from this module)
 from roadmap.adapters import cli  # noqa: F401, E402

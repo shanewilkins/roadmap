@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-09
+
 ### Fixed
 
 - Removed the unrelated `roadmap` PyPI distribution from runtime dependencies;
@@ -181,19 +183,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Progress reporting with visual charts and metrics
 - Risk identification with blocked issue tracking
 - Resource planning with team capacity analysis
-
----
-
-## [Unreleased]
-
-### Planned Features
-
-- **Real-time Collaboration**: WebSocket-based real-time updates
-- **Custom Chart Types**: User-configurable chart templates
-- **Advanced Filtering**: Complex query language for data analysis
-- **Integration Plugins**: Jira, Azure DevOps, GitLab integration
-- **Mobile Support**: Responsive web dashboard for mobile devices
-- **AI Insights**: Machine learning-based project predictions and recommendations
 
 ---
 
