@@ -6,11 +6,11 @@ build-backend = "hatchling.build"
 # ============================================================================
 # ROADMAP CLI - Enterprise Project Management Tool
 # ============================================================================
-# PRODUCTION INSTALLATION: uv sync
-#   Installs runtime dependencies (0 known CVEs)
+# USER INSTALLATION: uv tool install roadmap-cli
+#   Installs the CLI and runtime dependencies in an isolated environment.
 #
-# DEVELOPMENT INSTALLATION: uv sync
-#   Includes all dependencies including testing, linting, and documentation
+# DEVELOPMENT INSTALLATION: uv sync --all-extras --locked
+#   Installs the locked runtime and development dependency sets.
 # ============================================================================
 name = "roadmap-cli"
 version = "0.1.0"
@@ -48,7 +48,8 @@ classifiers = [
     "Topic :: Office/Business :: Scheduling",
     "Topic :: Utilities",
     "Environment :: Console",
-    "Operating System :: OS Independent"
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
     "click>=8.4.0,<9.0.0",
@@ -65,13 +66,7 @@ dependencies = [
     "opentelemetry-api>=1.42.0,<2.0.0",
     "opentelemetry-sdk>=1.42.0,<2.0.0",
     "opentelemetry-exporter-otlp>=1.42.0,<2.0.0",
-    "roadmap>=0.1",
-    "pydocstyle>=6.3.0",
-    "pytest>=9.1.1",
-    "pytest-xdist>=3.8.0",
-    "pyright>=1.1.411",
-    "ruff>=0.15.13",
-    "radon>=6.0.1",
+    "urllib3>=2.6.3,<3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -88,7 +83,7 @@ dev = [
     "radon>=6.0.1",
     "pytest-xdist>=3.8.0",
     "pytest-benchmark>=5.2.3",
-    "pyright>=1.1.409",
+    "pyright>=1.1.411",
     "pylint>=4.0.5",
     "sphinx>=9.1.0",
     "sphinx-rtd-theme>=3.1.0",
@@ -103,7 +98,8 @@ dev = [
 
 [project.urls]
 Homepage = "https://roadmap-cli.readthedocs.io"
-Repository = "https://github.com/roadmap-cli/roadmap"
+Repository = "https://github.com/shanewilkins/roadmap"
+Issues = "https://github.com/shanewilkins/roadmap/issues"
 Documentation = "https://roadmap-cli.readthedocs.io"
 
 [project.scripts]

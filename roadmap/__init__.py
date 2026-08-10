@@ -1,21 +1,16 @@
 """Roadmap CLI - A command line tool for creating and managing roadmaps."""
 
-import re
-from pathlib import Path
+from importlib.metadata import PackageNotFoundError, version
 
 # Define version BEFORE importing cli modules (they import __version__ from here)
-# Read version from pyproject.toml to keep a single source of truth
-_pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-if _pyproject_path.exists():
-    with open(_pyproject_path) as f:
-        content = f.read()
-        match = re.search(r'^version\s*=\s*["\']([^"\']+)["\']', content, re.MULTILINE)
-        if match:
-            __version__ = match.group(1)
-        else:
-            __version__ = "0.0.0"
-else:
-    __version__ = "0.0.0"
+# Keep a source-checkout fallback for direct imports. Installed wheels and sdists
+# obtain the authoritative version from their distribution metadata because the
+# repository-level pyproject.toml is not part of an installed wheel.
+__version__ = "0.1.0"
+try:
+    __version__ = version("roadmap-cli")
+except PackageNotFoundError:
+    __version__ = "0.1.0"
 
 # Now import cli (which will import __version__ from this module)
 from roadmap.adapters import cli  # noqa: F401, E402

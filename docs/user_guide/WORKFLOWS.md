@@ -342,7 +342,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install roadmap
-        run: pip install roadmap
+        run: pip install roadmap-cli
       - name: Validate roadmap
         run: roadmap health check
       - name: Check for blockers

@@ -1739,12 +1739,6 @@ wheels = [
 ]
 
 [[package]]
-name = "roadmap"
-version = "0.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6b/ae/30f6f6e0aed1933523152d7a01b5ca8f755339a6c31194c1df288c4fccff/roadmap-0.1.tar.gz", hash = "sha256:9ceb867558fa22fb32db1601741055411e56174b22a1e3bce3f72e87b07dedd9", size = 3236, upload-time = "2011-01-14T07:38:33.293Z" }
-
-[[package]]
 name = "roadmap-cli"
 version = "0.1.0"
 source = { editable = "." }
@@ -1757,19 +1751,13 @@ dependencies = [
     { name = "opentelemetry-exporter-otlp" },
     { name = "opentelemetry-sdk" },
     { name = "pydantic" },
-    { name = "pydocstyle" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-xdist" },
     { name = "pyyaml" },
-    { name = "radon" },
     { name = "requests" },
     { name = "rich" },
-    { name = "roadmap" },
-    { name = "ruff" },
     { name = "structlog" },
     { name = "tabulate" },
     { name = "toml" },
+    { name = "urllib3" },
 ]
 
 [package.optional-dependencies]
@@ -1825,27 +1813,20 @@ requires-dist = [
     { name = "opentelemetry-sdk", specifier = ">=1.42.0,<2.0.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.6.0" },
     { name = "pydantic", specifier = ">=2.13.4,<3.0.0" },
-    { name = "pydocstyle", specifier = ">=6.3.0" },
     { name = "pydocstyle", marker = "extra == 'dev'", specifier = ">=6.3.0" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=4.0.5" },
-    { name = "pyright", specifier = ">=1.1.411" },
-    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.409" },
-    { name = "pytest", specifier = ">=9.1.1" },
+    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.411" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.3" },
     { name = "pytest-aiohttp", marker = "extra == 'dev'", specifier = ">=1.1.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.3.0" },
     { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=5.2.3" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.1.0" },
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.15.1" },
-    { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.8.0" },
     { name = "pyyaml", specifier = ">=6.0.3,<7.0.0" },
-    { name = "radon", specifier = ">=6.0.1" },
     { name = "radon", marker = "extra == 'dev'", specifier = ">=6.0.1" },
     { name = "requests", specifier = ">=2.34.2,<3.0.0" },
     { name = "rich", specifier = ">=15.0.0,<16.0.0" },
-    { name = "roadmap", specifier = ">=0.1" },
-    { name = "ruff", specifier = ">=0.15.13" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.20" },
     { name = "sphinx", marker = "extra == 'dev'", specifier = ">=9.1.0" },
     { name = "sphinx-click", marker = "extra == 'dev'", specifier = ">=6.2.0" },
@@ -1853,6 +1834,7 @@ requires-dist = [
     { name = "structlog", specifier = ">=25.5.0,<27.0.0" },
     { name = "tabulate", specifier = ">=0.10.0,<1.0.0" },
     { name = "toml", specifier = ">=0.10.2,<1.0.0" },
+    { name = "urllib3", specifier = ">=2.6.3,<3.0.0" },
     { name = "vulture", marker = "extra == 'dev'", specifier = ">=2.16" },
 ]
 provides-extras = ["dev"]

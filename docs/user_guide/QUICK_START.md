@@ -4,24 +4,26 @@ Get up and running with Roadmap CLI in 5 minutes.
 
 ## Installation
 
-### Using Poetry (Recommended)
+### Using uv (Recommended)
 
 ```bash
-poetry add roadmap
-poetry run roadmap --version
-```
-
-### Using uv (Fast alternative)
-
-```bash
-uv pip install roadmap
+uv tool install roadmap-cli
 roadmap --version
 ```
 
-### Using pip
+### Using pipx
 
 ```bash
-pip install roadmap
+pipx install roadmap-cli
+roadmap --version
+```
+
+### Using pip in a virtual environment
+
+```bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+pip install roadmap-cli
 roadmap --version
 ```
 
@@ -44,8 +46,8 @@ Roadmap follows a **Git-like model:**
 
 **Example workflow (3 teammates):**
 ```bash
-# Alice installs once
-pip install roadmap
+# Each teammate installs the CLI once
+uv tool install roadmap-cli
 
 # In any project, Alice creates the roadmap
 cd my-project
@@ -56,7 +58,7 @@ git push
 
 # Bob and Carol pull the repo
 git pull
-# .roadmap/ is now on their machines (no install needed!)
+# .roadmap/ is now on their machines; their CLI reads the shared data
 
 # Bob creates an issue
 roadmap issue create "Fix login bug"

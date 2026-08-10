@@ -146,7 +146,7 @@ For production deployments, implement these security measures:
 
 ### Deployment Security
 
-- [ ] Use production installation (`poetry install --no-dev`)
+- [ ] Install the built `roadmap-cli` wheel in an isolated environment
 - [ ] Verify 0 CVEs with `pip-audit`
 - [ ] Deploy in container with read-only filesystem
 - [ ] Implement health checks and monitoring

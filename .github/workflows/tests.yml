@@ -7,6 +7,38 @@ on:
     branches: [ master, main ]
 
 jobs:
+  package-smoke:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.13', '3.14']
+
+    name: Package Python ${{ matrix.python-version }} on ${{ matrix.os }}
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v7
+
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: "0.12.3"
+
+    - name: Build wheel and source distribution
+      run: uv build --out-dir dist
+
+    - name: Smoke test wheel
+      run: python scripts/smoke_package.py dist/*.whl
+
+    - name: Smoke test source distribution
+      run: python scripts/smoke_package.py dist/*.tar.gz
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -28,7 +60,7 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
-        version: "latest"
+        version: "0.12.3"
 
     - name: Cache uv dependencies
       uses: actions/cache@v6
@@ -68,7 +100,7 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
-        version: "latest"
+        version: "0.12.3"
 
     - name: Cache uv dependencies
       uses: actions/cache@v6

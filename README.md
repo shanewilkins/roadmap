@@ -119,39 +119,43 @@ roadmap issue list --format plain | grep -i "performance"
 
 ## Requirements
 
-- **Python 3.12 or later** (3.12, 3.13)
+- **Python 3.13 or later** (3.13 and 3.14 are supported)
+- macOS or Linux
 - Git (for repository tracking and sync)
 - System keyring (for secure credential storage)
 
 ## Installation
 
-### Recommended: Poetry or uv
-
-**Poetry** (recommended for projects):
-
-```bash
-poetry add roadmap-cli
-```
-
-**uv** (fast, lightweight):
+### Recommended: uv tool
 
 ```bash
 uv tool install roadmap-cli
+roadmap --version
 ```
 
-### Pip (simple)
+### pipx
 
 ```bash
+pipx install roadmap-cli
+roadmap --version
+```
+
+### pip in a virtual environment
+
+```bash
+python3.13 -m venv .venv
+source .venv/bin/activate
 pip install roadmap-cli
+roadmap --version
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/shanemiller/roadmap.git
+git clone https://github.com/shanewilkins/roadmap.git
 cd roadmap
-poetry install
-poetry run roadmap --help
+uv sync --all-extras --locked
+uv run roadmap --help
 ```
 
 ## Quick Start (5 minutes)
@@ -214,6 +218,8 @@ roadmap today --filter priority=critical
 - [Contributing Guide](CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security Policy](SECURITY.md)
+- [Project Governance](docs/governance/README.md)
+- [Requirements Register](docs/requirements/README.md)
 
 ## Compare to Other Tools
 
@@ -360,7 +366,7 @@ See [Workflows.md](docs/user_guide/WORKFLOWS.md#Automating) for integration exam
 - **Questions?** See [FAQ.md](docs/user_guide/FAQ.md)
 - **Getting started?** See [Quick Start](docs/user_guide/QUICK_START.md)
 - **Ideas?** See [Future Features](docs/developer_notes/FUTURE_FEATURES.md)
-- **Bugs?** [Report on GitHub](https://github.com/shanemiller/roadmap/issues)
+- **Bugs?** [Report on GitHub](https://github.com/shanewilkins/roadmap/issues)
 - **Contributing?** [Join us!](CONTRIBUTING.md) (coming soon)
 
 ## License

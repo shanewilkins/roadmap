@@ -1,268 +1,146 @@
 # Installation Guide
 
-## Quick Start
+Roadmap CLI supports Python 3.13 and 3.14 on macOS and Linux. Windows is not
+currently a supported runtime because parts of the local locking implementation
+use POSIX APIs.
 
-### Production Installation (Recommended for Users)
+The distribution name is `roadmap-cli`; the command it installs is `roadmap`.
+Do not install the unrelated `roadmap` distribution from PyPI.
 
-```bash
+## Install for regular use
 
-# Using pip (simplest)
+An isolated tool environment avoids dependency conflicts with application
+projects.
 
-pip install roadmap-cli
-
-# Using Poetry (ensures reproducible builds)
-
-poetry install --no-dev
-
-```text
-
-**Result:** Lightweight, secure installation with **0 known CVEs**
-
-### Development Installation
+### uv tool (recommended)
 
 ```bash
+uv tool install roadmap-cli
+roadmap --version
+roadmap --help
+```
 
-# Install with all development tools
-
-poetry install
-
-# Or if using pip with extras
-
-pip install -e ".[dev]"
-
-```text
-
-**Includes:** Testing frameworks, linters, documentation tools, pre-commit hooks
-
-## Why Two Installation Modes?
-
-### Production (--no-dev)
-
-- **50 packages** installed
-- **0 CVEs** (verified with pip-audit)
-- Minimal footprint, faster installation
-- All runtime functionality included
-
-### Development
-
-- **80+ packages** installed
-- Includes: pytest, ruff, pyright, sphinx, mkdocs
-- Pre-commit hooks for code quality
-- Documentation tools for development
-
-## Production Installation Details
-
-When you run `poetry install --no-dev` (or `pip install .`), you get:
-
-✅ **Core Runtime Dependencies:**
-
-- Click (CLI framework)
-- Pydantic (data validation)
-- PyYAML (config files)
-- Requests + aiohttp (HTTP)
-- Pandas + matplotlib + plotly (data visualization)
-- Keyring (credential storage)
-- GitPython (git integration)
-- Dynaconf (configuration management)
-
-❌ **Excluded Dev Dependencies:**
-
-- pytest, pytest-cov, pytest-asyncio (testing)
-- ruff, pyright (linting/type checking)
-- sphinx, mkdocs (documentation)
-- pre-commit (git hooks)
-
-## Configuration Files
-
-### pyproject.toml
-
-- Contains production dependency specification
-- Marked with installation instructions
-- Use `poetry install --no-dev` for production
-
-### setup.cfg
-
-- Pip configuration file
-- Supports standard `pip install .` workflow
-- Ensures pip defaults to production-only
-
-### .env.production
-
-- Reference template for production deployments
-- Copy to `.env` for production settings
-- Includes recommended production flags
-
-## Verification
-
-To verify your installation has no vulnerabilities:
+Upgrade or remove it with:
 
 ```bash
+uv tool upgrade roadmap-cli
+uv tool uninstall roadmap-cli
+```
 
-# Install pip-audit
+### pipx
 
-pip install pip-audit
+```bash
+pipx install roadmap-cli
+roadmap --version
+```
 
-# For production installations
+### pip in a virtual environment
 
-pip-audit
+```bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install roadmap-cli
+roadmap --version
+```
 
-# Expected output: No known vulnerabilities found
+Only runtime libraries are installed by these commands. Test, lint, type-check,
+and documentation tools are development dependencies and are not part of a
+normal user installation.
 
-```text
+## Install from source for development
 
-## Docker Deployment
+Install [uv](https://docs.astral.sh/uv/), then use the locked development
+environment:
 
-For Docker production builds:
+```bash
+git clone https://github.com/shanewilkins/roadmap.git
+cd roadmap
+uv sync --all-extras --locked
+uv run roadmap --version
+uv run roadmap --help
+```
+
+Run development commands through `uv run` so they use the repository's managed
+environment:
+
+```bash
+uv run pytest -n 0 tests/integration/cli/test_cli_root_commands.py
+uv run ruff check --config config/ruff.toml roadmap tests
+```
+
+## Install a locally built artifact
+
+Build both release artifacts outside the source package and install the wheel in
+a fresh environment:
+
+```bash
+uv build
+python3.13 -m venv /tmp/roadmap-package-check
+/tmp/roadmap-package-check/bin/python -m pip install dist/roadmap_cli-*.whl
+/tmp/roadmap-package-check/bin/roadmap --help
+/tmp/roadmap-package-check/bin/roadmap --version
+```
+
+The repository's package smoke script performs a stronger check against either a
+wheel or source distribution. It installs the artifact in a temporary virtual
+environment, removes source-tree import overrides, and exercises help, version,
+initialization, and an issue lifecycle:
+
+```bash
+python scripts/smoke_package.py dist/roadmap_cli-*.whl
+python scripts/smoke_package.py dist/roadmap_cli-*.tar.gz
+```
+
+## Container installation
+
+Build the project before the final image so the runtime image receives the same
+wheel that is tested and released:
 
 ```dockerfile
-FROM python:3.12-slim
+FROM python:3.13-slim AS builder
+WORKDIR /src
+COPY . .
+RUN python -m pip install build && python -m build
 
-WORKDIR /app
-
-# Copy only needed files
-
-COPY pyproject.toml setup.cfg README.md LICENSE.md ./
-
-# Install production only
-
-RUN pip install --no-cache-dir .
-
-# Or with Poetry
-
-# RUN pip install poetry && poetry install --no-dev
-
+FROM python:3.13-slim
+COPY --from=builder /src/dist/roadmap_cli-*.whl /tmp/
+RUN python -m pip install --no-cache-dir /tmp/roadmap_cli-*.whl \
+    && rm /tmp/roadmap_cli-*.whl
 ENTRYPOINT ["roadmap"]
-
-```text
-
-## CI/CD Integration
-
-### GitHub Actions Example
-
-```yaml
-name: Production Build
-
-on: [push, pull_request]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      # Verify security for production
-
-      - name: Audit dependencies
-        run: |
-          pip install pip-audit
-          PIPAPI_PYTHON_LOCATION=$(which python) pip-audit
-
-      # Install production
-
-      - name: Install production
-        run: pip install .
-
-```text
+CMD ["--help"]
+```
 
 ## Troubleshooting
 
-### Q: I want to use development tools but keep my environment clean
+### `roadmap` imports `roadmap.py` or reports that `roadmap` is not a package
 
-A: Create a separate virtual environment for development:
-
-```bash
-
-# Development environment
-
-python -m venv venv-dev
-source venv-dev/bin/activate
-poetry install
-
-```text
+An unrelated distribution named `roadmap` may be installed in the environment.
+Inspect and remove it, then reinstall this project by its distribution name:
 
 ```bash
+python -m pip show roadmap
+python -m pip uninstall roadmap
+python -m pip install --force-reinstall roadmap-cli
+```
 
-# Production environment
+### The command is not found
 
-python -m venv venv-prod
-source venv-prod/bin/activate
-poetry install --no-dev
-
-```text
-
-### Q: How do I know which mode I'm in?
-
-A: Check installed packages:
+For `uv tool`, ensure the tool directory is on `PATH`:
 
 ```bash
+uv tool update-shell
+```
 
-# Production - 50 packages
+For a virtual environment, activate it before running `roadmap`.
 
-pip list | wc -l
-
-```text
-
-```bash
-
-# Development - 80+ packages
-
-pip list | wc -l
-
-```text
-
-Or look for test/dev tools:
+### Verify which package and version are running
 
 ```bash
-pip show pytest  # Not found in production
+roadmap --version
+python -c 'import roadmap; print(roadmap.__file__, roadmap.__version__)'
+python -m pip show roadmap-cli
+```
 
-pip show ruff    # Not found in production
-
-```text
-
-### Q: Can I switch from dev to production?
-
-A: Yes, create a fresh environment:
-
-```bash
-
-# Remove old packages
-
-pip uninstall -y -r <(pip freeze)
-
-```text
-
-```bash
-
-# Or start fresh
-
-python -m venv venv-new
-source venv-new/bin/activate
-poetry install --no-dev
-
-```text
-
-## Security Notes
-
-- Production installations have **0 known CVEs**
-- Development installations include tools with CVEs (expected for dev)
-- Regular `pip-audit` checks recommended in CI/CD
-- See `docs/PRODUCTION_ENVIRONMENT_VERIFICATION.md` for verification details
-
-## Version Requirements
-
-- **Python:** 3.10, 3.11, 3.12 (tested and supported)
-- **Poetry:** 1.2+ (recommended for reproducible builds)
-- **Pip:** 21.0+ (standard pip install support)
-
----
-
-For more information, see:
-
-- `docs/PRODUCTION_ENVIRONMENT_VERIFICATION.md` - Security verification report
-- `pyproject.toml` - Dependency specifications
-- `.env.production` - Production configuration template
+If these locations or versions disagree, create a fresh isolated environment and
+reinstall `roadmap-cli`.

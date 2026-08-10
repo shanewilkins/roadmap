@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Removed the unrelated `roadmap` PyPI distribution from runtime dependencies;
+  it installed a `roadmap.py` module that shadowed this project's package and
+  broke the `roadmap` console command.
+- Moved test, lint, type-check, complexity, and documentation tools out of the
+  runtime dependency set.
+- Read the installed version from distribution metadata so wheels report the
+  same version as their package metadata.
+- Added clean wheel and source-distribution smoke tests for imports, `--help`,
+  `--version`, initialization, and issue creation/listing.
+- Corrected supported Python/platform declarations, repository URLs, and
+  installation guidance.
+
 ## [0.1.0] - 2026-05-18
 
 ### Changed

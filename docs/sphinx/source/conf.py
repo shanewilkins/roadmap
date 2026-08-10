@@ -3,7 +3,8 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, "/Users/shane/roadmap")
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 # -- Project information -----------------------------------------------------
 project = "Roadmap CLI"
@@ -14,7 +15,7 @@ author = "Roadmap CLI Team"
 # Get version from pyproject.toml
 def get_version():
     """Extract version from pyproject.toml."""
-    pyproject = Path(__file__).parent.parent.parent.parent / "pyproject.toml"
+    pyproject = PROJECT_ROOT / "pyproject.toml"
     if pyproject.exists():
         with open(pyproject) as f:
             for line in f:

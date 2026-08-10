@@ -97,7 +97,7 @@ repos:
     hooks:
       - id: pydocstyle
         name: pydocstyle - docstring validation
-        entry: poetry run pydocstyle --convention=google roadmap
+        entry: uv run --locked pydocstyle --convention=google roadmap
         language: system
         types: [python]
         pass_filenames: false
