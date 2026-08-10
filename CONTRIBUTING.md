@@ -30,17 +30,16 @@ uv run roadmap --help
 Run these before opening a pull request.
 
 ```bash
-uv run ruff format --config config/ruff.toml roadmap tests
-uv run ruff check --config config/ruff.toml roadmap tests
-uv run pyright
-uv run pytest -q
+uv run --locked ruff format --config config/ruff.toml roadmap tests
+uv run --locked ruff check --config config/ruff.toml roadmap tests
+uv run --locked pyright
+uv run --locked pytest -q
 ```
 
-Optional full checks.
+Optional security check.
 
 ```bash
-uv run bandit -r roadmap --severity-level=high
-bash scripts/lint-imports-wrapper.sh
+uv run --locked bandit -c config/bandit.toml -r roadmap --severity-level=high
 ```
 
 ## Pull Request Guidelines

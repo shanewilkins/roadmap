@@ -2,7 +2,7 @@
 
 # Phase 7a: Error Handling & Logging Validation
 # These rules detect silent failures and error handling anti-patterns
-# that our structural linters (ruff, pylint) cannot catch
+# that Ruff and type checking cannot catch
 
 rules:
   # Rule 1: Exception handlers with pass statement (silent failure)

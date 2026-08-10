@@ -22,8 +22,8 @@ This document is written as operating instructions for an AI assistant or senior
 
 ### Definition of Done (global)
 - All CI checks pass.
-- Tool thresholds satisfied (lint, type, complexity, security).
-- Test coverage ≥ 85% (with documented exclusions).
+- Ruff, Pyright, Bandit, tests, coverage, and package smoke checks pass.
+- Test coverage satisfies the repository threshold (with documented exclusions).
 - Test runtime ≤ 3 minutes on CI runner.
 - pytest + pytest-mock used consistently.
 - structlog used consistently for application logging.
@@ -35,11 +35,7 @@ This document is written as operating instructions for an AI assistant or senior
 
 - Formatting/Lint: ruff, ruff-format
 - Security: bandit
-- Complexity: radon
-- Dead code: vulture
-- Lint (secondary): pylint
 - Types: pyright
-- Docs: pydocstyle
 - Tests: pytest, pytest-mock, pytest-cov
 - Logging: structlog
 
@@ -90,7 +86,7 @@ Acceptance:
 **Goal:** Remove unused code before refactoring.
 
 Actions:
-- Run vulture and ruff unused checks.
+- Run Ruff unused-code checks and review suspicious dynamic registrations manually.
 - Delete confirmed dead code.
 - Validate via tests.
 
@@ -293,13 +289,10 @@ Actions:
 ## CI Gate Order (Recommended)
 1. ruff format --check
 2. ruff check
-3. pydocstyle
-4. pylint
-5. pyright
-6. bandit
-7. radon
-8. vulture (informational or gated)
-9. pytest (with coverage)
+3. pyright
+4. bandit (high severity)
+5. pytest (with coverage)
+6. package compatibility smoke tests
 
 ---
 

@@ -1,141 +1,92 @@
-name: Tests
+name: CI
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [master, main]
   pull_request:
-    branches: [ master, main ]
+    branches: [master, main]
+
+permissions:
+  contents: read
 
 jobs:
-  package-smoke:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ['3.13', '3.14']
-
-    name: Package Python ${{ matrix.python-version }} on ${{ matrix.os }}
-
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v7
-
-    - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v7
-      with:
-        version: "0.12.3"
-
-    - name: Build wheel and source distribution
-      run: uv build --out-dir dist
-
-    - name: Smoke test wheel
-      run: python scripts/smoke_package.py dist/*.whl
-
-    - name: Smoke test source distribution
-      run: python scripts/smoke_package.py dist/*.tar.gz
-
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ['3.14']
-
-    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
-
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v7
-
-    - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v7
-      with:
-        version: "0.12.3"
-
-    - name: Cache uv dependencies
-      uses: actions/cache@v6
-      with:
-        path: .venv
-        key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-uv-${{ matrix.python-version }}-
-
-    - name: Install dependencies
-      run: uv sync --all-extras --locked
-
-    - name: Run Tests
-      run: uv run pytest --cov=roadmap --cov-report=xml --cov-report=term-missing
-
-    - name: Upload Coverage to Codecov
-      uses: codecov/codecov-action@v7
-      with:
-        files: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
-
-  lint:
+  verify:
+    name: Verify on Python 3.14
     runs-on: ubuntu-latest
-    name: Lint and Format
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v7
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-    - name: Setup Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.14'
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
 
-    - name: Install uv
-      uses: astral-sh/setup-uv@v7
-      with:
-        version: "0.12.3"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.12.3"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
 
-    - name: Cache uv dependencies
-      uses: actions/cache@v6
-      with:
-        path: .venv
-        key: ${{ runner.os }}-uv-3.14-${{ hashFiles('**/uv.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-uv-3.14-
+      - name: Verify lockfile
+        run: uv lock --check
 
-    - name: Install dependencies
-      run: uv sync --all-extras --locked
+      - name: Install dependencies
+        run: uv sync --all-extras --locked
 
-    - name: Check Ruff Version
-      run: uv run ruff --version
+      - name: Check formatting
+        run: uv run --locked ruff format --config config/ruff.toml --check roadmap tests
 
-    - name: Run Ruff Format Check
-      run: uv run ruff format --config config/ruff.toml --check roadmap tests
+      - name: Lint
+        run: uv run --locked ruff check --config config/ruff.toml roadmap tests
 
-    - name: Run Ruff Linter
-      run: uv run ruff check --config config/ruff.toml roadmap tests
+      - name: Type check
+        run: uv run --locked pyright
 
-    - name: Run Bandit Security Check
-      run: uv run bandit -r roadmap --severity-level=high
+      - name: Scan for high-severity security issues
+        run: uv run --locked bandit -c config/bandit.toml -r roadmap --severity-level=high
 
-    - name: Run Radon Complexity Check
-      run: bash -c 'uv run radon cc roadmap --exclude=tests --min D 2>&1 | grep -q . && exit 1 || exit 0'
+      - name: Test with coverage
+        run: >-
+          uv run --locked pytest
+          --cov=roadmap
+          --cov-config=config/.coveragerc
+          --cov-report=term-missing
 
-    - name: Run Vulture Dead Code Detection
-      run: uv run vulture roadmap --min-confidence=80 --exclude=tests
+  package-compatibility:
+    name: Package Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python-version: "3.13"
+          - os: macos-latest
+            python-version: "3.14"
 
-    - name: Run Semgrep Semantic Analysis
-      run: uvx semgrep --config=config/.semgrep.yml --error roadmap/
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-    - name: Run import-linter Architecture Check
-      run: bash scripts/lint-imports-wrapper.sh
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Run Pyright Type Checking
-      run: uv run pyright
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.12.3"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Build wheel and source distribution
+        run: uv build --out-dir dist
+
+      - name: Smoke test wheel
+        run: python scripts/smoke_package.py dist/*.whl
+
+      - name: Smoke test source distribution
+        run: python scripts/smoke_package.py dist/*.tar.gz

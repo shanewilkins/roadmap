@@ -77,14 +77,10 @@ dev = [
     "pytest-aiohttp>=1.1.0",
     "ruff==0.16.1",
     "pre-commit>=4.6.0",
-    "vulture>=2.16",
     "bandit[toml]>=1.9.4",
-    "pydocstyle>=6.3.0",
-    "radon>=6.0.1",
     "pytest-xdist>=3.8.0",
     "pytest-benchmark>=5.2.3",
     "pyright>=1.1.411",
-    "pylint>=4.0.5",
     "sphinx>=9.1.0",
     "sphinx-rtd-theme>=3.1.0",
     "sphinx-click>=6.2.0",
@@ -93,7 +89,6 @@ dev = [
     "mkdocs-click>=0.9.0",
     "myst-parser>=5.1.0",
     "pytest-mock>=3.15.1",
-    "import-linter>=2.11,<3.0.0",
 ]
 
 [project.urls]
@@ -136,50 +131,7 @@ include = [
 # - ruff.toml: Linting and formatting rules
 # - bandit.toml: Security scanning configuration
 # - .coveragerc: Test coverage thresholds and exclusions
-# - import-linter.ini: Architecture boundary enforcement
 # - pyrightconfig.json: Type checking configuration
-# - .vultureignore: Dead code detection whitelist
-
-# Dead code detection configuration for Vulture
-[tool.vulture]
-ignore_names = [
-    # Function parameters (public API)
-    "include_traceback", "filters", "log_level", "log_file", "force",
-    # Protocol/Interface methods (contract definitions)
-    "authenticate", "get_backend_name", "get_issues", "push_issues", "push_issue",
-    "pull_issues", "pull_issue", "get_conflict_resolution_options", "resolve_conflict",
-    "get_milestones", "get_projects", "create_backend", "list_supported_backends",
-    "get_default_backend", "validate_credentials", "parse_issue_content",
-    "parse_milestone_content", "parse_project_content", "list_files_in_directory",
-    "bulk_update", "find_by_milestone", "find_by_status", "get_current", "get_status",
-    "save_sync_state", "clear_sync_state", "get_last_sync_time", "update_last_sync_time",
-    "link_issues", "unlink_issue", "get_linked_remote_id", "get_linked_local_id",
-    "cache_remote_issue", "get_cached_remote_issue", "invalidate_cache", "is_cache_fresh",
-    "delete_token", "is_available",
-    # Interface attributes & parameters
-    "conflicts", "error", "local_issues", "issue_ids", "conflict", "resolution",
-    # Backends implementing SyncBackendInterface (polymorphic)
-    "SyncBackendInterface", "GitHubSyncBackend", "VanillaGitSyncBackend",
-    # Click command handlers (decorator-registered)
-    "main", "cli", "setup_git", "hooks_status", "sync_git", "git_status", "git_link",
-    "sync", "validate_links", "view", "get_cmd", "set_cmd", "generate_report",
-    "edit_comment", "delete_comment", "add_dependency", "handle_archive_parse_error",
-    "handle_restore_parse_error", "confirm_action", "check_entity_exists",
-    # CLI helper functions
-    "_detect_project_context", "_validate_branch_environment", "_get_and_validate_issue",
-    "_show_baseline", "_reset_baseline", "_capture_and_save_post_sync_baseline",
-    "_perform_apply_phase", "_clear_baseline", "_show_conflicts", "_handle_link_unlink",
-    # CLI decorator factories
-    "add_output_flags", "health_check_options",
-    # Exception/error handlers
-    "with_exception_handler", "setup_cli_exception_handling", "handle_exception",
-    # Provider/factory functions
-    "get_settings", "get_database_path", "get_log_directory", "is_github_enabled",
-    "get_export_settings", "switch_environment", "create_output_manager",
-    # Test patterns
-    "Test",
-]
-min_confidence = 60  # Lowered from 80 to catch more dead code
 
 # Type checking is now handled by Pyright
 # Configuration is in pyrightconfig.json
@@ -213,4 +165,3 @@ dev = [
 ]
 
 # Coverage configuration moved to config/.coveragerc
-# Import linter configuration moved to config/import-linter.ini

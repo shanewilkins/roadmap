@@ -368,9 +368,9 @@ Common Development Tasks
 
 .. code-block:: bash
 
-    poetry run ruff check roadmap/
-    poetry run mypy roadmap/
-    poetry run pylint roadmap/
+    uv run --locked ruff check --config config/ruff.toml roadmap tests
+    uv run --locked pyright
+    uv run --locked pytest -q
 
 Getting Help
 ============
