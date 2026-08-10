@@ -7,8 +7,8 @@ Get up and running with Roadmap CLI in just 5 minutes.
 What is Roadmap CLI?
 ====================
 
-Roadmap CLI is an enterprise-grade command-line tool for managing project
-roadmaps with GitHub integration, data visualization, and advanced analytics.
+Roadmap CLI is a git-native command-line tool for managing project roadmaps
+with local files, structured reporting, and optional GitHub integration.
 
 Think of it as a structured way to plan projects using:
 
