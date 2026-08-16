@@ -61,7 +61,7 @@ cohesion, but they do not create new architectural layers.
 | Logging and optional telemetry mechanisms | `roadmap.adapters.outbound.telemetry` |
 | Concrete construction currently mixed into coordination | `roadmap.bootstrap` |
 | `common` utilities | Domain, Application, or the owning adapter according to meaning |
-| Provider synchronization, baselines, reconciliation, and sync metrics | Remove under ADR-0002 |
+| Remote/provider synchronization, baselines, reconciliation, and sync metrics | Remove under ADR-0002 |
 
 The guide is an ownership map, not authorization for mechanical directory moves.
 Each module is classified by behavior before relocation.
@@ -120,6 +120,26 @@ SQLite remains the initial derived projection if it continues to provide value.
 The refactor does not redesign or replace it merely to prove adapter
 replaceability.
 
+### Projection maintenance is retained
+
+Removing synchronization means removing remote/provider reconciliation between
+separately writable sources. It does not remove the one-way pipeline that keeps
+SQLite or another approved local index current from canonical documents.
+
+- Canonical Markdown/YAML documents are the only input authority.
+- A successful canonical commit is followed by projection refresh.
+- Manual edits and Git-authored changes are detected through content identity
+  and incorporated by incremental refresh or full rebuild.
+- Projection corruption, deletion, or schema incompatibility triggers rebuild
+  without changing canonical content.
+- Projection failure marks derived state stale and does not undo a successful
+  canonical write.
+- Target code calls this projection refresh, projection rebuild, or index
+  maintenance rather than synchronization.
+
+Existing local file-to-SQLite behavior may be reused after it is separated from
+remote sync abstractions and made to satisfy these rules.
+
 ## Compatibility inventory
 
 Complete this inventory before changing the first affected behavior. Each item
@@ -149,7 +169,7 @@ Replace, Remove, or Internal.
 
 ### Remove deliberately
 
-- Sync commands and sync-backend selection.
+- Remote/provider sync commands and sync-backend selection.
 - GitHub or other provider entity replication.
 - The no-op Git synchronization backend.
 - Synchronization baselines, checkpoints, merge plans, reconciliation, duplicate
@@ -226,9 +246,10 @@ filesystem names alone and does not claim to prove semantic design quality.
    entities, projection rebuild, and ADR-0005 recovery.
 8. **Migrate lifecycle behavior.** Replace physical archive moves with ADR-0008
    metadata and explicit query scopes.
-9. **Remove synchronization.** Delete commands, services, adapters, persistence,
-   configuration, metrics, and tests whose only purpose is the rejected
-   application sync mechanism.
+9. **Remove remote/provider synchronization.** Delete commands, services,
+   adapters, persistence, configuration, metrics, and tests whose only purpose
+   is reconciliation with a separately writable remote source. Retain and
+   re-home canonical-to-SQLite projection refresh and rebuild behavior.
 10. **Dissolve legacy packages.** Assign remaining `common`, `core`,
     `infrastructure`, and `presentation` modules to their owners.
 11. **Close enforcement.** Remove the final baseline entries and verify no
@@ -280,7 +301,8 @@ The architecture refactor is complete when:
 - canonical data and lifecycle behavior conform to ADRs 0003, 0005, 0008, and
   0010;
 - configuration conforms to ADR-0009;
-- the superseded application synchronization mechanism is absent;
+- the superseded remote/provider reconciliation mechanism is absent;
+- retained local projections refresh or rebuild only from canonical files;
 - every retained projection is rebuildable from canonical files;
 - compatibility fixtures and migration tests pass on supported platforms; and
 - legacy architectural packages no longer exist as catch-all ownership zones.

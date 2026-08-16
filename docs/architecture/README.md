@@ -24,3 +24,7 @@ Implementation changes require separate, explicitly scoped work.
 ## Approved implementation specification
 
 - [Refactor implementation](refactor-implementation.md)
+
+## Proposed delivery plan
+
+- [Roadmap 0.2 architecture simplification plan](roadmap-0.2.md)

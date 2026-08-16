@@ -47,6 +47,27 @@ Specifically:
   state. It must be rebuildable from canonical roadmap files and must not become
   a competing source of truth.
 
+### Terminology boundary
+
+In this decision, **synchronization** means bidirectional or provider-facing
+reconciliation between separately writable sources. It does not mean maintaining
+a local derived projection from canonical Roadmap files.
+
+Roadmap retains a one-way canonical-to-projection pipeline for SQLite and any
+other approved local index:
+
+```text
+canonical Markdown/YAML -> validate -> refresh or rebuild derived projection
+```
+
+Projection maintenance is permitted and required where it supports retained
+queries. Canonical documents always win; projection data never flows back into
+canonical documents as authority. A canonical write commits before its
+projection refresh, projection failure marks derived state stale, and manual or
+Git-authored canonical changes are detected and incorporated through incremental
+refresh or full rebuild. This behavior should be named projection refresh,
+projection rebuild, or index maintenance in target code rather than `sync`.
+
 Roadmap may inspect local repository information through a narrow
 Application-owned port when a product feature genuinely needs it. Examples
 include the current branch, working-tree status, or commit metadata. This is
@@ -71,8 +92,10 @@ because provider code already exists.
 
 ## Architectural placement
 
-There is no synchronization subsystem in the target Application zone selected
-by ADR-0001.
+There is no remote or provider-reconciliation synchronization subsystem in the
+target Application zone selected by ADR-0001. Application may own narrow ports
+for refreshing and rebuilding local derived projections under ADR-0003; those
+ports do not expose SQLite as a second writable source.
 
 If repository inspection is retained, Application owns a narrow port for the
 specific information it needs and an outbound Git adapter implements that port.
@@ -133,4 +156,3 @@ and failure recovery while adding little capability beyond Git itself.
 This ADR fixes the product and architecture decision. It does not remove the
 existing synchronization implementation, commands, tests, configuration, or
 documentation. That cleanup requires a separately reviewed refactor plan.
-
