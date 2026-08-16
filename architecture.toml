@@ -1,0 +1,80 @@
+[architecture]
+version = 1
+current_phase = 2
+final_phase = 14
+production_root = "roadmap"
+baseline = "architecture-baseline.toml"
+
+[[zones]]
+id = "domain"
+prefix = "roadmap.domain"
+
+[[zones]]
+id = "application"
+prefix = "roadmap.application"
+
+[[zones]]
+id = "inbound"
+prefix = "roadmap.adapters.inbound"
+boundary_depth = 1
+
+[[zones]]
+id = "outbound"
+prefix = "roadmap.adapters.outbound"
+boundary_depth = 1
+
+[[zones]]
+id = "bootstrap"
+prefix = "roadmap.bootstrap"
+
+[[rules]]
+id = "domain-dependencies"
+kind = "zone_dependencies"
+source_zone = "domain"
+allowed_zones = ["domain"]
+allow_standard_library = true
+allow_external = false
+
+[[rules]]
+id = "application-dependencies"
+kind = "zone_dependencies"
+source_zone = "application"
+allowed_zones = ["application", "domain"]
+allow_standard_library = true
+allow_external = false
+
+[[rules]]
+id = "inbound-adapter-dependencies"
+kind = "adapter_dependencies"
+source_zone = "inbound"
+allowed_zones = ["application", "domain"]
+allow_standard_library = true
+allow_external = true
+
+[[rules]]
+id = "outbound-adapter-dependencies"
+kind = "adapter_dependencies"
+source_zone = "outbound"
+allowed_zones = ["application", "domain"]
+allow_standard_library = true
+allow_external = true
+
+[[rules]]
+id = "bootstrap-only-adapter-wiring"
+kind = "bootstrap_only_wiring"
+
+[[rules]]
+id = "zone-cycle"
+kind = "zone_cycle"
+
+[[rules]]
+id = "removed-namespace"
+kind = "removed_namespace"
+active_phase = 11
+namespaces = [
+  "roadmap.adapters.github",
+  "roadmap.adapters.sync",
+  "roadmap.core.services.baseline",
+  "roadmap.core.services.github",
+  "roadmap.core.services.sync",
+]

@@ -32,6 +32,7 @@ Run these before opening a pull request.
 ```bash
 uv run --locked ruff format --config config/ruff.toml roadmap tests
 uv run --locked ruff check --config config/ruff.toml roadmap tests
+uv run --locked python tests/policy/architecture_checker.py
 uv run --locked pyright
 uv run --locked pytest -q
 ```
@@ -52,7 +53,8 @@ uv run --locked bandit -c config/bandit.toml -r roadmap --severity-level=high
 
 ## Coding Guidelines
 
-- Follow existing architecture boundaries.
+- Follow `architecture.toml`; do not add or broaden an
+  `architecture-baseline.toml` exception to bypass a dependency violation.
 - Keep functions readable and avoid unnecessary complexity.
 - Prefer explicit types for new code.
 - Preserve backward compatibility unless the change is intentionally breaking.

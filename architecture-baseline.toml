@@ -1,0 +1,65 @@
+version = 1
+
+[[violations]]
+source = "roadmap.application.services.deduplicate_service"
+target = "roadmap.common.observability.instrumentation"
+rule = "application-dependencies"
+reason = "Legacy remote-deduplication orchestration still owns concrete tracing."
+owner = "Maintainer"
+removal_phase = 11
+
+[[violations]]
+source = "roadmap.application.services.deduplicate_service"
+target = "roadmap.common.services"
+rule = "application-dependencies"
+reason = "Legacy remote-deduplication orchestration still emits through a concrete logger."
+owner = "Maintainer"
+removal_phase = 11
+
+[[violations]]
+source = "roadmap.application.services.deduplicate_service"
+target = "roadmap.core.domain.issue"
+rule = "application-dependencies"
+reason = "The legacy remote-deduplication service predates the target Domain namespace."
+owner = "Maintainer"
+removal_phase = 11
+
+[[violations]]
+source = "roadmap.application.services.deduplicate_service"
+target = "roadmap.core.models.sync_models"
+rule = "application-dependencies"
+reason = "The legacy service directly consumes provider synchronization models."
+owner = "Maintainer"
+removal_phase = 11
+
+[[violations]]
+source = "roadmap.application.services.deduplicate_service"
+target = "roadmap.core.repositories"
+rule = "application-dependencies"
+reason = "The legacy service imports a repository abstraction outside Application-owned ports."
+owner = "Maintainer"
+removal_phase = 11
+
+[[violations]]
+source = "roadmap.application.services.deduplicate_service"
+target = "roadmap.core.services.sync.duplicate_detector"
+rule = "application-dependencies"
+reason = "The legacy service directly depends on remote synchronization machinery."
+owner = "Maintainer"
+removal_phase = 11
+
+[[violations]]
+source = "roadmap.application.services.deduplicate_service"
+target = "structlog"
+rule = "application-dependencies"
+reason = "The legacy service imports a concrete logging framework inside Application."
+owner = "Maintainer"
+removal_phase = 11
+
+[[violations]]
+source = "roadmap.domain.validation"
+target = "roadmap.core.services.validators"
+rule = "domain-dependencies"
+reason = "This transitional wrapper delegates filesystem validation outside the pure Domain."
+owner = "Maintainer"
+removal_phase = 4

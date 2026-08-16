@@ -37,3 +37,4 @@ Implementation changes require separate, explicitly scoped work.
 - [Phase 0 unchanged baseline — 2026-08-16](checkpoints/phase-0-baseline-2026-08-16.md)
 - [Phase 0A lifecycle repair — 2026-08-16](checkpoints/phase-0a-lifecycle-repair-2026-08-16.md)
 - [Phase 1 public contract — 2026-08-16](checkpoints/phase-1-public-contract-2026-08-16.md)
+- [Phase 2 architecture enforcement — 2026-08-16](checkpoints/phase-2-architecture-enforcement-2026-08-16.md)

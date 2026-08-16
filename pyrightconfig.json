@@ -10,7 +10,8 @@
     "build",
     ".venv",
     ".venv/**",
-    "htmlcov"
+    "htmlcov",
+    "tests/policy/fixtures/architecture/invalid"
   ],
   "pythonVersion": "3.13",
   "pythonPlatform": "All",
@@ -27,8 +28,5 @@
   "reportOptionalSubscript": "error",
   "useLibraryCodeForTypes": true,
   "venvPath": ".",
-  "extraPaths": [
-    "./roadmap",
-    "./.venv/lib/python3.14/site-packages"
-  ]
+  "venv": ".venv"
 }
