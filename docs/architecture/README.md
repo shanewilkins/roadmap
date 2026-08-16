@@ -25,6 +25,12 @@ Implementation changes require separate, explicitly scoped work.
 
 - [Refactor implementation](refactor-implementation.md)
 
-## Proposed delivery plan
+## Delivery plans
 
 - [Roadmap 0.2 architecture simplification plan](roadmap-0.2.md)
+- [Roadmap 0.2 refactor execution plan](refactor-execution-plan.md)
+
+## Execution checkpoints
+
+- [Phase 0 unchanged baseline — 2026-08-16](checkpoints/phase-0-baseline-2026-08-16.md)
+- [Phase 0A lifecycle repair — 2026-08-16](checkpoints/phase-0a-lifecycle-repair-2026-08-16.md)

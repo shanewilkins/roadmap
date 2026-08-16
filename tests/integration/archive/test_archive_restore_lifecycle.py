@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from roadmap.adapters.cli import main
+from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.common.constants import ProjectStatus
 from tests.fixtures.integration_helpers import IntegrationTestBase
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
@@ -78,7 +79,7 @@ class TestIssueArchiveRestore:
 
     def test_archive_single_done_issue(self, roadmap_with_issues_and_milestones):
         """Test archiving a single done issue."""
-        cli_runner, _core, issues, _temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
 
         done_issue = next(i for i in issues if i["status"] == "closed")
 
@@ -88,6 +89,23 @@ class TestIssueArchiveRestore:
         )
 
         assert result.exit_code == 0
+
+        archived_file = next(
+            (Path(temp_dir) / ".roadmap" / "archive" / "issues").rglob(
+                f"{done_issue['id']}*.md"
+            )
+        )
+        assert IssueParser.parse_issue_file(archived_file).archived is True
+        row = (
+            core.db._get_connection()
+            .execute(
+                "SELECT archived, archived_at FROM issues WHERE id = ?",
+                (done_issue["id"],),
+            )
+            .fetchone()
+        )
+        assert tuple(row) == (1, row["archived_at"])
+        assert row["archived_at"] is not None
 
         # Verify issue no longer in active list
         result = cli_runner.invoke(main, ["issue", "list"])
@@ -146,7 +164,7 @@ class TestIssueArchiveRestore:
 
     def test_restore_single_issue(self, roadmap_with_issues_and_milestones):
         """Test restoring a single archived issue."""
-        cli_runner, _core, issues, _temp_dir = roadmap_with_issues_and_milestones
+        cli_runner, core, issues, temp_dir = roadmap_with_issues_and_milestones
 
         done_issue = next(i for i in issues if i["status"] == "closed")
 
@@ -164,6 +182,25 @@ class TestIssueArchiveRestore:
         )
 
         assert result.exit_code == 0
+
+        restored_file = next(
+            (Path(temp_dir) / ".roadmap" / "issues").rglob(f"{done_issue['id']}*.md")
+        )
+        assert IssueParser.parse_issue_file(restored_file).archived is False
+        assert not list(
+            (Path(temp_dir) / ".roadmap" / "archive" / "issues").rglob(
+                f"{done_issue['id']}*.md"
+            )
+        )
+        row = (
+            core.db._get_connection()
+            .execute(
+                "SELECT archived, archived_at FROM issues WHERE id = ?",
+                (done_issue["id"],),
+            )
+            .fetchone()
+        )
+        assert tuple(row) == (0, None)
 
     def test_restore_all_issues(self, roadmap_with_issues_and_milestones):
         """Test restoring all archived issues."""

@@ -113,6 +113,7 @@ class TestIssueArchive:
                 return_value=[closed_issue, open_issue]
             )
             self.archive.find_entity_files = Mock(return_value=[issue_file])
+            self.archive.pre_archive_hook = Mock()
             self.archive.post_archive_hook = Mock()
 
             result = self.archive.execute()

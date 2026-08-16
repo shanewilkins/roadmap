@@ -6,6 +6,7 @@ the database, including complex scenarios like threading and metadata.
 
 import pytest
 
+from roadmap.adapters.cli import main
 from roadmap.common.constants import Priority
 from roadmap.core.services.comment.comment_service import CommentService
 from roadmap.infrastructure.coordination.core import RoadmapCore
@@ -21,6 +22,48 @@ class TestCommentPersistence:
         core.initialize()
         issue = core.issues.create("Test Issue for Comments", priority=Priority.HIGH)
         yield core, issue
+
+    def test_cli_add_comment_persists(self, cli_runner):
+        """The public CLI persists a comment through the coordinator API."""
+        with cli_runner.isolated_filesystem():
+            result = cli_runner.invoke(
+                main,
+                [
+                    "init",
+                    "--project-name",
+                    "Comment Project",
+                    "--non-interactive",
+                    "--skip-github",
+                ],
+            )
+            assert result.exit_code == 0
+            result = cli_runner.invoke(main, ["issue", "create", "--title", "Issue"])
+            assert result.exit_code == 0
+
+            core = RoadmapCore()
+            issue = core.issues.list()[0]
+            core.close()
+            result = cli_runner.invoke(
+                main,
+                [
+                    "issue",
+                    "comment",
+                    "add",
+                    issue.id,
+                    "Persist me",
+                    "--author",
+                    "tester",
+                ],
+            )
+            assert result.exit_code == 0
+
+            core = RoadmapCore()
+            reloaded = core.issues.get(issue.id)
+            assert reloaded is not None
+            assert [
+                (comment.author, comment.body) for comment in reloaded.comments
+            ] == [("tester", "Persist me")]
+            core.close()
 
     def test_add_comment_persists_to_database(self, core_and_issue):
         """Verify adding comment to issue persists data."""

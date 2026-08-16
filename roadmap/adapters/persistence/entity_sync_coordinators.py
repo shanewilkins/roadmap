@@ -312,25 +312,24 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
         return issue_id
 
     def _handle_project_id(self, issue_data: dict, issue_id: str) -> str | None:
-        """Get project ID for issue, using default if needed.
+        """Get project ID for issue, using a default when one exists.
 
         Args:
             issue_data: Issue data dict
             issue_id: Issue ID
 
         Returns:
-            Project ID or None if unavailable
+            Project ID, or ``None`` for a projectless issue
         """
         project_id = issue_data.get("project_id")
         if not project_id:
             project_id = self._get_default_project_id()
             if not project_id:
                 logger.warning(
-                    "no_projects_found_for_issue",
+                    "projectless_issue_projection",
                     issue_id=issue_id,
                     severity="operational",
                 )
-                return None
         issue_data["project_id"] = project_id
         return project_id
 
@@ -383,9 +382,7 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
             issue_id = self._extract_issue_id(issue_data, file_path)
 
             # Handle project ID
-            project_id = self._handle_project_id(issue_data, issue_id)
-            if not project_id:
-                return False
+            self._handle_project_id(issue_data, issue_id)
 
             # Handle milestone field
             self._handle_milestone_field(issue_data)
@@ -406,8 +403,15 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
                 "due_date",
                 "project_id",
                 "milestone_id",
+                "archived",
+                "archived_at",
             ]
             metadata = self._extract_metadata(issue_data, exclude_fields)
+
+            archived = bool(issue_data.get("archived", False))
+            archived_at = issue_data.get("archived_at")
+            if archived and not archived_at:
+                archived_at = self._normalize_date(issue_data.get("updated"))
 
             # Upsert issue
             with self._transaction() as conn:
@@ -415,8 +419,9 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
                     """
                     INSERT OR REPLACE INTO issues
                     (id, project_id, milestone_id, title, description, status,
-                     priority, issue_type, assignee, estimate_hours, due_date, metadata)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     priority, issue_type, assignee, estimate_hours, due_date,
+                     archived, archived_at, metadata)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                     (
                         issue_data["id"],
@@ -430,6 +435,8 @@ class IssueSyncCoordinator(EntitySyncCoordinator):
                         issue_data.get("assignee"),
                         issue_data.get("estimate_hours"),
                         issue_data["due_date"],
+                        archived,
+                        archived_at,
                         metadata,
                     ),
                 )

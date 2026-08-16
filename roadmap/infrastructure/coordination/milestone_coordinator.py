@@ -49,13 +49,26 @@ class MilestoneCoordinator:
         project_id: str | None = None,
     ) -> Milestone:
         """Create a new milestone."""
+        project = None
+        core = self._core
+        if project_id and core:
+            project = core.projects.get(project_id)
+            if project is None:
+                raise ValueError(f"Project '{project_id}' not found")
+
         milestone = self._ops.create_milestone(
-            name=name, headline=headline, due_date=due_date, status=status
+            name=name,
+            headline=headline,
+            due_date=due_date,
+            status=status,
+            project_id=project_id,
         )
 
-        # Assign to project if provided
-        if project_id:
-            milestone.project_id = project_id
+        if project and name not in project.milestones:
+            assert core is not None
+            project.milestones.append(name)
+            if not core.projects.save(project):
+                raise RuntimeError(f"Failed to update project '{project_id}'")
 
         return milestone
 

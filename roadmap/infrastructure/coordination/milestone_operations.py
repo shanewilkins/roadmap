@@ -39,6 +39,7 @@ class MilestoneOperations:
         headline: str = "",
         due_date: datetime | None = None,
         status: str | None = None,
+        project_id: str | None = None,
     ) -> Milestone:
         """Create a new milestone.
 
@@ -47,6 +48,7 @@ class MilestoneOperations:
             headline: Milestone headline (short summary)
             due_date: Due date for the milestone (optional)
             status: Milestone status (optional, defaults to OPEN)
+            project_id: Project this milestone belongs to
 
         Returns:
             Created Milestone object
@@ -59,7 +61,11 @@ class MilestoneOperations:
             status=status,
         )
         return self.milestone_service.create_milestone(
-            name=name, headline=headline, due_date=due_date, status=status
+            name=name,
+            headline=headline,
+            due_date=due_date,
+            status=status,
+            project_id=project_id,
         )
 
     @safe_operation(OperationType.READ, "Milestone")

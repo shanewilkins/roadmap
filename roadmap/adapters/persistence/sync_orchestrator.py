@@ -124,6 +124,7 @@ class SyncOrchestrator:
                 "projects/**/*.md",  # All project files including subdirectories
                 "milestones/**/*.md",  # All milestone files including subdirectories
                 "issues/**/*.md",  # All issue files including subdirectories
+                "archive/issues/**/*.md",  # Archived issues remain canonical
             ]
 
             for pattern in patterns:
@@ -209,7 +210,12 @@ class SyncOrchestrator:
             roadmap_dir: Root roadmap directory
             stats: Statistics dict to update
         """
-        for pattern in ["projects/**/*.md", "milestones/**/*.md", "issues/**/*.md"]:
+        for pattern in [
+            "projects/**/*.md",
+            "milestones/**/*.md",
+            "issues/**/*.md",
+            "archive/issues/**/*.md",
+        ]:
             for file_path in roadmap_dir.glob(pattern):
                 self._sync_file_in_rebuild(file_path, stats)
 

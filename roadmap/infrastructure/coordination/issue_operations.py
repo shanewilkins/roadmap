@@ -180,6 +180,8 @@ class IssueOperations:
             params_dict["estimate"] = updates["estimate"]
         if "reason" in updates:
             params_dict["reason"] = updates["reason"]
+        if "archived" in updates:
+            params_dict["archived"] = updates["archived"]
 
         return IssueUpdateServiceParams(**params_dict)
 
@@ -194,6 +196,7 @@ class IssueOperations:
             "content",
             "estimate",
             "reason",
+            "archived",
         }
     )
 

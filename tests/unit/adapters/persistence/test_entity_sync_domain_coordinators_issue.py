@@ -145,7 +145,7 @@ class TestIssueSyncCoordinator:
     def test_sync_issue_file_no_project_id(
         self, coordinator, tmp_path, mock_transaction
     ):
-        """Test sync fails when no project ID available."""
+        """Projectless issues remain valid in the local SQLite projection."""
         issue_file = tmp_path / "issue.md"
         issue_file.write_text("content")
 
@@ -154,10 +154,10 @@ class TestIssueSyncCoordinator:
         mock_transaction.__enter__.return_value = mock_conn
 
         with patch.object(coordinator._parser, "parse_yaml_frontmatter") as mock_parse:
-            with patch.object(coordinator, "_extract_issue_id", return_value="123"):
-                mock_parse.return_value = {}
-                result = coordinator.sync_issue_file(issue_file)
-                assert not result
+            mock_parse.return_value = {"id": "123", "title": "Projectless issue"}
+            result = coordinator.sync_issue_file(issue_file)
+            assert result
+            assert mock_parse.return_value["project_id"] is None
 
     def test_sync_issue_file_calls_database(
         self, coordinator, tmp_path, mock_transaction

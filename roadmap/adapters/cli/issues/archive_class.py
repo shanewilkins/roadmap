@@ -81,7 +81,7 @@ class IssueArchive(BaseArchive):
                 files.append(matching[0])
         return files
 
-    def _determine_archive_path(self, archive_dir: Path, issue_file: Path) -> Path:
+    def get_archive_path(self, archive_dir: Path, issue_file: Path) -> Path:
         """Determine archive path preserving folder structure.
 
         Args:
@@ -117,109 +117,11 @@ class IssueArchive(BaseArchive):
         dest_dir.mkdir(parents=True, exist_ok=True)
         return dest_dir / issue_file.name
 
-    def execute(self, entity_id: str | None = None, **kwargs) -> bool:
-        """Execute archive operation.
-
-        Archives issues by moving files and setting the archived flag.
-
-        Args:
-            entity_id: Optional issue ID
-            **kwargs: Filter options (all_closed, orphaned, etc.)
-
-        Returns:
-            True if successful
-        """
-        try:
-            entities = self.get_entities_to_archive(entity_id, **kwargs)
-
-            if not entities:
-                self.console.print(
-                    f"No {self.entity_type.value}s to archive",
-                    style="yellow",
-                )
-                return False
-
-            # Validate entities
-            invalid_entities = []
-            for entity in entities:
-                is_valid, error_msg = self.validate_entity_before_archive(
-                    entity, **kwargs
-                )
-                if not is_valid:
-                    invalid_entities.append((entity, error_msg))
-                    self.console.print(
-                        f"⚠️  Cannot archive {entity.id}: {error_msg}",
-                        style="yellow",
-                    )
-
-            if invalid_entities:
-                invalid_entity_ids = {e.id for e, _ in invalid_entities}
-                entities = [e for e in entities if e.id not in invalid_entity_ids]
-                if not entities:
-                    return False
-
-            # Find files
-            files_to_archive = self.find_entity_files(entities)
-
-            if not files_to_archive:
-                self.console.print(
-                    f"Could not find files for {len(entities)} {self.entity_type.value}(s)",
-                    style="yellow",
-                )
-                return False
-
-            # Archive with folder structure preservation
-            from roadmap.adapters.cli.crud.crud_helpers import (
-                display_archive_success,
-                get_archive_dir,
-            )
-
-            archive_dir = get_archive_dir(self.entity_type)
-            archive_dir.mkdir(parents=True, exist_ok=True)
-
-            archived_files = []
-            failed_count = 0
-
-            for file_path in files_to_archive:
-                try:
-                    archive_file = self._determine_archive_path(archive_dir, file_path)
-                    if archive_file.exists():
-                        failed_count += 1
-                        continue
-
-                    # Ensure parent directory exists and use rename (mv) for atomicity
-                    archive_file.parent.mkdir(parents=True, exist_ok=True)
-                    file_path.rename(archive_file)
-                    archived_files.append(archive_file)
-
-                except Exception as e:
-                    self.console.print(
-                        f"⚠️  Failed to archive {file_path.name}: {str(e)}",
-                        style="yellow",
-                    )
-                    failed_count += 1
-
-            # Update state (set archived flag and update cache)
-            self.post_archive_hook(archived_files, entities, **kwargs)
-
-            # Display results
-            display_archive_success(
-                self.entity_type,
-                len(archived_files),
-                failed_count,
-                console=self.console,
-            )
-
-            return True
-
-        except Exception as e:
-            self.console.print(
-                f"❌ Archive operation failed: {str(e)}",
-                style="red",
-            )
-            import click
-
-            raise click.ClickException(str(e)) from e
+    def pre_archive_hook(self, entities: list[Any], **kwargs) -> None:
+        """Bring the local SQLite projection current before moving files."""
+        stats = self.core.db.sync_directory_incremental(Path.cwd() / ".roadmap")
+        if stats.get("files_failed"):
+            raise RuntimeError("Failed to sync local issue state before archiving")
 
     def post_archive_hook(
         self, archived_files: list[Path], entities: list[Any], **kwargs
@@ -233,21 +135,11 @@ class IssueArchive(BaseArchive):
             entities: Entities that were archived
             **kwargs: Additional arguments
         """
-        # Set archived flag on entities
-        from roadmap.core.models import IssueUpdateServiceParams
+        from roadmap.adapters.persistence.parser import IssueParser
 
-        for entity in entities:
-            try:
-                params = IssueUpdateServiceParams(
-                    issue_id=entity.id,
-                    archived=True,
-                )
-                self.core.issues.update_issue(params)
-            except Exception as e:
-                self.console.print(
-                    f"⚠️  Warning: Failed to mark issue {entity.id} as archived: {e}",
-                    style="yellow",
-                )
-
-        # Clear the list cache after archiving to ensure archived issues don't appear in list output
-        self.core.issues._ops.issue_service._list_issues_cache.clear()
+        for archived_file in archived_files:
+            issue = IssueParser.parse_issue_file(archived_file)
+            if self.core.issues.update(issue.id, archived=True) is None:
+                raise RuntimeError(f"Failed to archive issue {issue.id}")
+            if not self.core.db.mark_issue_archived(issue.id):
+                raise RuntimeError(f"Failed to update issue projection {issue.id}")

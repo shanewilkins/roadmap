@@ -66,8 +66,7 @@ def add_comment(
 
     # Validate comment body
     if not body or not body.strip():
-        console.print("❌ Comment body cannot be empty", style="red")
-        return
+        raise click.ClickException("Comment body cannot be empty")
 
     # Create the comment
     try:
@@ -78,24 +77,21 @@ def add_comment(
             in_reply_to=reply_to,
         )
     except Exception as e:
-        console.print(f"❌ Failed to create comment: {e}", style="red")
-        return
+        raise click.ClickException(f"Failed to create comment: {e}") from e
 
     # If replying to a comment, validate that comment exists
     if reply_to is not None:
         if not any(c.id == reply_to for c in issue.comments):
-            console.print(
-                f"❌ Cannot find comment {reply_to} to reply to",
-                style="red",
-            )
-            return
+            raise click.ClickException(f"Cannot find comment {reply_to} to reply to")
 
     # Add comment to issue
     issue.comments.append(comment)
 
     # Update the issue
     try:
-        core.issues.update(issue.id, {"comments": issue.comments})
+        updated = core.issues.update(issue.id, comments=issue.comments)
+        if updated is None:
+            raise RuntimeError(f"Issue {issue.id} was not updated")
         console.print(
             f"✅ Comment added to issue {issue.id}",
             style="green",
@@ -105,7 +101,7 @@ def add_comment(
         if reply_to:
             console.print(f"   Replying to: {reply_to}")
     except Exception as e:
-        console.print(f"❌ Failed to update issue: {e}", style="red")
+        raise click.ClickException(f"Failed to update issue: {e}") from e
 
 
 @click.command("list")

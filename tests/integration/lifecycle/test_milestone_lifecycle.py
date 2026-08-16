@@ -5,6 +5,10 @@ with projects to ensure data integrity across operations.
 """
 
 from roadmap.adapters.cli import main
+from roadmap.core.services.validators.orphaned_milestones_validator import (
+    OrphanedMilestonesValidator,
+)
+from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.fixtures.integration_helpers import IntegrationTestBase
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
@@ -28,6 +32,15 @@ class TestMilestoneLifecycle:
             result = cli_runner.invoke(main, ["milestone", "list"])
             IntegrationTestBase.assert_cli_success(result)
             assert "sprint-1" in clean_cli_output(result.output)
+
+            core = RoadmapCore()
+            milestone = core.milestones.get("sprint-1")
+            project = core.projects.list()[0]
+            assert milestone is not None
+            assert milestone.project_id == project.id
+            assert "sprint-1" in project.milestones
+            assert not OrphanedMilestonesValidator.scan_for_orphaned_milestones(core)
+            core.close()
 
     def test_create_multiple_milestones_for_project(self, cli_runner):
         """Test creating multiple milestones for same project."""

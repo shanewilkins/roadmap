@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 from roadmap.adapters.cli.issues.comment import add_comment
 from roadmap.core.domain.comment import Comment
 from roadmap.core.domain.issue import Issue
+from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestCommentCommand:
@@ -55,7 +56,7 @@ class TestCommentCommand:
             in_reply_to=None,
         )
         mock_core_initialized.issues.update.assert_called_once_with(
-            "iss-1", {"comments": [comment]}
+            "iss-1", comments=[comment]
         )
         printed = "\n".join(str(call.args[0]) for call in console.print.call_args_list)
         assert "Comment added to issue iss-1" in printed
@@ -84,11 +85,10 @@ class TestCommentCommand:
                 obj={"core": mock_core_initialized},
             )
 
-        assert result.exit_code == 0
+        assert result.exit_code == 1
         mock_create.assert_not_called()
         mock_core_initialized.issues.update.assert_not_called()
-        console.print.assert_called_once()
-        assert "cannot be empty" in console.print.call_args.args[0].lower()
+        assert "cannot be empty" in clean_cli_output(result.output).lower()
 
     def test_add_comment_reply_target_missing_stops_before_update(
         self, cli_runner, mock_core_initialized
@@ -134,10 +134,9 @@ class TestCommentCommand:
                 obj={"core": mock_core_initialized},
             )
 
-        assert result.exit_code == 0
+        assert result.exit_code == 1
         mock_core_initialized.issues.update.assert_not_called()
-        printed = "\n".join(str(call.args[0]) for call in console.print.call_args_list)
-        assert "Cannot find comment 999" in printed
+        assert "Cannot find comment 999" in clean_cli_output(result.output)
 
     def test_add_comment_create_failure_prints_error(
         self, cli_runner, mock_core_initialized
@@ -164,10 +163,9 @@ class TestCommentCommand:
                 obj={"core": mock_core_initialized},
             )
 
-        assert result.exit_code == 0
+        assert result.exit_code == 1
         mock_core_initialized.issues.update.assert_not_called()
-        console.print.assert_called_once()
-        assert "Failed to create comment" in console.print.call_args.args[0]
+        assert "Failed to create comment" in clean_cli_output(result.output)
 
     def test_add_comment_update_failure_prints_error(
         self, cli_runner, mock_core_initialized
@@ -203,7 +201,6 @@ class TestCommentCommand:
                 obj={"core": mock_core_initialized},
             )
 
-        assert result.exit_code == 0
+        assert result.exit_code == 1
         assert mock_core_initialized.issues.update.call_count == 1
-        printed = "\n".join(str(call.args[0]) for call in console.print.call_args_list)
-        assert "Failed to update issue" in printed
+        assert "Failed to update issue" in clean_cli_output(result.output)

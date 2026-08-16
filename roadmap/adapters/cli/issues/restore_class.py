@@ -44,14 +44,21 @@ class IssueRestore(BaseRestore):
             restored_files: Files that were restored
             **kwargs: Additional arguments
         """
-        # Mark issues as restored in database
+        from roadmap.adapters.persistence.parser import IssueParser
+
+        issue_ids = []
         for file_path in restored_files:
-            try:
-                # Extract issue ID from filename
-                issue_id = file_path.stem.split("-")[0]
-                self.core.db.mark_issue_archived(issue_id, archived=False)
-            except Exception as e:
-                self.console.print(
-                    f"⚠️  Warning: Failed to update restoration status for {file_path.name}: {e}",
-                    style="yellow",
-                )
+            issue = IssueParser.parse_issue_file(file_path)
+            updates = {"archived": False}
+            if kwargs.get("status"):
+                updates["status"] = kwargs["status"]
+            if self.core.issues.update(issue.id, **updates) is None:
+                raise RuntimeError(f"Failed to restore issue {issue.id}")
+            issue_ids.append(issue.id)
+
+        stats = self.core.db.sync_directory_incremental(Path.cwd() / ".roadmap")
+        if stats.get("files_failed"):
+            raise RuntimeError("Failed to sync local issue state after restoring")
+        for issue_id in issue_ids:
+            if not self.core.db.mark_issue_archived(issue_id, archived=False):
+                raise RuntimeError(f"Failed to update issue projection {issue_id}")

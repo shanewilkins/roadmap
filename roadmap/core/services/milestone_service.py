@@ -69,6 +69,7 @@ class MilestoneService:
         headline: str = "",
         due_date: datetime | None = None,
         status: str | None = None,
+        project_id: str | None = None,
     ) -> Milestone:
         """Create a new milestone.
 
@@ -77,6 +78,7 @@ class MilestoneService:
             headline: Milestone headline (short summary)
             due_date: Target completion date
             status: Milestone status (optional, defaults to OPEN)
+            project_id: Project this milestone belongs to
 
         Returns:
             Newly created Milestone object
@@ -106,6 +108,7 @@ class MilestoneService:
             content="",
             due_date=due_date,
             status=milestone_status,
+            project_id=project_id,
         )
 
         # Persist using repository abstraction

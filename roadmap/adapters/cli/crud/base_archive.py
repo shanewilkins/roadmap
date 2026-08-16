@@ -111,6 +111,13 @@ class BaseArchive(ABC):
                 files.append(matching[0])
         return files
 
+    def get_archive_path(self, archive_dir: Path, file_path: Path) -> Path:
+        """Return the destination for an archived file."""
+        return archive_dir / file_path.name
+
+    def pre_archive_hook(self, entities: list[Any], **kwargs) -> None:  # noqa: B027
+        """Prepare entity-specific state before files are moved."""
+
     def execute(self, entity_id: str | None = None, **kwargs) -> bool:
         """Execute archive operation (Template Method).
 
@@ -148,7 +155,8 @@ class BaseArchive(ABC):
                         style="yellow",
                     )
                 # Continue with valid entities if any
-                entities = [e for e in entities if (e, None) not in invalid_entities]
+                invalid_ids = {entity.id for entity, _ in invalid_entities}
+                entities = [e for e in entities if e.id not in invalid_ids]
                 if not entities:
                     return False
 
@@ -162,6 +170,15 @@ class BaseArchive(ABC):
                 )
                 return False
 
+            if kwargs.get("dry_run"):
+                self.console.print(
+                    f"Would archive {len(files_to_archive)} {self.entity_type.value}(s)",
+                    style="yellow",
+                )
+                return True
+
+            self.pre_archive_hook(entities, **kwargs)
+
             # Step 4: Move files to archive
             archive_dir = get_archive_dir(self.entity_type)
             archive_dir.mkdir(parents=True, exist_ok=True)
@@ -171,13 +188,13 @@ class BaseArchive(ABC):
 
             for file_path in files_to_archive:
                 try:
-                    archive_file = archive_dir / file_path.name
+                    archive_file = self.get_archive_path(archive_dir, file_path)
                     if archive_file.exists():
                         failed_count += 1
                         continue
 
-                    archive_file.write_text(file_path.read_text())
-                    file_path.unlink()
+                    archive_file.parent.mkdir(parents=True, exist_ok=True)
+                    file_path.rename(archive_file)
                     archived_files.append(archive_file)
 
                 except Exception as e:
@@ -188,7 +205,8 @@ class BaseArchive(ABC):
                     failed_count += 1
 
             # Step 5: Update state via hook
-            self.post_archive_hook(archived_files, entities, **kwargs)
+            if archived_files:
+                self.post_archive_hook(archived_files, entities, **kwargs)
 
             # Step 6: Display results
             display_archive_success(
@@ -198,7 +216,7 @@ class BaseArchive(ABC):
                 console=self.console,
             )
 
-            return True
+            return bool(archived_files)
 
         except Exception as e:
             self.console.print(

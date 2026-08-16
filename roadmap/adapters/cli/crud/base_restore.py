@@ -173,8 +173,7 @@ class BaseRestore(ABC):
         for archive_file in files_to_restore:
             try:
                 active_file = active_dir / archive_file.name
-                active_file.write_text(archive_file.read_text())
-                archive_file.unlink()
+                archive_file.rename(active_file)
                 restored_files.append(active_file)
             except Exception as e:
                 self.console.print(
@@ -258,6 +257,13 @@ class BaseRestore(ABC):
                 self._display_conflicts(conflicts)
                 if not files_to_restore:
                     return False
+
+            if kwargs.get("dry_run"):
+                self.console.print(
+                    f"Would restore {len(files_to_restore)} {self.entity_type.value}(s)",
+                    style="yellow",
+                )
+                return True
 
             # Step 4: Restore files
             restored_files, failed_count = self._perform_file_restore(files_to_restore)

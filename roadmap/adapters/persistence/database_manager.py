@@ -146,6 +146,8 @@ class DatabaseManager:
             name TEXT NOT NULL,
             description TEXT,
             status TEXT NOT NULL DEFAULT 'active',
+            archived BOOLEAN DEFAULT 0,
+            archived_at TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             metadata TEXT  -- JSON for additional data
@@ -161,6 +163,7 @@ class DatabaseManager:
             due_date DATE,
             progress_percentage REAL DEFAULT 0.0,
             archived BOOLEAN DEFAULT 0,
+            archived_at TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             metadata TEXT,  -- JSON for additional data
@@ -181,6 +184,7 @@ class DatabaseManager:
             assignee TEXT,
             estimate_hours REAL,
             archived BOOLEAN DEFAULT 0,
+            archived_at TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             due_date DATE,
@@ -298,9 +302,13 @@ class DatabaseManager:
         result = []
         for table in ("projects", "milestones", "issues"):
             cursor.execute(f"PRAGMA table_info({table})")  # noqa: S608
-            if "archived" not in [col[1] for col in cursor.fetchall()]:
+            columns = {col[1] for col in cursor.fetchall()}
+            if "archived" not in columns:
                 result.append(
-                    f"ALTER TABLE {table} ADD COLUMN archived INTEGER DEFAULT 0;\n"
+                    f"ALTER TABLE {table} ADD COLUMN archived INTEGER DEFAULT 0;"
+                )
+            if "archived_at" not in columns:
+                result.append(
                     f"ALTER TABLE {table} ADD COLUMN archived_at TIMESTAMP NULL;"
                 )
         return result

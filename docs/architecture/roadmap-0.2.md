@@ -1,10 +1,12 @@
 # Roadmap 0.2 architecture simplification plan
 
-- Status: Proposed for maintainer approval
+- Status: Approved
 - Date: 2026-08-11
 - Release target: 0.2.0
 - Governing decisions: ADR-0001 through ADR-0010
 - Implementation specification: [refactor-implementation.md](refactor-implementation.md)
+- Detailed execution and checkpoint protocol:
+  [refactor-execution-plan.md](refactor-execution-plan.md)
 
 ## Decision
 
@@ -24,7 +26,9 @@ is not a mechanical package shuffle.
 
 As of 2026-08-11, the repository contains approximately:
 
-- 90,567 lines across 512 production Python modules;
+- 90,567 physical lines across 512 production Python modules;
+- 54,225 Python code lines across 504 files according to CLOC 2.10 on
+  2026-08-16;
 - 134,927 lines across 540 test modules;
 - 45,098 production lines under `roadmap.adapters`;
 - 23,764 production lines under `roadmap.core`;
@@ -41,6 +45,12 @@ this release plan.
 These counts are diagnostic, not productivity targets. The release succeeds by
 removing duplicate responsibilities and enforcing one path for each retained
 behavior. A smaller codebase should be the consequence.
+
+Production CLOC is nevertheless an execution ratchet for this refactor. Phase 0
+verifies the exact baseline using the command in the detailed execution plan.
+Every later accepted phase must have the same or fewer Python code lines under
+`roadmap/` than the preceding accepted phase. Tests and documentation are
+reported separately and cannot offset an increase in production code.
 
 ## 0.2 product boundary
 
@@ -351,6 +361,7 @@ Record these at the end of every phase:
 
 - architecture-baseline violations by rule;
 - production modules and lines by architectural zone;
+- production Python CLOC before, after, and phase delta;
 - retained behaviors with more than one production implementation;
 - remote-sync-specific modules and lines remaining;
 - canonical-to-projection refresh and rebuild contract tests passing;
@@ -363,8 +374,9 @@ Record these at the end of every phase:
 The final required values are zero architecture exceptions, zero
 remote-sync-specific code, zero legacy ownership zones, one composition root,
 one canonical-to-projection pipeline, and one implementation path for every
-retained behavior. Production line count and test count may rise temporarily but
-must not be optimized independently of these outcomes.
+retained behavior. Production Python CLOC may not increase between accepted
+phases. That ratchet complements rather than replaces correctness, data safety,
+architecture, performance, and meaningful test evidence.
 
 ## Pull-request shape
 
@@ -401,13 +413,8 @@ added without a second implementation path.
 
 ## Immediate next change
 
-Start Phase 0 and Phase 1 together in one bounded planning-and-enforcement pull
-request:
-
-1. approve or defer the 0.2 requirement rows and assign phase targets;
-2. create the public compatibility inventory;
-3. install the AST architecture policy and exact current baseline; and
-4. make the policy a real CI gate.
-
-Do not move production modules in that change. Its purpose is to make every
-subsequent deletion and migration measurable.
+Follow the detailed execution plan and begin only Phase 0: prove the unchanged
+baseline, create the compatibility fixture and checkpoint harness, run the full
+suite and installed-artifact journeys, report the evidence, and stop. Phase 1
+does not begin until the maintainer reviews that checkpoint and explicitly
+continues.

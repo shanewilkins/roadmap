@@ -131,6 +131,23 @@ class TestDatabaseManagerInitialization:
         assert "archived" in columns
         assert "archived_at" in columns
 
+    def test_migration_adds_archived_at_when_archived_already_exists(self):
+        """Legacy tables with archived still receive the archived_at column."""
+        conn = sqlite3.connect(":memory:")
+        for table in ("projects", "milestones", "issues"):
+            conn.execute(
+                f"CREATE TABLE {table} (id TEXT PRIMARY KEY, archived INTEGER DEFAULT 0)"
+            )
+
+        manager = DatabaseManager.__new__(DatabaseManager)
+        for migration in manager._migration_archive_columns(conn.cursor()):
+            conn.executescript(migration)
+
+        for table in ("projects", "milestones", "issues"):
+            columns = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+            assert "archived_at" in columns
+        conn.close()
+
 
 class TestDatabaseManagerCheckDatabase:
     """Tests for database integrity and existence checks."""
