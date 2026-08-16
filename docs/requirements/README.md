@@ -1,8 +1,9 @@
 # Requirements Register
 
 This directory is the product and engineering input to the development
-roadmap. The initial rows inventory requirements visible in the current code
-and documentation; a row remains `Draft` until it is deliberately reviewed.
+roadmap. The registers were triaged on 2026-08-16: every 0.2 requirement is
+Accepted and assigned to an implementation phase, while deliberately postponed
+directions are Deferred to post-0.2.
 
 ## Files
 
@@ -11,8 +12,10 @@ and documentation; a row remains `Draft` until it is deliberately reviewed.
 - [technical-requirements.csv](technical-requirements.csv) records system
   constraints, rationale, and verification methods.
 - [Requirements as First-Class Artifacts](REQUIREMENTS_AS_ARTIFACTS.md) is the
-  draft product and architecture recommendation for managing these records in
+  deferred product and architecture proposal for managing these records in
   Roadmap itself.
+- [Phase 1 requirements triage](phase-1-triage-2026-08-16.md) records the
+  accepted scope, deferrals, counts, and scheduling rationale.
 
 The registers use CSV so they remain diffable, scriptable, and easy to import
 into Roadmap CLI or a spreadsheet. UTF-8 and RFC 4180-compatible quoting are
@@ -49,12 +52,11 @@ paths, observable completion, and recovery.
 | `J-02` Capture and triage work | Create, inspect, prioritize, assign, and organize issues. |
 | `J-03` Execute daily work | Select work, manage state and dependencies, collaborate, and complete it. |
 | `J-04` Plan delivery | Organize projects and milestones, review scope/progress, and close or archive delivery units. |
-| `J-05` Collaborate through Git | Connect issues to branches, commits, and reversible Git-hook automation. |
-| `J-06` Synchronize remotes | Configure, preview, reconcile, recover, and audit optional remote synchronization. |
+| `J-05` Collaborate through Git | Use ordinary Git collaboration plus explicit local issue/branch references. Automatic hooks and commit mutation are deferred beyond 0.2. |
 | `J-07` Report and automate | Produce stable terminal, structured, export, and stakeholder reporting outputs. |
 | `J-08` Diagnose and recover | Detect corruption or inconsistency, preview repair, recover data, and understand failures. |
 | `J-09` Configure and evolve | Manage configuration and safely upgrade or migrate repository data. |
-| `J-10` Manage requirements as code | Create, govern, link, verify, exchange, and plan from requirements. This journey is proposed, not accepted. |
+| `J-10` Manage requirements as code | Create, govern, link, verify, exchange, and plan from requirements. This application feature is Deferred to post-0.2; the CSV registers remain governance artifacts. |
 
 ## Editing rules
 

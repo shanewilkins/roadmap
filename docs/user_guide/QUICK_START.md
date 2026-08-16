@@ -1,249 +1,121 @@
-# Quick Start: 5 Minutes to Your First Roadmap
+# Quick start
 
-Get up and running with Roadmap CLI in 5 minutes.
+This guide describes the supported local workflow. Provider synchronization
+and automatic Git mutation exposed experimentally in 0.1.1 are deprecated and
+will be removed in 0.2.
 
-## Installation
-
-### Using uv (Recommended)
+## Install
 
 ```bash
 uv tool install roadmap-cli
 roadmap --version
 ```
 
-### Using pipx
+`pipx install roadmap-cli` is also supported. Roadmap requires Python 3.13 or
+3.14.
+
+## Initialize a repository
 
 ```bash
-pipx install roadmap-cli
-roadmap --version
-```
-
-### Using pip in a virtual environment
-
-```bash
-python3.13 -m venv .venv
-source .venv/bin/activate
-pip install roadmap-cli
-roadmap --version
-```
-
-## How Roadmap Works (Architecture)
-
-Roadmap follows a **Git-like model:**
-
-| Aspect | Model |
-| --- | --- |
-| **Install** | Once per machine (like `git`) |
-| **Store** | Per-repository in `.roadmap/` folder |
-| **Share** | Commit `.roadmap/` to git (like code) |
-| **Sync** | `git push/pull` keeps everyone in sync |
-
-**Why this design?**
-- ✅ **Offline-first:** Clone the repo, work offline, push changes
-- ✅ **No server:** No subscriptions, no cloud dependency
-- ✅ **Git history:** See who changed what with `git blame`
-- ✅ **Team collaboration:** Just commit and push like code
-
-**Example workflow (3 teammates):**
-```bash
-# Each teammate installs the CLI once
-uv tool install roadmap-cli
-
-# In any project, Alice creates the roadmap
 cd my-project
-roadmap init
-git add .roadmap/
-git commit -m "Initialize project roadmap"
-git push
-
-# Bob and Carol pull the repo
-git pull
-# .roadmap/ is now on their machines; their CLI reads the shared data
-
-# Bob creates an issue
-roadmap issue create "Fix login bug"
-git add .roadmap/
-git commit -m "Add issue: Fix login bug"
-git push
-
-# Carol pulls and sees Bob's issue
-git pull
-roadmap issue list  # Shows Bob's issue
+roadmap init --name "My project"
+roadmap status
 ```
 
-## Initialize Your Project
+Roadmap stores repository-local data under `.roadmap/`. Commit the canonical
+Markdown and YAML files so collaborators receive them through ordinary Git.
+
+## Capture and update an issue
 
 ```bash
-# Create a new roadmap in your repo
-roadmap init
-
-# This creates:
-# .roadmap/                 - Your project management data
-# .roadmap/roadmap.md       - Main roadmap file
-# .roadmap/config.yaml      - Configuration
-#
-# ⚠️  Commit this to git so teammates can access it:
-# git add .roadmap/
-# git commit -m "Initialize project roadmap"
-# git push
-```
-
-## Your First Issue (1 minute)
-
-```bash
-# Create an issue
-roadmap issue create "Implement user authentication" \
+roadmap issue create \
+  --title "Implement authentication" \
   --priority high \
-  --status todo \
-  --assignee your-username
+  --assignee your-name
 
-# View all issues
 roadmap issue list
+roadmap issue view <issue-id>
+roadmap issue update <issue-id> --status in-progress
+roadmap issue progress <issue-id> 50
+roadmap issue close <issue-id> --reason "Implemented and verified"
+```
 
-# View your assigned issues
-roadmap issue list --filter assignee=your-username
+Use the stable ID printed by `issue create`. Valid issue states include `todo`,
+`in-progress`, `blocked`, `review`, and `closed`.
 
-# View today's work
+## Add dependencies and discussion
+
+```bash
+roadmap issue deps add <issue-id> <dependency-id>
+roadmap issue block <issue-id> --reason "Waiting for the dependency"
+roadmap issue unblock <issue-id> --reason "Dependency completed"
+
+roadmap issue comment add <issue-id> "Review notes"
+roadmap issue comment list <issue-id>
+roadmap issue comment list <issue-id> --format json
+```
+
+The supported discussion interface is `roadmap issue comment`. The separate
+top-level `roadmap comment` commands in 0.1.1 are unfinished duplicates and are
+not part of the 0.2 contract.
+
+## Plan a milestone
+
+```bash
+roadmap project create --title "Web application"
+roadmap milestone create \
+  --title "0.2" \
+  --due-date 2026-09-30 \
+  --project "Web application"
+
+roadmap milestone assign <issue-id> "0.2"
+roadmap milestone view "0.2"
+roadmap milestone list
+```
+
+## Query and export
+
+```bash
 roadmap today
+roadmap status --format json
+roadmap issue list --status blocked --format json
+roadmap issue list --priority critical --format csv
+roadmap data export --format markdown --output roadmap-report.md
 ```
 
-## Create a Milestone (1 minute)
+The exact options are available from `roadmap <command> --help`. Structured
+output is intended for scripts; human-readable styling is not a stable machine
+interface.
+
+## Collaborate
 
 ```bash
-# Create a milestone
-roadmap milestone create "v1.0 Release" \
-  --due-date 2025-03-31 \
-  --description "First production release"
-
-# View milestones
-roadmap milestone list
-
-# Add issue to milestone (using issue ID from create output)
-roadmap issue update issue-id --milestone "v1.0 Release"
+git add .roadmap/
+git commit -m "Update roadmap"
+git pull --rebase
+git push
 ```
 
-## Update Issue Status (1 minute)
+Git is the collaboration layer. SQLite remains a rebuildable local projection
+of canonical files; refreshing or rebuilding it is local maintenance, not
+remote synchronization. Do not use `roadmap sync` or `roadmap git sync` for a
+new workflow: those experimental 0.1.1 commands are scheduled for removal.
+
+## Recover safely
 
 ```bash
-# Mark issue as in-progress
-roadmap issue update issue-id --status in-progress
-
-# Mark issue as done
-roadmap issue update issue-id --status done
-
-# View progress
-roadmap milestone list
+roadmap health
+roadmap health scan --details
+roadmap health fix --dry-run
 ```
 
-## Different Output Formats (1 minute)
+Preview repair before applying it, and commit or back up `.roadmap/` first. The
+0.2 implementation will narrow repair operations further and document a
+versioned projection-rebuild workflow.
 
-```bash
-# Rich (colorful, interactive) - default
-roadmap issue list
+## Next steps
 
-# Plain text (POSIX-friendly, for piping)
-roadmap issue list --format plain
-
-# JSON (machine-readable)
-roadmap issue list --format json
-
-# CSV (for spreadsheets)
-roadmap issue list --format csv
-```
-
-## Add Comments to Issues (1 minute)
-
-```bash
-# Add a comment to an issue
-roadmap issue comment add issue-id "Great progress on this!"
-
-# Add a comment with a custom author
-roadmap issue comment add issue-id "Looking good!" --author john
-
-# Reply to a specific comment (threaded discussion)
-roadmap issue comment add issue-id "I agree!" --reply-to 12345
-
-# View all comments on an issue
-roadmap issue comment list issue-id
-
-# View comments in JSON format
-roadmap issue comment list issue-id --format json
-```
-
-Comments support markdown and threading, making it easy to have discussions right in your issues without leaving the terminal.
-
-## Commit and Track Status
-
-Once you've created issues, **status updates happen automatically when you commit:**
-
-```bash
-# Make your changes
-git add .
-git commit -m "fixes issue-abc123"  # Issue auto-marks as done
-
-# Or use the roadmap syntax
-git commit -m "[closes roadmap:issue-id] Implement auth"
-```
-
-## GitHub Integration (Optional)
-
-```bash
-# Setup one-time
-roadmap git setup --auth
-roadmap config set github.repository "username/repo"
-roadmap config set github.enabled true
-roadmap config set github.sync_enabled true
-roadmap config set github.sync_backend github
-
-# Pull existing issues from GitHub
-roadmap sync pull
-
-# Create a new issue locally and push to GitHub
-roadmap issue create "New feature"
-roadmap sync push --issues
-```
-
-## Next Steps
-
-- **[Full Workflows Guide](WORKFLOWS.md)** - Team collaboration patterns
-- **[Architecture decisions](../architecture/README.md)** - Accepted system design
-- **[FAQ](FAQ.md)** - Common questions
-- **[Installation Guide](INSTALLATION.md)** - Advanced setup options
-
-## Common Commands Reference
-
-```bash
-# Issues
-roadmap issue list              # View all issues
-roadmap issue create "Title"    # Create issue
-roadmap issue update id --status done  # Update status
-roadmap issue show id           # View issue details
-
-# Comments
-roadmap issue comment add id "Your comment"      # Add a comment
-roadmap issue comment add id "Reply" --reply-to 123  # Reply to comment
-roadmap issue comment list id                    # View comments on issue
-
-# Milestones
-roadmap milestone list          # View all milestones
-roadmap milestone create "v1.0" # Create milestone
-
-# Your daily work
-roadmap today                   # Your assigned for upcoming milestone
-roadmap status                  # Overall project status
-
-# Data export
-roadmap data export csv         # Export to CSV
-roadmap data export json        # Export to JSON
-```
-
-## Getting Help
-
-```bash
-roadmap --help                  # Overall help
-roadmap issue --help            # Issue commands help
-roadmap milestone --help        # Milestone commands help
-roadmap [command] --help        # Any command's help
-```
-
-That's it! You're ready to manage your project from the command line. 🎉
+- [Workflows](WORKFLOWS.md)
+- [Installation](INSTALLATION.md)
+- [FAQ](FAQ.md)
+- [Roadmap 0.2 public contract](../architecture/public-contract-0.2.md)

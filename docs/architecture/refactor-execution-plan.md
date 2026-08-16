@@ -1,8 +1,8 @@
 # Roadmap 0.2 refactor execution plan
 
 - Status: Approved
-- Execution status: Phase 0A `GO`; awaiting maintainer approval for Phase 1; see
-  [phase-0a-lifecycle-repair-2026-08-16.md](checkpoints/phase-0a-lifecycle-repair-2026-08-16.md)
+- Execution status: Phase 1 `GO`; awaiting maintainer approval for Phase 2; see
+  [phase-1-public-contract-2026-08-16.md](checkpoints/phase-1-public-contract-2026-08-16.md)
 - Date: 2026-08-16
 - Baseline commit: `61595a6e`
 - Current release: 0.1.1
