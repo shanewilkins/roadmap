@@ -6,6 +6,7 @@ It separates database infrastructure concerns from the state management layer.
 
 import sqlite3
 import threading
+import weakref
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,10 +16,17 @@ from roadmap.common.logging import get_logger
 logger = get_logger(__name__)
 
 
+def _close_connections(
+    connections: set[sqlite3.Connection], lock: threading.RLock
+) -> None:
+    """Close a manager-owned connection registry without retaining its manager."""
+    with lock:
+        while connections:
+            connections.pop().close()
+
+
 class DatabaseError(Exception):
     """Base exception for database operations."""
-
-    pass
 
 
 class DatabaseManager:
@@ -50,6 +58,14 @@ class DatabaseManager:
 
         # Thread-local storage for connections
         self._local = threading.local()
+        self._connections: set[sqlite3.Connection] = set()
+        self._connections_lock = threading.RLock()
+        self._connection_finalizer = weakref.finalize(
+            self,
+            _close_connections,
+            self._connections,
+            self._connections_lock,
+        )
 
         logger.info("Initializing database manager", db_path=str(self.db_path))
         try:
@@ -98,26 +114,36 @@ class DatabaseManager:
 
     def _get_connection(self) -> sqlite3.Connection:
         """Get thread-local database connection."""
-        if not hasattr(self._local, "connection"):
-            self._local.connection = sqlite3.connect(
+        connection = getattr(self._local, "connection", None)
+        with self._connections_lock:
+            if connection in self._connections or (
+                connection is not None
+                and not isinstance(connection, sqlite3.Connection)
+            ):
+                return connection
+
+            connection = sqlite3.connect(
                 str(self.db_path),
                 check_same_thread=False,
                 timeout=30.0,
                 isolation_level=None,  # Autocommit mode
             )
-            # Register datetime adapter for Python 3.12+
-            sqlite3.register_adapter(datetime, lambda dt: dt.isoformat())
-            sqlite3.register_converter(
-                "TIMESTAMP", lambda val: datetime.fromisoformat(val.decode())
-            )
+            try:
+                sqlite3.register_adapter(datetime, lambda dt: dt.isoformat())
+                sqlite3.register_converter(
+                    "TIMESTAMP", lambda val: datetime.fromisoformat(val.decode())
+                )
+                connection.execute("PRAGMA foreign_keys = ON")
+                connection.execute("PRAGMA journal_mode = WAL")
+                connection.execute("PRAGMA synchronous = NORMAL")
+                connection.row_factory = sqlite3.Row
+            except Exception:
+                connection.close()
+                raise
+            self._connections.add(connection)
+            self._local.connection = connection
 
-            # Enable foreign keys and WAL mode for better performance
-            self._local.connection.execute("PRAGMA foreign_keys = ON")
-            self._local.connection.execute("PRAGMA journal_mode = WAL")
-            self._local.connection.execute("PRAGMA synchronous = NORMAL")
-            self._local.connection.row_factory = sqlite3.Row
-
-        return self._local.connection
+        return connection
 
     @contextmanager
     def transaction(self):
@@ -449,10 +475,14 @@ class DatabaseManager:
             return False
 
     def close(self):
-        """Close database connections."""
-        if hasattr(self._local, "connection"):
-            self._local.connection.close()
-            delattr(self._local, "connection")
+        """Close every connection created by this manager, from any thread."""
+        connections = getattr(self, "_connections", None)
+        lock = getattr(self, "_connections_lock", None)
+        if connections is not None and lock is not None:
+            _close_connections(connections, lock)
+        local = getattr(self, "_local", None)
+        if local is not None and hasattr(local, "connection"):
+            delattr(local, "connection")
 
     def vacuum(self):
         """Optimize database."""

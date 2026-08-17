@@ -275,7 +275,8 @@ class TestVersionConsistencyChecking:
         if pyproject_version is None:
             pyproject_file = project_root / "pyproject.toml"
             if pyproject_file.exists():
-                data = toml.load(open(pyproject_file))
+                with pyproject_file.open() as stream:
+                    data = toml.load(stream)
                 if "tool" in data and "poetry" in data["tool"]:
                     del data["tool"]["poetry"]["version"]
                 with open(pyproject_file, "w") as f:
@@ -316,7 +317,8 @@ class TestVersionUpdate:
 
         # Verify pyproject was updated
         pyproject_file = project_root / "pyproject.toml"
-        updated_pyproject = toml.load(open(pyproject_file))
+        with pyproject_file.open() as stream:
+            updated_pyproject = toml.load(stream)
         assert updated_pyproject["tool"]["poetry"]["version"] == "2.0.0"
 
         # Verify __init__.py was updated

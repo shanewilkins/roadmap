@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 import sys
+from contextlib import closing
 from typing import Any
 
 import click
@@ -200,11 +201,9 @@ def clear_baseline(core: Any, backend: str | None, console_inst: Any) -> bool:
     try:
         db_path = core.db_dir / "state.db"
         if db_path.exists():
-            conn = sqlite3.connect(str(db_path))
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM sync_base_state")
-            conn.commit()
-            conn.close()
+            with closing(sqlite3.connect(str(db_path))) as conn:
+                conn.cursor().execute("DELETE FROM sync_base_state")
+                conn.commit()
             console_inst.print("✅ Baseline cleared successfully", style="bold green")
         else:
             console_inst.print(

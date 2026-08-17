@@ -1,15 +1,10 @@
 """Parser for issue markdown files."""
 
-import uuid
-from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from roadmap.common.datetime_parser import parse_datetime
-from roadmap.common.utils.timezone_utils import now_utc
 from roadmap.core.domain import Issue, IssueType, Priority, Status
 
-from ..persistence import enhanced_persistence
 from .frontmatter import FrontmatterParser
 
 
@@ -127,119 +122,3 @@ class IssueParser:
         frontmatter, content = FrontmatterParser.parse_file(file_path)
         FrontmatterParser.update_sync_metadata(frontmatter, sync_metadata)
         FrontmatterParser.serialize_file(frontmatter, content, file_path)
-
-    @classmethod
-    def _validate_enum_field(
-        cls, field_name: str, value: str | None, enum_class
-    ) -> tuple[bool, Any, str | None]:
-        """Validate and convert enum field. Returns (success, value, error_message)."""
-        if not value:
-            return True, None, None
-
-        try:
-            return True, enum_class(value), None
-        except ValueError:
-            valid_values = [e.value for e in enum_class]
-            error_msg = (
-                f"Invalid {field_name}: {value}. Valid: {', '.join(valid_values)}"
-            )
-            return False, None, error_msg
-
-    @classmethod
-    def _extract_issue_dates(
-        cls, data: dict
-    ) -> tuple[datetime, datetime, datetime | None]:
-        """Extract and parse date fields from data."""
-        now = now_utc()
-        created = cls._parse_datetime(data.get("created")) or now
-        updated = cls._parse_datetime(data.get("updated")) or now
-        due_date = cls._parse_datetime(data.get("due_date"))
-        return created, updated, due_date
-
-    @classmethod
-    def _build_issue_from_data(
-        cls, data: dict, file_path: Path
-    ) -> tuple[bool, Issue | None, str | None]:
-        """Build Issue object from validated data. Returns (success, issue, error_message)."""
-        # Validate priority
-        success, priority, error = cls._validate_enum_field(
-            "priority", data.get("priority"), Priority
-        )
-        if not success:
-            return False, None, f"{error} in {file_path}"
-        priority = priority or Priority.MEDIUM
-
-        # Validate status
-        success, status, error = cls._validate_enum_field(
-            "status", data.get("status"), Status
-        )
-        if not success:
-            return False, None, f"{error} in {file_path}"
-        status = status or Status.TODO
-
-        # Validate issue_type
-        success, _, error = cls._validate_enum_field(
-            "issue_type", data.get("issue_type"), IssueType
-        )
-        if not success:
-            return False, None, f"{error} in {file_path}"
-
-        # Extract dates
-        created, updated, due_date = cls._extract_issue_dates(data)
-
-        try:
-            issue = Issue(
-                id=data.get("id") or str(uuid.uuid4())[:8],
-                title=data.get("title") or "Untitled Issue",
-                priority=priority,
-                status=status,
-                assignee=data.get("assignee"),
-                milestone=data.get("milestone"),
-                labels=data.get("labels", []),
-                created=created,
-                updated=updated,
-                due_date=due_date,
-                content=data.get("content", ""),
-            )
-            return True, issue, None
-        except Exception as e:
-            return False, None, f"Error creating Issue: {e}"
-
-    @classmethod
-    def parse_issue_file_safe(
-        cls, file_path: Path
-    ) -> tuple[bool, Issue | None, str | None]:
-        """Safely parse an issue file with enhanced validation and recovery.
-
-        Returns:
-            (success, issue, error_message)
-        """
-        is_valid, result = enhanced_persistence.safe_load_with_validation(
-            file_path, "issue"
-        )
-
-        if not is_valid:
-            # result is a string error message
-            return False, None, str(result)
-
-        try:
-            # Convert the validated data to an Issue
-            # At this point, result must be a dict since is_valid is True
-            data = result if isinstance(result, dict) else {}
-            return cls._build_issue_from_data(data, file_path)
-        except Exception as e:
-            return False, None, f"Error processing issue file: {e}"
-
-    @classmethod
-    def save_issue_file_safe(cls, issue: Issue, file_path: Path) -> tuple[bool, str]:
-        """Safely save an issue file with automatic backup."""
-        try:
-            cls.save_issue_file(issue, file_path)
-            return True, "Issue saved successfully"
-        except Exception as e:
-            return False, f"Error saving issue: {e}"
-
-    @classmethod
-    def _parse_datetime(cls, value: Any) -> datetime | None:
-        """Parse datetime from various formats with timezone awareness."""
-        return parse_datetime(value, source_type="file", assumed_timezone="UTC")

@@ -51,6 +51,23 @@ jobs:
       - name: Scan for high-severity security issues
         run: uv run --locked bandit -c config/bandit.toml -r roadmap --severity-level=high
 
+      - name: Report complexity with Radon
+        run: >-
+          uv run --locked radon cc roadmap
+          --exclude '*/migrations/*'
+          --total-average
+          --show-complexity
+          --min D
+
+      - name: Enforce complexity with Xenon
+        run: >-
+          uv run --locked xenon
+          --exclude '*/migrations/*'
+          --max-absolute C
+          --max-modules C
+          --max-average A
+          roadmap
+
       - name: Test with coverage
         run: >-
           uv run --locked pytest

@@ -26,6 +26,7 @@ Implementation changes require separate, explicitly scoped work.
 - [Refactor implementation](refactor-implementation.md)
 - [Roadmap 0.2 public contract](public-contract-0.2.md)
 - [Roadmap 0.2 compatibility inventory](compatibility-inventory-0.2.csv)
+- [Canonical persistence and projection contract](canonical-persistence-contract-0.2.md)
 
 ## Delivery plans
 
@@ -39,3 +40,5 @@ Implementation changes require separate, explicitly scoped work.
 - [Phase 1 public contract — 2026-08-16](checkpoints/phase-1-public-contract-2026-08-16.md)
 - [Phase 2 architecture enforcement — 2026-08-16](checkpoints/phase-2-architecture-enforcement-2026-08-16.md)
 - [Phase 3 Bootstrap composition root — 2026-08-16](checkpoints/phase-3-bootstrap-composition-root-2026-08-16.md)
+- [Phase 4 Domain and Application contracts — 2026-08-17](checkpoints/phase-4-domain-application-contracts-2026-08-17.md)
+- [Phase 5 canonical persistence and SQLite projection — 2026-08-17](checkpoints/phase-5-canonical-persistence-projection-2026-08-17.md)

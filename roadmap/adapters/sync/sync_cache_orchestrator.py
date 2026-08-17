@@ -4,6 +4,7 @@ This module integrates OptimizedBaselineBuilder with the sync pipeline,
 providing intelligent change detection, database caching, and progress feedback.
 """
 
+from contextlib import closing
 from datetime import UTC, datetime
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -76,18 +77,13 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
                 logger.debug("cached_baseline_db_not_found")
                 return None
 
-            conn = sqlite3.connect(str(db_path))
-            cursor = conn.cursor()
-
-            # Query sync_base_state table
-            cursor.execute(
-                """
-                SELECT last_sync, data FROM sync_base_state
-                ORDER BY created_at DESC LIMIT 1
-                """
-            )
-            result = cursor.fetchone()
-            conn.close()
+            with closing(sqlite3.connect(str(db_path))) as conn:
+                result = conn.execute(
+                    """
+                    SELECT last_sync, data FROM sync_base_state
+                    ORDER BY created_at DESC LIMIT 1
+                    """
+                ).fetchone()
 
             if not result:
                 logger.debug("cached_baseline_not_in_db")
@@ -131,25 +127,21 @@ class SyncCacheOrchestrator(SyncRetrievalOrchestrator):
             db_path = self.core.db_dir / "state.db"
             db_path.parent.mkdir(parents=True, exist_ok=True)
 
-            conn = sqlite3.connect(str(db_path))
-            cursor = conn.cursor()
-
-            # Insert into sync_base_state
-            cursor.execute(
-                """
-                INSERT INTO sync_base_state (last_sync, data, created_at)
-                VALUES (?, ?, ?)
-                """,
-                (
-                    baseline.last_sync_time.isoformat()
-                    if baseline.last_sync_time
-                    else "unknown",
-                    json.dumps(baseline.to_dict()),
-                    datetime.now(UTC).isoformat(),
-                ),
-            )
-            conn.commit()
-            conn.close()
+            with closing(sqlite3.connect(str(db_path))) as conn:
+                conn.execute(
+                    """
+                    INSERT INTO sync_base_state (last_sync, data, created_at)
+                    VALUES (?, ?, ?)
+                    """,
+                    (
+                        baseline.last_sync_time.isoformat()
+                        if baseline.last_sync_time
+                        else "unknown",
+                        json.dumps(baseline.to_dict()),
+                        datetime.now(UTC).isoformat(),
+                    ),
+                )
+                conn.commit()
 
             logger.info(
                 "baseline_cached_to_db",

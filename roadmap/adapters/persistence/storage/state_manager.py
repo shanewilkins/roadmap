@@ -31,8 +31,6 @@ logger = get_logger(__name__)
 class DatabaseError(Exception):
     """Base exception for database operations."""
 
-    pass
-
 
 class StateManager:
     """SQLite-based state manager for roadmap data.

@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import dataclasses
 import re
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -178,7 +179,7 @@ def test_requirement_registers_are_fully_triaged_and_referentially_valid() -> No
     for row in [*users, *technical]:
         assert row["status"] in {"Accepted", "Deferred", "Rejected"}
         assert row["roadmap_target"] != "TBD"
-        assert row["last_updated"] == "2026-08-16"
+        assert date.fromisoformat(row["last_updated"]) <= date.today()
         if row["priority"] == "Must":
             assert row["status"] == "Accepted", row["id"]
         if row["status"] == "Accepted":

@@ -4,7 +4,11 @@ Tests for transaction context manager, initialization errors,
 and safety check error handling.
 """
 
+import gc
 import sqlite3
+import threading
+import warnings
+import weakref
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -281,6 +285,37 @@ class TestDatabaseManagerClose:
         manager.close()  # Should not raise
 
         assert not hasattr(manager._local, "connection")
+
+    def test_close_closes_connections_created_by_worker_threads(self, tmp_path):
+        """The manager, not a worker thread, owns every connection it creates."""
+        manager = DatabaseManager(tmp_path / "test.db")
+        worker_connections: list[sqlite3.Connection] = []
+
+        thread = threading.Thread(
+            target=lambda: worker_connections.append(manager._get_connection())
+        )
+        thread.start()
+        thread.join()
+
+        manager.close()
+
+        with pytest.raises(sqlite3.ProgrammingError):
+            worker_connections[0].execute("SELECT 1")
+
+    def test_finalizer_closes_connection_without_resource_warning(self, tmp_path):
+        """Abandoned managers retain a safe fallback for host integrations."""
+        manager = DatabaseManager(tmp_path / "test.db")
+        connection = manager._get_connection()
+        manager_ref = weakref.ref(manager)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", ResourceWarning)
+            del manager
+            gc.collect()
+
+        assert manager_ref() is None
+        with pytest.raises(sqlite3.ProgrammingError):
+            connection.execute("SELECT 1")
 
 
 class TestDatabaseManagerVacuum:

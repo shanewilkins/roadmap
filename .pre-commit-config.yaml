@@ -29,3 +29,18 @@ repos:
         entry: uv run --locked ruff format --config config/ruff.toml
         language: system
         types: [python]
+
+      - id: radon-complexity-report
+        name: radon complexity report
+        entry: uv run --locked radon cc roadmap --exclude */migrations/* --total-average --show-complexity --min D
+        language: system
+        pass_filenames: false
+        always_run: true
+        verbose: true
+
+      - id: xenon-complexity
+        name: xenon complexity gate
+        entry: uv run --locked xenon --exclude */migrations/* --max-absolute C --max-modules C --max-average A roadmap
+        language: system
+        pass_filenames: false
+        always_run: true

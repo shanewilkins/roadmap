@@ -78,6 +78,8 @@ dev = [
     "ruff==0.16.1",
     "pre-commit>=4.6.0",
     "bandit[toml]>=1.9.4",
+    "radon>=6.0.1,<7.0.0",
+    "xenon>=0.9.3,<1.0.0",
     "pytest-xdist>=3.8.0",
     "pytest-benchmark>=5.2.3",
     "pyright>=1.1.411",

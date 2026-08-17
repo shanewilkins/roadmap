@@ -3,6 +3,8 @@
 import sqlite3
 from contextlib import contextmanager
 
+import pytest
+
 from roadmap.adapters.persistence.repositories.issue_repository import IssueRepository
 
 
@@ -17,7 +19,8 @@ def _transaction(conn):
         raise
 
 
-def _repo():
+@pytest.fixture
+def repository():
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
     conn.execute("CREATE TABLE projects (id TEXT PRIMARY KEY)")
@@ -43,12 +46,13 @@ def _repo():
         )
         """
     )
-    return conn, IssueRepository(lambda: conn, lambda: _transaction(conn))
+    yield conn, IssueRepository(lambda: conn, lambda: _transaction(conn))
+    conn.close()
 
 
-def test_create_missing_project_and_milestone_are_set_to_none():
+def test_create_missing_project_and_milestone_are_set_to_none(repository):
     """Unknown project/milestone IDs should be normalized to NULL."""
-    conn, repo = _repo()
+    conn, repo = repository
 
     issue_id = repo.create(
         {
@@ -68,9 +72,9 @@ def test_create_missing_project_and_milestone_are_set_to_none():
     assert row["milestone_id"] is None
 
 
-def test_update_empty_dict_returns_false_without_query_changes():
+def test_update_empty_dict_returns_false_without_query_changes(repository):
     """Empty update payload should return False and not modify row."""
-    conn, repo = _repo()
+    conn, repo = repository
     repo.create({"id": "iss-2", "title": "T", "description": "D"})
 
     result = repo.update("iss-2", {})
@@ -80,15 +84,15 @@ def test_update_empty_dict_returns_false_without_query_changes():
     assert count == 1
 
 
-def test_delete_many_empty_list_returns_zero():
+def test_delete_many_empty_list_returns_zero(repository):
     """Batch delete should short-circuit when no IDs are provided."""
-    _conn, repo = _repo()
+    _conn, repo = repository
     assert repo.delete_many([]) == 0
 
 
-def test_mark_archived_true_sets_flag_and_timestamp():
+def test_mark_archived_true_sets_flag_and_timestamp(repository):
     """Archiving should set archived=1 and archived_at timestamp."""
-    conn, repo = _repo()
+    conn, repo = repository
     repo.create({"id": "iss-3", "title": "T", "description": "D"})
 
     assert repo.mark_archived("iss-3", archived=True) is True
@@ -101,9 +105,9 @@ def test_mark_archived_true_sets_flag_and_timestamp():
     assert row["archived_at"] is not None
 
 
-def test_mark_archived_false_clears_timestamp():
+def test_mark_archived_false_clears_timestamp(repository):
     """Unarchiving should clear archived_at and set archived=0."""
-    conn, repo = _repo()
+    conn, repo = repository
     repo.create({"id": "iss-4", "title": "T", "description": "D"})
     assert repo.mark_archived("iss-4", archived=True) is True
 

@@ -4,6 +4,8 @@ This module contains initialization and baseline helpers extracted from
 `sync.py` to reduce its size and improve maintainability.
 """
 
+from contextlib import closing
+
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from structlog import get_logger
 
@@ -65,11 +67,9 @@ def _clear_baseline_db(core, console_inst):
     try:
         db_path = core.db_dir / "state.db"
         if db_path.exists():
-            conn = sqlite3.connect(str(db_path))
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM sync_base_state")
-            conn.commit()
-            conn.close()
+            with closing(sqlite3.connect(str(db_path))) as conn:
+                conn.execute("DELETE FROM sync_base_state")
+                conn.commit()
             console_inst.print("✅ Cleared existing baseline from database")
     except OSError as e:
         logger.warning(
@@ -226,28 +226,25 @@ def _prune_db_issues_missing_files(core, console_inst, dry_run: bool) -> None:
         if not db_path.exists():
             return
 
-        conn = sqlite3.connect(str(db_path))
-        conn.row_factory = sqlite3.Row
-        rows = conn.execute("SELECT id FROM issues").fetchall()
-        db_issue_ids = {row["id"] for row in rows}
+        with closing(sqlite3.connect(str(db_path))) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute("SELECT id FROM issues").fetchall()
+            db_issue_ids = {row["id"] for row in rows}
 
-        stale_ids = sorted(db_issue_ids - local_issue_ids)
-        if not stale_ids:
-            conn.close()
-            return
+            stale_ids = sorted(db_issue_ids - local_issue_ids)
+            if not stale_ids:
+                return
 
-        if dry_run:
-            console_inst.print(
-                f"🧹 DB preflight: {len(stale_ids)} issues would be removed (no local file)",
-                style="yellow",
-            )
-            conn.close()
-            return
+            if dry_run:
+                console_inst.print(
+                    f"🧹 DB preflight: {len(stale_ids)} issues would be removed (no local file)",
+                    style="yellow",
+                )
+                return
 
-        placeholders = ",".join("?" * len(stale_ids))
-        conn.execute(f"DELETE FROM issues WHERE id IN ({placeholders})", stale_ids)
-        conn.commit()
-        conn.close()
+            placeholders = ",".join("?" * len(stale_ids))
+            conn.execute(f"DELETE FROM issues WHERE id IN ({placeholders})", stale_ids)
+            conn.commit()
 
         console_inst.print(
             f"🧹 DB preflight: removed {len(stale_ids)} stale issues", style="green"

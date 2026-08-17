@@ -6,6 +6,7 @@ Checks that local issue files align with database state and baseline.
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 
 import click
 from structlog import get_logger
@@ -34,18 +35,21 @@ def _collect_local_issue_ids(issues_dir) -> tuple[set[str], list[tuple[str, str]
 
 def _load_db_state(db_path) -> tuple[set[str], set[str], int] | None:
     try:
-        conn = sqlite3.connect(str(db_path))
-        conn.row_factory = sqlite3.Row
-        db_ids = {row["id"] for row in conn.execute("SELECT id FROM issues").fetchall()}
-        baseline_ids = {
-            row["issue_id"]
-            for row in conn.execute("SELECT issue_id FROM sync_base_state").fetchall()
-        }
-        remote_links_count = conn.execute(
-            "SELECT COUNT(*) FROM issue_remote_links"
-        ).fetchone()[0]
-        conn.close()
-        return db_ids, baseline_ids, remote_links_count
+        with closing(sqlite3.connect(str(db_path))) as conn:
+            conn.row_factory = sqlite3.Row
+            db_ids = {
+                row["id"] for row in conn.execute("SELECT id FROM issues").fetchall()
+            }
+            baseline_ids = {
+                row["issue_id"]
+                for row in conn.execute(
+                    "SELECT issue_id FROM sync_base_state"
+                ).fetchall()
+            }
+            remote_links_count = conn.execute(
+                "SELECT COUNT(*) FROM issue_remote_links"
+            ).fetchone()[0]
+            return db_ids, baseline_ids, remote_links_count
     except Exception as exc:
         logger.warning(
             "db_integrity_query_failed",
