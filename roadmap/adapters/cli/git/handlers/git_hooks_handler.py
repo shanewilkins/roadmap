@@ -1,10 +1,11 @@
 """Handler for Git hooks management."""
 
+from typing import Any
+
 import structlog
 from rich.console import Console
 
 from roadmap.adapters.git.git_hooks_manager import GitHookManager
-from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = structlog.get_logger()
 
@@ -20,7 +21,7 @@ class GitHooksHandler:
         """
         self.console = console
 
-    def install_hooks(self, core: RoadmapCore):
+    def install_hooks(self, core: Any):
         """Install Git hooks for roadmap integration.
 
         Args:
@@ -48,7 +49,7 @@ class GitHooksHandler:
             self.console.print(f"❌ Error installing hooks: {e}", style="bold red")
             raise
 
-    def uninstall_hooks(self, core: RoadmapCore):
+    def uninstall_hooks(self, core: Any):
         """Remove Git hooks for roadmap integration.
 
         Args:
@@ -69,7 +70,7 @@ class GitHooksHandler:
             self.console.print(f"❌ Error removing hooks: {e}", style="bold red")
             raise
 
-    def show_hooks_status(self, core: RoadmapCore):
+    def show_hooks_status(self, core: Any):
         """Show status of installed Git hooks.
 
         Args:

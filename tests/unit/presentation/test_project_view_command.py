@@ -264,14 +264,14 @@ class TestViewProjectCommand:
 
     def test_view_project_help(self, cli_runner):
         """Test view project command help."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         result = cli_runner.invoke(main, ["project", "view", "--help"])
         assert result.exit_code == 0
 
     def test_view_project_not_initialized(self, cli_runner):
         """Test view project command when roadmap not initialized."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ["project", "view", "test-project"])
@@ -279,7 +279,7 @@ class TestViewProjectCommand:
 
     def test_view_nonexistent_project(self, cli_runner):
         """Test viewing a project that doesn't exist."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         with cli_runner.isolated_filesystem():
             cli_runner.invoke(main, ["init", "-y", "--skip-github", "--skip-project"])
@@ -289,7 +289,7 @@ class TestViewProjectCommand:
 
     def test_view_created_project(self, cli_runner):
         """Test viewing a successfully created project."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         with cli_runner.isolated_filesystem():
             init_result = cli_runner.invoke(

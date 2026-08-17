@@ -4,20 +4,19 @@ This service wraps the sync backend factory to prevent direct
 CLI imports from lower-level adapter modules (layer violation fix).
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 import structlog
 
 from roadmap.adapters.sync.backend_factory import get_sync_backend as _get_backend
 from roadmap.core.interfaces.sync_backend import SyncBackendInterface
-from roadmap.infrastructure.coordination.core import RoadmapCore
 
 log = structlog.get_logger()
 
 
 def get_sync_backend(
     backend_type: Literal["github", "git"],
-    core: RoadmapCore,
+    core: Any,
     config: dict | None = None,
 ) -> SyncBackendInterface | None:
     """Create a sync backend (CLI-facing wrapper over factory).

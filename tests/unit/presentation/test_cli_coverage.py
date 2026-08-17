@@ -4,11 +4,9 @@ This module focuses on testing CLI commands that aren't covered by existing test
 using a simpler approach that works with the existing codebase.
 """
 
-from unittest.mock import patch
-
 import pytest
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 
 
 class TestCLIStatus:
@@ -70,35 +68,6 @@ class TestCLIGitIntegration:
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(main, ["git-hooks", "--install"])
             assert result.exit_code in (0, 1, 2)
-
-
-class TestCLIHelperFunctions:
-    """Test CLI helper functions."""
-
-    def test_get_current_user_with_mock(self, cli_runner):
-        """Test _get_current_user function with mocked environment."""
-        from roadmap.adapters.cli import _get_current_user
-
-        with (
-            patch("os.getenv") as mock_getenv,
-            patch("getpass.getuser") as mock_getuser,
-        ):
-            mock_getenv.return_value = "test_user"
-            mock_getuser.return_value = "fallback_user"
-
-            user = _get_current_user()  # type: ignore[call-arg]
-            assert user is not None
-            assert isinstance(user, str)
-
-    def test_detect_project_context_basic(self, cli_runner):
-        """Test _detect_project_context function."""
-        from roadmap.adapters.cli import _detect_project_context
-
-        with cli_runner.isolated_filesystem():
-            context = _detect_project_context()  # type: ignore[call-arg]
-            assert isinstance(context, dict)
-            assert "project_name" in context
-            assert "has_git" in context
 
 
 class TestCLIInitAdvanced:

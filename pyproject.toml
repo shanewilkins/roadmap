@@ -98,7 +98,7 @@ Issues = "https://github.com/shanewilkins/roadmap/issues"
 Documentation = "https://roadmap-cli.readthedocs.io"
 
 [project.scripts]
-roadmap = "roadmap.adapters.cli:main"
+roadmap = "roadmap.bootstrap:main"
 
 [tool.hatch.build]
 exclude = [

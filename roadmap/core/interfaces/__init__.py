@@ -2,67 +2,6 @@
 
 from typing import Protocol
 
-from .assignee_validator import AssigneeValidator  # type: ignore[assignment]
-from .backend_factory import SyncBackendFactoryInterface, SyncBackendInterface
-from .github import GitHubBackendInterface
-from .parsers import (
-    FrontmatterParserInterface,
-    IssueParserInterface,
-    MilestoneParserInterface,
-    ProjectParserInterface,
-)
-from .persistence import (
-    FileNotFound,
-    GitHistoryError,
-    PersistenceInterface,
-)
-from .repositories import (
-    IssueRepository,
-    MilestoneRepository,
-    ProjectRepository,
-)
-from .state_managers import (
-    IssueStateManager,
-    MilestoneStateManager,
-    ProjectStateManager,
-    QueryStateManager,
-    SyncStateManager,
-)
-from .state_storage import SyncStateStorageInterface
-from .sync_backend import (
-    SyncConflict,
-    SyncReport,
-)
-from .sync_services import SyncCacheServiceInterface, SyncLinkingServiceInterface
-
-__all__ = [
-    "CredentialProvider",
-    "AssigneeValidator",
-    "ProjectStateManager",
-    "MilestoneStateManager",
-    "IssueStateManager",
-    "SyncStateManager",
-    "QueryStateManager",
-    "SyncBackendInterface",
-    "SyncBackendFactoryInterface",
-    "SyncConflict",
-    "SyncReport",
-    "PersistenceInterface",
-    "IssueParserInterface",
-    "FrontmatterParserInterface",
-    "MilestoneParserInterface",
-    "ProjectParserInterface",
-    "GitHubBackendInterface",
-    "SyncStateStorageInterface",
-    "SyncLinkingServiceInterface",
-    "SyncCacheServiceInterface",
-    "IssueRepository",
-    "MilestoneRepository",
-    "ProjectRepository",
-    "FileNotFound",
-    "GitHistoryError",
-]
-
 
 class CredentialProvider(Protocol):
     """Abstract interface for credential management.
@@ -107,3 +46,70 @@ class CredentialProvider(Protocol):
             True if available, False otherwise
         """
         ...
+
+
+# Define CredentialProvider before compatibility re-exports: state_storage
+# reaches services that import this protocol during package initialization.
+from .assignee_validator import AssigneeValidator  # noqa: E402
+from .backend_factory import (  # noqa: E402
+    SyncBackendFactoryInterface,
+    SyncBackendInterface,
+)
+from .github import GitHubBackendInterface  # noqa: E402
+from .parsers import (  # noqa: E402
+    FrontmatterParserInterface,
+    IssueParserInterface,
+    MilestoneParserInterface,
+    ProjectParserInterface,
+)
+from .persistence import (  # noqa: E402
+    FileNotFound,
+    GitHistoryError,
+    PersistenceInterface,
+)
+from .repositories import (  # noqa: E402
+    IssueRepository,
+    MilestoneRepository,
+    ProjectRepository,
+)
+from .state_managers import (  # noqa: E402
+    IssueStateManager,
+    MilestoneStateManager,
+    ProjectStateManager,
+    QueryStateManager,
+    SyncStateManager,
+)
+from .state_storage import SyncStateStorageInterface  # noqa: E402
+from .sync_backend import SyncConflict, SyncReport  # noqa: E402
+from .sync_services import (  # noqa: E402
+    SyncCacheServiceInterface,
+    SyncLinkingServiceInterface,
+)
+
+__all__ = [
+    "CredentialProvider",
+    "AssigneeValidator",
+    "ProjectStateManager",
+    "MilestoneStateManager",
+    "IssueStateManager",
+    "SyncStateManager",
+    "QueryStateManager",
+    "SyncBackendInterface",
+    "SyncBackendFactoryInterface",
+    "SyncConflict",
+    "SyncReport",
+    "PersistenceInterface",
+    "IssueParserInterface",
+    "FrontmatterParserInterface",
+    "MilestoneParserInterface",
+    "ProjectParserInterface",
+    "GitHubBackendInterface",
+    "SyncStateStorageInterface",
+    "SyncLinkingServiceInterface",
+    "SyncCacheServiceInterface",
+    "IssueRepository",
+    "MilestoneRepository",
+    "ProjectRepository",
+    "FileNotFound",
+    "GitHistoryError",
+]

@@ -286,7 +286,7 @@ class TestSyncStatusCommand:
 
     def test_sync_status_no_args_no_flags_fails(self, cli_runner):
         """Test sync-status command without issue ID or flags fails."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         with cli_runner.isolated_filesystem():
             cli_runner.invoke(main, ["init", "-y", "--skip-github", "--skip-project"])
@@ -295,7 +295,7 @@ class TestSyncStatusCommand:
 
     def test_sync_status_with_invalid_issue_id(self, cli_runner):
         """Test sync-status command with invalid issue ID."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         with cli_runner.isolated_filesystem():
             cli_runner.invoke(main, ["init", "-y", "--skip-github", "--skip-project"])
@@ -304,7 +304,7 @@ class TestSyncStatusCommand:
 
     def test_sync_status_help(self, cli_runner):
         """Test sync-status command help."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         result = cli_runner.invoke(main, ["issue", "sync-status", "--help"])
         assert result.exit_code == 0

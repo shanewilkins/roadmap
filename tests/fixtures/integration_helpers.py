@@ -8,7 +8,7 @@ from typing import Any
 
 from click.testing import CliRunner
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from roadmap.infrastructure.coordination.core import RoadmapCore
 
 

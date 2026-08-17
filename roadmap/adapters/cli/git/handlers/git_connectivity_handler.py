@@ -1,9 +1,9 @@
 """Handler for Git connectivity and authentication testing."""
 
+from typing import Any
+
 import structlog
 from rich.console import Console
-
-from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = structlog.get_logger()
 
@@ -19,7 +19,7 @@ class GitConnectivityHandler:
         """
         self.console = console
 
-    def test_git_connectivity(self, core: RoadmapCore):
+    def test_git_connectivity(self, core: Any):
         """Test and verify Git repository connectivity for self-hosting.
 
         Args:

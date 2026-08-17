@@ -1,11 +1,12 @@
 """Handler for Git branch operations."""
 
+from typing import Any
+
 import structlog
 from rich.console import Console
 
 from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
 from roadmap.core.domain import Issue, Status
-from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = structlog.get_logger()
 
@@ -21,7 +22,7 @@ class GitBranchHandler:
         """
         self.console = console
 
-    def validate_branch_environment(self, core: RoadmapCore) -> bool:
+    def validate_branch_environment(self, core: Any) -> bool:
         """Validate roadmap and git environment for branch creation.
 
         Args:
@@ -43,7 +44,7 @@ class GitBranchHandler:
 
         return True
 
-    def get_and_validate_issue(self, core: RoadmapCore, issue_id: str):
+    def get_and_validate_issue(self, core: Any, issue_id: str):
         """Get and validate issue exists.
 
         Args:
@@ -59,7 +60,7 @@ class GitBranchHandler:
             return None
         return issue
 
-    def create_branch(self, core: RoadmapCore, issue_id: str, checkout: bool = True):
+    def create_branch(self, core: Any, issue_id: str, checkout: bool = True):
         """Create a Git branch for an issue.
 
         Args:
@@ -118,7 +119,7 @@ class GitBranchHandler:
             )
             self.console.print(f"❌ Failed to create Git branch: {e}", style="bold red")
 
-    def link_issue_to_branch(self, core: RoadmapCore, issue_id: str):
+    def link_issue_to_branch(self, core: Any, issue_id: str):
         """Link an issue to the current Git branch.
 
         Args:
@@ -222,7 +223,7 @@ class GitBranchHandler:
         self.console.print(f"🔗 Linked to issue: {issue.title}", style="cyan")
 
     def _update_issue_status_if_needed(
-        self, core: RoadmapCore, issue: Issue, issue_id: str
+        self, core: Any, issue: Issue, issue_id: str
     ) -> None:
         """Update issue status to in-progress if it's todo.
 

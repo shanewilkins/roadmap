@@ -14,7 +14,7 @@ from tests.unit.domain.test_data_factory_generation import TestDataFactory
 @pytest.fixture
 def initialized_roadmap(temp_dir):
     """Create a temporary directory with initialized roadmap."""
-    from roadmap.adapters.cli import main
+    from roadmap.bootstrap import cli as main
 
     runner = CliRunner()
     result = runner.invoke(
@@ -177,7 +177,7 @@ class TestCLIAssigneeValidation:
 
     def test_issue_create_with_invalid_assignee(self, cli_runner, initialized_roadmap):
         """Test issue creation with invalid assignee."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         # Create a mock core
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -189,28 +189,20 @@ class TestCLIAssigneeValidation:
         mock_core.team.get_current_user.return_value = None
         mock_core.issues.create.side_effect = Exception("Should not reach create")
 
-        # Mock the CLI's core resolution
-        with patch("roadmap.cli.RoadmapCore") as mock_core_class:
-            mock_core_class.find_existing_roadmap.return_value = None
-            mock_core_class.return_value = mock_core
+        result = cli_runner.invoke(
+            main,
+            ["issue", "create", "--title", "Test Issue", "--assignee", "baduser"],
+            obj={"core": mock_core},
+        )
 
-            result = cli_runner.invoke(
-                main,
-                ["issue", "create", "--title", "Test Issue", "--assignee", "baduser"],
-                obj={"core": mock_core},
-            )
-
-            # Click Abort should result in exit code 1
-            assert result.exit_code == 1
-            assert (
-                "Invalid assignee" in result.output or "does not exist" in result.output
-            )
-            # Should not create issue when validation fails
-            mock_core.issues.create.assert_not_called()
+        assert result.exit_code == 1
+        output = result.output
+        assert "Invalid assignee" in output or "does not exist" in output
+        mock_core.issues.create.assert_not_called()
 
     def test_issue_create_with_valid_assignee(self, cli_runner, initialized_roadmap):
         """Test issue creation with valid assignee."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         # Create a mock core
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -231,23 +223,18 @@ class TestCLIAssigneeValidation:
         mock_issue.estimated_time_display = "Not estimated"
         mock_core.issues.create.return_value = mock_issue
 
-        # Mock the CLI's core resolution
-        with patch("roadmap.cli.RoadmapCore") as mock_core_class:
-            mock_core_class.find_existing_roadmap.return_value = None
-            mock_core_class.return_value = mock_core
+        result = cli_runner.invoke(
+            main,
+            ["issue", "create", "--title", "Test Issue", "--assignee", "gooduser"],
+            obj={"core": mock_core},
+        )
 
-            result = cli_runner.invoke(
-                main,
-                ["issue", "create", "--title", "Test Issue", "--assignee", "gooduser"],
-            )
-
-            assert_command_success(result)
-            # Should create issue when validation passes
-            mock_core.issues.create.assert_called_once()
+        assert_command_success(result)
+        mock_core.issues.create.assert_called_once()
 
     def test_issue_create_local_only_usage(self, cli_runner, initialized_roadmap):
         """Test issue creation works without GitHub when validation is skipped."""
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         # Create a mock core that simulates local-only usage (no GitHub config)
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
@@ -269,26 +256,19 @@ class TestCLIAssigneeValidation:
         mock_issue.estimated_time_display = "Not estimated"
         mock_core.issues.create.return_value = mock_issue
 
-        with patch("roadmap.cli.RoadmapCore") as mock_core_class:
-            mock_core_class.find_existing_roadmap.return_value = None
-            mock_core_class.return_value = mock_core
+        result = cli_runner.invoke(
+            main,
+            [
+                "issue",
+                "create",
+                "--title",
+                "Local Issue",
+                "--assignee",
+                "alice.local",
+            ],
+            obj={"core": mock_core},
+        )
 
-            # Should work with any assignee when GitHub is not configured
-            result = cli_runner.invoke(
-                main,
-                [
-                    "issue",
-                    "create",
-                    "--title",
-                    "Local Issue",
-                    "--assignee",
-                    "alice.local",
-                ],
-                obj={"core": mock_core},
-            )
-
-            assert_command_success(result)
-            # Validation should have been called but returned success
-            mock_core.team.validate_assignee.assert_called_once_with("alice.local")
-            # Issue should have been created successfully
-            mock_core.issues.create.assert_called_once()
+        assert_command_success(result)
+        mock_core.team.validate_assignee.assert_called_once_with("alice.local")
+        mock_core.issues.create.assert_called_once()

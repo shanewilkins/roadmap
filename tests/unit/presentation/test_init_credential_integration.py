@@ -1,6 +1,6 @@
 """Tests for credential handling in initialization."""
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 

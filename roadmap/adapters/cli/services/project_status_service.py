@@ -9,12 +9,12 @@ Handles all business logic related to:
 
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 from roadmap.adapters.persistence.parser import MilestoneParser, ProjectParser
 from roadmap.common.logging import get_logger
 from roadmap.common.models import ColumnDef, ColumnType, TableData
 from roadmap.core.domain import MilestoneStatus, ProjectStatus, Status
-from roadmap.infrastructure.coordination.core import RoadmapCore
 from roadmap.infrastructure.validation.file_enumeration import FileEnumerationService
 
 logger = get_logger(__name__)
@@ -24,7 +24,7 @@ class StatusDataService:
     """Service for gathering and computing status data."""
 
     @staticmethod
-    def gather_status_data(core: RoadmapCore) -> dict:
+    def gather_status_data(core: Any) -> dict:
         """Gather all status data from roadmap.
 
         Args:
@@ -68,7 +68,7 @@ class MilestoneProgressService:
     """Service for computing milestone progress."""
 
     @staticmethod
-    def get_milestone_progress(core: RoadmapCore, milestone_name: str) -> dict:
+    def get_milestone_progress(core: Any, milestone_name: str) -> dict:
         """Get progress for a specific milestone.
 
         Args:
@@ -105,7 +105,7 @@ class MilestoneProgressService:
             return {"total": 0, "completed": 0, "percentage": 0}
 
     @staticmethod
-    def get_all_milestones_progress(core: RoadmapCore, milestones: list) -> dict:
+    def get_all_milestones_progress(core: Any, milestones: list) -> dict:
         """Get progress for all milestones.
 
         Args:
@@ -202,7 +202,7 @@ class StatusSnapshotService:
     """Service for building a snapshot of entity status counts."""
 
     @staticmethod
-    def build_snapshot_tables(core: RoadmapCore) -> dict[str, TableData]:
+    def build_snapshot_tables(core: Any) -> dict[str, TableData]:
         """Build status snapshot tables for entities and issue status.
 
         Args:
@@ -239,14 +239,14 @@ class StatusSnapshotService:
         }
 
     @staticmethod
-    def _list_archived_projects(core: RoadmapCore) -> list:
+    def _list_archived_projects(core: Any) -> list:
         archive_dir = core.projects_dir.parent / "archive" / "projects"
         return FileEnumerationService.enumerate_and_parse(
             archive_dir, ProjectParser.parse_project_file
         )
 
     @staticmethod
-    def _list_archived_milestones(core: RoadmapCore) -> list:
+    def _list_archived_milestones(core: Any) -> list:
         archive_dir = core.milestones_dir.parent / "archive" / "milestones"
         return FileEnumerationService.enumerate_and_parse(
             archive_dir, MilestoneParser.parse_milestone_file
@@ -385,9 +385,7 @@ class RoadmapSummaryService:
     """Service for computing high-level roadmap summaries."""
 
     @staticmethod
-    def compute_roadmap_summary(
-        core: RoadmapCore, issues: list, milestones: list
-    ) -> dict:
+    def compute_roadmap_summary(core: Any, issues: list, milestones: list) -> dict:
         """Compute comprehensive roadmap summary.
 
         Args:

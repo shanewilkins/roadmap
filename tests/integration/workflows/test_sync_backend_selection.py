@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 
 
 class TestSyncBackendSelection:

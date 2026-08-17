@@ -1,7 +1,7 @@
 """Service for persisting issues to local storage (YAML files)."""
 
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from structlog import get_logger
 
@@ -212,7 +212,7 @@ class IssuePersistenceService:
             else:
                 logger.debug("issue_not_found_in_repo", issue_id=issue_id)
 
-            return issue
+            return cast(Issue | None, issue)
 
         except Exception as e:
             logger.error(

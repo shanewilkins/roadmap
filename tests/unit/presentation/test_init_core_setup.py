@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 
 
 class TestInitCommand:

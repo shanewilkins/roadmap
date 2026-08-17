@@ -52,7 +52,7 @@ def test_distribution_and_console_script_names_are_distinct() -> None:
     project = _configuration()["project"]
 
     assert project["name"] == "roadmap-cli"
-    assert project["scripts"] == {"roadmap": "roadmap.adapters.cli:main"}
+    assert project["scripts"] == {"roadmap": "roadmap.bootstrap:main"}
 
 
 def test_runtime_dependencies_exclude_namespace_collision_and_dev_tools() -> None:

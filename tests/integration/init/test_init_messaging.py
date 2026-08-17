@@ -7,7 +7,7 @@ Tests enhanced init messaging:
 - Team onboarding messaging
 """
 
-from roadmap.adapters.cli.core import init
+from roadmap.bootstrap import cli as main
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
@@ -20,7 +20,9 @@ class TestInitMessagingEnhancements:
         """Test messaging when joining existing projects shows project details."""
         roadmap_dir, projects_dir = temp_roadmap_with_projects
         # Run init with --yes to avoid prompts
-        result = cli_runner.invoke(init, ["--yes", "--skip-github", "--skip-project"])
+        result = cli_runner.invoke(
+            main, ["init", "--yes", "--skip-github", "--skip-project"]
+        )
 
         # Verify init completes successfully
         assert result.exit_code == 0
@@ -33,8 +35,8 @@ class TestInitMessagingEnhancements:
         with cli_runner.isolated_filesystem():
             # Run init (no existing projects)
             result = cli_runner.invoke(
-                init,
-                ["--yes", "--skip-github", "--project-name", "New Project"],
+                main,
+                ["init", "--yes", "--skip-github", "--project-name", "New Project"],
             )
 
             # Verify the output shows initialization
@@ -47,7 +49,9 @@ class TestInitMessagingEnhancements:
         """Test messaging displays multiple projects when joining."""
         roadmap_dir, projects_dir = temp_roadmap_with_projects
         # Run init
-        result = cli_runner.invoke(init, ["--yes", "--skip-github", "--skip-project"])
+        result = cli_runner.invoke(
+            main, ["init", "--yes", "--skip-github", "--skip-project"]
+        )
 
         # Verify command succeeded
         assert result.exit_code == 0
@@ -60,8 +64,9 @@ class TestInitMessagingEnhancements:
         roadmap_dir, config_file = temp_roadmap_with_config
         # Run init (Bob joining)
         result = cli_runner.invoke(
-            init,
+            main,
             [
+                "init",
                 "--yes",
                 "--skip-github",
                 "--skip-project",
@@ -81,8 +86,9 @@ class TestInitConfigLocalMessaging:
         """Test that init displays config sharing strategy on first run."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(
-                init,
+                main,
                 [
+                    "init",
                     "--yes",
                     "--skip-github",
                     "--skip-project",
@@ -100,7 +106,9 @@ class TestInitConfigLocalMessaging:
         """Test messaging shows team config pattern when joining existing project."""
         roadmap_dir, projects_dir, config_file = temp_roadmap_team_scenario
         # Run init (Bob joining)
-        result = cli_runner.invoke(init, ["--yes", "--skip-github", "--skip-project"])
+        result = cli_runner.invoke(
+            main, ["init", "--yes", "--skip-github", "--skip-project"]
+        )
 
         assert result.exit_code == 0
         # Should acknowledge that roadmap is already initialized
@@ -120,8 +128,9 @@ class TestInitContextDetectionMessaging:
     ):
         """Test that init shows detected git repository in output."""
         result = cli_runner.invoke(
-            init,
+            main,
             [
+                "init",
                 "--yes",
                 "--skip-github",
                 "--skip-project",
@@ -138,8 +147,9 @@ class TestInitContextDetectionMessaging:
         """Test that init shows directory context in initialization message."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(
-                init,
+                main,
                 [
+                    "init",
                     "--yes",
                     "--skip-github",
                     "--skip-project",
@@ -161,7 +171,7 @@ class TestInitSuccessSummary:
     ):
         """Test that successful init shows comprehensive summary."""
         roadmap_dir, projects_dir = temp_roadmap_with_projects
-        result = cli_runner.invoke(init, ["--yes", "--skip-github"])
+        result = cli_runner.invoke(main, ["init", "--yes", "--skip-github"])
 
         assert result.exit_code == 0
         # Verify init completed successfully and produced output
@@ -171,8 +181,8 @@ class TestInitSuccessSummary:
         """Test that init summary shows whether GitHub is configured."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(
-                init,
-                ["--yes", "--skip-github", "--skip-project"],
+                main,
+                ["init", "--yes", "--skip-github", "--skip-project"],
             )
 
             assert result.exit_code == 0
@@ -187,8 +197,9 @@ class TestTeamOnboardingUXFlow:
         """Test Alice's init flow: creates new shared project."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(
-                init,
+                main,
                 [
+                    "init",
                     "--yes",
                     "--skip-github",
                     "--project-name",
@@ -207,7 +218,7 @@ class TestTeamOnboardingUXFlow:
         """Test Bob's init flow: joins Alice's existing project."""
         roadmap_dir, projects_dir = temp_roadmap_with_projects
         # Bob runs init
-        result = cli_runner.invoke(init, ["--yes", "--skip-github"])
+        result = cli_runner.invoke(main, ["init", "--yes", "--skip-github"])
 
         assert result.exit_code == 0
         # Bob's flow should show joining
@@ -222,8 +233,9 @@ class TestTeamOnboardingUXFlow:
         """Test messaging about team config sharing in onboarding."""
         roadmap_dir, config_file = temp_roadmap_with_config
         result = cli_runner.invoke(
-            init,
+            main,
             [
+                "init",
                 "--yes",
                 "--skip-github",
                 "--skip-project",
@@ -258,8 +270,8 @@ class TestInitErrorMessaging:
             )
 
             result = cli_runner.invoke(
-                init,
-                ["--yes", "--skip-github", "--skip-project"],
+                main,
+                ["init", "--yes", "--skip-github", "--skip-project"],
             )
 
             # Lock validation depends on process detection
@@ -273,7 +285,7 @@ class TestInitHelpText:
 
     def test_init_help_mentions_team_onboarding(self, cli_runner):
         """Test that 'roadmap init --help' mentions team features."""
-        result = cli_runner.invoke(init, ["--help"])
+        result = cli_runner.invoke(main, ["init", "--help"])
 
         assert result.exit_code == 0
         output_lower = clean_cli_output(result.output).lower()
@@ -289,8 +301,8 @@ class TestInitConfigLocalIntegration:
         with cli_runner.isolated_filesystem():
             # Run init first (Bob joining empty roadmap)
             result = cli_runner.invoke(
-                init,
-                ["--yes", "--skip-github"],
+                main,
+                ["init", "--yes", "--skip-github"],
             )
 
             # The init command should execute successfully
@@ -303,8 +315,8 @@ class TestInitConfigLocalIntegration:
         """Test that init creates .roadmap dir with proper permissions."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(
-                init,
-                ["--yes", "--skip-github"],
+                main,
+                ["init", "--yes", "--skip-github"],
             )
 
             # Verify the command ran (exit code 0 or 1 both acceptable for this test)

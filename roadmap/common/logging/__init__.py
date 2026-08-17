@@ -104,10 +104,3 @@ __all__ = [
     "track_operation_time",
     "track_sync_operation",
 ]
-
-# Initialize logging at module load time
-# This is the single source of truth for production logging configuration
-setup_logging(log_level="INFO", debug_mode=False, log_to_file=True)
-
-# Get default logger instance
-logger = get_logger("roadmap")

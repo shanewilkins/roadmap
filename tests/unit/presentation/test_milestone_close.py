@@ -1,6 +1,6 @@
 """CLI tests for milestone close convenience command."""
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 
 
 class TestMilestoneClose:

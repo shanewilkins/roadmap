@@ -73,9 +73,8 @@ def _get_core(ctx: click.Context):
 
     if core is None:
         try:
-            from roadmap.infrastructure.coordination.core import RoadmapCore
-
-            core = RoadmapCore.find_existing_roadmap()
+            factory = ctx.obj.get("existing_core_factory") if ctx.obj else None
+            core = factory() if factory else None
         except Exception:
             core = None
 

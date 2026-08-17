@@ -7,7 +7,7 @@ to handle validation, updates, and user feedback consistently.
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import click
 
@@ -17,9 +17,6 @@ from roadmap.common.formatters.text.operations import (
     format_operation_success,
 )
 from roadmap.core.domain import Status
-
-if TYPE_CHECKING:
-    from roadmap.infrastructure.coordination.core import RoadmapCore  # noqa: F401
 
 console = get_console()
 
@@ -46,7 +43,7 @@ class StatusChangeConfig:
 
 
 def apply_status_change(
-    core: "RoadmapCore",
+    core: Any,
     issue_id: str,
     config: StatusChangeConfig,
     reason: str | None = None,

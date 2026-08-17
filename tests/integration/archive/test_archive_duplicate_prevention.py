@@ -62,7 +62,7 @@ class TestArchiveDuplicatePrevention:
         # Use the CLI to archive
         from click.testing import CliRunner
 
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         runner = CliRunner()
         result = runner.invoke(main, ["issue", "archive", issue.id, "--force"])
@@ -79,7 +79,7 @@ class TestArchiveDuplicatePrevention:
 
         from click.testing import CliRunner
 
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         runner = CliRunner()
         result = runner.invoke(main, ["issue", "close", issue.id])
@@ -106,7 +106,7 @@ class TestArchiveDuplicatePrevention:
         # Archive all closed issues
         from click.testing import CliRunner
 
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         runner = CliRunner()
         result = runner.invoke(main, ["issue", "archive", "--all-closed", "--force"])
@@ -134,7 +134,7 @@ class TestArchiveDuplicatePrevention:
 
         from click.testing import CliRunner
 
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         runner = CliRunner()
 

@@ -12,7 +12,7 @@ import click
 import pytest
 from pydantic import BaseModel
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from roadmap.common.configuration.config_schema import RoadmapConfig as LegacyConfig
 from roadmap.common.models.config_models import RoadmapConfig as ActiveConfig
 from roadmap.core.domain.issue import Issue
@@ -103,7 +103,10 @@ def _cli_surfaces() -> dict[str, str]:
     def walk(command: click.Command, path: list[str]) -> None:
         surfaces[" ".join(path)] = _command_signature(command)
         if isinstance(command, click.Group):
-            for name, child in sorted(command.commands.items()):
+            context = click.Context(command, info_name=path[-1])
+            for name in command.list_commands(context):
+                child = command.get_command(context, name)
+                assert child is not None, name
                 walk(child, [*path, name])
 
     walk(main, ["roadmap"])

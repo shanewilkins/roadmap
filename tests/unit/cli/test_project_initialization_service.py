@@ -11,7 +11,7 @@ import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from roadmap.adapters.cli.services.project_initialization_service import (
+from roadmap.core.services.project_init import (
     ProjectContextDetectionService,
     ProjectCreationService,
     ProjectDetectionService,

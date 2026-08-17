@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.unit.common.formatters.test_ansi_utilities import strip_ansi
 from tests.unit.common.formatters.test_assertion_helpers import (

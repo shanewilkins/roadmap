@@ -1,6 +1,6 @@
 """Tests for estimated time functionality."""
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from roadmap.core.domain import Status
 from tests.factories import IssueBuilder, MilestoneBuilder
 from tests.unit.common.formatters.test_assertion_helpers import (

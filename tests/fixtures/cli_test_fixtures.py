@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from roadmap.adapters.cli.core import init
+from roadmap.bootstrap import cli as main
 
 
 @pytest.fixture
@@ -149,8 +149,9 @@ def cli_runner_with_init(cli_runner):
     """Create a CLI runner with initialized roadmap."""
     with cli_runner.isolated_filesystem():
         result = cli_runner.invoke(
-            init,
+            main,
             [
+                "init",
                 "--yes",
                 "--skip-github",
                 "--skip-project",

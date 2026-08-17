@@ -7,8 +7,8 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from click.testing import CliRunner
 
-from roadmap.adapters.cli import main
 from roadmap.adapters.persistence.parser import MilestoneParser
+from roadmap.bootstrap import cli as main
 from roadmap.core.domain import Milestone, MilestoneStatus, Priority, Status
 from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.fixtures.cli_test_helpers import CLIOutputParser

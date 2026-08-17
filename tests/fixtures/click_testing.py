@@ -11,7 +11,7 @@ from collections.abc import Callable
 import pytest
 from click.testing import CliRunner
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 
 
 class ClickTestResult:

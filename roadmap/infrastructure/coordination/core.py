@@ -1,82 +1,29 @@
-"""RoadmapCore - Lightweight Service Container and Coordinator.
+"""Compatibility facade over collaborators assembled by Bootstrap."""
 
-RoadmapCore is a lightweight facade that provides a clean, domain-organized
-API by coordinating across multiple specialized domain coordinators.
-
-Instead of being a god object with 50+ methods, RoadmapCore now delegates
-to focused domain coordinators:
-- IssueCoordinator: Issue CRUD and queries
-- MilestoneCoordinator: Milestone CRUD and consistency validation
-- ProjectCoordinator: Project CRUD and management
-- TeamCoordinator: Team member and user management
-- GitCoordinator: Git integration and branch linking
-- ValidationCoordinator: Validation and configuration
-
-This design:
-- Keeps RoadmapCore <200 LOC (down from 670 LOC)
-- Makes each domain independently testable
-- Provides a clear mental model for users
-- Scales well for future features
-"""
-
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, cast
 
 from roadmap.common.logging import get_logger
 from roadmap.common.utils.path_utils import build_roadmap_paths
-from roadmap.core.services import (
-    ConfigurationService,
-    GitHubIntegrationService,
-    IssueService,
-    MilestoneService,
-    ProjectService,
-)
-from roadmap.infrastructure.coordination.git_coordinator import GitCoordinator
-from roadmap.infrastructure.coordination.initialization import InitializationManager
-from roadmap.infrastructure.coordination.issue_coordinator import IssueCoordinator
-from roadmap.infrastructure.coordination.issue_operations import IssueOperations
-from roadmap.infrastructure.coordination.milestone_coordinator import (
-    MilestoneCoordinator,
-)
-from roadmap.infrastructure.coordination.milestone_operations import MilestoneOperations
-from roadmap.infrastructure.coordination.project_coordinator import ProjectCoordinator
-from roadmap.infrastructure.coordination.project_operations import ProjectOperations
-from roadmap.infrastructure.coordination.team_coordinator import TeamCoordinator
-from roadmap.infrastructure.coordination.user_operations import UserOperations
-from roadmap.infrastructure.coordination.validation_coordinator import (
-    ValidationCoordinator,
-)
-from roadmap.infrastructure.coordination_gateway import CoordinationGateway
-from roadmap.infrastructure.git.git_integration_ops import GitIntegrationOps
 
 logger = get_logger(__name__)
 
 
 class RoadmapCore:
-    """Lightweight service container and coordinator of domain coordinators.
+    """Legacy coordination API whose concrete graph is owned by Bootstrap."""
 
-    RoadmapCore provides a clean, organized API by delegating to focused
-    domain coordinators for each concern (issues, milestones, projects, etc).
-
-    Usage:
-        core = RoadmapCore()
-        core.initialize()  # One-time setup
-
-        # Use domain-specific coordinators
-        issue = core.issues.create(title="...")
-        milestone = core.milestones.create(name="...")
-        members = core.team.get_members()
-        commits = core.git.get_commits_for_issue("issue-123")
-    """
+    _git = db = git_sync_monitor = github_service = config_service = milestone_service = project_service = _init_manager = issues = milestones = projects = team = git = validation = _console_factory = _git_hook_manager_factory = cast(Any, None)  # fmt: skip
+    issue_service: Any = None
 
     def __init__(
-        self, root_path: Path | None = None, roadmap_dir_name: str = ".roadmap"
-    ):
-        """Initialize RoadmapCore with service setup and coordinators.
-
-        Args:
-            root_path: Root path for the roadmap (defaults to cwd)
-            roadmap_dir_name: Name of the roadmap directory (defaults to .roadmap)
-        """
+        self,
+        root_path: Path | None = None,
+        roadmap_dir_name: str = ".roadmap",
+        *,
+        component_builder: Callable[["RoadmapCore"], None] | None = None,
+    ) -> None:
+        """Build paths, then let Bootstrap install the legacy collaborators."""
         self.root_path = root_path or Path.cwd()
         self.roadmap_dir_name = roadmap_dir_name
 
@@ -91,90 +38,11 @@ class RoadmapCore:
         self.config_file = paths["config_file"]
         self.db_dir = paths["db_dir"]
 
-        # Initialize core infrastructure
-        self._git = CoordinationGateway.get_git_integration()
-        self._git.root_path = self.root_path
+        if component_builder is None:
+            from roadmap.bootstrap.core import wire_legacy_core
 
-        # Initialize StateManager with correct project-local database path
-        db_path = self.db_dir / "state.db"
-        self.db = CoordinationGateway.get_state_manager(db_path=db_path)
-
-        # Initialize GitSyncMonitor with StateManager for database sync
-        self.git_sync_monitor = CoordinationGateway.get_git_sync_monitor()
-        self.git_sync_monitor.repo_path = self.root_path
-        self.git_sync_monitor.state_manager = self.db
-
-        # Initialize remote links from YAML (Phase 3)
-        try:
-            self.db.initialize_remote_links(self.root_path)
-        except Exception as e:
-            from roadmap.common.logging import get_logger
-
-            logger = get_logger(__name__)
-            logger.warning(
-                "failed_to_initialize_remote_links_in_core",
-                error=str(e),
-                severity="operational",
-            )
-
-        # Wire GitSyncMonitor into StateManager for transparent cache sync
-        self.db._git_sync_monitor = self.git_sync_monitor
-
-        self.github_service = GitHubIntegrationService(
-            root_path=self.root_path, config_file=self.config_file
-        )
-        self.config_service = ConfigurationService()
-
-        # Initialize repositories (abstraction layer)
-        issue_repository = CoordinationGateway.get_yaml_issue_repository(
-            db=self.db, issues_dir=self.issues_dir
-        )
-
-        from roadmap.adapters.persistence.yaml_repositories import (
-            YAMLMilestoneRepository,
-            YAMLProjectRepository,
-        )
-
-        milestone_repository = YAMLMilestoneRepository(self.db, self.milestones_dir)
-        project_repository = YAMLProjectRepository(self.db, self.projects_dir)
-
-        # Initialize services with repository injection
-        # (decoupled from implementation)
-        self.issue_service = IssueService(issue_repository)
-        self.milestone_service = MilestoneService(
-            milestone_repository,
-            issue_repository=issue_repository,
-            issues_dir=self.issues_dir,
-            milestones_dir=self.milestones_dir,
-        )
-        self.project_service = ProjectService(project_repository, self.milestones_dir)
-
-        # Keep reference to init manager for setup (needed before creating coordinators)
-        self._init_manager = InitializationManager(
-            self.root_path, self.roadmap_dir_name
-        )
-
-        # Initialize operations managers
-        issue_ops = IssueOperations(self.issue_service, self.issues_dir)
-        milestone_ops = MilestoneOperations(self.milestone_service)
-        project_ops = ProjectOperations(self.project_service)
-
-        # Determine appropriate assignee validator based on sync backend
-        assignee_validator = self._get_assignee_validator()
-        user_ops = UserOperations(
-            self.github_service, self.issue_service, assignee_validator
-        )
-        git_ops = GitIntegrationOps(self._git, self)
-
-        # Initialize domain coordinators (pass self for initialization check)
-        self.issues = IssueCoordinator(issue_ops, core=self)
-        self.milestones = MilestoneCoordinator(
-            milestone_ops, self.milestones_dir, core=self
-        )
-        self.projects = ProjectCoordinator(project_ops, core=self)
-        self.team = TeamCoordinator(user_ops, core=self)
-        self.git = GitCoordinator(git_ops, core=self)
-        self.validation = ValidationCoordinator(self.github_service, core=self)
+            component_builder = wire_legacy_core
+        component_builder(self)
 
     def is_initialized(self) -> bool:
         """Check if roadmap is initialized in current directory."""
@@ -185,41 +53,6 @@ class RoadmapCore:
         if not self.is_initialized():
             raise ValueError("Roadmap not initialized. Run 'roadmap init' first.")
 
-    def _get_assignee_validator(self):
-        """Determine the appropriate assignee validator based on sync backend.
-
-        Returns the validator for the configured sync backend:
-        - "github" backend → GitHubAssigneeValidator (validates against collaborators)
-        - "git" or other backend → VanillaAssigneeValidator (accepts any assignee)
-
-        Defaults to vanilla/git validator if no backend is configured.
-
-        Returns:
-            An assignee validator instance (implements AssigneeValidator protocol)
-        """
-        from roadmap.common.configuration import ConfigManager
-        from roadmap.infrastructure.validation.github_assignee_validator import (
-            GitHubAssigneeValidator,
-        )
-        from roadmap.infrastructure.validation.vanilla_assignee_validator import (
-            VanillaAssigneeValidator,
-        )
-
-        try:
-            config_manager = ConfigManager(self.config_file)
-            config = config_manager.load()
-            # Access dataclass attributes, not dictionary
-            sync_backend = config.github.sync_backend if config.github else "git"
-        except Exception:
-            # If we can't read config, default to vanilla/git validator
-            sync_backend = "git"
-
-        if str(sync_backend).lower() == "github":
-            return GitHubAssigneeValidator(self.github_service)
-        else:
-            # Default to vanilla validator for "git" backend or if not specified
-            return VanillaAssigneeValidator()
-
     @classmethod
     def find_existing_roadmap(
         cls, root_path: Path | None = None
@@ -229,12 +62,9 @@ class RoadmapCore:
         Searches for common roadmap directory names and returns a RoadmapCore
         instance if found, or None if no roadmap is detected.
         """
-        manager = InitializationManager.find_existing_roadmap(root_path)
-        if manager:
-            return cls(
-                root_path=manager.root_path, roadmap_dir_name=manager.roadmap_dir_name
-            )
-        return None
+        from roadmap.bootstrap.core import find_existing_core
+
+        return find_existing_core(root_path)
 
     def initialize(self) -> None:
         """Initialize a new roadmap in the current directory."""
@@ -357,9 +187,7 @@ class RoadmapCore:
             force_rebuild: Force a full rebuild even if database exists
             show_progress: Show progress indicators during sync
         """
-        from rich.console import Console
-
-        console = Console()
+        console = self._console_factory()
 
         if not self.is_initialized():
             return
@@ -374,7 +202,7 @@ class RoadmapCore:
     def _ensure_git_hooks_installed(self, console, show_progress: bool = True) -> None:
         """Ensure git hooks are installed for automatic sync."""
         try:
-            hook_manager = CoordinationGateway.get_git_hook_manager(self)
+            hook_manager = self._git_hook_manager_factory()
 
             if show_progress:
                 console.print("[dim]Installing git hooks for automatic sync...[/dim]")

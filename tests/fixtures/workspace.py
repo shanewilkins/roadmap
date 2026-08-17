@@ -143,7 +143,7 @@ def temp_workspace():
         # Use the CLI runner to properly initialize the workspace
         from click.testing import CliRunner
 
-        from roadmap.adapters.cli import main
+        from roadmap.bootstrap import cli as main
 
         runner = CliRunner()
         result = runner.invoke(

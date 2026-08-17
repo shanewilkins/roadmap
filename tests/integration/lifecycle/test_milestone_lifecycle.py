@@ -4,7 +4,7 @@ Tests milestone creation, updating, deletion, and relationship management
 with projects to ensure data integrity across operations.
 """
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from roadmap.core.services.validators.orphaned_milestones_validator import (
     OrphanedMilestonesValidator,
 )

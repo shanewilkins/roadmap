@@ -1,6 +1,6 @@
 """Tests for issue creation with Git branch creation."""
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 
 
 class TestIssueBranchCreation:

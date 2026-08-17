@@ -253,15 +253,11 @@ class TestCommentCLI:
     def test_comment_help_available(self):
         """Test that comment commands are available in CLI."""
         # This is a basic test to ensure the commands are properly registered
-        from roadmap.adapters.cli import main
+        import click
 
-        # The main function should have a comment group
-        comment_group = None
-        for command in main.commands.values():
-            if hasattr(command, "name") and command.name == "comment":
-                comment_group = command
-                break
+        from roadmap.bootstrap import cli as main
 
+        comment_group = main.get_command(click.Context(main), "comment")
         assert comment_group is not None
         assert "list" in comment_group.commands  # type: ignore[attr-defined]
         assert "create" in comment_group.commands  # type: ignore[attr-defined]

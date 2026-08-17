@@ -11,8 +11,8 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.adapters.cli import main
 from roadmap.adapters.git.git import GitBranch, GitCommit, GitIntegration
+from roadmap.bootstrap import cli as main
 from roadmap.core.domain import IssueType, Priority
 from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output

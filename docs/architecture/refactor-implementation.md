@@ -2,7 +2,8 @@
 
 - Status: Approved
 - Date: 2026-08-10
-- Implementation status: Not started
+- Implementation status: Phases 0 through 3 complete; Bootstrap composition
+  root established and execution stopped before Phase 4
 - Governing decisions: ADR-0001 through ADR-0010
 
 ## Purpose

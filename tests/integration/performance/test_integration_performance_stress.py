@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 import pytest
 from click.testing import CliRunner
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from roadmap.core.domain import Priority
 from roadmap.infrastructure.coordination.core import RoadmapCore
 

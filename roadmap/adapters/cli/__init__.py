@@ -1,249 +1,145 @@
-"""Modular CLI architecture for the Roadmap tool.
-
-This module provides the main CLI entry point and implements plugin-style
-lazy-loading of command groups to improve performance and maintainability.
-
-## Architecture
-
-Commands are registered via a plugin registry that specifies:
-- Command name/group name
-- Module path where the command is defined
-- Variable name of the command in that module
-
-This allows commands to be imported only when actually invoked, reducing
-startup time and improving modularity.
-"""
+"""Lazy Click adapter assembled by :mod:`roadmap.bootstrap`."""
 
 import importlib
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from typing import Any
 
 import click
 
 from roadmap import __version__
-from roadmap.adapters.cli.exception_handler import handle_cli_exception
 
-# Initialize console for rich output
-from roadmap.common.console import get_console
-from roadmap.common.errors.exceptions import RoadmapException
 
-# Initialize OpenTelemetry tracing
-from roadmap.common.observability.otel_init import initialize_tracing
+def _handle_cli_exception(ctx: click.Context, error: Exception) -> Any:
+    from roadmap.adapters.cli.exception_handler import handle_cli_exception
 
-# Import core classes for backward compatibility with tests
-from roadmap.infrastructure.coordination.core import RoadmapCore
+    return handle_cli_exception(ctx, error, show_traceback=False)
 
-console = get_console()
 
-# Plugin registry: maps command names to their import locations
-# Format: "command_name": ("module_path", "variable_name")
-# This allows lazy loading of commands - they're only imported when invoked
-_COMMAND_REGISTRY: dict[str, tuple[str, str]] = {
-    # Core v1.0 standalone commands
-    "init": ("roadmap.adapters.cli.core", "init"),
-    "status": ("roadmap.adapters.cli.core", "status"),
-    "health": ("roadmap.adapters.cli.core", "health"),
-    "today": ("roadmap.adapters.cli.today", "today"),
-    "cleanup": ("roadmap.infrastructure.maintenance", "cleanup"),
-    # Command groups
-    "analysis": ("roadmap.adapters.cli.analysis", "analysis"),
-    "comment": ("roadmap.adapters.cli.comment", "comment"),
-    "config": ("roadmap.adapters.cli.config", "config"),
-    "data": ("roadmap.adapters.cli.data", "data"),
-    "git": ("roadmap.adapters.cli.git", "git"),
-    "issue": ("roadmap.adapters.cli.issues", "issue"),
-    "milestone": ("roadmap.adapters.cli.milestones", "milestone"),
-    "project": ("roadmap.adapters.cli.projects", "project"),
-    "sync": ("roadmap.adapters.cli.sync", "sync"),
-    "validate-links": ("roadmap.adapters.cli.sync_validation", "validate_links"),
+CommandLocation = tuple[str, str, str]
+
+# fmt: off
+COMMAND_REGISTRY: dict[str, CommandLocation] = {
+    "init": ("roadmap.adapters.cli.core", "init", "Initialize a new roadmap structure."),
+    "status": ("roadmap.adapters.cli.core", "status", "Show the current status of the roadmap."),
+    "health": ("roadmap.adapters.cli.core", "health", "Health and diagnostics commands."),
+    "today": ("roadmap.adapters.cli.today", "today", "Show your daily workflow summary for the upcoming milestone."),
+    "cleanup": ("roadmap.infrastructure.maintenance", "cleanup", "Comprehensive roadmap cleanup - fix backups, folders, duplicates, and malformed files."),
+    "analysis": ("roadmap.adapters.cli.analysis", "analysis", "Analysis and insights commands."),
+    "comment": ("roadmap.adapters.cli.comment", "comment", "Manage comments on issues and milestones."),
+    "config": ("roadmap.adapters.cli.config", "config", "Manage roadmap configuration."),
+    "data": ("roadmap.adapters.cli.data", "data", "Export, import, and analyze roadmap data."),
+    "git": ("roadmap.adapters.cli.git", "git", "Git integration and workflow management."),
+    "issue": ("roadmap.adapters.cli.issues", "issue", "Manage issues."),
+    "milestone": ("roadmap.adapters.cli.milestones", "milestone", "Manage milestones."),
+    "project": ("roadmap.adapters.cli.projects", "project", "Manage projects (top-level planning documents)."),
+    "sync": ("roadmap.adapters.cli.sync", "sync", "Sync roadmap with remote repository."),
+    "validate-links": ("roadmap.adapters.cli.sync_validation", "validate_links", "Validate remote links in the database against YAML files."),
 }
-
-# Cache for loaded commands to avoid re-importing
-_command_cache: dict[str, Any] = {}
+# fmt: on
 
 
-def _load_command(command_name: str) -> Any:
-    """Lazily load a command from the registry.
+@dataclass
+class CliRuntime:
+    """Explicit process collaborators supplied by Bootstrap."""
 
-    Args:
-        command_name: Name of command to load
+    core_factory: Callable[[str], Any]
+    existing_core_factory: Callable[[], Any | None]
+    logging_initializer: Callable[[], None]
+    tracing_initializer: Callable[[], None]
+    console_factory: Callable[[], Any]
+    initialized: bool = False
 
-    Returns:
-        The Click command/group object
-
-    Raises:
-        ValueError: If command not found in registry
-    """
-    if command_name in _command_cache:
-        return _command_cache[command_name]
-
-    if command_name not in _COMMAND_REGISTRY:
-        raise ValueError(f"Unknown command: {command_name}")
-
-    module_path, var_name = _COMMAND_REGISTRY[command_name]
-    module = importlib.import_module(module_path)
-    command = getattr(module, var_name)
-
-    _command_cache[command_name] = command
-    return command
-
-
-# Flag to track if commands have been registered to avoid duplicate registration
-_commands_registered = False
+    def initialize(self) -> None:
+        if self.initialized:
+            return
+        self.logging_initializer()
+        self.tracing_initializer()
+        self.initialized = True
 
 
 class RoadmapClickGroup(click.Group):
-    """Custom Click Group that handles RoadmapException instances."""
+    """Click group that loads commands on demand and normalizes failures."""
 
-    def invoke(self, ctx: click.Context) -> click.Context | None:
-        """Invoke the group with centralized exception handling."""
+    def __init__(
+        self,
+        *args: Any,
+        command_registry: Mapping[str, CommandLocation],
+        console_factory: Callable[[], Any],
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self._command_registry = dict(command_registry)
+        self._console_factory = console_factory
+        self._command_cache: dict[str, click.Command] = {}
+
+    def list_commands(self, ctx: click.Context) -> list[str]:
+        """List declared and explicitly attached commands deterministically."""
+        return sorted(set(self._command_registry) | set(super().list_commands(ctx)))
+
+    def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:  # fmt: skip
+        """Render root help from static metadata without importing features."""
+        names = sorted(self._command_registry)
+        limit = formatter.width - 6 - max(map(len, names), default=0)
+        rows = [(name, click.utils.make_default_short_help(self._command_registry[name][2], limit)) for name in names]  # fmt: skip
+        with formatter.section("Commands"):
+            formatter.write_dl(rows)
+
+    def get_command(self, ctx: click.Context, name: str) -> click.Command | None:
+        """Load one registered command only when Click requests it."""
+        if (attached := super().get_command(ctx, name)) is not None:
+            return attached
+        if name in self._command_cache:
+            return self._command_cache[name]
+        location = self._command_registry.get(name)
+        if location is None:
+            return None
+        module_path, attribute, _help = location
         try:
-            # Allow Click to handle help and version flags normally
-            result = super().invoke(ctx)
-            return result
-        except RoadmapException as exc:
-            # Handle roadmap exceptions with our formatter
-            handle_cli_exception(ctx, exc, show_traceback=False)
-        except click.exceptions.Exit:
-            # Let Click Exit exceptions propagate (--help, --version)
-            raise
-        except click.ClickException:
-            # Let Click exceptions propagate
-            raise
-        except click.Abort:
-            # Let Click Abort propagate
-            raise
-        except SystemExit:
-            # Let SystemExit propagate (used by Click for --help, --version, etc.)
-            raise
-        except Exception as exc:
-            # Handle unexpected exceptions
-            handle_cli_exception(ctx, exc, show_traceback=False)
-
-
-# Import utility functions that tests need
-try:
-    import git as gitpython
-except ImportError:
-    gitpython = None
-
-
-def _get_current_user():
-    """Get current user from git config."""
-    if gitpython is None:
-        import os
-
-        return os.environ.get("USER") or os.environ.get("USERNAME")
-
-    try:
-        repo = gitpython.Repo(search_parent_directories=True)  # type: ignore[attr-defined]
-        try:
-            name = repo.config_reader().get_value("user", "name")
-            return name
-        except Exception as e:
-            from roadmap.common.logging import get_logger
-
-            logger = get_logger(__name__)
-            logger.debug(
-                "git_user_name_read_failed", error=str(e), action="get_git_user_name"
+            self._command_cache[name] = command = getattr(importlib.import_module(module_path), attribute)  # fmt: skip
+        except Exception as error:
+            self._console_factory().print(
+                f"⚠️  Failed to load command '{name}': {error}", style="yellow"
             )
-    except Exception as e:
-        from roadmap.common.logging import get_logger
+            return None
+        return command
 
-        logger = get_logger(__name__)
-        logger.debug("git_repo_open_failed", error=str(e), action="detect_git_repo")
-
-    # Fallback to environment variables
-    import os
-
-    return os.environ.get("USER") or os.environ.get("USERNAME")
-
-
-def _detect_project_context():
-    """Detect project context from current directory."""
-    import pathlib
-
-    context = {
-        "project_name": pathlib.Path.cwd().name,
-        "has_git": False,
-    }
-
-    # Check if we're in a git repository
-    if gitpython is not None:
+    def invoke(self, ctx: click.Context) -> Any:
+        """Invoke the CLI with centralized Roadmap exception handling."""
         try:
-            gitpython.Repo(search_parent_directories=True)  # type: ignore[attr-defined]
-            context["has_git"] = True
-        except Exception as e:
-            from roadmap.common.logging import get_logger
-
-            logger = get_logger(__name__)
-            logger.debug(
-                "git_repo_detection_failed",
-                error=str(e),
-                action="detect_project_context",
-            )
-
-    return context
+            return super().invoke(ctx)
+        except (click.exceptions.Exit, click.ClickException, click.Abort, SystemExit):
+            raise
+        except Exception as error:
+            return _handle_cli_exception(ctx, error)
 
 
-@click.group(cls=RoadmapClickGroup)
-@click.version_option(version=__version__)
-@click.pass_context
-def main(ctx: click.Context):
-    """Roadmap CLI - A command line tool for creating and managing roadmaps."""
-    # Initialize OpenTelemetry tracing
-    initialize_tracing()
+def create_cli(
+    runtime: CliRuntime,
+    *,
+    command_registry: Mapping[str, CommandLocation] = COMMAND_REGISTRY,
+) -> RoadmapClickGroup:
+    """Create a CLI bound only to collaborators explicitly supplied by Bootstrap."""
 
-    # Ensure that ctx.obj exists and is a dict (in case `cli()` is called
-    # by means other than the `if` block below)
-    ctx.ensure_object(dict)
+    @click.group(
+        cls=RoadmapClickGroup,
+        command_registry=command_registry,
+        console_factory=runtime.console_factory,
+    )
+    @click.version_option(version=__version__)
+    @click.pass_context
+    def cli(ctx: click.Context) -> None:
+        """Roadmap CLI - A command line tool for creating and managing roadmaps."""
+        ctx.ensure_object(dict)
+        ctx.obj.setdefault("core_factory", runtime.core_factory)
+        ctx.obj.setdefault("existing_core_factory", runtime.existing_core_factory)
+        ctx.obj.setdefault("console_factory", runtime.console_factory)
+        runtime.initialize()
 
-    # Initialize core with default roadmap directory (skip for init command)
-    if ctx.invoked_subcommand != "init":
-        try:
-            ctx.obj["core"] = RoadmapCore()
-        except Exception as exc:
-            # Handle exceptions during core initialization
-            handle_cli_exception(ctx, exc, show_traceback=False)
+        if ctx.invoked_subcommand not in {None, "init"} and "core" not in ctx.obj:
+            try:
+                ctx.obj["core"] = runtime.core_factory(".roadmap")
+            except Exception as error:
+                _handle_cli_exception(ctx, error)
 
-    # If no subcommand was provided, show help
-    if ctx.invoked_subcommand is None:
-        click.echo(ctx.get_help())
-
-
-def register_commands():
-    """Register all commands from the plugin registry.
-
-    Commands are loaded lazily from the registry, which maps command names
-    to their module paths. This approach:
-    - Reduces startup time by deferring imports
-    - Makes it easy to add/remove commands
-    - Provides a single source of truth for command list
-    """
-    for command_name, _ in _COMMAND_REGISTRY.items():
-        try:
-            command = _load_command(command_name)
-            main.add_command(command, name=command_name)
-        except Exception as e:
-            console.print(
-                f"⚠️  Failed to register command '{command_name}': {e}", style="yellow"
-            )
-
-
-# Register commands at module load time
-# This ensures CLI commands are available for tests and direct usage
-try:
-    register_commands()
-    _commands_registered = True
-except ImportError as e:
-    # If there's a circular import, commands will still be registered
-    # when main() is invoked through Click's mechanism
-    if "partially initialized" not in str(e):
-        # Re-raise if it's not a circular import issue
-        raise
-    else:
-        # For circular imports, we'll register commands lazily when needed
-        _commands_registered = False
-
-
-if __name__ == "__main__":
-    main()  # type: ignore[call-arg]
+    return cli

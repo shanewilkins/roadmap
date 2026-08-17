@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from roadmap.common.security import PathValidationError, validate_path
 
 

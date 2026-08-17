@@ -1,6 +1,8 @@
 """Integration tests for health fix CLI command."""
 
-from roadmap.adapters.cli import main
+import click
+
+from roadmap.bootstrap import cli as main
 
 
 class TestHealthFixCommand:
@@ -9,5 +11,4 @@ class TestHealthFixCommand:
     def test_command_registered(self):
         """Test that health fix command is registered in the CLI."""
         # The main CLI group should have the health subcommand
-        assert hasattr(main, "commands")
-        assert "health" in main.commands
+        assert main.get_command(click.Context(main), "health") is not None

@@ -9,7 +9,7 @@ import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -24,7 +24,6 @@ from roadmap.common.security import (
     validate_export_size,
     validate_path,
 )
-from tests.unit.domain.test_data_factory_generation import TestDataFactory
 
 pytestmark = pytest.mark.unit
 
@@ -49,14 +48,7 @@ class TestLogSecurityEvent:
     )
     def test_log_security_event_variants(self, event_type, has_details):
         """Test logging with and without event details."""
-        mock_handler = TestDataFactory.create_mock_core(is_initialized=True)
-        mock_handler.stream = TestDataFactory.create_mock_core(is_initialized=True)
-        mock_handler.stream.closed = False
-
-        with (
-            patch.object(security_logger, "handlers", [mock_handler]),
-            patch.object(security_logger, "info") as mock_info,
-        ):
+        with patch.object(security_logger, "info") as mock_info:
             details = {"key": "value"} if has_details else None
             if details:
                 log_security_event(event_type, details)
@@ -70,14 +62,7 @@ class TestLogSecurityEvent:
 
     def test_log_security_event_with_timestamp(self):
         """Test that timestamp is added to logged events."""
-        mock_handler = TestDataFactory.create_mock_core(is_initialized=True)
-        mock_handler.stream = TestDataFactory.create_mock_core(is_initialized=True)
-        mock_handler.stream.closed = False
-
-        with (
-            patch.object(security_logger, "handlers", [mock_handler]),
-            patch.object(security_logger, "info") as mock_info,
-        ):
+        with patch.object(security_logger, "info") as mock_info:
             log_security_event("timed_event")
             args, kwargs = mock_info.call_args
             assert "timestamp" in kwargs
@@ -86,11 +71,8 @@ class TestLogSecurityEvent:
 
     def test_log_security_event_exception_handling(self):
         """Test that logging exceptions don't break functionality."""
-        with (
-            patch.object(security_logger, "handlers", [MagicMock()]),
-            patch.object(
-                security_logger, "info", side_effect=Exception("Logging failed")
-            ),
+        with patch.object(
+            security_logger, "info", side_effect=Exception("Logging failed")
         ):
             # This should raise the exception since log_security_event doesn't handle it
             try:
@@ -102,14 +84,7 @@ class TestLogSecurityEvent:
 
     def test_log_security_event_closed_handler(self):
         """Test handling of closed log handlers."""
-        mock_handler = Mock()
-        mock_handler.stream = Mock()
-        mock_handler.stream.closed = True
-
-        with (
-            patch.object(security_logger, "handlers", [mock_handler]),
-            patch.object(security_logger, "info") as mock_info,
-        ):
+        with patch.object(security_logger, "info") as mock_info:
             log_security_event("closed_handler_event")
             # The implementation doesn't check handler status, so it will still be called
             mock_info.assert_called_once()

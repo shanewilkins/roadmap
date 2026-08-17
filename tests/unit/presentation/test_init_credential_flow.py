@@ -1,6 +1,6 @@
 """Tests for credential flow in initialization."""
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 
 
 class TestInitCredentialFlow:

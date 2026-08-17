@@ -1,10 +1,10 @@
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 import yaml
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
@@ -37,13 +37,12 @@ def fake_issue():
 @pytest.fixture
 def mocked_core(fake_issue):
     """Create a mocked RoadmapCore instance."""
-    with patch("roadmap.cli.RoadmapCore") as MockCoreMain:
-        core_inst = MockCoreMain.return_value
-        core_inst.is_initialized.return_value = True
-        core_inst.issues.get.return_value = fake_issue
-        core_inst.update_issue.return_value = True
-        core_inst.git = DummyGit()
-        yield core_inst, MockCoreMain
+    core_inst = Mock()
+    core_inst.is_initialized.return_value = True
+    core_inst.issues.get.return_value = fake_issue
+    core_inst.update_issue.return_value = True
+    core_inst.git = DummyGit()
+    return core_inst
 
 
 class TestIssueStartBranch:
@@ -53,7 +52,7 @@ class TestIssueStartBranch:
         self, cli_runner, fake_issue, mocked_core
     ):
         """Test that config auto_branch setting is respected (currently disabled)."""
-        core_inst, _ = mocked_core
+        core_inst = mocked_core
         runner = cli_runner
 
         with runner.isolated_filesystem():
@@ -65,7 +64,11 @@ class TestIssueStartBranch:
 
             core_inst.config_file = Path(".roadmap/config.yaml")
 
-            result = runner.invoke(main, ["issue", "start", fake_issue.id])
+            result = runner.invoke(
+                main,
+                ["issue", "start", fake_issue.id],
+                obj={"core": core_inst},
+            )
 
             # Without --git-branch flag, branch should not be created
             assert result.exit_code == 0
@@ -73,13 +76,14 @@ class TestIssueStartBranch:
 
     def test_start_creates_branch_with_flag(self, cli_runner, fake_issue, mocked_core):
         """Test that --git-branch flag creates a Git branch."""
-        _, _ = mocked_core
+        core_inst = mocked_core
         runner = cli_runner
 
         with runner.isolated_filesystem():
             result = runner.invoke(
                 main,
                 ["issue", "start", fake_issue.id, "--git-branch", "--no-checkout"],
+                obj={"core": core_inst},
             )
 
             assert result.exit_code == 0

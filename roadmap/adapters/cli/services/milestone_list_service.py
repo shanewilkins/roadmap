@@ -8,9 +8,9 @@ Handles all business logic related to:
 """
 
 from datetime import UTC, datetime
+from typing import Any
 
 from roadmap.common.logging import get_logger
-from roadmap.infrastructure.coordination.core import RoadmapCore
 
 logger = get_logger(__name__)
 
@@ -69,7 +69,7 @@ class MilestoneProgressService:
     """Service for computing milestone progress."""
 
     @staticmethod
-    def get_milestone_progress(core: RoadmapCore, milestone_name: str) -> dict:
+    def get_milestone_progress(core: Any, milestone_name: str) -> dict:
         """Get progress for a specific milestone.
 
         Args:
@@ -105,7 +105,7 @@ class MilestoneProgressService:
             return {"total": 0, "completed": 0, "percentage": 0}
 
     @staticmethod
-    def get_all_milestones_progress(core: RoadmapCore, milestones: list) -> dict:
+    def get_all_milestones_progress(core: Any, milestones: list) -> dict:
         """Get progress for all milestones.
 
         Args:
@@ -153,7 +153,7 @@ class MilestoneTimeEstimateService:
 class MilestoneListService:
     """Service for gathering and processing milestone list data."""
 
-    def __init__(self, core: RoadmapCore):
+    def __init__(self, core: Any):
         """Initialize milestone list service.
 
         Args:

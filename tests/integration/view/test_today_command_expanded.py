@@ -7,7 +7,7 @@ assignment filtering, and time-based calculations.
 
 import re
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from tests.fixtures.integration_helpers import IntegrationTestBase
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 

@@ -2,17 +2,13 @@
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import click
 from structlog import get_logger
 
 from roadmap.adapters.cli.presentation.core_initialization_presenter import (
     CoreInitializationPresenter,
-)
-from roadmap.adapters.cli.services.project_initialization_service import (
-    ProjectContextDetectionService,
-    ProjectCreationService,
-    ProjectDetectionService,
 )
 from roadmap.common.constants import SyncBackend
 from roadmap.common.initialization.github import GitHubInitializationService
@@ -22,7 +18,11 @@ from roadmap.core.services.initialization import (
     InitializationValidator,
     InitializationWorkflow,
 )
-from roadmap.infrastructure.coordination.core import RoadmapCore
+from roadmap.core.services.project_init import (
+    ProjectContextDetectionService,
+    ProjectCreationService,
+    ProjectDetectionService,
+)
 
 logger = get_logger()
 presenter = CoreInitializationPresenter()
@@ -218,7 +218,7 @@ def _handle_already_initialized(
 
 
 def _setup_project_and_context(
-    custom_core: RoadmapCore,
+    custom_core: Any,
     skip_project: bool,
     detected_info: dict,
     project_name: str | None,
@@ -284,9 +284,7 @@ def _present_project_results(project_info: dict | None) -> None:
             presenter.present_project_joined(project_info.get("name", ""))
 
 
-def _persist_sync_backend_config(
-    custom_core: RoadmapCore, sync_backend: str, log
-) -> None:
+def _persist_sync_backend_config(custom_core: Any, sync_backend: str, log) -> None:
     """Persist sync backend selection to configuration.
 
     Args:
@@ -339,7 +337,7 @@ def _persist_sync_backend_config(
 
 
 def _finalize_initialization(
-    custom_core: RoadmapCore,
+    custom_core: Any,
     name: str,
     project_info: dict | None,
     should_create_structure: bool,
@@ -499,7 +497,11 @@ def init(
     )
     log.info("starting_init")
 
-    custom_core = RoadmapCore(roadmap_dir_name=params.name)
+    ctx.ensure_object(dict)
+    core_factory = ctx.obj.get("core_factory")
+    if core_factory is None:
+        raise click.ClickException("Roadmap CLI must be constructed by Bootstrap")
+    custom_core = core_factory(params.name)
 
     # Handle dry-run mode
     if params.dry_run:

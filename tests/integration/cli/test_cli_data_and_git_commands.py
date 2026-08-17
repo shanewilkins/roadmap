@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from roadmap.adapters.cli import main
+from roadmap.bootstrap import cli as main
 from tests.fixtures.integration_helpers import IntegrationTestBase
 
 
