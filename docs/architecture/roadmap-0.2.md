@@ -7,6 +7,8 @@
 - Implementation specification: [refactor-implementation.md](refactor-implementation.md)
 - Detailed execution and checkpoint protocol:
   [refactor-execution-plan.md](refactor-execution-plan.md)
+- Detailed execution status: Phase 6 issue-query checkpoint accepted on
+  2026-08-17; work is stopped before Phase 7.
 
 ## Decision
 
@@ -37,10 +39,10 @@ As of 2026-08-11, the repository contains approximately:
   lines when remote-sync-specific CLI, persistence, and metrics code is
   included.
 
-The current architecture policy described in the approved implementation
-specification has not yet been installed. The existing `.roadmap` data also
-contains a closed legacy milestone named `v0-2-0`; it is historical data, not
-this release plan.
+At that baseline date, the architecture policy described in the approved
+implementation specification had not yet been installed; Phase 2 subsequently
+made it a local and CI gate. The existing `.roadmap` data also contains a closed
+legacy milestone named `v0-2-0`; it is historical data, not this release plan.
 
 These counts are diagnostic, not productivity targets. The release succeeds by
 removing duplicate responsibilities and enforcing one path for each retained

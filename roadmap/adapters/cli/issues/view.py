@@ -1,36 +1,43 @@
-"""View issue command."""
+"""View a canonical issue through the target application query boundary."""
 
 import click
 
-from roadmap.adapters.cli.cli_command_helpers import (
-    ensure_entity_exists,
-    require_initialized,
-)
-from roadmap.adapters.cli.mappers import IssueMapper
-from roadmap.adapters.cli.presentation.issue_presenter import IssuePresenter
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.cli.issues.query_presenter import IssueQueryPresenter
+from roadmap.application.failures import ApplicationFailure
+from roadmap.domain.types import EntityId
+
+
+def _resolve_prefix(service, supplied: str) -> EntityId:
+    try:
+        requested = EntityId(supplied)
+    except ValueError as error:
+        raise click.ClickException(str(error)) from error
+    identities = service.ids()
+    if requested in identities:
+        return requested
+    matches: tuple[EntityId, ...] = tuple(
+        identity for identity in identities if identity.startswith(requested)
+    )
+    if not matches:
+        raise click.ClickException(f"Issue '{supplied}' was not found")
+    if len(matches) > 1:
+        raise click.ClickException(
+            f"Ambiguous issue ID prefix '{supplied}'; use a complete ID"
+        )
+    return next(iter(matches))
 
 
 @click.command("view")
 @click.argument("issue_id")
 @click.pass_context
 @require_initialized
-def view_issue(ctx: click.Context, issue_id: str):
-    """Display detailed information about a specific issue.
-
-    Shows complete issue details including metadata, timeline, description,
-    and acceptance criteria in a formatted view.
-
-    Example:
-        roadmap issue view abc123def
-    """
-    core = ctx.obj["core"]
-
-    # Retrieve the domain issue from the repository
-    issue = ensure_entity_exists(core, "issue", issue_id)
-
-    # Convert domain issue to DTO for presentation
-    issue_dto = IssueMapper.domain_to_dto(issue)
-
-    # Use presenter to render the issue
-    presenter = IssuePresenter()
-    presenter.render(issue_dto)
+def view_issue(ctx: click.Context, issue_id: str) -> None:
+    """Display one issue selected by a complete or unambiguous ID prefix."""
+    service = ctx.obj["core"].issue_queries
+    identity = _resolve_prefix(service, issue_id)
+    try:
+        record = service.view(identity)
+    except ApplicationFailure as error:
+        raise click.ClickException(str(error)) from error
+    IssueQueryPresenter().render(record)

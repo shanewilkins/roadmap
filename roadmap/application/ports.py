@@ -5,7 +5,7 @@ from typing import Protocol
 from roadmap.domain.aggregates import Issue, Milestone, Project
 from roadmap.domain.types import EntityId, Timestamp
 
-from .contracts import GitSnapshot
+from .contracts import GitSnapshot, IssueQueryRecord
 
 
 class Clock(Protocol):
@@ -48,3 +48,15 @@ class ProjectionMaintenance(Protocol):
 
 class InspectLocalGit(Protocol):
     def inspect_local_git(self) -> GitSnapshot: ...
+
+
+class ReadIssueRecords(Protocol):
+    """Canonical issue records, optionally accelerated by a projection."""
+
+    def list_issue_records(self) -> tuple[IssueQueryRecord, ...]: ...
+    def load_issue_record(self, issue_id: EntityId) -> IssueQueryRecord | None: ...
+    def next_milestone_id(self) -> EntityId | None: ...
+
+
+class CurrentIdentity(Protocol):
+    def current_identity(self) -> str | None: ...

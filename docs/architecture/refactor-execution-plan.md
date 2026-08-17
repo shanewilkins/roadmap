@@ -1,9 +1,10 @@
 # Roadmap 0.2 refactor execution plan
 
 - Status: Approved
-- Execution status: Phase 4 checkpoint passed on 2026-08-17; stop and obtain
-  maintainer approval before Phase 5
+- Execution status: Phase 6 checkpoint passed on 2026-08-17; stop and obtain
+  maintainer approval before Phase 7
 - Date: 2026-08-16
+- Last updated: 2026-08-17
 - Baseline commit: `61595a6e`
 - Current release: 0.1.1
 - Target release: 0.2.0
@@ -90,6 +91,8 @@ uv run --locked ruff format --config config/ruff.toml --check roadmap tests
 uv run --locked ruff check --config config/ruff.toml roadmap tests
 uv run --locked pyright
 uv run --locked bandit -c config/bandit.toml -r roadmap --severity-level=high
+uv run --locked radon cc roadmap --exclude '*/migrations/*' --total-average --show-complexity --min D
+uv run --locked xenon --exclude '*/migrations/*' --max-absolute C --max-modules C --max-average A roadmap
 ```
 
 After Phase 2, this section also runs the architecture policy and verifies that

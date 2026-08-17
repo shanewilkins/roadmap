@@ -1,14 +1,19 @@
 """Construction of the retained 0.1.1 collaborator graph."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from rich.console import Console
 
+from roadmap.adapters.outbound.persistence import DocumentIssueQueries
+from roadmap.adapters.outbound.persistence.documents import DocumentRepository
+from roadmap.adapters.outbound.persistence.projection import SQLiteProjection
 from roadmap.adapters.persistence.yaml_repositories import (
     YAMLMilestoneRepository,
     YAMLProjectRepository,
 )
+from roadmap.application.use_cases import IssueQueries
 from roadmap.common.configuration import ConfigManager
 from roadmap.common.logging import get_logger
 from roadmap.core.services import (
@@ -18,6 +23,7 @@ from roadmap.core.services import (
     MilestoneService,
     ProjectService,
 )
+from roadmap.domain.types import Timestamp
 from roadmap.infrastructure.coordination.core import RoadmapCore
 from roadmap.infrastructure.coordination.git_coordinator import GitCoordinator
 from roadmap.infrastructure.coordination.initialization import InitializationManager
@@ -44,6 +50,21 @@ from roadmap.infrastructure.validation.vanilla_assignee_validator import (
 )
 
 logger = get_logger(__name__)
+
+
+class _LegacyCurrentIdentity:
+    """Narrow compatibility adapter until configuration migrates in Phase 9."""
+
+    def __init__(self, core: RoadmapCore):
+        self._core = core
+
+    def current_identity(self) -> str | None:
+        return self._core.team.get_current_user()
+
+
+class _SystemClock:
+    def now(self) -> Timestamp:
+        return Timestamp(datetime.now(UTC))
 
 
 def _assignee_validator(core: RoadmapCore) -> Any:
@@ -110,6 +131,14 @@ def wire_legacy_core(core: RoadmapCore) -> None:
     core.team = TeamCoordinator(user_ops, core=core)
     core.git = GitCoordinator(git_ops, core=core)
     core.validation = ValidationCoordinator(core.github_service, core=core)
+    documents = DocumentRepository(core.roadmap_dir)
+    projection = SQLiteProjection(core.db_dir / "projection.db", documents)
+    dynamic_core: Any = core
+    dynamic_core.issue_queries = IssueQueries(
+        DocumentIssueQueries(documents, projection),
+        _LegacyCurrentIdentity(core),
+        _SystemClock(),
+    )
     core._console_factory = Console
     core._git_hook_manager_factory = lambda: CoordinationGateway.get_git_hook_manager(
         core

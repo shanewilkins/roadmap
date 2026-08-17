@@ -45,8 +45,8 @@ Existing project policies remain authoritative in their specific areas:
 | `.roadmap/` | Implementation work items and, after planning, the development roadmap. |
 
 If two documents conflict, the more specific policy controls. The maintainer
-resolves unresolved conflicts and records material architecture decisions in
-the existing design-decisions document.
+resolves unresolved conflicts and records material architecture decisions as
+ADRs in the architecture decision directory.
 
 ## Requirement lifecycle
 

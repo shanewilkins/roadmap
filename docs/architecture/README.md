@@ -8,6 +8,15 @@ The ADRs describe the intended architecture. The current package layout is in
 transition and is not evidence that a conflicting dependency is permitted.
 Implementation changes require separate, explicitly scoped work.
 
+## Current execution state
+
+- Accepted checkpoint: Phase 6, issue queries.
+- Next approved work after maintainer authorization: Phase 7, issue mutations
+  and relationships.
+- Final planned implementation phase: Phase 13, 0.2.0 release preparation.
+- Current production Python CLOC ceiling: 54,169.
+- Every phase ends with the complete checkpoint and a hard approval stop.
+
 ## Accepted decisions
 
 - [ADR-0001: Adopt pragmatic hexagonal architecture](adr/0001-pragmatic-hexagonal-architecture.md)
@@ -42,3 +51,4 @@ Implementation changes require separate, explicitly scoped work.
 - [Phase 3 Bootstrap composition root — 2026-08-16](checkpoints/phase-3-bootstrap-composition-root-2026-08-16.md)
 - [Phase 4 Domain and Application contracts — 2026-08-17](checkpoints/phase-4-domain-application-contracts-2026-08-17.md)
 - [Phase 5 canonical persistence and SQLite projection — 2026-08-17](checkpoints/phase-5-canonical-persistence-projection-2026-08-17.md)
+- [Phase 6 issue queries — 2026-08-17](checkpoints/phase-6-issue-queries-2026-08-17.md)

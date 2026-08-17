@@ -2,8 +2,10 @@
 
 - Status: Approved
 - Date: 2026-08-10
-- Implementation status: Phases 0 through 4 complete; pure Domain/Application
-  contracts established and execution stopped before Phase 5
+- Last updated: 2026-08-17
+- Implementation status: Phases 0 through 6 complete; issue queries now run
+  through Application-owned use cases and canonical-first adapters, and
+  execution is stopped before Phase 7
 - Governing decisions: ADR-0001 through ADR-0010
 
 ## Purpose

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -24,6 +25,33 @@ from tests.policy.architecture_checker import (
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = Path(__file__).parent / "fixtures" / "architecture"
 POLICY = load_policy(ROOT / "architecture.toml")
+EXECUTION_PLAN = ROOT / "docs" / "architecture" / "refactor-execution-plan.md"
+ARCHITECTURE_INDEX = ROOT / "docs" / "architecture" / "README.md"
+CHECKPOINTS = ROOT / "docs" / "architecture" / "checkpoints"
+
+
+def test_governance_phase_state_is_consistent() -> None:
+    """The policy, execution plan, index, and accepted checkpoint cannot drift."""
+    plan = EXECUTION_PLAN.read_text(encoding="utf-8")
+    index = ARCHITECTURE_INDEX.read_text(encoding="utf-8")
+    header = "\n".join(plan.splitlines()[:12])
+    phases = {
+        int(match.group(1))
+        for match in re.finditer(r"^## Phase (\d+) —", plan, flags=re.MULTILINE)
+    }
+
+    assert phases == set(range(POLICY.final_phase + 1))
+    assert f"Execution status: Phase {POLICY.current_phase} checkpoint passed" in header
+    assert f"approval before Phase {POLICY.current_phase + 1}" in header
+    assert f"Accepted checkpoint: Phase {POLICY.current_phase}" in index
+    assert f"Final planned implementation phase: Phase {POLICY.final_phase}" in index
+
+    checkpoints = sorted(CHECKPOINTS.glob(f"phase-{POLICY.current_phase}-*.md"))
+    assert len(checkpoints) == 1
+    checkpoint = checkpoints[0].read_text(encoding="utf-8")
+    assert "Decision: **GO**" in checkpoint
+    assert f"before Phase {POLICY.current_phase + 1}" in checkpoint
+    assert checkpoints[0].name in index
 
 
 def test_valid_fixture_obeys_every_architecture_rule() -> None:

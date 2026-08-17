@@ -48,15 +48,15 @@ from .health.file_repair_service import (  # noqa: F401
 )
 from .health.issue_health_scanner import IssueHealthScanner  # noqa: F401
 from .issue.issue_creation_service import IssueCreationService  # noqa: F401
-from .issue.issue_filter_service import (
-    IssueFilterValidator,  # noqa: F401
-    IssueQueryService,  # noqa: F401
-    WorkloadCalculator,  # noqa: F401
-)
 from .issue.issue_matching_service import IssueMatchingService  # noqa: F401
 from .issue.issue_service import IssueService  # noqa: F401
 from .issue.issue_update_service import IssueUpdateService  # noqa: F401
 from .issue.start_issue_service import StartIssueService  # noqa: F401
+from .issue_helpers.issue_filters import (
+    IssueFilterValidator,  # noqa: F401
+    IssueQueryService,  # noqa: F401
+    WorkloadCalculator,  # noqa: F401
+)
 from .milestone_service import MilestoneService  # noqa: F401
 from .status_change_service import (
     extract_issue_status_update,  # noqa: F401

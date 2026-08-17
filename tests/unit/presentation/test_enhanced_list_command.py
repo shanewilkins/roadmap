@@ -193,7 +193,7 @@ class TestListAllVariants:
         result = runner.invoke(
             main, ["issue", "list", "--backlog", "--milestone", "Test Sprint"]
         )
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         assert (
             "Cannot combine --backlog, --unassigned, --next-milestone" in result.output
         )

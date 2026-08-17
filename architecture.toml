@@ -1,7 +1,7 @@
 [architecture]
 version = 1
-current_phase = 5
-final_phase = 14
+current_phase = 6
+final_phase = 13
 production_root = "roadmap"
 baseline = "architecture-baseline.toml"
 
