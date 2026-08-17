@@ -186,7 +186,10 @@ def inspect_fixture(roadmap: Path, fixture: Path, workspace: Path) -> dict[str, 
 
 
 def _extract_created_issue_id(output: str) -> str:
-    match = re.search(r"\bID:\s*([0-9a-f]{8})\b", output)
+    match = re.search(
+        r"(?:\bID:\s*|Created issue:\s*\[)([0-9a-f]{8}(?:-[0-9a-f-]{27})?)",
+        output,
+    )
     if not match:
         raise RuntimeError("Could not read the created issue ID")
     return match.group(1)

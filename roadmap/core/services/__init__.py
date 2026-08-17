@@ -50,8 +50,6 @@ from .health.issue_health_scanner import IssueHealthScanner  # noqa: F401
 from .issue.issue_creation_service import IssueCreationService  # noqa: F401
 from .issue.issue_matching_service import IssueMatchingService  # noqa: F401
 from .issue.issue_service import IssueService  # noqa: F401
-from .issue.issue_update_service import IssueUpdateService  # noqa: F401
-from .issue.start_issue_service import StartIssueService  # noqa: F401
 from .issue_helpers.issue_filters import (
     IssueFilterValidator,  # noqa: F401
     IssueQueryService,  # noqa: F401

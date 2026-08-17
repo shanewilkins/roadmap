@@ -87,6 +87,12 @@ class _Write:
     expected: str | None
 
 
+@dataclass(slots=True)
+class _Delete:
+    path: Path
+    expected: str
+
+
 def _atomic_write(path: Path, content: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, raw_temp = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
@@ -105,6 +111,17 @@ def _atomic_write(path: Path, content: bytes) -> None:
     finally:
         if temp.exists():
             temp.unlink()
+
+
+def _atomic_delete(path: Path) -> None:
+    path.unlink(missing_ok=True)
+    if not path.parent.exists():
+        return
+    directory = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory)
+    finally:
+        os.close(directory)
 
 
 class CanonicalUnitOfWork:
@@ -127,6 +144,7 @@ class CanonicalUnitOfWork:
         self._loaded: dict[tuple[DocumentKind, EntityId], DocumentEnvelope] = {}
         self._identities: dict[Path, str | None] = {}
         self._writes: dict[tuple[DocumentKind, EntityId], _Write] = {}
+        self._deletes: dict[tuple[DocumentKind, EntityId], _Delete] = {}
         self.projection_stale = False
         self._entered = False
 
@@ -161,6 +179,18 @@ class CanonicalUnitOfWork:
         aggregate = self._load("issue", issue_id)
         return aggregate if isinstance(aggregate, Issue) else None
 
+    def list_issues(self) -> tuple[Issue, ...]:
+        self._require_lock()
+        issues: list[Issue] = []
+        for envelope in self.repository.scan("issue"):
+            identity = envelope.aggregate.id
+            self._loaded[("issue", identity)] = envelope
+            digest = content_identity(envelope.path.read_bytes())
+            self._identities[envelope.path] = digest
+            if isinstance(envelope.aggregate, Issue):
+                issues.append(envelope.aggregate)
+        return tuple(issues)
+
     def load_milestone(self, milestone_id: EntityId) -> Milestone | None:
         aggregate = self._load("milestone", milestone_id)
         return aggregate if isinstance(aggregate, Milestone) else None
@@ -190,6 +220,25 @@ class CanonicalUnitOfWork:
     def save_issue(self, issue: Issue) -> None:
         self._save("issue", issue)
 
+    def delete_issue(self, issue_id: EntityId) -> bool:
+        self._require_lock()
+        key = ("issue", issue_id)
+        envelope = self._loaded.get(key)
+        if envelope is None:
+            found = self.repository.load("issue", issue_id)
+            if found is None:
+                return False
+            envelope = found
+            self._loaded[key] = envelope
+            self._identities[envelope.path] = content_identity(
+                envelope.path.read_bytes()
+            )
+        expected = self._identities[envelope.path]
+        assert expected is not None
+        self._writes.pop(key, None)
+        self._deletes[key] = _Delete(envelope.path, expected)
+        return True
+
     def save_milestone(self, milestone: Milestone) -> None:
         self._save("milestone", milestone)
 
@@ -202,6 +251,14 @@ class CanonicalUnitOfWork:
             actual = content_identity(path.read_bytes()) if path.exists() else None
             if actual != write.expected:
                 raise CanonicalConflict(f"canonical document changed: {path}")
+        for deletion in self._deletes.values():
+            actual = (
+                content_identity(deletion.path.read_bytes())
+                if deletion.path.exists()
+                else None
+            )
+            if actual != deletion.expected:
+                raise CanonicalConflict(f"canonical document changed: {deletion.path}")
 
     def _journal(self, directory: Path) -> list[dict[str, Any]]:
         entries: list[dict[str, Any]] = []
@@ -217,6 +274,19 @@ class CanonicalUnitOfWork:
                     "target": str(path.relative_to(self.repository.roadmap_dir)),
                     "before": before_name if path.exists() else None,
                     "after": after_name,
+                }
+            )
+        offset = len(entries)
+        for index, deletion in enumerate(self._deletes.values(), start=offset):
+            before_name = f"{index}.before"
+            (directory / before_name).write_bytes(deletion.path.read_bytes())
+            entries.append(
+                {
+                    "target": str(
+                        deletion.path.relative_to(self.repository.roadmap_dir)
+                    ),
+                    "before": before_name,
+                    "after": None,
                 }
             )
         journal = directory / "journal.json"
@@ -236,7 +306,10 @@ class CanonicalUnitOfWork:
         for entry in entries:
             target = self._target(entry["target"])
             self._inject("before_replace", target)
-            _atomic_write(target, (directory / entry["after"]).read_bytes())
+            if entry["after"] is None:
+                _atomic_delete(target)
+            else:
+                _atomic_write(target, (directory / entry["after"]).read_bytes())
             self._inject("after_replace", target)
 
     def _restore(self, directory: Path, entries: list[dict[str, Any]]) -> None:
@@ -245,7 +318,7 @@ class CanonicalUnitOfWork:
             before = entry["before"]
             if before is None:
                 if target.exists():
-                    target.unlink()
+                    _atomic_delete(target)
             else:
                 _atomic_write(target, (directory / before).read_bytes())
 
@@ -273,7 +346,7 @@ class CanonicalUnitOfWork:
 
     def commit(self) -> None:
         self._require_lock()
-        if not self._writes:
+        if not self._writes and not self._deletes:
             return
         self._inject("before_validate", None)
         self._validate()
@@ -292,8 +365,9 @@ class CanonicalUnitOfWork:
             shutil.rmtree(directory, ignore_errors=True)
             raise
         shutil.rmtree(directory)
-        changed_ids = tuple(key[1] for key in self._writes)
+        changed_ids = tuple(key[1] for key in (*self._writes, *self._deletes))
         self._writes.clear()
+        self._deletes.clear()
         if self._projection is not None:
             try:
                 self._projection.refresh(changed_ids)
@@ -303,3 +377,15 @@ class CanonicalUnitOfWork:
 
     def rollback(self) -> None:
         self._writes.clear()
+        self._deletes.clear()
+
+
+class CanonicalIssueUnitOfWorkFactory:
+    """Create one workspace-locked unit of work per Application mutation."""
+
+    def __init__(self, repository: DocumentRepository, projection: Any | None = None):
+        self._repository = repository
+        self._projection = projection
+
+    def create(self) -> CanonicalUnitOfWork:
+        return CanonicalUnitOfWork(self._repository, self._projection)

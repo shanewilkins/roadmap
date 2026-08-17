@@ -177,17 +177,16 @@ class TestCLIAssigneeValidation:
 
     def test_issue_create_with_invalid_assignee(self, cli_runner, initialized_roadmap):
         """Test issue creation with invalid assignee."""
+        from roadmap.application.failures import ApplicationFailure, FailureCategory
         from roadmap.bootstrap import cli as main
 
         # Create a mock core
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.is_initialized.return_value = True
-        mock_core.team.validate_assignee.return_value = (
-            False,
-            "User 'baduser' does not exist",
+        mock_core.issue_mutations.create.side_effect = ApplicationFailure(
+            FailureCategory.INVALID_REQUEST,
+            "Invalid assignee: baduser",
         )
-        mock_core.team.get_current_user.return_value = None
-        mock_core.issues.create.side_effect = Exception("Should not reach create")
 
         result = cli_runner.invoke(
             main,
@@ -197,7 +196,7 @@ class TestCLIAssigneeValidation:
 
         assert result.exit_code == 1
         output = result.output
-        assert "Invalid assignee" in output or "does not exist" in output
+        assert "Invalid assignee" in output
         mock_core.issues.create.assert_not_called()
 
     def test_issue_create_with_valid_assignee(self, cli_runner, initialized_roadmap):
@@ -207,21 +206,11 @@ class TestCLIAssigneeValidation:
         # Create a mock core
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.is_initialized.return_value = True
-        mock_core.team.validate_assignee.return_value = (True, "")
-        mock_core.team.get_current_user.return_value = None
-        mock_core.git.is_git_repository.return_value = (
-            False  # Disable git branch creation
-        )
-
-        # Mock successful issue creation - use a Mock instead of real Issue
         mock_issue = Mock()
         mock_issue.title = "Test Issue"
         mock_issue.id = "test123"
-        mock_issue.issue_type.value.title.return_value = "Other"
-        mock_issue.priority.value = "medium"
-        mock_issue.filename = "test123-test-issue.md"
-        mock_issue.estimated_time_display = "Not estimated"
-        mock_core.issues.create.return_value = mock_issue
+        mock_result = Mock(issue=mock_issue, projection_stale=False)
+        mock_core.issue_mutations.create.return_value = mock_result
 
         result = cli_runner.invoke(
             main,
@@ -230,7 +219,7 @@ class TestCLIAssigneeValidation:
         )
 
         assert_command_success(result)
-        mock_core.issues.create.assert_called_once()
+        mock_core.issue_mutations.create.assert_called_once()
 
     def test_issue_create_local_only_usage(self, cli_runner, initialized_roadmap):
         """Test issue creation works without GitHub when validation is skipped."""
@@ -239,22 +228,11 @@ class TestCLIAssigneeValidation:
         # Create a mock core that simulates local-only usage (no GitHub config)
         mock_core = TestDataFactory.create_mock_core(is_initialized=True)
         mock_core.is_initialized.return_value = True
-        mock_core.team.validate_assignee.return_value = (
-            True,
-            "",
-        )  # No validation when no GitHub
-        mock_core.team.get_current_user.return_value = None
-        mock_core.git.is_git_repository.return_value = False
-
-        # Mock successful issue creation
         mock_issue = Mock()
         mock_issue.title = "Local Issue"
         mock_issue.id = "local123"
-        mock_issue.issue_type.value.title.return_value = "Other"
-        mock_issue.priority.value = "medium"
-        mock_issue.filename = "local123-local-issue.md"
-        mock_issue.estimated_time_display = "Not estimated"
-        mock_core.issues.create.return_value = mock_issue
+        mock_result = Mock(issue=mock_issue, projection_stale=False)
+        mock_core.issue_mutations.create.return_value = mock_result
 
         result = cli_runner.invoke(
             main,
@@ -270,5 +248,5 @@ class TestCLIAssigneeValidation:
         )
 
         assert_command_success(result)
-        mock_core.team.validate_assignee.assert_called_once_with("alice.local")
-        mock_core.issues.create.assert_called_once()
+        command = mock_core.issue_mutations.create.call_args.args[0]
+        assert command.assignee == "alice.local"

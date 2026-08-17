@@ -1,5 +1,6 @@
 """Canonical document and disposable projection adapters."""
 
+from .canonical import CanonicalIssueUnitOfWorkFactory
 from .issue_queries import DocumentIssueQueries
 
-__all__ = ["DocumentIssueQueries"]
+__all__ = ["CanonicalIssueUnitOfWorkFactory", "DocumentIssueQueries"]

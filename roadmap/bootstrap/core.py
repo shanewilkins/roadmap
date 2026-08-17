@@ -6,14 +6,17 @@ from typing import Any
 
 from rich.console import Console
 
-from roadmap.adapters.outbound.persistence import DocumentIssueQueries
+from roadmap.adapters.outbound.persistence import (
+    CanonicalIssueUnitOfWorkFactory,
+    DocumentIssueQueries,
+)
 from roadmap.adapters.outbound.persistence.documents import DocumentRepository
 from roadmap.adapters.outbound.persistence.projection import SQLiteProjection
 from roadmap.adapters.persistence.yaml_repositories import (
     YAMLMilestoneRepository,
     YAMLProjectRepository,
 )
-from roadmap.application.use_cases import IssueQueries
+from roadmap.application.use_cases import IssueMutations, IssueQueries
 from roadmap.common.configuration import ConfigManager
 from roadmap.common.logging import get_logger
 from roadmap.core.services import (
@@ -59,12 +62,25 @@ class _LegacyCurrentIdentity:
         self._core = core
 
     def current_identity(self) -> str | None:
-        return self._core.team.get_current_user()
+        return self._core.team.get_current_user() or self._core.git.get_current_user()
 
 
 class _SystemClock:
     def now(self) -> Timestamp:
         return Timestamp(datetime.now(UTC))
+
+
+class _LegacyAssigneeDirectory:
+    """Narrow compatibility adapter until identity management migrates."""
+
+    def __init__(self, core: RoadmapCore):
+        self._core = core
+
+    def canonical_assignee(self, assignee: str) -> str | None:
+        valid, _message = self._core.team.validate_assignee(assignee)
+        if not valid:
+            return None
+        return self._core.team.get_canonical_assignee(assignee)
 
 
 def _assignee_validator(core: RoadmapCore) -> Any:
@@ -137,6 +153,12 @@ def wire_legacy_core(core: RoadmapCore) -> None:
     dynamic_core.issue_queries = IssueQueries(
         DocumentIssueQueries(documents, projection),
         _LegacyCurrentIdentity(core),
+        _SystemClock(),
+    )
+    dynamic_core.issue_mutations = IssueMutations(
+        CanonicalIssueUnitOfWorkFactory(documents, projection),
+        _LegacyCurrentIdentity(core),
+        _LegacyAssigneeDirectory(core),
         _SystemClock(),
     )
     core._console_factory = Console

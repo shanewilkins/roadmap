@@ -1,44 +1,27 @@
-"""Restore issue command - move archived issues back to active."""
+"""Restore archived issues through canonical lifecycle metadata."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.issues.restore_class import IssueRestore
-from roadmap.common.console import get_console
-from roadmap.common.logging import (
-    log_command,
-    verbose_output,
+from roadmap.adapters.cli.issues.resolution import (
+    invoke,
+    projection_warning,
+    resolve_issue_id,
 )
+from roadmap.common.logging import log_command, verbose_output
+from roadmap.domain.types import IssueStatus
 
 
-@click.command()
+@click.command("restore")
 @click.argument("issue_id", required=False)
-@click.option(
-    "--all",
-    is_flag=True,
-    help="Restore all archived issues",
-)
+@click.option("--all", "restore_all", is_flag=True, help="Restore every archive")
 @click.option(
     "--status",
     type=click.Choice(["todo", "in-progress", "blocked", "review", "closed"]),
-    help="Set status when restoring (default: keep current status)",
 )
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Preview what would be restored without actually doing it",
-)
-@click.option(
-    "--force",
-    is_flag=True,
-    help="Skip confirmation prompt",
-)
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Show detailed debug information",
-)
+@click.option("--dry-run", is_flag=True, help="Preview without saving")
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+@click.option("--verbose", "-v", is_flag=True)
 @click.pass_context
 @verbose_output
 @log_command("issue_restore", entity_type="issue", track_duration=True)
@@ -46,51 +29,30 @@ from roadmap.common.logging import (
 def restore_issue(
     ctx: click.Context,
     issue_id: str | None,
-    all: bool,
+    restore_all: bool,
     status: str | None,
     dry_run: bool,
     force: bool,
-    verbose: bool,  # noqa: F841
-):
-    """Restore an archived issue back to active issues.
-
-    This moves an issue from .roadmap/archive/issues/ back to
-    .roadmap/issues/, making it active again. Optionally update
-    the status when restoring.
-
-    Examples:
-        roadmap issue restore 8a00a17e
-        roadmap issue restore 8a00a17e --status todo
-        roadmap issue restore --all
-        roadmap issue restore 8a00a17e --dry-run
-    """
+    verbose: bool,  # noqa: ARG001
+) -> None:
+    """Restore archived issues without moving their Markdown files."""
+    if (issue_id is None) == (not restore_all):
+        raise click.UsageError("Specify exactly one of ISSUE_ID or --all")
     core = ctx.obj["core"]
-    console = get_console()
-
-    restore = IssueRestore(core, console)
-
-    if not issue_id and not all:
-        console.print(
-            "❌ Error: Specify an issue ID or use --all",
-            style="bold red",
-        )
-        ctx.exit(1)
-
-    if issue_id and all:
-        console.print(
-            "❌ Error: Cannot specify issue ID with --all",
-            style="bold red",
-        )
-        ctx.exit(1)
-
-    try:
-        restore.execute(
-            entity_id=issue_id,
-            all=all,
-            status=status,
+    identity = resolve_issue_id(core, issue_id) if issue_id else None
+    if not dry_run and not force:
+        click.confirm("Restore the selected issue(s)?", abort=True)
+    result = invoke(
+        lambda: core.issue_mutations.restore(
+            identity,
+            restore_all=restore_all,
+            status=IssueStatus(status) if status else None,
             dry_run=dry_run,
-            force=force,
         )
-    except Exception as e:
-        console.print(f"❌ Restore operation failed: {str(e)}", style="bold red")
-        ctx.exit(1)
+    )
+    verb = "Would restore" if dry_run else "Restored"
+    for issue in result.issues:
+        click.echo(f"{verb} issue {issue.id}: {issue.title}")
+    if not result.issues:
+        click.echo("No matching issues.")
+    projection_warning(result)

@@ -48,8 +48,8 @@ class TestArchiveDuplicatePrevention:
         files = archive_issues_dir.glob("**/*.md")
         return {Path(f).stem.split("-")[0] for f in files}
 
-    def test_archive_closed_issue_removes_from_active(self, core):
-        """Ensure archiving a closed issue removes it from active directory."""
+    def test_archive_closed_issue_keeps_one_canonical_file(self, core):
+        """Archiving changes metadata without moving the canonical file."""
         # Create and close an issue
         issue = core.issues.create("Test Issue", priority=Priority.MEDIUM)
         core.issues.update(issue.id, status=Status.CLOSED)
@@ -69,9 +69,10 @@ class TestArchiveDuplicatePrevention:
         clean_output = clean_cli_output(result.output)
         assert result.exit_code == 0, f"Archive failed: {clean_output}"
 
-        # Verify it's removed from active
+        # The canonical document stays put; lifecycle metadata controls visibility.
         active_after = self.count_active_issue_files(core)
-        assert active_after == 0, "Closed issue should be removed from active"
+        assert active_after == 1
+        assert self.count_archived_issue_files(core) == 0
 
     def test_close_keeps_issue_active_and_out_of_archive(self, core):
         """Ensure closing an issue does not move it into the archive tree."""
@@ -92,8 +93,8 @@ class TestArchiveDuplicatePrevention:
         assert issue.id[:8] in active_ids, "Closed issue should remain in active files"
         assert issue.id[:8] not in archived_ids, "Close should not archive the issue"
 
-    def test_no_issue_ids_in_both_directories(self, core):
-        """Ensure no issue appears in both active and archive directories."""
+    def test_bulk_archive_creates_no_second_document_tree(self, core):
+        """Bulk archive retains one file per issue and creates no archive copies."""
         # Create multiple issues and close some
         issue1 = core.issues.create("Issue 1", priority=Priority.MEDIUM)
         issue2 = core.issues.create("Issue 2", priority=Priority.MEDIUM)
@@ -113,19 +114,18 @@ class TestArchiveDuplicatePrevention:
         clean_output = clean_cli_output(result.output)
         assert result.exit_code == 0, f"Archive all-closed failed: {clean_output}"
 
-        # Check that no issue ID appears in both directories
+        # Every canonical document remains in place and none is copied.
         active_ids = self.get_active_issue_ids(core)
         archived_ids = self.get_archived_issue_ids(core)
 
         overlap = active_ids & archived_ids
         assert not overlap, f"Issues found in both active and archive: {overlap}"
 
-        # Verify issue3 is still active, issue1 and issue2 are archived
+        # Retention is metadata, so all three files remain in the canonical tree.
         assert issue3.id[:8] in active_ids, "Active open issue should still be active"
-        assert issue1.id[:8] not in active_ids, "Closed issue1 should not be active"
-        assert issue2.id[:8] not in active_ids, "Closed issue2 should not be active"
-        assert issue1.id[:8] in archived_ids, "Closed issue1 should be archived"
-        assert issue2.id[:8] in archived_ids, "Closed issue2 should be archived"
+        assert issue1.id[:8] in active_ids
+        assert issue2.id[:8] in active_ids
+        assert archived_ids == set()
 
     def test_archive_handles_existing_archive_file(self, core):
         """Ensure archive operation skips if file already exists in archive."""
@@ -163,7 +163,7 @@ class TestArchiveDuplicatePrevention:
             "Archived files should not change on second archive"
         )
 
-        # Most importantly: verify no duplicates exist
+        # Most importantly: verify no second document tree exists.
         active_ids = self.get_active_issue_ids(core)
         archived_ids = self.get_archived_issue_ids(core)
         overlap = active_ids & archived_ids

@@ -27,7 +27,7 @@ from roadmap.adapters.outbound.persistence.documents import (
 )
 from roadmap.adapters.outbound.persistence.projection import SQLiteProjection
 from roadmap.domain.aggregates import Issue, Milestone
-from roadmap.domain.types import EntityId, Name, Timestamp, Title
+from roadmap.domain.types import EntityId, IssueComment, Name, Timestamp, Title
 
 NOW = Timestamp(datetime(2026, 8, 17, 12, tzinfo=UTC))
 LATER = Timestamp(NOW.value + timedelta(minutes=1))
@@ -96,12 +96,29 @@ def test_document_mapping_preserves_unicode_unknown_fields_and_markdown(tmp_path
     assert envelope.extra_frontmatter["remote_ids"] == {"tracker": 42}
 
 
+def test_legacy_naive_timestamps_are_normalized_at_the_boundary(tmp_path):
+    path = _write(
+        tmp_path / ".roadmap/issues/backlog/issue-1.md",
+        _issue_values(created="2026-08-17T12:00:00", updated="2026-08-17T12:00:00"),
+    )
+
+    issue = parse_document(path, "issue").aggregate
+
+    assert issue.created.value.tzinfo is UTC
+
+
 @pytest.mark.parametrize(
     "values, message",
     [
         (_issue_values(schema_version=99), "unsupported schema_version"),
         (_issue_values(created="not-a-time"), "invalid created timestamp"),
         (_issue_values(title=""), "invalid issue document"),
+        (_issue_values(comments="not-a-list"), "comments must be a list"),
+        (
+            _issue_values(comments=["not-a-mapping"]),
+            "every issue comment must be a mapping",
+        ),
+        (_issue_values(history=[42]), "every issue history entry must be a mapping"),
     ],
 )
 def test_malformed_documents_fail_without_rewrite(tmp_path, values, message):
@@ -147,6 +164,27 @@ def test_unit_of_work_round_trips_envelope_and_commits_canonical_first(tmp_path)
     assert saved.extra_frontmatter["custom"] == "keep-me"
 
 
+def test_serialized_comments_remain_readable_by_released_legacy_model(tmp_path):
+    repository = _repository(tmp_path)
+    issue = Issue(
+        EntityId("issue-1"),
+        NOW,
+        NOW,
+        title=Title("Commented"),
+        comments=(IssueComment(1, "alice", "Hello", NOW, NOW),),
+    )
+
+    with CanonicalUnitOfWork(repository) as unit:
+        unit.save_issue(issue)
+        unit.commit()
+
+    raw = yaml.safe_load(
+        (tmp_path / ".roadmap/issues/backlog/issue-1.md").read_text().split("---", 2)[1]
+    )
+    assert raw["comments"][0]["issue_id"] == "issue-1"
+    assert "github_url" in raw["comments"][0]
+
+
 def test_unexpected_external_edit_conflicts_instead_of_overwriting(tmp_path):
     path = _write(tmp_path / ".roadmap/issues/backlog/issue-1.md", _issue_values())
     repository = _repository(tmp_path)
@@ -160,6 +198,61 @@ def test_unexpected_external_edit_conflicts_instead_of_overwriting(tmp_path):
             unit.commit()
 
     assert "External edit" in path.read_text()
+
+
+def test_unit_of_work_deletes_canonical_issue_and_refreshes_projection(tmp_path):
+    class Projection:
+        changed = ()
+
+        def refresh(self, changed_ids):
+            self.changed = changed_ids
+
+        def mark_stale(self):
+            raise AssertionError("projection refresh should succeed")
+
+    path = _write(tmp_path / ".roadmap/issues/backlog/issue-1.md", _issue_values())
+    projection = Projection()
+
+    with CanonicalUnitOfWork(_repository(tmp_path), projection) as unit:
+        assert unit.delete_issue(EntityId("issue-1"))
+        unit.commit()
+
+    assert not path.exists()
+    assert projection.changed == (EntityId("issue-1"),)
+
+
+def test_delete_failure_restores_canonical_document(tmp_path):
+    path = _write(tmp_path / ".roadmap/issues/backlog/issue-1.md", _issue_values())
+    before = path.read_bytes()
+
+    def fail(stage: str, _path: Path | None) -> None:
+        if stage == "after_replace":
+            raise OSError("delete failed")
+
+    with CanonicalUnitOfWork(_repository(tmp_path), failure_injector=fail) as unit:
+        assert unit.delete_issue(EntityId("issue-1"))
+        with pytest.raises(OSError, match="delete failed"):
+            unit.commit()
+
+    assert path.read_bytes() == before
+
+
+def test_interrupted_delete_recovers_to_complete_deleted_state(tmp_path):
+    path = _write(tmp_path / ".roadmap/issues/backlog/issue-1.md", _issue_values())
+
+    def crash(stage: str, _path: Path | None) -> None:
+        if stage == "after_replace":
+            raise SystemExit("simulated process death")
+
+    with pytest.raises(SystemExit):
+        with CanonicalUnitOfWork(_repository(tmp_path), failure_injector=crash) as unit:
+            assert unit.delete_issue(EntityId("issue-1"))
+            unit.commit()
+
+    with CanonicalUnitOfWork(_repository(tmp_path)):
+        pass
+
+    assert not path.exists()
 
 
 def test_write_failure_restores_complete_old_multi_document_state(tmp_path):

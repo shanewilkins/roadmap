@@ -237,7 +237,10 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         # Create a milestone
-        runner.invoke(main, ["milestone", "create", "--title", "Test Milestone"])
+        result = runner.invoke(
+            main, ["milestone", "create", "--title", "test-milestone"]
+        )
+        assert_command_success(result)
 
         # Create issues and assign to milestone
         runner.invoke(
@@ -258,10 +261,10 @@ class TestEstimatedTimeCLI:
 
         # Assign issues to milestone
         runner.invoke(
-            main, ["issue", "update", task1.id, "--milestone", "Test Milestone"]
+            main, ["issue", "update", task1.id, "--milestone", "test-milestone"]
         )
         runner.invoke(
-            main, ["issue", "update", task2.id, "--milestone", "Test Milestone"]
+            main, ["issue", "update", task2.id, "--milestone", "test-milestone"]
         )
 
         # List milestones
@@ -273,7 +276,10 @@ class TestEstimatedTimeCLI:
         runner, core = cli_runner_with_init
 
         # Create a milestone
-        runner.invoke(main, ["milestone", "create", "--title", "Test Milestone"])
+        result = runner.invoke(
+            main, ["milestone", "create", "--title", "test-milestone"]
+        )
+        assert_command_success(result)
 
         # Create issues and assign to milestone
         runner.invoke(
@@ -292,10 +298,10 @@ class TestEstimatedTimeCLI:
 
         # Assign issues to milestone
         runner.invoke(
-            main, ["issue", "update", task1.id, "--milestone", "Test Milestone"]
+            main, ["issue", "update", task1.id, "--milestone", "test-milestone"]
         )
         runner.invoke(
-            main, ["issue", "update", task2.id, "--milestone", "Test Milestone"]
+            main, ["issue", "update", task2.id, "--milestone", "test-milestone"]
         )
 
         # Verify issues are assigned
@@ -303,8 +309,8 @@ class TestEstimatedTimeCLI:
         fresh_task2 = core.issues.get(task2.id)
         assert fresh_task1 is not None
         assert fresh_task2 is not None
-        assert fresh_task1.milestone == "Test Milestone"
-        assert fresh_task2.milestone == "Test Milestone"
+        assert fresh_task1.milestone == "test-milestone"
+        assert fresh_task2.milestone == "test-milestone"
 
     def test_milestone_list_shows_estimated_hours(self, cli_runner_with_init):
         """Test that milestone issues show estimated hours."""

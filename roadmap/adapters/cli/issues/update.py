@@ -1,58 +1,17 @@
-"""Update issue command."""
+"""Update an issue through the target Application boundary."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.crud import BaseUpdate, EntityType
-from roadmap.adapters.cli.crud.entity_builders import IssueBuilder
-from roadmap.adapters.cli.presentation.crud_presenter import UpdatePresenter
-from roadmap.common.logging import (
-    log_command,
+from roadmap.adapters.cli.issues.resolution import (
+    entity_id,
+    invoke,
+    projection_warning,
+    resolve_issue_id,
 )
-from roadmap.common.models import IssueUpdateParams
-
-
-class IssueUpdate(BaseUpdate):
-    """Update issue command implementation."""
-
-    entity_type = EntityType.ISSUE
-
-    def __init__(self, core):
-        """Initialize IssueUpdate."""
-        super().__init__(core)
-        self._current_update_dict = {}
-        self._current_reason = None
-
-    def build_update_dict(self, entity_id: str, **kwargs) -> dict:
-        """Build update dictionary for issue."""
-        return IssueBuilder.build_update_dict(
-            title=kwargs.get("title"),
-            priority=kwargs.get("priority"),
-            status=kwargs.get("status"),
-            assignee=kwargs.get("assignee"),
-            milestone=kwargs.get("milestone"),
-            description=kwargs.get("description"),
-            estimate=kwargs.get("estimate"),
-        )
-
-    def execute(self, entity_id: str, **kwargs):
-        """Execute update and display results using proper formatter.
-
-        Overrides parent to store update_dict and reason for display.
-        """
-        # Store for use in _display_success
-        self._current_update_dict = self.build_update_dict(
-            entity_id=entity_id, **kwargs
-        )
-        self._current_reason = kwargs.get("reason")
-
-        # Call parent execute which will call _display_success
-        return super().execute(entity_id=entity_id, **kwargs)
-
-    def _display_success(self, entity) -> None:
-        """Display success message using presenter."""
-        presenter = UpdatePresenter()
-        presenter.render(entity, self._current_update_dict)
+from roadmap.application.contracts import IssueUpdateCommand
+from roadmap.common.logging import log_command
+from roadmap.domain.types import Priority, Title
 
 
 @click.command("update")
@@ -62,18 +21,16 @@ class IssueUpdate(BaseUpdate):
     "--priority",
     "-p",
     type=click.Choice(["critical", "high", "medium", "low"]),
-    help="Update priority",
 )
 @click.option(
     "--status",
     "-s",
     type=click.Choice(["todo", "in-progress", "blocked", "review", "closed"]),
-    help="Update status",
 )
 @click.option("--assignee", "-a", help="Update assignee")
 @click.option("--milestone", "-m", help="Update milestone")
 @click.option("--description", "-d", help="Update description")
-@click.option("--estimate", "-e", type=float, help="Update estimated time (in hours)")
+@click.option("--estimate", "-e", type=float, help="Update estimated hours")
 @click.option("--reason", "-r", help="Reason for the update")
 @click.pass_context
 @log_command("issue_update", entity_type="issue", track_duration=True)
@@ -81,40 +38,43 @@ class IssueUpdate(BaseUpdate):
 def update_issue(
     ctx: click.Context,
     issue_id: str,
-    title: str,
-    priority: str,
-    status: str,
-    assignee: str,
-    milestone: str,
-    description: str,
-    estimate: float,
-    reason: str,
-):
-    """Update an existing issue."""
+    title: str | None,
+    priority: str | None,
+    status: str | None,
+    assignee: str | None,
+    milestone: str | None,
+    description: str | None,
+    estimate: float | None,
+    reason: str | None,
+) -> None:
+    """Update an existing canonical issue."""
+    if not any(
+        value is not None
+        for value in (
+            title,
+            priority,
+            status,
+            assignee,
+            milestone,
+            description,
+            estimate,
+        )
+    ):
+        raise click.UsageError("Specify at least one field to update")
     core = ctx.obj["core"]
-    updater = IssueUpdate(core)
-
-    # Create structured parameter object
-    params = IssueUpdateParams(
-        issue_id=issue_id,
-        title=title,
-        priority=priority,
-        status=status,
-        assignee=assignee,
-        milestone=milestone,
-        content=description,
-        estimate=estimate,
-        reason=reason,
+    command = invoke(
+        lambda: IssueUpdateCommand(
+            issue_id=resolve_issue_id(core, issue_id),
+            title=Title(title) if title is not None else None,
+            priority=Priority(priority) if priority is not None else None,
+            status=status,
+            assignee=assignee,
+            milestone_id=entity_id(milestone),
+            content=description,
+            estimated_hours=estimate,
+            reason=reason,
+        )
     )
-
-    updater.execute(
-        entity_id=params.issue_id,
-        title=params.title,
-        priority=params.priority,
-        status=params.status,
-        assignee=params.assignee,
-        milestone=params.milestone,
-        content=params.content,
-        estimate=params.estimate,
-        reason=params.reason,
-    )
+    result = invoke(lambda: core.issue_mutations.update(command))
+    click.echo(f"Updated issue {result.issue.id}: {result.issue.title}")
+    projection_warning(result)

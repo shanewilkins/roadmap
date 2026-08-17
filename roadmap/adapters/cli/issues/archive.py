@@ -1,50 +1,25 @@
-"""Archive issue command - move completed issues to archive."""
+"""Archive issues by changing canonical lifecycle metadata."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.issues.archive_class import IssueArchive
-from roadmap.common.console import get_console
-from roadmap.common.logging import (
-    log_command,
-    verbose_output,
+from roadmap.adapters.cli.issues.resolution import (
+    invoke,
+    projection_warning,
+    resolve_issue_id,
 )
+from roadmap.application.contracts import IssueListQuery, IssueScope
+from roadmap.common.logging import log_command, verbose_output
 
 
-@click.command()
+@click.command("archive")
 @click.argument("issue_id", required=False)
-@click.option(
-    "--all-closed",
-    is_flag=True,
-    help="Archive all closed issues",
-)
-@click.option(
-    "--orphaned",
-    is_flag=True,
-    help="Archive issues with no milestone assigned",
-)
-@click.option(
-    "--list",
-    "list_archived",
-    is_flag=True,
-    help="List archived issues",
-)
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Preview what would be archived without actually doing it",
-)
-@click.option(
-    "--force",
-    is_flag=True,
-    help="Skip confirmation prompt",
-)
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Show detailed debug information",
-)
+@click.option("--all-closed", is_flag=True, help="Archive every closed issue")
+@click.option("--orphaned", is_flag=True, help="Archive issues without milestones")
+@click.option("--list", "list_archived", is_flag=True, help="List archived issues")
+@click.option("--dry-run", is_flag=True, help="Preview without saving")
+@click.option("--force", is_flag=True, help="Allow non-closed issues and skip prompt")
+@click.option("--verbose", "-v", is_flag=True)
 @click.pass_context
 @verbose_output
 @log_command("issue_archive", entity_type="issue", track_duration=True)
@@ -57,81 +32,38 @@ def archive_issue(
     list_archived: bool,
     dry_run: bool,
     force: bool,
-    verbose: bool,  # noqa: F841
-):
-    """Archive an issue by moving it to .roadmap/archive/issues/.
-
-    This is a non-destructive operation that preserves issue data while
-    cleaning up the active workspace. Archived issues can be restored
-    if needed.
-
-    Examples:
-        roadmap issue archive 8a00a17e
-        roadmap issue archive --all-closed
-        roadmap issue archive --orphaned --dry-run
-        roadmap issue archive --list
-    """
+    verbose: bool,  # noqa: ARG001
+) -> None:
+    """Archive issues in place; canonical Markdown files are not moved."""
     core = ctx.obj["core"]
-    console = get_console()
-
-    archive = IssueArchive(core, console)
-
     if list_archived:
-        # List archived issues
-        from pathlib import Path
-
-        from roadmap.adapters.persistence.parser import IssueParser
-
-        roadmap_dir = Path.cwd() / ".roadmap"
-        archive_dir = roadmap_dir / "archive" / "issues"
-
-        if not archive_dir.exists():
-            console.print("📋 No archived issues.", style="yellow")
-            return
-
-        archived_files = list(archive_dir.rglob("*.md"))
-        if not archived_files:
-            console.print("📋 No archived issues.", style="yellow")
-            return
-
-        console.print("\n📦 Archived Issues:\n", style="bold blue")
-        for file_path in sorted(archived_files):
-            try:
-                issue = IssueParser.parse_issue_file(file_path)
-                milestone = issue.milestone or "No milestone"
-                console.print(
-                    f"  • {issue.id[:8]} - {issue.title} [{milestone}] ({issue.status.value})",
-                    style="cyan",
-                )
-            except Exception:
-                console.print(
-                    f"  • {file_path.name} (error reading file)", style="yellow"
-                )
+        records = invoke(
+            lambda: core.issue_queries.list(IssueListQuery(scope=IssueScope.ARCHIVED))
+        ).records
+        if not records:
+            click.echo("No archived issues.")
+        for record in records:
+            click.echo(f"{record.issue.id}  {record.issue.title}")
         return
-
-    # Validate arguments
-    if not issue_id and not all_closed and not orphaned:
-        console.print(
-            "❌ Error: Specify an issue ID, --all-closed, or --orphaned",
-            style="bold red",
+    if sum((issue_id is not None, all_closed, orphaned)) != 1:
+        raise click.UsageError(
+            "Specify exactly one of ISSUE_ID, --all-closed, or --orphaned"
         )
-        ctx.exit(1)
-
-    if sum([bool(issue_id), all_closed, orphaned]) > 1:
-        console.print(
-            "❌ Error: Specify only one of: issue ID, --all-closed, or --orphaned",
-            style="bold red",
-        )
-        ctx.exit(1)
-
-    try:
-        archive.execute(
-            entity_id=issue_id,
+    identity = resolve_issue_id(core, issue_id) if issue_id else None
+    if not dry_run and not force:
+        click.confirm("Archive the selected issue(s)?", abort=True)
+    result = invoke(
+        lambda: core.issue_mutations.archive(
+            identity,
             all_closed=all_closed,
             orphaned=orphaned,
-            dry_run=dry_run,
             force=force,
+            dry_run=dry_run,
         )
-    except Exception as e:
-        console.print(f"❌ Archive operation failed: {str(e)}", style="bold red")
-        ctx.exit(1)
+    )
+    verb = "Would archive" if dry_run else "Archived"
+    for issue in result.issues:
+        click.echo(f"{verb} issue {issue.id}: {issue.title}")
+    if not result.issues:
+        click.echo("No matching issues.")
+    projection_warning(result)

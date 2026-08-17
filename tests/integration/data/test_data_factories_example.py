@@ -89,13 +89,9 @@ class TestIssueScenarioFactory:
         """Test creating priority issues assigned to milestone."""
         from tests.fixtures import IntegrationTestBase
 
-        (
-            IssueScenarioFactory(cli_runner)
-            .with_initialized_roadmap()
-            .with_issue("Create milestone", milestone="v1-0")
-        )
+        IssueScenarioFactory(cli_runner).with_initialized_roadmap()
 
-        # Manually create milestone (factory only creates issues)
+        # References must resolve, so create the milestone before its issues.
         IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
 
         # Now create issues for milestone

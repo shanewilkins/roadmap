@@ -2,65 +2,32 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
-
 from roadmap.application.contracts import IssueCommentView, IssueQueryRecord
 from roadmap.domain.aggregates import Issue, Milestone
-from roadmap.domain.types import EntityId, MilestoneStatus, RetentionState, Timestamp
+from roadmap.domain.types import EntityId, MilestoneStatus, RetentionState
 
 from .documents import DocumentEnvelope, DocumentError, DocumentRepository
 from .projection import ProjectionError, SQLiteProjection
-
-
-def _timestamp(value: Any, field: str) -> Timestamp:
-    if isinstance(value, datetime):
-        parsed = value
-    elif isinstance(value, str):
-        try:
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-        except ValueError as error:
-            raise DocumentError(f"invalid {field} timestamp: {value}") from error
-    else:
-        raise DocumentError(f"missing {field} timestamp")
-    try:
-        return Timestamp(parsed)
-    except ValueError as error:
-        raise DocumentError(f"invalid {field} timestamp: {value}") from error
-
-
-def _comment(value: Any) -> IssueCommentView:
-    if not isinstance(value, dict):
-        raise DocumentError("issue comment must be a mapping")
-    try:
-        return IssueCommentView(
-            id=int(value["id"]),
-            author=str(value["author"]),
-            body=str(value["body"]),
-            created_at=_timestamp(value.get("created_at"), "comment created_at"),
-            updated_at=_timestamp(value.get("updated_at"), "comment updated_at"),
-            in_reply_to=(
-                int(value["in_reply_to"])
-                if value.get("in_reply_to") is not None
-                else None
-            ),
-        )
-    except (KeyError, TypeError, ValueError) as error:
-        raise DocumentError(f"invalid issue comment: {error}") from error
 
 
 def _record(envelope: DocumentEnvelope) -> IssueQueryRecord:
     aggregate = envelope.aggregate
     if not isinstance(aggregate, Issue):
         raise DocumentError(f"expected issue document, got {envelope.kind}")
-    raw_comments = envelope.extra_frontmatter.get("comments", [])
-    if not isinstance(raw_comments, list):
-        raise DocumentError("issue comments must be a list")
-    raw_end = envelope.extra_frontmatter.get("actual_end_date")
     return IssueQueryRecord(
         issue=aggregate,
-        comments=tuple(_comment(value) for value in raw_comments),
-        actual_end_at=_timestamp(raw_end, "actual_end_date") if raw_end else None,
+        comments=tuple(
+            IssueCommentView(
+                id=comment.id,
+                author=comment.author,
+                body=comment.body,
+                created_at=comment.created_at,
+                updated_at=comment.updated_at,
+                in_reply_to=comment.in_reply_to,
+            )
+            for comment in aggregate.comments
+        ),
+        actual_end_at=aggregate.actual_end_at,
     )
 
 

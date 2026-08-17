@@ -1,16 +1,10 @@
-"""Delete issue command."""
+"""Permanently delete an archived issue."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.crud import BaseDelete, EntityType
+from roadmap.adapters.cli.issues.resolution import invoke, resolve_issue_id
 from roadmap.common.logging import log_command
-
-
-class IssueDelete(BaseDelete):
-    """Delete issue command implementation."""
-
-    entity_type = EntityType.ISSUE
 
 
 @click.command("delete")
@@ -19,13 +13,14 @@ class IssueDelete(BaseDelete):
 @click.pass_context
 @log_command("issue_delete", entity_type="issue", track_duration=True)
 @require_initialized
-def delete_issue(
-    ctx: click.Context,
-    issue_id: str,
-    yes: bool,
-):
-    """Delete an issue."""
+def delete_issue(ctx: click.Context, issue_id: str, yes: bool) -> None:
+    """Permanently purge an archived issue after an explicit confirmation."""
     core = ctx.obj["core"]
-    deleter = IssueDelete(core)
-
-    deleter.execute(entity_id=issue_id, force=yes)
+    identity = resolve_issue_id(core, issue_id)
+    issue = invoke(lambda: core.issue_queries.view(identity)).issue
+    if not yes:
+        click.confirm(
+            f"Permanently delete issue {identity} ({issue.title})?", abort=True
+        )
+    invoke(lambda: core.issue_mutations.purge(identity))
+    click.echo(f"Deleted issue {identity}: {issue.title}")

@@ -8,48 +8,7 @@ Benefits:
 - Type-safe parameter handling
 """
 
-from dataclasses import dataclass, field
-
-
-@dataclass
-class IssueCreateParams:
-    """Parameters for creating an issue."""
-
-    title: str
-    priority: str | None = None
-    issue_type: str | None = None
-    milestone: str | None = None
-    assignee: str | None = None
-    labels: tuple = field(default_factory=tuple)
-    estimate: float | None = None
-    depends_on: tuple = field(default_factory=tuple)
-    blocks: tuple = field(default_factory=tuple)
-    content: str | None = None
-
-
-@dataclass
-class IssueUpdateParams:
-    """Parameters for updating an issue."""
-
-    issue_id: str
-    title: str | None = None
-    priority: str | None = None
-    status: str | None = None
-    assignee: str | None = None
-    milestone: str | None = None
-    content: str | None = None
-    estimate: float | None = None
-    reason: str | None = None
-
-
-@dataclass
-class IssueGitParams:
-    """Git-related parameters for issues."""
-
-    git_branch: bool = False
-    checkout: bool = False
-    branch_name: str | None = None
-    force: bool = False
+from dataclasses import dataclass
 
 
 @dataclass

@@ -5,15 +5,18 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
+from uuid import UUID
 
 import yaml
 
 from roadmap.domain.aggregates import Issue, Milestone, Project
 from roadmap.domain.types import (
     EntityId,
+    IssueComment,
+    IssueEvent,
     IssueRelations,
     IssueStatus,
     IssueType,
@@ -70,6 +73,8 @@ def _timestamp(value: Any, field: str) -> Timestamp:
             raise DocumentError(f"invalid {field} timestamp: {value}") from error
     else:
         raise DocumentError(f"missing {field} timestamp")
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        parsed = parsed.replace(tzinfo=UTC)
     try:
         return Timestamp(parsed)
     except ValueError as error:
@@ -96,6 +101,54 @@ def _ids(value: Any, field: str) -> tuple[EntityId, ...]:
         return tuple(EntityId(str(item)) for item in value)
     except ValueError as error:
         raise DocumentError(f"invalid {field}") from error
+
+
+def _comments(value: Any) -> tuple[IssueComment, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        raise DocumentError("comments must be a list")
+    if any(not isinstance(item, dict) for item in value):
+        raise DocumentError("every issue comment must be a mapping")
+    try:
+        return tuple(
+            IssueComment(
+                id=int(item["id"]),
+                author=str(item["author"]),
+                body=str(item["body"]),
+                created_at=_timestamp(item.get("created_at"), "comment created_at"),
+                updated_at=_timestamp(item.get("updated_at"), "comment updated_at"),
+                in_reply_to=(
+                    int(item["in_reply_to"])
+                    if item.get("in_reply_to") is not None
+                    else None
+                ),
+                external_url=item.get("github_url") or item.get("external_url"),
+            )
+            for item in value
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise DocumentError(f"invalid issue comment: {error}") from error
+
+
+def _history(value: Any) -> tuple[IssueEvent, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        raise DocumentError("history must be a list")
+    if any(not isinstance(item, dict) for item in value):
+        raise DocumentError("every issue history entry must be a mapping")
+    try:
+        return tuple(
+            IssueEvent(
+                action=str(item["action"]),
+                at=_timestamp(item.get("at"), "history at"),
+                reason=str(item["reason"]) if item.get("reason") else None,
+            )
+            for item in value
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise DocumentError(f"invalid issue history: {error}") from error
 
 
 def _base(data: dict[str, Any], fallback_id: str | None = None) -> dict[str, Any]:
@@ -153,6 +206,15 @@ def _parse_issue(data: dict[str, Any], body: str, path: Path) -> Issue:
             estimated_hours=data.pop("estimated_hours", None),
             due_at=_optional_timestamp(data.pop("due_date", None), "due_date"),
             progress_percentage=data.pop("progress_percentage", None),
+            actual_start_at=_optional_timestamp(
+                data.pop("actual_start_date", None), "actual_start_date"
+            ),
+            actual_end_at=_optional_timestamp(
+                data.pop("actual_end_date", None), "actual_end_date"
+            ),
+            git_branches=tuple(str(item) for item in data.pop("git_branches", [])),
+            comments=_comments(data.pop("comments", None)),
+            history=_history(data.pop("history", None)),
         )
     except (TypeError, ValueError) as error:
         raise DocumentError(f"invalid issue document {path}: {error}") from error
@@ -248,6 +310,7 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
     if isinstance(aggregate, Issue):
         data.update(
             title=str(aggregate.title),
+            archived=aggregate.retention is RetentionState.ARCHIVED,
             headline=aggregate.headline,
             priority=aggregate.priority.value,
             status=aggregate.status.value,
@@ -262,6 +325,38 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
             estimated_hours=aggregate.estimated_hours,
             due_date=aggregate.due_at.value.isoformat() if aggregate.due_at else None,
             progress_percentage=aggregate.progress_percentage,
+            actual_start_date=(
+                aggregate.actual_start_at.value.isoformat()
+                if aggregate.actual_start_at
+                else None
+            ),
+            actual_end_date=(
+                aggregate.actual_end_at.value.isoformat()
+                if aggregate.actual_end_at
+                else None
+            ),
+            git_branches=list(aggregate.git_branches),
+            comments=[
+                {
+                    "id": comment.id,
+                    "issue_id": str(aggregate.id),
+                    "author": comment.author,
+                    "body": comment.body,
+                    "created_at": comment.created_at.value.isoformat(),
+                    "updated_at": comment.updated_at.value.isoformat(),
+                    "in_reply_to": comment.in_reply_to,
+                    "github_url": comment.external_url,
+                }
+                for comment in aggregate.comments
+            ],
+            history=[
+                {
+                    "action": event.action,
+                    "at": event.at.value.isoformat(),
+                    "reason": event.reason,
+                }
+                for event in aggregate.history
+            ],
         )
     elif isinstance(aggregate, Milestone):
         data.update(
@@ -322,7 +417,19 @@ class DocumentRepository:
 
     def default_path(self, kind: DocumentKind, aggregate: Aggregate) -> Path:
         if kind == "issue":
-            return self.roadmap_dir / "issues" / "backlog" / f"{aggregate.id}.md"
+            assert isinstance(aggregate, Issue)
+            try:
+                UUID(str(aggregate.id))
+            except ValueError:
+                filename = f"{aggregate.id}.md"
+            else:
+                safe_title = "".join(
+                    character
+                    for character in aggregate.title
+                    if character.isalnum() or character in (" ", "-", "_")
+                ).strip()
+                filename = f"{aggregate.id}-{safe_title.replace(' ', '-').lower()}.md"
+            return self.roadmap_dir / "issues" / "backlog" / filename
         if kind == "milestone":
             assert isinstance(aggregate, Milestone)
             return self.roadmap_dir / "milestones" / f"{aggregate.name}.md"

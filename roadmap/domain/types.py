@@ -91,6 +91,40 @@ class RetentionState(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class IssueComment:
+    id: int
+    author: str
+    body: str
+    created_at: Timestamp
+    updated_at: Timestamp
+    in_reply_to: int | None = None
+    external_url: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.id <= 0:
+            raise InvalidValue("comment ID must be positive")
+        if not self.author.strip():
+            raise InvalidValue("comment author cannot be empty")
+        if not self.body.strip():
+            raise InvalidValue("comment body cannot be empty")
+        if self.updated_at < self.created_at:
+            raise InvalidValue("comment updated timestamp cannot precede creation")
+        if self.in_reply_to == self.id:
+            raise InvalidValue("comment cannot reply to itself")
+
+
+@dataclass(frozen=True, slots=True)
+class IssueEvent:
+    action: str
+    at: Timestamp
+    reason: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.action.strip():
+            raise InvalidValue("issue event action cannot be empty")
+
+
+@dataclass(frozen=True, slots=True)
 class IssueRelations:
     milestone_id: EntityId | None = None
     depends_on: tuple[EntityId, ...] = ()

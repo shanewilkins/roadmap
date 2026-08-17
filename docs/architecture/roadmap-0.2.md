@@ -7,8 +7,8 @@
 - Implementation specification: [refactor-implementation.md](refactor-implementation.md)
 - Detailed execution and checkpoint protocol:
   [refactor-execution-plan.md](refactor-execution-plan.md)
-- Detailed execution status: Phase 6 issue-query checkpoint accepted on
-  2026-08-17; work is stopped before Phase 7.
+- Detailed execution status: Phase 7 issue-mutation checkpoint accepted on
+  2026-08-17; work is stopped before Phase 8 of the detailed execution plan.
 
 ## Decision
 

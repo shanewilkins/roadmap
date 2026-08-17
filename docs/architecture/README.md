@@ -10,11 +10,11 @@ Implementation changes require separate, explicitly scoped work.
 
 ## Current execution state
 
-- Accepted checkpoint: Phase 6, issue queries.
-- Next approved work after maintainer authorization: Phase 7, issue mutations
-  and relationships.
+- Accepted checkpoint: Phase 7, issue mutations and relationships.
+- Next approved work after maintainer authorization: Phase 8, projects,
+  milestones, and planning views.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
-- Current production Python CLOC ceiling: 54,169.
+- Current production Python CLOC ceiling: 54,155.
 - Every phase ends with the complete checkpoint and a hard approval stop.
 
 ## Accepted decisions
@@ -52,3 +52,4 @@ Implementation changes require separate, explicitly scoped work.
 - [Phase 4 Domain and Application contracts — 2026-08-17](checkpoints/phase-4-domain-application-contracts-2026-08-17.md)
 - [Phase 5 canonical persistence and SQLite projection — 2026-08-17](checkpoints/phase-5-canonical-persistence-projection-2026-08-17.md)
 - [Phase 6 issue queries — 2026-08-17](checkpoints/phase-6-issue-queries-2026-08-17.md)
+- [Phase 7 issue mutations — 2026-08-17](checkpoints/phase-7-issue-mutations-2026-08-17.md)

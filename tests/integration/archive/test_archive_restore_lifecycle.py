@@ -90,22 +90,13 @@ class TestIssueArchiveRestore:
 
         assert result.exit_code == 0
 
-        archived_file = next(
-            (Path(temp_dir) / ".roadmap" / "archive" / "issues").rglob(
-                f"{done_issue['id']}*.md"
-            )
+        canonical_file = next(
+            (Path(temp_dir) / ".roadmap" / "issues").rglob(f"{done_issue['id']}*.md")
         )
-        assert IssueParser.parse_issue_file(archived_file).archived is True
-        row = (
-            core.db._get_connection()
-            .execute(
-                "SELECT archived, archived_at FROM issues WHERE id = ?",
-                (done_issue["id"],),
-            )
-            .fetchone()
+        assert IssueParser.parse_issue_file(canonical_file).archived is True
+        assert not list(
+            (Path(temp_dir) / ".roadmap" / "archive" / "issues").rglob("*.md")
         )
-        assert tuple(row) == (1, row["archived_at"])
-        assert row["archived_at"] is not None
 
         # Verify issue no longer in active list
         result = cli_runner.invoke(main, ["issue", "list"])
@@ -192,15 +183,6 @@ class TestIssueArchiveRestore:
                 f"{done_issue['id']}*.md"
             )
         )
-        row = (
-            core.db._get_connection()
-            .execute(
-                "SELECT archived, archived_at FROM issues WHERE id = ?",
-                (done_issue["id"],),
-            )
-            .fetchone()
-        )
-        assert tuple(row) == (0, None)
 
     def test_restore_all_issues(self, roadmap_with_issues_and_milestones):
         """Test restoring all archived issues."""

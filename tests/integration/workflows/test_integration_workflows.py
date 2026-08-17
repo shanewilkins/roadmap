@@ -174,11 +174,14 @@ class TestEndToEndWorkflows:
         result = runner.invoke(main, ["status"])
         assert_command_success(result)
 
-        # Step 9: Delete an issue
+        # Step 9: Close and archive before permanent deletion.
         issue_objects_for_delete = core.issues.list()
-        result = runner.invoke(
-            main, ["issue", "delete", str(issue_objects_for_delete[2].id)], input="y\n"
-        )
+        delete_id = str(issue_objects_for_delete[2].id)
+        result = runner.invoke(main, ["issue", "close", delete_id])
+        assert_command_success(result)
+        result = runner.invoke(main, ["issue", "archive", delete_id, "--force"])
+        assert_command_success(result)
+        result = runner.invoke(main, ["issue", "delete", delete_id], input="y\n")
         assert result.exit_code == 0
         output = clean_cli_output(result.output)
         assert "Deleted" in output or "deleted" in output

@@ -3,10 +3,7 @@
 from .cli_models import (  # noqa: F401
     CleanupParams,
     InitParams,
-    IssueCreateParams,
-    IssueGitParams,
     IssueListParams,
-    IssueUpdateParams,
 )
 from .config_models import (  # noqa: F401
     BehaviorConfig,
@@ -26,10 +23,7 @@ __all__ = [
     # CLI models
     "CleanupParams",
     "InitParams",
-    "IssueCreateParams",
-    "IssueGitParams",
     "IssueListParams",
-    "IssueUpdateParams",
     # Config models
     "BehaviorConfig",
     "ExportConfig",
