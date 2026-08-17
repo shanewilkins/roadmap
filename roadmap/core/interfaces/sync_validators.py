@@ -5,7 +5,6 @@ corruption during sync operations, particularly foreign key constraint violation
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Protocol
 
 
 class ForeignKeyValidator(ABC):
@@ -48,101 +47,6 @@ class ForeignKeyValidator(ABC):
         Example:
             ['project-id-1', 'project-id-2']
         """
-        ...
-
-
-class SyncPhaseOrder(Protocol):
-    """Protocol defining ordered sync phases to prevent constraint violations.
-
-    Ensures entities are synced in correct dependency order:
-    1. Projects (no dependencies)
-    2. Milestones (depends on projects)
-    3. Issues (depends on projects and milestones)
-
-    Implementation should enforce this ordering and fail if called out-of-order.
-    """
-
-    def validate_phase_order(self, _current_phase: str, _next_phase: str) -> bool:
-        """Validate that phase transition is allowed.
-
-        Args:
-            current_phase: Current sync phase ('projects', 'milestones', 'issues')
-            next_phase: Next sync phase to execute
-
-        Returns:
-            True if transition is valid, False otherwise
-
-        Raises:
-            ValueError: If phases are invalid or transition violates ordering
-        """
-        ...
-
-    def get_phase_order(self) -> list[str]:
-        """Get the canonical phase execution order.
-
-        Returns:
-            Ordered list of phases: ['projects', 'milestones', 'issues']
-        """
-        ...
-
-
-class PreSyncValidator(Protocol):
-    """Protocol for pre-sync validation with fail-fast semantics.
-
-    Validates preconditions before any sync operations begin.
-    Failures immediately abort sync to prevent partial state corruptions.
-    """
-
-    def validate_pre_sync(self, _roadmap_dir: str | None = None) -> dict[str, Any]:
-        """Validate preconditions before sync.
-
-        Args:
-            roadmap_dir: Optional roadmap directory path to validate
-
-        Returns:
-            dict with validation results:
-            {
-                'valid': bool,
-                'errors': list[str],
-                'warnings': list[str],
-                'prerequisite_count': int
-            }
-
-        Raises:
-            ValueError: If critical preconditions fail (fail-fast)
-            RuntimeError: If database connection fails
-
-        Notes:
-            - Errors (critical) cause immediate abort via exception
-            - Warnings (non-critical) logged but allow sync to proceed
-            - Should check prerequisite tables before FK-dependent syncing
-        """
-        ...
-
-
-class AtomicSyncPhase(Protocol):
-    """Protocol for atomic sync operations (transaction-based).
-
-    Wraps entity sync in transactions to ensure all-or-nothing semantics
-    per sync phase.
-
-    Usage:
-        with atomic_sync('projects') as phase:
-            sync_project_1()  # If any sync fails, entire phase rolls back
-            sync_project_2()
-    """
-
-    def __enter__(self) -> "AtomicSyncPhase":
-        """Enter atomic sync context (start transaction)."""
-        ...
-
-    def __exit__(
-        self,
-        _exc_type: type,
-        _exc_val: Exception,
-        _exc_tb: Any,
-    ) -> None:
-        """Exit atomic sync context (commit or rollback)."""
         ...
 
 

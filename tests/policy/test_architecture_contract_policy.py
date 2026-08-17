@@ -105,7 +105,7 @@ def test_unchanged_production_tree_matches_only_the_exact_reviewed_baseline() ->
     """The current migration debt passes only through reviewed exact entries."""
     result = check_repository(ROOT)
     assert result.passed, result.render()
-    assert len(result.violations) == 8
+    assert len(result.violations) == 7
 
 
 def test_removing_a_used_baseline_entry_exposes_a_new_violation() -> None:

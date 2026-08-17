@@ -1,7 +1,6 @@
-"""Fake/test implementation of IIssueRepository."""
+"""Fake issue repository used by legacy remote-deduplication tests."""
 
 from roadmap.core.domain.issue import Issue
-from roadmap.core.domain.ports.issue_repository import IIssueRepository
 
 
 class IssueNotFound(Exception):
@@ -10,8 +9,8 @@ class IssueNotFound(Exception):
     pass
 
 
-class FakeIssueRepository(IIssueRepository):
-    """In-memory test implementation of IIssueRepository."""
+class FakeIssueRepository:
+    """In-memory test double with the capability expected by the service."""
 
     def __init__(self):
         self._issues: dict[str, Issue] = {}

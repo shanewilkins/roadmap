@@ -1,8 +1,8 @@
 # Roadmap 0.2 refactor execution plan
 
 - Status: Approved
-- Execution status: Phase 3 checkpoint passed on 2026-08-16; stop and obtain
-  maintainer approval before Phase 4
+- Execution status: Phase 4 checkpoint passed on 2026-08-17; stop and obtain
+  maintainer approval before Phase 5
 - Date: 2026-08-16
 - Baseline commit: `61595a6e`
 - Current release: 0.1.1

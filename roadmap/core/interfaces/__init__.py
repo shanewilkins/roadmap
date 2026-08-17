@@ -1,5 +1,6 @@
 """Protocol definitions for dependency injection and service abstraction."""
 
+from importlib import import_module
 from typing import Protocol
 
 
@@ -51,10 +52,6 @@ class CredentialProvider(Protocol):
 # Define CredentialProvider before compatibility re-exports: state_storage
 # reaches services that import this protocol during package initialization.
 from .assignee_validator import AssigneeValidator  # noqa: E402
-from .backend_factory import (  # noqa: E402
-    SyncBackendFactoryInterface,
-    SyncBackendInterface,
-)
 from .github import GitHubBackendInterface  # noqa: E402
 from .parsers import (  # noqa: E402
     FrontmatterParserInterface,
@@ -67,11 +64,6 @@ from .persistence import (  # noqa: E402
     GitHistoryError,
     PersistenceInterface,
 )
-from .repositories import (  # noqa: E402
-    IssueRepository,
-    MilestoneRepository,
-    ProjectRepository,
-)
 from .state_managers import (  # noqa: E402
     IssueStateManager,
     MilestoneStateManager,
@@ -79,12 +71,13 @@ from .state_managers import (  # noqa: E402
     QueryStateManager,
     SyncStateManager,
 )
-from .state_storage import SyncStateStorageInterface  # noqa: E402
-from .sync_backend import SyncConflict, SyncReport  # noqa: E402
-from .sync_services import (  # noqa: E402
-    SyncCacheServiceInterface,
-    SyncLinkingServiceInterface,
-)
+
+
+def __getattr__(name: str):  # noqa: ANN202
+    if name in {"SyncBackendInterface", "SyncConflict", "SyncReport"}:
+        return getattr(import_module(f"{__name__}.sync_backend"), name)
+    raise AttributeError(name)
+
 
 __all__ = [
     "CredentialProvider",
@@ -94,22 +87,12 @@ __all__ = [
     "IssueStateManager",
     "SyncStateManager",
     "QueryStateManager",
-    "SyncBackendInterface",
-    "SyncBackendFactoryInterface",
-    "SyncConflict",
-    "SyncReport",
     "PersistenceInterface",
     "IssueParserInterface",
     "FrontmatterParserInterface",
     "MilestoneParserInterface",
     "ProjectParserInterface",
     "GitHubBackendInterface",
-    "SyncStateStorageInterface",
-    "SyncLinkingServiceInterface",
-    "SyncCacheServiceInterface",
-    "IssueRepository",
-    "MilestoneRepository",
-    "ProjectRepository",
     "FileNotFound",
     "GitHistoryError",
 ]

@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-from roadmap.core.services.sync.sync_state import IssueBaseState, SyncState
-
 # Import from parent models.py (service params and other models)
 # Get the parent directory's models.py file
 _models_file = Path(__file__).parent.parent / "models.py"
@@ -19,6 +17,13 @@ IssueCreateServiceParams = _models_mod.IssueCreateServiceParams
 IssueUpdateServiceParams = _models_mod.IssueUpdateServiceParams
 ProjectCreateServiceParams = _models_mod.ProjectCreateServiceParams
 ProjectUpdateServiceParams = _models_mod.ProjectUpdateServiceParams
+
+# Import service-owned compatibility models only after the lightweight values
+# above exist; service initialization imports this package in return.
+from roadmap.core.services.sync.sync_state import (  # noqa: E402
+    IssueBaseState,
+    SyncState,
+)
 
 __all__ = [
     "NOT_PROVIDED",

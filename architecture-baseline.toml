@@ -55,11 +55,3 @@ rule = "application-dependencies"
 reason = "The legacy service imports a concrete logging framework inside Application."
 owner = "Maintainer"
 removal_phase = 11
-
-[[violations]]
-source = "roadmap.domain.validation"
-target = "roadmap.core.services.validators"
-rule = "domain-dependencies"
-reason = "This transitional wrapper delegates filesystem validation outside the pure Domain."
-owner = "Maintainer"
-removal_phase = 4
