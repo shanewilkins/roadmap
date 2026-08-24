@@ -241,7 +241,11 @@ def _parse_milestone(data: dict[str, Any], body: str, path: Path) -> Milestone:
 
 
 def _parse_project(data: dict[str, Any], body: str, path: Path) -> Project:
-    base = _base(data)
+    # 0.1.1 project templates did not persist the ID in frontmatter. Their
+    # filename is ``<short-id>-<slug>.md``; retain that read compatibility
+    # while new writes always persist the complete canonical ID.
+    fallback_id = path.stem.split("-", 1)[0]
+    base = _base(data, fallback_id)
     try:
         return Project(
             **base,
@@ -255,6 +259,15 @@ def _parse_project(data: dict[str, Any], body: str, path: Path) -> Project:
             ),
             owner=data.pop("owner", None),
             estimated_hours=data.pop("estimated_hours", None),
+            start_at=_optional_timestamp(data.pop("start_date", None), "start_date"),
+            target_end_at=_optional_timestamp(
+                data.pop("target_end_date", None), "target_end_date"
+            ),
+            actual_end_at=_optional_timestamp(
+                data.pop("actual_end_date", None), "actual_end_date"
+            ),
+            actual_hours=data.pop("actual_hours", None),
+            repository_url=data.pop("repo_url", data.pop("repository", None)),
         )
     except (TypeError, ValueError) as error:
         raise DocumentError(f"invalid project document {path}: {error}") from error
@@ -278,6 +291,8 @@ def parse_document(path: Path, kind: DocumentKind) -> DocumentEnvelope:
     if not isinstance(loaded, dict):
         raise DocumentError(f"frontmatter must be a mapping in {path}")
     data = dict(loaded)
+    if "archive" in path.parts and "retention" not in data and "archived" not in data:
+        data["archived"] = True
     version = data.pop("schema_version", 0)
     if not isinstance(version, int) or version > 1 or version < 0:
         raise DocumentError(f"unsupported schema_version {version!r} in {path}")
@@ -318,8 +333,8 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
             milestone=str(aggregate.relations.milestone_id)
             if aggregate.relations.milestone_id
             else None,
-            depends_on=list(aggregate.relations.depends_on),
-            blocks=list(aggregate.relations.blocks),
+            depends_on=[str(item) for item in aggregate.relations.depends_on],
+            blocks=[str(item) for item in aggregate.relations.blocks],
             labels=list(aggregate.labels),
             assignee=aggregate.assignee,
             estimated_hours=aggregate.estimated_hours,
@@ -374,9 +389,24 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
             headline=aggregate.headline,
             status=aggregate.status.value,
             priority=aggregate.priority.value,
-            milestones=list(aggregate.relations.milestone_ids),
+            milestones=[str(item) for item in aggregate.relations.milestone_ids],
             owner=aggregate.owner,
             estimated_hours=aggregate.estimated_hours,
+            start_date=(
+                aggregate.start_at.value.isoformat() if aggregate.start_at else None
+            ),
+            target_end_date=(
+                aggregate.target_end_at.value.isoformat()
+                if aggregate.target_end_at
+                else None
+            ),
+            actual_end_date=(
+                aggregate.actual_end_at.value.isoformat()
+                if aggregate.actual_end_at
+                else None
+            ),
+            actual_hours=aggregate.actual_hours,
+            repo_url=aggregate.repository_url,
         )
     yaml_text = yaml.safe_dump(data, sort_keys=False, allow_unicode=True).rstrip()
     return f"---\n{yaml_text}\n---\n\n{aggregate.content}".encode()
@@ -386,8 +416,8 @@ class DocumentRepository:
     """Canonical lookup for the retained 0.1.1 directory layout."""
 
     _patterns = {
-        "project": ("projects/**/*.md",),
-        "milestone": ("milestones/**/*.md",),
+        "project": ("projects/**/*.md", "archive/projects/**/*.md"),
+        "milestone": ("milestones/**/*.md", "archive/milestones/**/*.md"),
         "issue": ("issues/**/*.md", "archive/issues/**/*.md"),
     }
 

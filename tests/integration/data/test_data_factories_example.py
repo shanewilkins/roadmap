@@ -12,6 +12,15 @@ from tests.fixtures import (
     MilestoneScenarioFactory,
     TestDataBuilder,
 )
+from tests.fixtures.integration_helpers import IntegrationTestBase
+
+
+def _milestone_id(name: str) -> str:
+    core = IntegrationTestBase.get_roadmap_core()
+    try:
+        return str(core.planning.resolve_milestone_id(name))
+    finally:
+        core.close()
 
 
 class TestMilestoneScenarioFactory:
@@ -87,8 +96,6 @@ class TestIssueScenarioFactory:
 
     def test_issues_by_priority_with_milestone(self, cli_runner):
         """Test creating priority issues assigned to milestone."""
-        from tests.fixtures import IntegrationTestBase
-
         IssueScenarioFactory(cli_runner).with_initialized_roadmap()
 
         # References must resolve, so create the milestone before its issues.
@@ -101,7 +108,8 @@ class TestIssueScenarioFactory:
             .build()
         )
 
-        assert all(issue.milestone == "v1-0" for issue in scenario["issues"])
+        expected_id = _milestone_id("v1-0")
+        assert all(issue.milestone == expected_id for issue in scenario["issues"])
 
     def test_bulk_issues(self, cli_runner):
         """Test creating many issues at once."""
@@ -151,7 +159,8 @@ class TestComplexWorkflowFactory:
         assert len(scenario["issues"]) == 6  # 4 features + 2 bugs
 
         # Verify issues assigned correctly
-        v2_issues = [i for i in scenario["issues"] if i.milestone == "v2-0"]
+        expected_id = _milestone_id("v2-0")
+        v2_issues = [i for i in scenario["issues"] if i.milestone == expected_id]
         assert len(v2_issues) == 6
         high_priority = [i for i in v2_issues if i.priority.value == "high"]
         assert len(high_priority) == 4  # Features
@@ -170,8 +179,9 @@ class TestComplexWorkflowFactory:
 
         # Verify each sprint has issues
         for sprint_num in range(1, 4):
+            expected_id = _milestone_id(f"sprint-{sprint_num}")
             sprint_issues = [
-                i for i in scenario["issues"] if i.milestone == f"sprint-{sprint_num}"
+                i for i in scenario["issues"] if i.milestone == expected_id
             ]
             assert len(sprint_issues) == 5
 

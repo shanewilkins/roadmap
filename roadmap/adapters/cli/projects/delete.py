@@ -1,16 +1,10 @@
-"""Delete project command."""
+"""Permanently delete archived projects."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.crud import BaseDelete, EntityType
+from roadmap.adapters.cli.planning_resolution import invoke, resolve_project_id
 from roadmap.common.logging import log_command
-
-
-class ProjectDelete(BaseDelete):
-    """Delete project command implementation."""
-
-    entity_type = EntityType.PROJECT
 
 
 @click.command("delete")
@@ -19,9 +13,16 @@ class ProjectDelete(BaseDelete):
 @click.pass_context
 @require_initialized
 @log_command("project_delete", entity_type="project", track_duration=True)
-def delete_project(ctx: click.Context, project_id: str, yes: bool):
-    """Delete a project."""
+def delete_project(ctx, project_id: str, yes: bool) -> None:
+    """Purge an archived, unreferenced project."""
     core = ctx.obj["core"]
-    deleter = ProjectDelete(core)
-
-    deleter.execute(entity_id=project_id, force=yes)
+    identity = resolve_project_id(core, project_id)
+    project = invoke(
+        lambda: core.planning.project(str(identity), include_archived=True)
+    ).project
+    if not yes:
+        click.confirm(
+            f"Permanently delete project {identity} ({project.name})?", abort=True
+        )
+    invoke(lambda: core.planning.purge_project(identity))
+    click.echo(f"Deleted project {identity}: {project.name}")

@@ -4,11 +4,11 @@ import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.issues.resolution import (
-    entity_id,
     invoke,
     projection_warning,
     resolve_issue_ids,
 )
+from roadmap.adapters.cli.planning_resolution import resolve_milestone_id
 from roadmap.application.contracts import IssueCreateCommand
 from roadmap.common.logging import log_command, verbose_output
 from roadmap.domain.types import IssueType, Priority, Title
@@ -68,7 +68,7 @@ def create_issue(
             title=Title(title),
             priority=Priority(priority),
             issue_type=IssueType(issue_type),
-            milestone_id=entity_id(milestone),
+            milestone_id=resolve_milestone_id(core, milestone) if milestone else None,
             assignee=assignee,
             labels=labels,
             estimated_hours=estimate,

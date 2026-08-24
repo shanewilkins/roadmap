@@ -5,6 +5,7 @@ These tests verify end-to-end workflows and cross-module integration.
 
 import os
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -12,7 +13,7 @@ import yaml
 from click.testing import CliRunner
 
 from roadmap.bootstrap import cli as main
-from roadmap.core.domain import Status
+from roadmap.domain.types import EntityId, IssueStatus
 from roadmap.infrastructure.coordination.core import RoadmapCore
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 from tests.unit.common.formatters.test_assertion_helpers import (
@@ -314,47 +315,32 @@ class TestEndToEndWorkflows:
         runner.invoke(main, ["milestone", "assign", issue2_id, milestone_name])
         # backlog_issue_id intentionally not assigned
 
-        # Verify relationships through core
+        # Verify relationships through the canonical planning model.
         core = RoadmapCore()
-
-        # Test milestone methods
-        all_issues = core.issues.list()
-        milestone = core.milestones.get(milestone_name)
+        dynamic_core: Any = core
+        summary = dynamic_core.planning.milestone(milestone_name)
+        milestone_id = summary.milestone.id
+        all_issues = dynamic_core.planning.snapshot().issues
+        milestone_issue_ids = {
+            str(issue.id)
+            for issue in all_issues
+            if issue.relations.milestone_id == milestone_id
+        }
+        backlog_issue_ids = {
+            str(issue.id)
+            for issue in all_issues
+            if issue.relations.milestone_id is None
+        }
 
         assert len(all_issues) == 3
-        assert milestone is not None
-
-        # Test milestone-issue relationship
-        milestone_issues = milestone.get_issues(all_issues)
-        assert len(milestone_issues) == 2
-        milestone_issue_ids = [issue.id for issue in milestone_issues]
-        assert issue1_id in milestone_issue_ids
-        assert issue2_id in milestone_issue_ids
-        assert backlog_issue_id not in milestone_issue_ids
-
-        # Test backlog functionality
-        backlog_issues = core.issues.get_backlog()
-        assert len(backlog_issues) == 1
-        assert backlog_issues[0].id == backlog_issue_id
-        assert backlog_issues[0].is_backlog
-        assert backlog_issues[0].milestone_name == "Backlog"
-
-        # Test issues grouped by milestone
-        grouped = core.get_issues_by_milestone()
-        assert "Backlog" in grouped
-        assert milestone_name in grouped
-        assert len(grouped["Backlog"]) == 1
-        assert len(grouped[milestone_name]) == 2
-
-        # Test milestone completion tracking
-        completion_percentage = milestone.get_completion_percentage(all_issues)
-        assert completion_percentage == 0.0  # No issues completed yet
+        assert summary.issue_count == 2
+        assert {issue1_id, issue2_id} == milestone_issue_ids
+        assert backlog_issue_ids == {backlog_issue_id}
+        assert summary.progress == 0.0
 
         # Update one issue to done and check completion
-        core.issues.update(issue1_id, status=Status.CLOSED)
-        all_issues = core.issues.list()  # Refresh
-        completion_percentage = milestone.get_completion_percentage(all_issues)
-        assert completion_percentage == 50.0  # 1 of 2 issues completed
+        dynamic_core.issue_mutations.transition(EntityId(issue1_id), IssueStatus.CLOSED)
+        assert dynamic_core.planning.milestone(milestone_name).progress == 50.0
 
     def test_error_recovery_workflow(self, tmp_path):
         """Test error handling and recovery in workflows."""

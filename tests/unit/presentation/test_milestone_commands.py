@@ -177,12 +177,22 @@ class TestMilestoneDelete:
             assert init_result.exit_code == 0
 
             cli_runner.invoke(
-                main, ["milestone", "create", "v1-0", "--description", "First release"]
+                main,
+                [
+                    "milestone",
+                    "create",
+                    "--title",
+                    "v1-0",
+                    "--description",
+                    "First release",
+                ],
             )
+            archive_result = cli_runner.invoke(
+                main, ["milestone", "archive", "v1-0", "--force"]
+            )
+            assert archive_result.exit_code == 0
 
-            result = cli_runner.invoke(
-                main, ["milestone", "delete", "v1-0"], input="y\n"
-            )
+            result = cli_runner.invoke(main, ["milestone", "delete", "v1-0", "--yes"])
             assert result.exit_code == 0
             assert "v1-0" in result.output
 

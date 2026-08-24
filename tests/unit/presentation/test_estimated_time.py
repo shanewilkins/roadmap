@@ -309,8 +309,9 @@ class TestEstimatedTimeCLI:
         fresh_task2 = core.issues.get(task2.id)
         assert fresh_task1 is not None
         assert fresh_task2 is not None
-        assert fresh_task1.milestone == "test-milestone"
-        assert fresh_task2.milestone == "test-milestone"
+        milestone_id = str(core.planning.resolve_milestone_id("test-milestone"))
+        assert fresh_task1.milestone == milestone_id
+        assert fresh_task2.milestone == milestone_id
 
     def test_milestone_list_shows_estimated_hours(self, cli_runner_with_init):
         """Test that milestone issues show estimated hours."""

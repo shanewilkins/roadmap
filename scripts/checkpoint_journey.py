@@ -43,7 +43,9 @@ def canonical_digests(workspace: Path) -> dict[str, str]:
     files = []
     for pattern in (
         "projects/**/*.md",
+        "archive/projects/**/*.md",
         "milestones/**/*.md",
+        "archive/milestones/**/*.md",
         "issues/**/*.md",
         "archive/issues/**/*.md",
     ):
@@ -224,7 +226,19 @@ def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
         ],
         workspace,
     )
-    _run([str(roadmap), "project", "list"], workspace)
+    projects = _run(
+        [str(roadmap), "project", "list", "--format", "json"],
+        workspace,
+        parse_json=True,
+    )
+    if len(projects["rows"]) != 1:
+        raise RuntimeError("Fresh project was not represented in structured output")
+    project_id = projects["rows"][0][0]
+    _run(
+        [str(roadmap), "project", "update", project_id, "--status", "active"],
+        workspace,
+    )
+    _run([str(roadmap), "project", "view", project_id], workspace)
     _run(
         [
             str(roadmap),
@@ -237,6 +251,14 @@ def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
         ],
         workspace,
     )
+    milestones = _run(
+        [str(roadmap), "milestone", "list", "--format", "json"],
+        workspace,
+        parse_json=True,
+    )
+    if [row[0] for row in milestones["rows"]] != ["checkpoint-1"]:
+        raise RuntimeError("Fresh milestone was not represented in structured output")
+    _run([str(roadmap), "milestone", "view", "checkpoint-1"], workspace)
     create_output = _run(
         [
             str(roadmap),
@@ -251,6 +273,8 @@ def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
     )
     issue_id = _extract_created_issue_id(create_output)
     _run([str(roadmap), "issue", "view", issue_id], workspace)
+    _run([str(roadmap), "milestone", "kanban", "checkpoint-1"], workspace)
+    _run([str(roadmap), "today"], workspace)
     _run(
         [
             str(roadmap),
@@ -273,6 +297,32 @@ def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
     _run([str(roadmap), "issue", "restore", issue_id, "--force"], workspace)
     _run(
         [str(roadmap), "issue", "list", "--format", "json"],
+        workspace,
+        parse_json=True,
+    )
+    _run([str(roadmap), "milestone", "recalculate", "checkpoint-1"], workspace)
+    _run([str(roadmap), "milestone", "close", "checkpoint-1"], workspace)
+    _run(
+        [str(roadmap), "milestone", "archive", "checkpoint-1", "--force"],
+        workspace,
+    )
+    _run(
+        [str(roadmap), "milestone", "restore", "checkpoint-1", "--force"],
+        workspace,
+    )
+    _run([str(roadmap), "project", "close", project_id, "--force"], workspace)
+    _run([str(roadmap), "project", "archive", project_id, "--force"], workspace)
+    _run([str(roadmap), "project", "restore", project_id, "--force"], workspace)
+    _run([str(roadmap), "status", "--format", "json"], workspace, parse_json=True)
+    _run(
+        [
+            str(roadmap),
+            "analysis",
+            "critical-path",
+            "--include-closed",
+            "--export",
+            "json",
+        ],
         workspace,
         parse_json=True,
     )

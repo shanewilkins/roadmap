@@ -62,10 +62,6 @@ from .status_change_service import (
     parse_status_change,  # noqa: F401
 )
 from .utils.configuration_service import ConfigurationService  # noqa: F401
-from .utils.critical_path_calculator import (  # noqa: F401
-    CriticalPathCalculator,
-    CriticalPathResult,
-)
 from .utils.dependency_analyzer import (  # noqa: F401
     DependencyAnalysisResult,
     DependencyAnalyzer,
@@ -90,7 +86,6 @@ if TYPE_CHECKING:
         InfrastructureValidator,  # noqa: F401
     )
     from .project.project_service import ProjectService  # noqa: F401
-    from .project.project_status_service import ProjectStatusService  # noqa: F401
     from .sync.sync_change_computer import (  # noqa: F401
         compute_changes,
         compute_changes_remote,
@@ -153,10 +148,6 @@ def __getattr__(name: str):  # noqa: ANN001, ANN201
         "ProjectService": (
             "roadmap.core.services.project.project_service",
             "ProjectService",
-        ),
-        "ProjectStatusService": (
-            "roadmap.core.services.project.project_status_service",
-            "ProjectStatusService",
         ),
         "compute_changes": (
             "roadmap.core.services.sync.sync_change_computer",
@@ -269,7 +260,6 @@ __all__ = [
     # Git (lazy loaded)
     # Project
     "ProjectService",
-    "ProjectStatusService",
     # Root level
     "MilestoneService",
     "extract_issue_status_update",
@@ -300,8 +290,6 @@ __all__ = [
     "SyncStateManager",
     # Utils
     "ConfigurationService",
-    "CriticalPathCalculator",
-    "CriticalPathResult",
     "DependencyAnalyzer",
     "DependencyAnalysisResult",
     "FieldConflictDetector",

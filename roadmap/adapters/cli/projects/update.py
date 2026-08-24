@@ -1,57 +1,53 @@
-"""Update project command."""
+"""Update canonical projects."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.crud import BaseUpdate, EntityType
-from roadmap.adapters.cli.crud.entity_builders import ProjectBuilder
+from roadmap.adapters.cli.planning_resolution import (
+    invoke,
+    projection_warning,
+    resolve_project_id,
+)
+from roadmap.application.contracts import ProjectUpdateCommand
 from roadmap.common.logging import log_command
-
-
-class ProjectUpdate(BaseUpdate):
-    """Update project command implementation."""
-
-    entity_type = EntityType.PROJECT
-
-    def build_update_dict(self, entity_id: str, **kwargs) -> dict:
-        """Build update dictionary for project."""
-        return ProjectBuilder.build_update_dict(
-            name=kwargs.get("name"),
-            description=kwargs.get("description"),
-            repository=kwargs.get("repository"),
-            status=kwargs.get("status"),
-        )
+from roadmap.domain.types import Name, ProjectStatus
 
 
 @click.command("update")
 @click.argument("project_id")
-@click.option("--name", help="Update project name")
-@click.option("--description", "-d", help="Update project description")
-@click.option("--repository", "-r", help="Update repository URL")
-@click.option(
-    "--status",
-    type=click.Choice(["active", "inactive", "completed"]),
-    help="Update project status",
-)
+@click.option("--name")
+@click.option("--description", "-d")
+@click.option("--repository", "-r")
+@click.option("--status", type=click.Choice(["active", "inactive", "completed"]))
 @click.pass_context
 @require_initialized
 @log_command("project_update", entity_type="project", track_duration=True)
 def update_project(
-    ctx: click.Context,
+    ctx,
     project_id: str,
-    name: str,
-    description: str,
-    repository: str,
-    status: str,
-):
-    """Update an existing project."""
+    name: str | None,
+    description: str | None,
+    repository: str | None,
+    status: str | None,
+) -> None:
+    """Update a project through the Application boundary."""
     core = ctx.obj["core"]
-    updater = ProjectUpdate(core)
-
-    updater.execute(
-        entity_id=project_id,
-        name=name,
-        description=description,
-        repository=repository,
-        status=status,
+    statuses = {
+        "active": ProjectStatus.ACTIVE,
+        "inactive": ProjectStatus.ON_HOLD,
+        "completed": ProjectStatus.COMPLETED,
+    }
+    result = invoke(
+        lambda: core.planning.update_project(
+            ProjectUpdateCommand(
+                resolve_project_id(core, project_id),
+                Name(name) if name else None,
+                description,
+                repository,
+                statuses[status] if status else None,
+            )
+        )
     )
+    project = result.aggregate
+    click.echo(f"Updated project: [{project.id}] {project.name}")
+    projection_warning(result)

@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 class RoadmapCore:
     """Legacy coordination API whose concrete graph is owned by Bootstrap."""
 
-    _git = db = git_sync_monitor = github_service = config_service = milestone_service = project_service = _init_manager = issues = milestones = projects = team = git = validation = _console_factory = _git_hook_manager_factory = cast(Any, None)  # fmt: skip
+    _git = db = git_sync_monitor = github_service = config_service = milestone_service = project_service = _init_manager = issues = milestones = projects = team = git = validation = planning = issue_queries = issue_mutations = _console_factory = _git_hook_manager_factory = cast(Any, None)  # fmt: skip
     issue_service: Any = None
 
     def __init__(

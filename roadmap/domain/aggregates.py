@@ -174,6 +174,30 @@ class Milestone(_Aggregate):
         require_transition(self.status, status, MILESTONE_TRANSITIONS)
         return replace(self, status=status, updated=at)
 
+    def revise(
+        self,
+        *,
+        at: t.Timestamp,
+        name: t.Name,
+        headline: str,
+        content: str,
+        status: t.MilestoneStatus,
+        relation: t.MilestoneRelation,
+        due_at: t.Timestamp | None,
+    ) -> "Milestone":
+        changed = replace(
+            self,
+            name=name,
+            headline=headline,
+            content=content,
+            relation=relation,
+            due_at=due_at,
+            updated=at,
+        )
+        return (
+            changed.change_status(status, at) if status is not self.status else changed
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class Project(_Aggregate):
@@ -185,11 +209,20 @@ class Project(_Aggregate):
     relations: t.ProjectRelations = field(default_factory=t.ProjectRelations)
     owner: str | None = None
     estimated_hours: float | None = None
+    start_at: t.Timestamp | None = None
+    target_end_at: t.Timestamp | None = None
+    actual_end_at: t.Timestamp | None = None
+    actual_hours: float | None = None
+    repository_url: str | None = None
 
     def __post_init__(self) -> None:
         _Aggregate.__post_init__(self)
         if self.estimated_hours is not None and self.estimated_hours <= 0:
             raise InvariantViolation("estimated hours must be positive")
+        if self.actual_hours is not None and self.actual_hours < 0:
+            raise InvariantViolation("actual hours cannot be negative")
+        if self.start_at and self.target_end_at and self.target_end_at < self.start_at:
+            raise InvariantViolation("target end cannot precede project start")
 
     def rename(self, name: t.Name, at: t.Timestamp) -> "Project":
         return replace(self, name=name, updated=at)
@@ -200,3 +233,31 @@ class Project(_Aggregate):
     def change_status(self, status: t.ProjectStatus, at: t.Timestamp) -> "Project":
         require_transition(self.status, status, PROJECT_TRANSITIONS)
         return replace(self, status=status, updated=at)
+
+    def revise(
+        self,
+        *,
+        at: t.Timestamp,
+        name: t.Name,
+        headline: str,
+        content: str,
+        status: t.ProjectStatus,
+        priority: t.Priority,
+        owner: str | None,
+        estimated_hours: float | None,
+        repository_url: str | None,
+    ) -> "Project":
+        changed = replace(
+            self,
+            name=name,
+            headline=headline,
+            content=content,
+            priority=priority,
+            owner=owner,
+            estimated_hours=estimated_hours,
+            repository_url=repository_url,
+            updated=at,
+        )
+        return (
+            changed.change_status(status, at) if status is not self.status else changed
+        )

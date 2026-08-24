@@ -1,6 +1,7 @@
 """Show roadmap status and system health."""
 
 import json
+from collections import Counter
 from pathlib import Path
 
 import click
@@ -18,18 +19,20 @@ from roadmap.adapters.cli.presentation.core_initialization_presenter import (
 from roadmap.adapters.cli.presentation.project_status_presenter import (
     RoadmapStatusPresenter,
 )
-from roadmap.adapters.cli.services.project_status_service import (
-    StatusSnapshotService,
-)
 from roadmap.adapters.cli.utils.click_options import (
     details_option,
     format_option,
     health_check_options,
     verbose_option,
 )
-from roadmap.common.models import TableData  # noqa: F401 (used in type hints)
+from roadmap.common.models import ColumnDef, ColumnType, TableData
 from roadmap.common.output_formatter import OutputFormatter
-from roadmap.common.utils.timezone_utils import now_utc
+from roadmap.domain.types import (
+    IssueStatus,
+    MilestoneStatus,
+    ProjectStatus,
+    RetentionState,
+)
 from roadmap.infrastructure.observability.health import HealthCheck
 
 logger = get_logger()
@@ -69,7 +72,7 @@ def status(ctx: click.Context, verbose: bool, format: str, output: Path | None) 
         elif format_name == "plain":
             click.echo("Roadmap Status")
 
-        tables_by_name = StatusSnapshotService.build_snapshot_tables(core)
+        tables_by_name = _build_snapshot_tables(core.planning)
         ordered_names = ["entities", "issue_status"]
 
         _render_snapshot_tables(
@@ -77,6 +80,7 @@ def status(ctx: click.Context, verbose: bool, format: str, output: Path | None) 
             ordered_names=ordered_names,
             format_name=format_name,
             output_path=output,
+            generated_at=core.planning.now().value.isoformat(),
         )
 
     except Exception as e:
@@ -89,12 +93,15 @@ def _render_snapshot_tables(
     ordered_names: list[str],
     format_name: str,
     output_path: Path | None,
+    generated_at: str,
 ) -> None:
     normalized = format_name.lower()
     export_format = normalized if normalized != "rich" else "plain"
 
     if output_path:
-        content = _format_snapshot_content(tables_by_name, ordered_names, export_format)
+        content = _format_snapshot_content(
+            tables_by_name, ordered_names, export_format, generated_at
+        )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(content)
         click.secho(f"✅ Saved to {output_path}", fg="green")
@@ -108,7 +115,9 @@ def _render_snapshot_tables(
                 click.echo()
         return
 
-    content = _format_snapshot_content(tables_by_name, ordered_names, normalized)
+    content = _format_snapshot_content(
+        tables_by_name, ordered_names, normalized, generated_at
+    )
     click.echo(content)
 
 
@@ -116,10 +125,11 @@ def _format_snapshot_content(
     tables_by_name: dict[str, "TableData"],
     ordered_names: list[str],
     format_name: str,
+    generated_at: str,
 ) -> str:
     if format_name == "json":
         payload = {
-            "generated_at": now_utc().isoformat(),
+            "generated_at": generated_at,
             "tables": {name: tables_by_name[name].to_dict() for name in ordered_names},
         }
         return json.dumps(payload, indent=2, default=str)
@@ -141,6 +151,108 @@ def _format_snapshot_content(
             parts.append(formatter.to_plain_text())
 
     return "\n\n".join(part for part in parts if part)
+
+
+def _build_snapshot_tables(planning) -> dict[str, TableData]:
+    projects = planning.all_projects()
+    milestones = planning.all_milestones()
+    issues = planning.all_issues()
+    visible_projects = tuple(
+        item for item in projects if item.retention is RetentionState.VISIBLE
+    )
+    visible_milestones = tuple(
+        item for item in milestones if item.retention is RetentionState.VISIBLE
+    )
+    visible_issues = tuple(
+        item for item in issues if item.retention is RetentionState.VISIBLE
+    )
+    project_counts = Counter(item.status for item in visible_projects)
+    milestone_counts = Counter(item.status for item in visible_milestones)
+    issue_counts = Counter(item.status for item in visible_issues)
+    archived_projects = sum(
+        item.retention is RetentionState.ARCHIVED for item in projects
+    )
+    archived_milestones = sum(
+        item.retention is RetentionState.ARCHIVED for item in milestones
+    )
+    archived_issues = sum(item.retention is RetentionState.ARCHIVED for item in issues)
+
+    project_open = sum(
+        project_counts[item]
+        for item in (
+            ProjectStatus.PLANNING,
+            ProjectStatus.ACTIVE,
+            ProjectStatus.ON_HOLD,
+        )
+    )
+    project_closed = sum(
+        project_counts[item]
+        for item in (ProjectStatus.COMPLETED, ProjectStatus.CANCELLED)
+    )
+    milestone_open = milestone_counts[MilestoneStatus.OPEN]
+    milestone_closed = milestone_counts[MilestoneStatus.CLOSED]
+    issue_open = sum(
+        issue_counts[item]
+        for item in (
+            IssueStatus.TODO,
+            IssueStatus.IN_PROGRESS,
+            IssueStatus.BLOCKED,
+            IssueStatus.REVIEW,
+        )
+    )
+    issue_closed = issue_counts[IssueStatus.CLOSED]
+    entity_rows = [
+        [
+            "Projects",
+            project_open,
+            project_closed,
+            archived_projects,
+            len(projects),
+        ],
+        [
+            "Milestones",
+            milestone_open,
+            milestone_closed,
+            archived_milestones,
+            len(milestones),
+        ],
+        ["Issues", issue_open, issue_closed, archived_issues, len(issues)],
+    ]
+    entity_rows.append(
+        [
+            "Total",
+            project_open + milestone_open + issue_open,
+            project_closed + milestone_closed + issue_closed,
+            archived_projects + archived_milestones + archived_issues,
+            len(projects) + len(milestones) + len(issues),
+        ]
+    )
+    entities = TableData(
+        columns=[
+            ColumnDef("entity", "Entity", ColumnType.STRING, width=12),
+            ColumnDef("open", "Open", ColumnType.INTEGER, width=6),
+            ColumnDef("closed", "Closed", ColumnType.INTEGER, width=7),
+            ColumnDef("archived", "Archived", ColumnType.INTEGER, width=9),
+            ColumnDef("total", "Total", ColumnType.INTEGER, width=6),
+        ],
+        rows=entity_rows,
+        title="Entities",
+    )
+    status_rows = [[item.value, issue_counts[item]] for item in IssueStatus]
+    status_rows.append(["archived", archived_issues])
+    status_rows.append(["Total", len(issues)])
+    issue_status = TableData(
+        columns=[
+            ColumnDef("status", "Status", ColumnType.STRING, width=14),
+            ColumnDef("count", "Count", ColumnType.INTEGER, width=7),
+        ],
+        rows=status_rows,
+        title="Issue Status",
+    )
+    return {
+        "entities": entities,
+        "issue_status": issue_status,
+    }
 
 
 @click.command()

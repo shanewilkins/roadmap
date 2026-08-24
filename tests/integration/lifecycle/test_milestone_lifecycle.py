@@ -38,7 +38,8 @@ class TestMilestoneLifecycle:
             project = core.projects.list()[0]
             assert milestone is not None
             assert milestone.project_id == project.id
-            assert "sprint-1" in project.milestones
+            milestone_id = str(core.planning.resolve_milestone_id("sprint-1"))
+            assert milestone_id in project.milestones
             assert not OrphanedMilestonesValidator.scan_for_orphaned_milestones(core)
             core.close()
 

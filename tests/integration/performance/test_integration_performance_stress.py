@@ -139,8 +139,11 @@ class TestPerformanceAndStress:
         assert len(milestones) == num_milestones
 
         # Verify most issues are assigned to milestones (allow some to be unassigned due to timing)
+        milestone_ids = {
+            str(core.planning.resolve_milestone_id(name)) for name in milestone_names
+        }
         assigned_issues = [
-            issue for issue in issues if issue.milestone in milestone_names
+            issue for issue in issues if issue.milestone in milestone_ids
         ]
         assert len(assigned_issues) >= int(num_issues * 0.8)  # At least 80% assigned
 

@@ -38,7 +38,10 @@ class IssueQueryPresenter:
 
         metadata = _metadata()
         metadata.add_row("Assignee", issue.assignee or "Unassigned")
-        metadata.add_row("Milestone", str(issue.relations.milestone_id or "None"))
+        metadata.add_row(
+            "Milestone",
+            record.milestone_name or str(issue.relations.milestone_id or "None"),
+        )
         metadata.add_row("Lifecycle", issue.retention.value)
         metadata.add_row("Created", issue.created.value.strftime("%Y-%m-%d %H:%M"))
         metadata.add_row("Updated", issue.updated.value.strftime("%Y-%m-%d %H:%M"))

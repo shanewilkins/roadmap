@@ -1,28 +1,12 @@
-"""Create project command."""
+"""Create canonical projects."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.crud import BaseCreate, EntityType
-from roadmap.adapters.cli.crud.entity_builders import ProjectBuilder
-from roadmap.common.logging import (
-    log_command,
-    verbose_output,
-)
-
-
-class ProjectCreate(BaseCreate):
-    """Create project command implementation."""
-
-    entity_type = EntityType.PROJECT
-
-    def build_entity_dict(self, title: str, **kwargs) -> dict:
-        """Build entity dictionary for project creation."""
-        return ProjectBuilder.build_create_dict(
-            name=title,
-            description=kwargs.get("description"),
-            repository=kwargs.get("repository"),
-        )
+from roadmap.adapters.cli.planning_resolution import invoke, projection_warning
+from roadmap.application.contracts import ProjectCreateCommand
+from roadmap.common.logging import log_command, verbose_output
+from roadmap.domain.types import Name
 
 
 @click.command("create")
@@ -34,17 +18,14 @@ class ProjectCreate(BaseCreate):
 @verbose_output
 @log_command("project_create", entity_type="project", track_duration=True)
 def create_project(
-    ctx: click.Context,
-    title: str,
-    description: str,
-    repository: str,
-):
-    """Create a new project."""
-    core = ctx.obj["core"]
-    creator = ProjectCreate(core)
-
-    creator.execute(
-        title=title,
-        description=description,
-        repository=repository,
+    ctx, title: str, description: str | None, repository: str | None
+) -> None:
+    """Create a project through the Application boundary."""
+    result = invoke(
+        lambda: ctx.obj["core"].planning.create_project(
+            ProjectCreateCommand(Name(title), description or "", repository)
+        )
     )
+    project = result.aggregate
+    click.echo(f"Created project: [{project.id}] {project.name}")
+    projection_warning(result)

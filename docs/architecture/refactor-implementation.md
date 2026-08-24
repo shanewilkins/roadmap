@@ -2,10 +2,11 @@
 
 - Status: Approved
 - Date: 2026-08-10
-- Last updated: 2026-08-17
-- Implementation status: Phases 0 through 7 complete; retained issue queries,
-  mutations, relationships, and lifecycle now run through Application-owned
-  use cases and canonical adapters, and execution is stopped before Phase 8
+- Last updated: 2026-08-24
+- Implementation status: Phases 0 through 8 complete; issues, projects,
+  milestones, relationships, lifecycle, progress, and planning views now share
+  Application-owned use cases and canonical adapters, and execution is stopped
+  before Phase 9
 - Governing decisions: ADR-0001 through ADR-0010
 
 ## Purpose

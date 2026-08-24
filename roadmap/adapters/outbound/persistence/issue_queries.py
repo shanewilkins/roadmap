@@ -10,7 +10,9 @@ from .documents import DocumentEnvelope, DocumentError, DocumentRepository
 from .projection import ProjectionError, SQLiteProjection
 
 
-def _record(envelope: DocumentEnvelope) -> IssueQueryRecord:
+def _record(
+    envelope: DocumentEnvelope, milestone_names: dict[EntityId, str]
+) -> IssueQueryRecord:
     aggregate = envelope.aggregate
     if not isinstance(aggregate, Issue):
         raise DocumentError(f"expected issue document, got {envelope.kind}")
@@ -28,6 +30,11 @@ def _record(envelope: DocumentEnvelope) -> IssueQueryRecord:
             for comment in aggregate.comments
         ),
         actual_end_at=aggregate.actual_end_at,
+        milestone_name=(
+            milestone_names.get(aggregate.relations.milestone_id)
+            if aggregate.relations.milestone_id is not None
+            else None
+        ),
     )
 
 
@@ -39,6 +46,13 @@ class DocumentIssueQueries:
     ):
         self._repository = repository
         self._projection = projection
+
+    def _milestone_names(self) -> dict[EntityId, str]:
+        return {
+            item.id: str(item.name)
+            for envelope in self._repository.scan("milestone")
+            if isinstance((item := envelope.aggregate), Milestone)
+        }
 
     def list_issue_records(self) -> tuple[IssueQueryRecord, ...]:
         candidates: set[str] | None = None
@@ -52,11 +66,12 @@ class DocumentIssueQueries:
         envelopes = self._repository.scan("issue")
         if candidates is not None:
             envelopes = [item for item in envelopes if item.identity in candidates]
-        return tuple(_record(item) for item in envelopes)
+        milestone_names = self._milestone_names()
+        return tuple(_record(item, milestone_names) for item in envelopes)
 
     def load_issue_record(self, issue_id: EntityId) -> IssueQueryRecord | None:
         envelope = self._repository.load("issue", issue_id)
-        return _record(envelope) if envelope else None
+        return _record(envelope, self._milestone_names()) if envelope else None
 
     def next_milestone_id(self) -> EntityId | None:
         milestones = (item.aggregate for item in self._repository.scan("milestone"))

@@ -77,7 +77,7 @@ class TestCLIMilestoneList:
 
     def test_list_milestones(self, roadmap_with_milestones):
         """Test listing all milestones."""
-        cli_runner, scenario = roadmap_with_milestones
+        cli_runner, _scenario = roadmap_with_milestones
 
         result = cli_runner.invoke(main, ["milestone", "list"])
 
@@ -126,7 +126,7 @@ class TestCLIMilestoneAssign:
 
     def test_assign_nonexistent_issue(self, roadmap_with_milestones):
         """Test assigning non-existent issue."""
-        cli_runner, scenario = roadmap_with_milestones
+        cli_runner, _scenario = roadmap_with_milestones
 
         result = cli_runner.invoke(
             main,
@@ -215,18 +215,21 @@ class TestCLIMilestoneDelete:
 
     def test_delete_milestone(self, roadmap_with_milestones):
         """Test deleting a milestone."""
-        cli_runner, scenario = roadmap_with_milestones
+        cli_runner, _scenario = roadmap_with_milestones
+
+        archived = cli_runner.invoke(
+            main,
+            ["milestone", "archive", "sprint-1", "--force"],
+        )
+        IntegrationTestBase.assert_cli_success(archived)
 
         result = cli_runner.invoke(
             main,
             ["milestone", "delete", "sprint-1", "--yes"],
         )
 
-        # Should succeed or handle gracefully
-        assert (
-            result.exit_code == 0
-            or "deleted" in clean_cli_output(result.output).lower()
-        )
+        IntegrationTestBase.assert_cli_success(result)
+        assert "deleted" in clean_cli_output(result.output).lower()
 
     def test_delete_nonexistent_milestone(self, empty_roadmap):
         """Test deleting non-existent milestone."""

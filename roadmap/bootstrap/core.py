@@ -16,7 +16,7 @@ from roadmap.adapters.persistence.yaml_repositories import (
     YAMLMilestoneRepository,
     YAMLProjectRepository,
 )
-from roadmap.application.use_cases import IssueMutations, IssueQueries
+from roadmap.application.use_cases import IssueMutations, IssueQueries, Planning
 from roadmap.common.configuration import ConfigManager
 from roadmap.common.logging import get_logger
 from roadmap.core.services import (
@@ -160,6 +160,9 @@ def wire_legacy_core(core: RoadmapCore) -> None:
         _LegacyCurrentIdentity(core),
         _LegacyAssigneeDirectory(core),
         _SystemClock(),
+    )
+    dynamic_core.planning = Planning(
+        CanonicalIssueUnitOfWorkFactory(documents, projection), _SystemClock()
     )
     core._console_factory = Console
     core._git_hook_manager_factory = lambda: CoordinationGateway.get_git_hook_manager(

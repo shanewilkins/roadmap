@@ -1,321 +1,78 @@
-"""Unit tests for milestone recalculate command."""
+"""Tests for the canonical milestone progress report command."""
 
-from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
-import pytest
 from click.testing import CliRunner
 
 from roadmap.adapters.cli.milestones.recalculate import (
     recalculate_milestone_progress,
 )
-from roadmap.core.domain import Issue, Milestone, MilestoneStatus, Priority, Status
-from roadmap.core.domain.issue import IssueType
+from tests.unit.common.formatters.test_ansi_utilities import strip_ansi
 
 
-@pytest.fixture
-def sample_milestone():
-    """Create a sample milestone."""
-    return Milestone(
-        name="v1-0",
-        content="First release",
-        due_date=None,
-        status=MilestoneStatus.OPEN,
+def _summary(name: str, progress: float, closed: int = 0, total: int = 0):
+    return SimpleNamespace(
+        milestone=SimpleNamespace(name=name),
+        progress=progress,
+        closed_count=closed,
+        issue_count=total,
     )
 
 
-@pytest.fixture
-def sample_issues():
-    """Create sample issues."""
-    return [
-        Issue(
-            title="Feature A",
-            status=Status.TODO,
-            priority=Priority.HIGH,
-            issue_type=IssueType.FEATURE,
-            milestone="v1-0",
-        ),
-        Issue(
-            title="Feature B",
-            status=Status.IN_PROGRESS,
-            priority=Priority.MEDIUM,
-            issue_type=IssueType.FEATURE,
-            milestone="v1-0",
-        ),
-        Issue(
-            title="Bug Fix",
-            status=Status.CLOSED,
-            priority=Priority.HIGH,
-            issue_type=IssueType.BUG,
-            milestone="v1-0",
-        ),
-    ]
+def _invoke(planning, *arguments: str):
+    core = SimpleNamespace(planning=planning)
+    return CliRunner().invoke(
+        recalculate_milestone_progress,
+        list(arguments),
+        obj={"core": core},
+    )
 
 
-class TestRecalculateMilestoneProgress:
-    """Test recalculate milestone progress command."""
+def test_recalculate_specific_milestone_reports_derived_progress():
+    planning = MagicMock()
+    planning.milestone.return_value = _summary("v1-0", 62.5)
 
-    def test_recalculate_specific_milestone(
-        self, cli_runner, mock_core, sample_milestone, sample_issues
-    ):
-        """Test recalculating progress for a specific milestone."""
-        mock_core.milestones.get.return_value = sample_milestone
-        mock_core.issues.list.return_value = sample_issues
-        mock_core.milestones.list.return_value = [sample_milestone]
+    result = _invoke(planning, "v1-0")
+    output = strip_ansi(result.output)
 
-        with patch(
-            "roadmap.adapters.cli.milestones.recalculate.get_console"
-        ) as mock_get_console:
-            mock_console = MagicMock()
-            mock_get_console.return_value = mock_console
+    assert result.exit_code == 0
+    assert "v1-0: 62.5%" in output
+    planning.milestone.assert_called_once_with("v1-0")
 
-            with patch(
-                "roadmap.common.progress.ProgressCalculationEngine"
-            ) as mock_engine_class:
-                mock_engine = MagicMock()
-                mock_engine_class.return_value = mock_engine
-                mock_engine.update_milestone_progress.return_value = True
 
-                runner = CliRunner()
-                result = runner.invoke(
-                    recalculate_milestone_progress,
-                    ["v1-0"],
-                    obj={"core": mock_core},
-                )
+def test_recalculate_all_milestones_reports_snapshot():
+    planning = MagicMock()
+    planning.snapshot.return_value.milestones = (
+        _summary("v1-0", 25.0),
+        _summary("v2-0", 75.0),
+    )
 
-                assert result.exit_code == 0
-                assert mock_core.milestones.get.called
-                assert mock_core.issues.list.called
+    result = _invoke(planning)
+    output = strip_ansi(result.output)
 
-    def test_recalculate_all_milestones(
-        self, cli_runner, mock_core, sample_milestone, sample_issues
-    ):
-        """Test recalculating progress for all milestones."""
-        mock_core.issues.list.return_value = sample_issues
-        mock_core.milestones.list.return_value = [sample_milestone]
+    assert result.exit_code == 0
+    assert "v1-0: 25.0%" in output
+    assert "v2-0: 75.0%" in output
 
-        with patch(
-            "roadmap.adapters.cli.milestones.recalculate.get_console"
-        ) as mock_get_console:
-            mock_console = MagicMock()
-            mock_get_console.return_value = mock_console
 
-            with patch(
-                "roadmap.common.progress.ProgressCalculationEngine"
-            ) as mock_engine_class:
-                mock_engine = MagicMock()
-                mock_engine_class.return_value = mock_engine
-                mock_engine.update_milestone_progress.return_value = True
+def test_count_based_recalculation_uses_closed_issue_count():
+    planning = MagicMock()
+    planning.milestone.return_value = _summary("v1-0", 12.5, closed=2, total=5)
 
-                runner = CliRunner()
-                result = runner.invoke(
-                    recalculate_milestone_progress,
-                    [],
-                    obj={"core": mock_core},
-                )
+    result = _invoke(planning, "v1-0", "--method", "count_based")
+    output = strip_ansi(result.output)
 
-                assert result.exit_code == 0
-                assert mock_core.milestones.list.called
-                assert mock_core.issues.list.called
+    assert result.exit_code == 0
+    assert "v1-0: 40.0%" in output
 
-    def test_recalculate_milestone_not_found(self, cli_runner, mock_core):
-        """Test error handling when milestone is not found."""
-        mock_core.milestones.get.return_value = None
-        mock_core.issues.list.return_value = []
 
-        with patch(
-            "roadmap.adapters.cli.milestones.recalculate.get_console"
-        ) as mock_get_console:
-            mock_console = MagicMock()
-            mock_get_console.return_value = mock_console
+def test_recalculate_translates_application_failure():
+    planning = MagicMock()
+    planning.milestone.side_effect = ValueError("Milestone 'missing' was not found")
 
-            with patch("roadmap.common.progress.ProgressCalculationEngine"):
-                runner = CliRunner()
-                result = runner.invoke(
-                    recalculate_milestone_progress,
-                    ["nonexistent"],
-                    obj={"core": mock_core},
-                )
+    result = _invoke(planning, "missing")
+    output = strip_ansi(result.output)
 
-                # Command should handle not found gracefully
-                assert result.exit_code == 0
-
-    def test_recalculate_with_effort_weighted_method(
-        self, cli_runner, mock_core, sample_milestone, sample_issues
-    ):
-        """Test recalculation with effort_weighted method."""
-        mock_core.milestones.get.return_value = sample_milestone
-        mock_core.issues.list.return_value = sample_issues
-        mock_core.milestones.list.return_value = [sample_milestone]
-
-        with patch(
-            "roadmap.adapters.cli.milestones.recalculate.get_console"
-        ) as mock_get_console:
-            mock_console = MagicMock()
-            mock_get_console.return_value = mock_console
-
-            with patch(
-                "roadmap.common.progress.ProgressCalculationEngine"
-            ) as mock_engine_class:
-                mock_engine = MagicMock()
-                mock_engine_class.return_value = mock_engine
-                mock_engine.update_milestone_progress.return_value = True
-
-                runner = CliRunner()
-                result = runner.invoke(
-                    recalculate_milestone_progress,
-                    ["v1-0", "--method", "effort_weighted"],
-                    obj={"core": mock_core},
-                )
-
-                assert result.exit_code == 0
-                mock_engine_class.assert_called_with(method="effort_weighted")
-
-    def test_recalculate_with_count_based_method(
-        self, cli_runner, mock_core, sample_milestone, sample_issues
-    ):
-        """Test recalculation with count_based method."""
-        mock_core.milestones.get.return_value = sample_milestone
-        mock_core.issues.list.return_value = sample_issues
-        mock_core.milestones.list.return_value = [sample_milestone]
-
-        with patch(
-            "roadmap.adapters.cli.milestones.recalculate.get_console"
-        ) as mock_get_console:
-            mock_console = MagicMock()
-            mock_get_console.return_value = mock_console
-
-            with patch(
-                "roadmap.common.progress.ProgressCalculationEngine"
-            ) as mock_engine_class:
-                mock_engine = MagicMock()
-                mock_engine_class.return_value = mock_engine
-                mock_engine.update_milestone_progress.return_value = True
-
-                runner = CliRunner()
-                result = runner.invoke(
-                    recalculate_milestone_progress,
-                    ["v1-0", "--method", "count_based"],
-                    obj={"core": mock_core},
-                )
-
-                assert result.exit_code == 0
-                mock_engine_class.assert_called_with(method="count_based")
-
-    def test_recalculate_handles_exception(self, cli_runner, mock_core):
-        """Test exception handling during recalculation."""
-        mock_core.issues.list.side_effect = Exception("Test error")
-
-        with patch(
-            "roadmap.adapters.cli.milestones.recalculate.get_console"
-        ) as mock_get_console:
-            mock_console = MagicMock()
-            mock_get_console.return_value = mock_console
-
-            with patch("roadmap.common.progress.ProgressCalculationEngine"):
-                runner = CliRunner()
-                result = runner.invoke(
-                    recalculate_milestone_progress,
-                    [],
-                    obj={"core": mock_core},
-                )
-
-                # Command should handle exception gracefully
-                assert result.exit_code == 0
-
-    def test_recalculate_multiple_milestones(
-        self, cli_runner, mock_core, sample_milestone, sample_issues
-    ):
-        """Test recalculating multiple milestones."""
-        milestone2 = Milestone(
-            name="v2-0",
-            content="Second release",
-            due_date=None,
-            status=MilestoneStatus.OPEN,
-        )
-        mock_core.issues.list.return_value = sample_issues
-        mock_core.milestones.list.return_value = [sample_milestone, milestone2]
-
-        with patch(
-            "roadmap.adapters.cli.milestones.recalculate.get_console"
-        ) as mock_get_console:
-            mock_console = MagicMock()
-            mock_get_console.return_value = mock_console
-
-            with patch(
-                "roadmap.common.progress.ProgressCalculationEngine"
-            ) as mock_engine_class:
-                mock_engine = MagicMock()
-                mock_engine_class.return_value = mock_engine
-                mock_engine.update_milestone_progress.return_value = True
-
-                runner = CliRunner()
-                result = runner.invoke(
-                    recalculate_milestone_progress,
-                    [],
-                    obj={"core": mock_core},
-                )
-
-                assert result.exit_code == 0
-                assert mock_core.milestones.list.called
-                # Should be called twice (once for each milestone)
-                assert mock_engine.update_milestone_progress.call_count == 2
-
-    def test_recalculate_empty_milestone(self, cli_runner, mock_core, sample_milestone):
-        """Test recalculation for milestone with no issues."""
-        mock_core.milestones.get.return_value = sample_milestone
-        mock_core.issues.list.return_value = []
-        mock_core.milestones.list.return_value = [sample_milestone]
-
-        with patch(
-            "roadmap.adapters.cli.milestones.recalculate.get_console"
-        ) as mock_get_console:
-            mock_console = MagicMock()
-            mock_get_console.return_value = mock_console
-
-            with patch(
-                "roadmap.common.progress.ProgressCalculationEngine"
-            ) as mock_engine_class:
-                mock_engine = MagicMock()
-                mock_engine_class.return_value = mock_engine
-                mock_engine.update_milestone_progress.return_value = False
-
-                runner = CliRunner()
-                result = runner.invoke(
-                    recalculate_milestone_progress,
-                    ["v1-0"],
-                    obj={"core": mock_core},
-                )
-
-                assert result.exit_code == 0
-                assert mock_core.milestones.get.called
-
-    def test_recalculate_no_issues_found_message(
-        self, cli_runner, mock_core, sample_milestone
-    ):
-        """Test that appropriate message is shown when no issues exist."""
-        mock_core.milestones.get.return_value = sample_milestone
-        mock_core.issues.list.return_value = []
-        mock_core.milestones.list.return_value = [sample_milestone]
-
-        with patch(
-            "roadmap.adapters.cli.milestones.recalculate.get_console"
-        ) as mock_get_console:
-            mock_console = MagicMock()
-            mock_get_console.return_value = mock_console
-
-            with patch(
-                "roadmap.common.progress.ProgressCalculationEngine"
-            ) as mock_engine_class:
-                mock_engine = MagicMock()
-                mock_engine_class.return_value = mock_engine
-                mock_engine.update_milestone_progress.return_value = False
-
-                runner = CliRunner()
-                result = runner.invoke(
-                    recalculate_milestone_progress,
-                    ["v1-0"],
-                    obj={"core": mock_core},
-                )
-
-                assert result.exit_code == 0
-                assert mock_core.milestones.get.called
+    assert result.exit_code != 0
+    assert "not found" in output

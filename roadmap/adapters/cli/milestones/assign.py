@@ -1,20 +1,15 @@
-"""Assign issue to milestone command."""
+"""Assign canonical issues to milestones."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.cli_error_handlers import handle_cli_error
-from roadmap.common.console import get_console
-from roadmap.common.formatters.text.operations import (
-    format_operation_failure,
-    format_operation_success,
+from roadmap.adapters.cli.issues.resolution import resolve_issue_id
+from roadmap.adapters.cli.planning_resolution import (
+    invoke,
+    projection_warning,
+    resolve_milestone_id,
 )
-from roadmap.common.logging import (
-    log_command,
-    track_database_operation,
-)
-
-console = get_console()
+from roadmap.common.logging import log_command
 
 
 @click.command("assign")
@@ -23,40 +18,14 @@ console = get_console()
 @click.pass_context
 @require_initialized
 @log_command("milestone_assign", entity_type="milestone", track_duration=True)
-def assign_milestone(ctx: click.Context, issue_id: str, milestone_name: str):
-    """Assign an issue to a milestone."""
+def assign_milestone(ctx, issue_id: str, milestone_name: str) -> None:
+    """Assign an issue and refresh derived planning progress."""
     core = ctx.obj["core"]
-
-    try:
-        with track_database_operation("update", "milestone", warn_threshold_ms=2000):
-            success = core.issues.assign_to_milestone(issue_id, milestone_name)
-
-        if success:
-            extra_details = {"Milestone": milestone_name}
-            lines = format_operation_success(
-                "✅", "Assigned", "", issue_id, None, extra_details
-            )
-            for line in lines:
-                console.print(line, style="green")
-        else:
-            lines = format_operation_failure(
-                "Assign", issue_id, "Issue or milestone not found"
-            )
-            for line in lines:
-                console.print(line, style="bold red")
-            raise click.Abort()
-    except click.Abort:
-        raise
-    except Exception as e:
-        handle_cli_error(
-            error=e,
-            operation="milestone_assign",
-            entity_type="milestone",
-            entity_id=milestone_name,
-            context={"issue_id": issue_id, "milestone_name": milestone_name},
-            fatal=True,
+    result = invoke(
+        lambda: core.planning.assign_issue(
+            resolve_issue_id(core, issue_id),
+            resolve_milestone_id(core, milestone_name),
         )
-        lines = format_operation_failure("Assign", issue_id, str(e))
-        for line in lines:
-            console.print(line, style="bold red")
-        raise click.Abort() from e
+    )
+    click.echo(f"Assigned issue {result.aggregate.id} to milestone {milestone_name}")
+    projection_warning(result)

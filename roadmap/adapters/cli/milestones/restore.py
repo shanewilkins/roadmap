@@ -1,87 +1,43 @@
-"""Restore milestone command - move archived milestones back to active."""
+"""Restore milestones through lifecycle metadata."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.milestones.restore_class import MilestoneRestore
-from roadmap.common.console import get_console
-from roadmap.common.logging import (
-    log_command,
-    verbose_output,
-)
+from roadmap.adapters.cli.planning_resolution import invoke, projection_warning
+from roadmap.common.logging import log_command, verbose_output
 
 
-@click.command()
+@click.command("restore")
 @click.argument("milestone_name", required=False)
-@click.option(
-    "--all",
-    is_flag=True,
-    help="Restore all archived milestones",
-)
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Preview what would be restored without actually doing it",
-)
-@click.option(
-    "--force",
-    is_flag=True,
-    help="Skip confirmation prompt",
-)
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Show detailed debug information",
-)
+@click.option("--all", "restore_all", is_flag=True)
+@click.option("--dry-run", is_flag=True)
+@click.option("--force", is_flag=True)
+@click.option("--verbose", "-v", is_flag=True)
 @click.pass_context
 @verbose_output
 @log_command("milestone_restore", entity_type="milestone", track_duration=True)
 @require_initialized
 def restore_milestone(
-    ctx: click.Context,
+    ctx,
     milestone_name: str | None,
-    all: bool,
+    restore_all: bool,
     dry_run: bool,
     force: bool,
-    verbose: bool,  # noqa: F841
-):
-    """Restore an archived milestone back to active milestones.
-
-    This moves a milestone from .roadmap/archive/milestones/ back to
-    .roadmap/milestones/, making it active again.
-
-    Examples:
-        roadmap milestone restore "v1.0"
-        roadmap milestone restore --all
-        roadmap milestone restore "v1.0" --dry-run
-    """
-    core = ctx.obj["core"]
-    console = get_console()
-
-    restore = MilestoneRestore(core, console)
-
-    if not milestone_name and not all:
-        console.print(
-            "❌ Error: Specify a milestone name or use --all",
-            style="bold red",
+    verbose: bool,
+) -> None:  # noqa: ARG001
+    """Restore milestones without moving canonical files."""
+    if (milestone_name is None) == (not restore_all):
+        raise click.UsageError("Specify exactly one of MILESTONE_NAME or --all")
+    if not dry_run and not force:
+        click.confirm("Restore the selected milestone(s)?", abort=True)
+    result = invoke(
+        lambda: ctx.obj["core"].planning.restore_milestone(
+            milestone_name, restore_all=restore_all, dry_run=dry_run
         )
-        ctx.exit(1)
-
-    if milestone_name and all:
-        console.print(
-            "❌ Error: Cannot specify milestone name with --all",
-            style="bold red",
-        )
-        ctx.exit(1)
-
-    try:
-        restore.execute(
-            entity_id=milestone_name,
-            all=all,
-            dry_run=dry_run,
-            force=force,
-        )
-    except Exception as e:
-        console.print(f"❌ Restore operation failed: {str(e)}", style="bold red")
-        ctx.exit(1)
+    )
+    verb = "Would restore" if dry_run else "Restored"
+    for item in result.aggregates:
+        click.echo(f"{verb} milestone {item.id}: {item.name}")
+    if not result.aggregates:
+        click.echo("No matching milestones.")
+    projection_warning(result)

@@ -56,7 +56,7 @@ class TestIssueCreationRobust:
         core = IntegrationTestBase.get_roadmap_core()
         issues = core.issues.list()
         assert len(issues) == 1
-        assert issues[0].milestone == "v1-0"
+        assert issues[0].milestone == str(core.planning.resolve_milestone_id("v1-0"))
 
     def test_create_multiple_issues_with_varying_priorities(self, cli_runner):
         """Test creating multiple issues with different priorities."""
@@ -146,8 +146,9 @@ class TestWorkflowRobust:
 
         # Verify all issues are in milestone
         core = IntegrationTestBase.get_roadmap_core()
+        milestone_id = str(core.planning.resolve_milestone_id("beta-release"))
         for issue in core.issues.list():
-            assert issue.milestone == "beta-release"
+            assert issue.milestone == milestone_id
 
     def test_workflow_with_error_context(self, cli_runner):
         """Test that error context is captured properly."""
@@ -167,7 +168,7 @@ class TestWorkflowRobust:
         core = IntegrationTestBase.get_roadmap_core()
         issues = core.issues.list()
         assert len(issues) == 1, "Expected exactly 1 issue"
-        assert issues[0].milestone == "v2-0", "Issue should be in v2.0 milestone"
+        assert issues[0].milestone == str(core.planning.resolve_milestone_id("v2-0"))
 
 
 class TestErrorHandlingRobust:

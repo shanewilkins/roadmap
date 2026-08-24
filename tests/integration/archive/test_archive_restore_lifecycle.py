@@ -12,6 +12,7 @@ import pytest
 from roadmap.adapters.persistence.parser import IssueParser
 from roadmap.bootstrap import cli as main
 from roadmap.common.constants import ProjectStatus
+from roadmap.domain.types import RetentionState
 from tests.fixtures.integration_helpers import IntegrationTestBase
 from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
@@ -246,7 +247,7 @@ class TestMilestoneArchiveRestore:
             ["milestone", "archive", "v1-0"],
         )
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         assert list(active_milestones_dir.glob("*.md")) == active_before
         assert not archive_milestones_dir.exists() or not list(
             archive_milestones_dir.glob("*.md")
@@ -266,8 +267,8 @@ class TestMilestoneArchiveRestore:
     def test_archive_milestone_with_issues_folder(
         self, roadmap_with_issues_and_milestones
     ):
-        """Test that archiving a milestone also archives its issues folder if it exists."""
-        cli_runner, _core, issues, temp_dir = roadmap_with_issues_and_milestones
+        """Archiving metadata never cascades into canonical issue paths."""
+        cli_runner, core, _issues, temp_dir = roadmap_with_issues_and_milestones
 
         roadmap_dir = Path(temp_dir) / ".roadmap"
 
@@ -293,32 +294,19 @@ class TestMilestoneArchiveRestore:
             f"Archive command failed (exit {result.exit_code}): {output}"
         )
 
-        # Verify milestone file was archived
+        # The milestone remains at its stable path with archived retention metadata.
         archive_milestones_dir = roadmap_dir / "archive" / "milestones"
-        assert archive_milestones_dir.exists(), (
-            "Archive milestones directory should exist"
+        assert not archive_milestones_dir.exists()
+        milestone = core.planning.resolve_milestone_id("v1-0")
+        persisted = next(
+            item for item in core.planning.all_milestones() if item.id == milestone
         )
+        assert persisted.retention is RetentionState.ARCHIVED
 
-        milestone_files = list(archive_milestones_dir.glob("*.md"))
-        assert len(milestone_files) > 0, (
-            f"No milestone files found in {archive_milestones_dir}"
-        )
-
-        # Verify issues folder was also archived
-        assert not issues_dir.exists(), (
-            "Issues folder should not exist in active directory after archiving"
-        )
-
-        archive_issues_dir = roadmap_dir / "archive" / "issues" / "v1-0"
-        assert archive_issues_dir.exists(), (
-            "Issues folder should be moved to archive/issues/"
-        )
-
-        # Verify the issue file was moved
-        archived_issue_file = archive_issues_dir / "test-issue.md"
-        assert archived_issue_file.exists(), (
-            "Issue file should be moved to archived folder"
-        )
+        # No issue or folder is silently moved as a side effect.
+        assert issues_dir.exists()
+        assert (issues_dir / "test-issue.md").exists()
+        assert not (roadmap_dir / "archive" / "issues" / "v1-0").exists()
 
     def test_archive_list_milestones(self, roadmap_with_issues_and_milestones):
         """Test listing archived milestones."""
@@ -438,13 +426,14 @@ class TestProjectArchiveRestore:
             f"Project archive all-closed failed (exit {result.exit_code}): {output}"
         )
 
-        archived_files = list(archive_dir.rglob("*.md"))
-        archived_names = {path.name for path in archived_files}
-
-        assert project_one.filename in archived_names
-        assert project_two.filename in archived_names
-        assert not (roadmap_dir / "projects" / project_one.filename).exists()
-        assert not (roadmap_dir / "projects" / project_two.filename).exists()
+        assert not archive_dir.exists() or not list(archive_dir.rglob("*.md"))
+        assert (roadmap_dir / "projects" / project_one.filename).exists()
+        assert (roadmap_dir / "projects" / project_two.filename).exists()
+        retained = {
+            str(item.id): item.retention for item in core.planning.all_projects()
+        }
+        assert retained[project_one.id] is RetentionState.ARCHIVED
+        assert retained[project_two.id] is RetentionState.ARCHIVED
 
     def test_project_archive_single(self, isolated_roadmap):
         """Test archiving a project."""

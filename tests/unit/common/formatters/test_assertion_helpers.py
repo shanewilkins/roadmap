@@ -140,7 +140,8 @@ def assert_issue_assigned_to_milestone(
         milestone_name: The expected milestone name
         message: Optional message if assertion fails
     """
-    assert issue.milestone == milestone_name, (
+    expected = str(core.planning.resolve_milestone_id(milestone_name))
+    assert issue.milestone == expected, (
         f"Issue '{issue.title}' should be assigned to '{milestone_name}', "
         f"but is assigned to '{issue.milestone}'. {message}"
     )

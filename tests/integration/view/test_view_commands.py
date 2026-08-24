@@ -75,21 +75,21 @@ def roadmap_with_data(cli_runner):
         rows = json_output.get("rows", [])
         columns = json_output.get("columns", [])
 
-        # Find the column index for "title"
-        title_idx = None
+        # Find the column index for the canonical project name.
+        name_idx = None
         id_idx = 0  # ID is typically the first column
         for i, col in enumerate(columns):
-            if col.get("name") == "title":
-                title_idx = i
+            if col.get("name") == "name":
+                name_idx = i
             elif col.get("name") == "id":
                 id_idx = i
 
-        assert title_idx is not None, "Could not find 'title' column in project list"
+        assert name_idx is not None, "Could not find 'name' column in project list"
 
         # Find the row with title "test-project"
         project_id = None
         for row in rows:
-            if row[title_idx] == "test-project":
+            if row[name_idx] == "test-project":
                 project_id = row[id_idx]
                 break
 

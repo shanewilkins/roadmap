@@ -1,87 +1,43 @@
-"""Restore project command - move archived projects back to active."""
+"""Restore projects through lifecycle metadata."""
 
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.cli.projects.restore_class import ProjectRestore
-from roadmap.common.console import get_console
-from roadmap.common.logging import (
-    log_command,
-    verbose_output,
-)
+from roadmap.adapters.cli.planning_resolution import invoke, projection_warning
+from roadmap.common.logging import log_command, verbose_output
 
 
-@click.command()
+@click.command("restore")
 @click.argument("project_name", required=False)
-@click.option(
-    "--all",
-    is_flag=True,
-    help="Restore all archived projects",
-)
-@click.option(
-    "--dry-run",
-    is_flag=True,
-    help="Preview what would be restored without actually doing it",
-)
-@click.option(
-    "--force",
-    is_flag=True,
-    help="Skip confirmation prompt",
-)
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Show detailed debug information",
-)
+@click.option("--all", "restore_all", is_flag=True)
+@click.option("--dry-run", is_flag=True)
+@click.option("--force", is_flag=True)
+@click.option("--verbose", "-v", is_flag=True)
 @click.pass_context
 @verbose_output
 @log_command("project_restore", entity_type="project", track_duration=True)
 @require_initialized
 def restore_project(
-    ctx: click.Context,
+    ctx,
     project_name: str | None,
-    all: bool,
+    restore_all: bool,
     dry_run: bool,
     force: bool,
-    verbose: bool,  # noqa: F841
-):
-    """Restore an archived project back to active projects.
-
-    This moves a project from .roadmap/archive/projects/ back to
-    .roadmap/projects/, making it active again.
-
-    Examples:
-        roadmap project restore "Project Name"
-        roadmap project restore --all
-        roadmap project restore "Project Name" --dry-run
-    """
-    core = ctx.obj["core"]
-    console = get_console()
-
-    restore = ProjectRestore(core, console)
-
-    if not project_name and not all:
-        console.print(
-            "❌ Error: Specify a project name or use --all",
-            style="bold red",
+    verbose: bool,
+) -> None:  # noqa: ARG001
+    """Restore projects without moving canonical files."""
+    if (project_name is None) == (not restore_all):
+        raise click.UsageError("Specify exactly one of PROJECT_NAME or --all")
+    if not dry_run and not force:
+        click.confirm("Restore the selected project(s)?", abort=True)
+    result = invoke(
+        lambda: ctx.obj["core"].planning.restore_project(
+            project_name, restore_all=restore_all, dry_run=dry_run
         )
-        ctx.exit(1)
-
-    if project_name and all:
-        console.print(
-            "❌ Error: Cannot specify project name with --all",
-            style="bold red",
-        )
-        ctx.exit(1)
-
-    try:
-        restore.execute(
-            entity_id=project_name,
-            all=all,
-            dry_run=dry_run,
-            force=force,
-        )
-    except Exception as e:
-        console.print(f"❌ Restore operation failed: {str(e)}", style="bold red")
-        ctx.exit(1)
+    )
+    verb = "Would restore" if dry_run else "Restored"
+    for item in result.aggregates:
+        click.echo(f"{verb} project {item.id}: {item.name}")
+    if not result.aggregates:
+        click.echo("No matching projects.")
+    projection_warning(result)

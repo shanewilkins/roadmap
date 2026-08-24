@@ -219,7 +219,7 @@ class TestStatusEdgeCases:
         }
 
         with patch(
-            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+            "roadmap.adapters.cli.status._build_snapshot_tables"
         ) as mock_snapshot:
             mock_snapshot.return_value = {
                 "entities": {
@@ -242,7 +242,7 @@ class TestStatusEdgeCases:
                         obj=ctx_obj,
                         catch_exceptions=False,
                     )
-                mock_snapshot.assert_called_once_with(ctx_obj["core"])
+                mock_snapshot.assert_called_once_with(ctx_obj["core"].planning)
                 mock_render.assert_called_once()
 
     def test_formatter_with_very_long_message(self):

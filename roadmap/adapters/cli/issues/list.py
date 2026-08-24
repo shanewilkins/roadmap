@@ -6,13 +6,13 @@ import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.decorators import with_output_support
+from roadmap.adapters.cli.planning_resolution import resolve_milestone_id
 from roadmap.application.contracts import IssueListQuery, IssueQueryRecord, IssueScope
 from roadmap.application.failures import ApplicationFailure
 from roadmap.common.console import get_console
 from roadmap.common.formatters.tables.column_factory import create_issue_columns
 from roadmap.common.logging import verbose_output
 from roadmap.common.models import ColumnType, TableData
-from roadmap.domain.types import EntityId
 
 
 def _time(hours: float | None) -> str:
@@ -43,7 +43,7 @@ def _table(result) -> TableData:
                 _progress(record),
                 issue.assignee or "Unassigned",
                 _time(issue.estimated_hours),
-                str(issue.relations.milestone_id or "Backlog"),
+                record.milestone_name or str(issue.relations.milestone_id or "Backlog"),
                 f"💬 {len(record.comments)}" if record.comments else "",
             ]
         )
@@ -156,9 +156,10 @@ def list_issues(  # noqa: F841
     verbose: bool,
 ):
     """List, filter, search, and sort canonical issues."""
+    core = ctx.obj["core"]
     query = IssueListQuery(
         scope=IssueScope(scope),
-        milestone=EntityId(milestone) if milestone else None,
+        milestone=resolve_milestone_id(core, milestone) if milestone else None,
         backlog=backlog or unassigned or filter_type == "backlog",
         next_milestone=next_milestone,
         assignee=assignee,
@@ -172,7 +173,7 @@ def list_issues(  # noqa: F841
         search=search,
     )
     try:
-        result = ctx.obj["core"].issue_queries.list(query)
+        result = core.issue_queries.list(query)
     except (ApplicationFailure, ValueError) as error:
         raise click.ClickException(str(error)) from error
     console = get_console()

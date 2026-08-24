@@ -27,12 +27,19 @@ MILESTONE_TRANSITIONS = {
 }
 PROJECT_TRANSITIONS = {
     ProjectStatus.PLANNING: frozenset(
-        {ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD, ProjectStatus.CANCELLED}
+        {
+            ProjectStatus.ACTIVE,
+            ProjectStatus.ON_HOLD,
+            ProjectStatus.COMPLETED,
+            ProjectStatus.CANCELLED,
+        }
     ),
     ProjectStatus.ACTIVE: frozenset(
         {ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED, ProjectStatus.CANCELLED}
     ),
-    ProjectStatus.ON_HOLD: frozenset({ProjectStatus.ACTIVE, ProjectStatus.CANCELLED}),
+    ProjectStatus.ON_HOLD: frozenset(
+        {ProjectStatus.ACTIVE, ProjectStatus.COMPLETED, ProjectStatus.CANCELLED}
+    ),
     ProjectStatus.COMPLETED: frozenset({ProjectStatus.ACTIVE}),
     ProjectStatus.CANCELLED: frozenset({ProjectStatus.PLANNING}),
 }

@@ -133,7 +133,7 @@ class TestStatusCommand:
         runner = CliRunner()
         ctx_obj = {"core": MagicMock()}
         with patch(
-            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+            "roadmap.adapters.cli.status._build_snapshot_tables"
         ) as mock_snapshot:
             if mock_snapshot_side_effect:
                 mock_snapshot.side_effect = mock_snapshot_side_effect
@@ -169,7 +169,7 @@ class TestStatusCommand:
         }
 
         with patch(
-            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+            "roadmap.adapters.cli.status._build_snapshot_tables"
         ) as mock_snapshot:
             mock_snapshot.return_value = {}
 
@@ -184,7 +184,7 @@ class TestStatusCommand:
                         catch_exceptions=False,
                     )
 
-                mock_snapshot.assert_called_once_with(ctx_obj["core"])
+                mock_snapshot.assert_called_once_with(ctx_obj["core"].planning)
                 mock_render.assert_called_once()
 
     def test_status_with_exception(self):
@@ -195,7 +195,7 @@ class TestStatusCommand:
         }
 
         with patch(
-            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+            "roadmap.adapters.cli.status._build_snapshot_tables"
         ) as mock_snapshot:
             mock_snapshot.side_effect = Exception("Database error")
 
@@ -220,7 +220,7 @@ class TestStatusCommand:
         }
 
         with patch(
-            "roadmap.adapters.cli.status.StatusSnapshotService.build_snapshot_tables"
+            "roadmap.adapters.cli.status._build_snapshot_tables"
         ) as mock_snapshot:
             mock_snapshot.return_value = {}
 

@@ -28,6 +28,30 @@ class OrphanedMilestonesValidator(BaseValidator):
         orphaned = []
 
         try:
+            planning = core.__dict__.get("planning")
+            if planning is not None:
+                snapshot = planning.snapshot()
+                assigned_ids = {
+                    milestone_id
+                    for summary in snapshot.projects
+                    for milestone_id in summary.project.relations.milestone_ids
+                }
+                for summary in snapshot.milestones:
+                    milestone = summary.milestone
+                    if (
+                        milestone.relation.project_id is None
+                        and milestone.id not in assigned_ids
+                    ):
+                        orphaned.append(
+                            {
+                                "name": str(milestone.name),
+                                "content": milestone.content or "(no description)",
+                                "status": milestone.status.value,
+                                "created": milestone.created.value.isoformat(),
+                            }
+                        )
+                return orphaned
+
             all_milestones = core.milestones.list()
             all_projects = core.projects.list()
 

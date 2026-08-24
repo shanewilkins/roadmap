@@ -191,6 +191,25 @@ class CanonicalUnitOfWork:
                 issues.append(envelope.aggregate)
         return tuple(issues)
 
+    def _list(self, kind: DocumentKind, aggregate_type):
+        self._require_lock()
+        aggregates = []
+        for envelope in self.repository.scan(kind):
+            identity = envelope.aggregate.id
+            self._loaded[(kind, identity)] = envelope
+            self._identities[envelope.path] = content_identity(
+                envelope.path.read_bytes()
+            )
+            if isinstance(envelope.aggregate, aggregate_type):
+                aggregates.append(envelope.aggregate)
+        return tuple(aggregates)
+
+    def list_milestones(self) -> tuple[Milestone, ...]:
+        return self._list("milestone", Milestone)
+
+    def list_projects(self) -> tuple[Project, ...]:
+        return self._list("project", Project)
+
     def load_milestone(self, milestone_id: EntityId) -> Milestone | None:
         aggregate = self._load("milestone", milestone_id)
         return aggregate if isinstance(aggregate, Milestone) else None
@@ -221,11 +240,14 @@ class CanonicalUnitOfWork:
         self._save("issue", issue)
 
     def delete_issue(self, issue_id: EntityId) -> bool:
+        return self._delete("issue", issue_id)
+
+    def _delete(self, kind: DocumentKind, identity: EntityId) -> bool:
         self._require_lock()
-        key = ("issue", issue_id)
+        key = (kind, identity)
         envelope = self._loaded.get(key)
         if envelope is None:
-            found = self.repository.load("issue", issue_id)
+            found = self.repository.load(kind, identity)
             if found is None:
                 return False
             envelope = found
@@ -238,6 +260,12 @@ class CanonicalUnitOfWork:
         self._writes.pop(key, None)
         self._deletes[key] = _Delete(envelope.path, expected)
         return True
+
+    def delete_milestone(self, milestone_id: EntityId) -> bool:
+        return self._delete("milestone", milestone_id)
+
+    def delete_project(self, project_id: EntityId) -> bool:
+        return self._delete("project", project_id)
 
     def save_milestone(self, milestone: Milestone) -> None:
         self._save("milestone", milestone)

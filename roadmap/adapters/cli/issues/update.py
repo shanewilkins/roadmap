@@ -4,11 +4,11 @@ import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.cli.issues.resolution import (
-    entity_id,
     invoke,
     projection_warning,
     resolve_issue_id,
 )
+from roadmap.adapters.cli.planning_resolution import resolve_milestone_id
 from roadmap.application.contracts import IssueUpdateCommand
 from roadmap.common.logging import log_command
 from roadmap.domain.types import Priority, Title
@@ -69,7 +69,7 @@ def update_issue(
             priority=Priority(priority) if priority is not None else None,
             status=status,
             assignee=assignee,
-            milestone_id=entity_id(milestone),
+            milestone_id=resolve_milestone_id(core, milestone) if milestone else None,
             content=description,
             estimated_hours=estimate,
             reason=reason,
