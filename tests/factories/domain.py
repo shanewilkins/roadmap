@@ -118,16 +118,6 @@ class IssueBuilder:
         self._issue.estimated_hours = hours
         return self
 
-    def with_github_issue(self, github_issue: str | int | None) -> "IssueBuilder":
-        """Link to a GitHub issue."""
-        self._issue.github_issue = github_issue
-        return self
-
-    def with_remote_ids(self, remote_ids: dict[str, str | int]) -> "IssueBuilder":
-        """Set remote IDs for multiple backends."""
-        self._issue.remote_ids = remote_ids
-        return self
-
     def with_due_date(self, due_date: datetime | None) -> "IssueBuilder":
         """Set the due date."""
         self._issue.due_date = due_date
@@ -235,11 +225,6 @@ class MilestoneBuilder:
     def with_content(self, content: str) -> "MilestoneBuilder":
         """Set the milestone content (markdown)."""
         self._milestone.content = content
-        return self
-
-    def with_github_milestone(self, github_id: int | None) -> "MilestoneBuilder":
-        """Link to a GitHub milestone."""
-        self._milestone.github_milestone = github_id
         return self
 
     def with_progress(self, progress: float) -> "MilestoneBuilder":
@@ -476,9 +461,9 @@ class CommentBuilder:
         self._comment.updated_at = updated_at
         return self
 
-    def with_github_url(self, url: str | None) -> "CommentBuilder":
-        """Set the GitHub comment URL."""
-        self._comment.github_url = url
+    def with_external_url(self, url: str | None) -> "CommentBuilder":
+        """Set an optional external reference URL."""
+        self._comment.external_url = url
         return self
 
     def with_reply_to(self, comment_id: int | None) -> "CommentBuilder":
@@ -501,7 +486,7 @@ class CommentBuilder:
             body=self._comment.body,
             created_at=self._comment.created_at,
             updated_at=self._comment.updated_at,
-            github_url=self._comment.github_url,
+            external_url=self._comment.external_url,
             in_reply_to=self._comment.in_reply_to,
         )
         return new_builder

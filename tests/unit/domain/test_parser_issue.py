@@ -99,7 +99,6 @@ labels:
   - bug
   - urgent
 assignee: user1
-github_issue: 123
 created: "2024-01-01T00:00:00"
 updated: "2024-01-02T00:00:00"
 ---
@@ -162,15 +161,14 @@ Test content.
         assert issue.milestone == "v1-0"
         assert issue.assignee == "user1"
 
-    def test_parse_issue_file_labels_and_github(self):
-        """Test parsing issue labels and GitHub issue number."""
+    def test_parse_issue_file_labels(self):
+        """Test parsing issue labels."""
         content = """---
 id: "abcdef12"
 title: Complex Issue
 labels:
   - bug
   - urgent
-github_issue: 123
 ---
 
 Test content.
@@ -183,7 +181,6 @@ Test content.
             issue = IssueParser.parse_issue_file(Path(f.name))
 
         assert issue.labels == ["bug", "urgent"]
-        assert issue.github_issue == 123
 
     def test_parse_issue_file_content(self):
         """Test parsing issue content section."""

@@ -220,8 +220,8 @@ def log_operation_duration(
         warn_threshold_ms: Threshold in milliseconds to warn about slow ops
 
     Example:
-        @log_operation_duration("sync_issues", warn_threshold_ms=5000)
-        def sync_to_github():
+        @log_operation_duration("rebuild_projection", warn_threshold_ms=5000)
+        def rebuild_projection():
             ...
     """
 

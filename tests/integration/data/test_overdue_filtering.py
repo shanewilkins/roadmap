@@ -248,7 +248,6 @@ class TestOverdueProjectFiltering:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0
@@ -286,7 +285,6 @@ class TestOverdueProjectFiltering:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0

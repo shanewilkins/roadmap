@@ -89,34 +89,6 @@ class TestPathValidation:
         assert result.is_valid == expect_valid
 
 
-class TestGithubIssueNumberValidation:
-    """Test GitHub issue number validation."""
-
-    @pytest.fixture
-    def validator(self):
-        return RoadmapValidator()
-
-    @pytest.mark.parametrize(
-        "issue_number,field_name,expect_valid",
-        [
-            (123, "github_issue", True),
-            ("456", "github_issue", True),
-            (-1, "github_issue", False),
-            (0, "github_issue", False),
-            ("abc", "github_issue", False),
-            (None, "github_issue", True),
-            (999999999, "github_issue", True),
-            (123.45, "github_issue", True),
-        ],
-    )
-    def test_github_issue_number_validation(
-        self, validator, issue_number, field_name, expect_valid
-    ):
-        """Test GitHub issue number validation with various inputs."""
-        result = validator.validate_github_issue_number(issue_number, field_name)
-        assert result.is_valid == expect_valid
-
-
 class TestLabelsValidation:
     """Test labels validation."""
 
@@ -199,12 +171,6 @@ class TestEdgeCases:
         """Test assignee with only whitespace."""
         result = validator.validate_string_length("   ", "assignee")
         assert result.is_valid  # length check doesn't care about content
-
-    def test_float_issue_number(self, validator):
-        """Test float as issue number."""
-        result = validator.validate_github_issue_number(123.45, "github_issue")
-        # Should convert and check if it's > 0
-        assert result.is_valid
 
     def test_empty_validation_result(self):
         """Test empty ValidationResult."""

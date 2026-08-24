@@ -8,13 +8,13 @@ from datetime import datetime
 class Comment:
     """Comment data model for issues."""
 
-    id: int  # GitHub comment ID
-    issue_id: str  # Local issue ID or GitHub issue number
-    author: str  # GitHub username
+    id: int
+    issue_id: str
+    author: str
     body: str  # Comment content (markdown)
     created_at: datetime
     updated_at: datetime
-    github_url: str | None = None  # GitHub comment URL
+    external_url: str | None = None
     in_reply_to: int | None = None  # Comment ID this is a reply to (for threading)
 
     def __str__(self) -> str:

@@ -358,6 +358,8 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
                     "created_at": comment.created_at.value.isoformat(),
                     "updated_at": comment.updated_at.value.isoformat(),
                     "in_reply_to": comment.in_reply_to,
+                    # Preserve the released storage key as a bounded compatibility
+                    # alias while the domain uses the provider-neutral field name.
                     "github_url": comment.external_url,
                 }
                 for comment in aggregate.comments

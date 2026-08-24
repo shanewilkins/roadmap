@@ -22,7 +22,6 @@ class TestPostInitValidation:
             args = [
                 "init",
                 "--non-interactive",
-                "--skip-github",
             ]
             if skip_project:
                 args.append("--skip-project")

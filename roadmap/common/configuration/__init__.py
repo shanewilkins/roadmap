@@ -4,7 +4,6 @@ from .config_manager import ConfigManager  # noqa: F401
 from .config_schema import (  # noqa: F401
     BehaviorConfig,
     DisplayConfig,
-    GitHubConfig,
     PathsConfig,
     RoadmapConfig,
     UserConfig,
@@ -15,7 +14,6 @@ __all__ = [
     "RoadmapConfig",
     "BehaviorConfig",
     "DisplayConfig",
-    "GitHubConfig",
     "PathsConfig",
     "UserConfig",
 ]

@@ -195,7 +195,7 @@ def log_external_service_error(
     operation: str,
     retry_count: int = 0,
 ) -> None:
-    """Log an external service error (GitHub API, etc.).
+    """Log an external service error.
 
     Args:
         error: The error from external service

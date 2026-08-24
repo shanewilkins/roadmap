@@ -58,7 +58,6 @@ class IssueMapper:
             updated=issue.updated,
             content=issue.content,
             labels=issue.labels.copy() if issue.labels else [],
-            github_issue=str(issue.github_issue) if issue.github_issue else None,
             comments=comments,
         )
 
@@ -91,11 +90,6 @@ class IssueMapper:
             progress_percentage=dto.progress_percentage,
             content=dto.content or "",
             labels=dto.labels.copy() if dto.labels else [],
-            remote_ids=(
-                {"github": int(dto.github_issue)}
-                if dto.github_issue and dto.github_issue.isdigit()
-                else {}
-            ),
         )
 
 

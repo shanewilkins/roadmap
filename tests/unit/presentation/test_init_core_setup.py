@@ -12,7 +12,7 @@ class TestInitCommand:
         """Test that init with --non-interactive creates .roadmap directory."""
         with cli_runner.isolated_filesystem():
             result = cli_runner.invoke(
-                main, ["init", "--non-interactive", "--skip-github", "--skip-project"]
+                main, ["init", "--non-interactive", "--skip-project"]
             )
             assert result.exit_code == 0
             assert Path(".roadmap").exists()
@@ -21,9 +21,7 @@ class TestInitCommand:
         """Test that force reinit removes old configuration files."""
         with cli_runner.isolated_filesystem():
             # First init
-            res1 = cli_runner.invoke(
-                main, ["init", "--non-interactive", "--skip-github"]
-            )
+            res1 = cli_runner.invoke(main, ["init", "--non-interactive"])
             assert res1.exit_code == 0
             assert Path(".roadmap").exists()
 
@@ -32,9 +30,7 @@ class TestInitCommand:
             assert (Path(".roadmap") / "marker.txt").exists()
 
             # Force reinit
-            res2 = cli_runner.invoke(
-                main, ["init", "--non-interactive", "--force", "--skip-github"]
-            )
+            res2 = cli_runner.invoke(main, ["init", "--non-interactive", "--force"])
             assert res2.exit_code == 0
             # Marker should be gone after force reinit
             assert not (Path(".roadmap") / "marker.txt").exists()

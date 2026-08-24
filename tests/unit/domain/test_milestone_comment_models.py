@@ -67,12 +67,6 @@ class TestMilestoneCreation:
 
         assert milestone.project_id == "project-123"
 
-    def test_milestone_with_github_id(self):
-        """Milestone should track GitHub milestone ID."""
-        milestone = Milestone(name="v1-0", github_milestone=42)
-
-        assert milestone.github_milestone == 42
-
     def test_milestone_with_comments(self):
         """Milestone should accept comments list."""
         comment = Comment(
@@ -292,8 +286,8 @@ class TestCommentCreation:
         assert hasattr(comment, "created_at")
         assert hasattr(comment, "updated_at")
 
-    def test_comment_with_github_url(self):
-        """Comment should track GitHub URL."""
+    def test_comment_with_external_url(self):
+        """Comment should retain an ordinary external reference URL."""
         comment = Comment(
             id=1,
             issue_id="issue-1",
@@ -301,10 +295,12 @@ class TestCommentCreation:
             body="Test",
             created_at=datetime(2024, 1, 1, tzinfo=UTC),
             updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-            github_url="https://github.com/repo/issues/1#issuecomment-123",
+            external_url="https://tracker.example.test/issues/1#comment-123",
         )
 
-        assert comment.github_url == "https://github.com/repo/issues/1#issuecomment-123"
+        assert (
+            comment.external_url == "https://tracker.example.test/issues/1#comment-123"
+        )
 
     def test_comment_with_reply_threading(self):
         """Comment should track reply-to relationship."""

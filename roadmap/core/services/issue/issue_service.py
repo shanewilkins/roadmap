@@ -586,7 +586,6 @@ class IssueService:
         Transfers all data from duplicate to canonical:
         - Comments and discussion threads
         - Labels (union of both)
-        - Remote IDs (merge both backends)
         - Updated timestamp (take latest)
         - Keep canonical: created date, ID, content (local priority)
 
@@ -615,7 +614,7 @@ class IssueService:
             return Err(msg)
 
         try:
-            # Merge data: union labels, merge remote_ids, combine comments
+            # Merge data: union labels and combine comments
             merged = Issue(
                 id=canonical.id,
                 title=canonical.title,  # Keep canonical title
@@ -646,10 +645,6 @@ class IssueService:
                 updated=max(
                     canonical.updated, duplicate.updated
                 ),  # Take latest updated
-                remote_ids={
-                    **canonical.remote_ids,
-                    **duplicate.remote_ids,  # Merge remote IDs
-                },
             )
 
             # Persist merged issue
@@ -722,14 +717,7 @@ class IssueService:
             # Update domain model status
             issue.status = Status.ARCHIVED
 
-            # Store resolution metadata
-            if not issue.github_sync_metadata:
-                issue.github_sync_metadata = {}
-            issue.github_sync_metadata["archived_at"] = now_utc().isoformat()
-            issue.github_sync_metadata["resolution_type"] = resolution_type
-            if duplicate_of_id:
-                issue.github_sync_metadata["duplicate_of_id"] = duplicate_of_id
-
+            issue.archived = True
             issue.updated = now_utc()
 
             # Persist updated metadata and status

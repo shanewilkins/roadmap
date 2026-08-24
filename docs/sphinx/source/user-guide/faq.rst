@@ -151,18 +151,10 @@ Configuration
 
 A: Located at `~/.roadmap/config.yaml` or `$ROADMAP_CONFIG_PATH` if set.
 
-**Q: How do I enable GitHub sync?**
+**Q: How do I collaborate through a hosted Git service?**
 
-A: See :doc:`../getting-started/configuration` for GitHub setup instructions.
-
-In brief:
-
-.. code-block:: yaml
-
-    github:
-        enabled: true
-        token: YOUR_GITHUB_TOKEN
-        org: YOUR_ORG
+A: Commit canonical ``.roadmap/`` files and use ordinary Git pull, review, and
+push commands. Roadmap does not synchronize hosted issues.
 
 **Q: Can I use environment variables for configuration?**
 
@@ -189,36 +181,18 @@ A: Yes, set different config paths:
     export ROADMAP_CONFIG_PATH=/path/to/config2.yaml
     roadmap project list
 
-GitHub Integration
-==================
+Remote collaboration
+====================
 
-**Q: How do I sync with GitHub?**
+**Q: Does Roadmap require a provider token?**
 
-A: Use:
+A: No. Core workflows are fully offline. Git owns any remote authentication.
 
-.. code-block:: bash
+**Q: What happened to the 0.1.1 sync commands?**
 
-    roadmap sync
-
-When enabled, Roadmap can:
-
-- Push milestones to GitHub
-- Sync issues with GitHub issues
-- Link to GitHub PRs
-
-See :doc:`../getting-started/configuration` for setup.
-
-**Q: Do I need a GitHub token?**
-
-A: Yes, for GitHub integration. See :doc:`../getting-started/configuration` for how to create one.
-
-**Q: Will Roadmap overwrite my GitHub issues?**
-
-A: No. Sync is bi-directional and non-destructive. Conflicts are handled carefully.
-
-**Q: Can I use Roadmap with GitHub Enterprise?**
-
-A: Yes, configure the GitHub URL in your config.yaml.
+A: They were experimental and are absent in 0.2. A standard ``No such command``
+error is expected. SQLite projection refresh remains local maintenance and is
+not remote synchronization.
 
 Troubleshooting
 ===============
@@ -248,13 +222,10 @@ Reinstall if needed:
     pip uninstall roadmap-cli
     pip install roadmap-cli
 
-**Q: My changes aren't showing up**
+**Q: My canonical-file changes aren't showing up**
 
-A: Try refreshing GitHub sync:
-
-.. code-block:: bash
-
-    roadmap sync
+A: Run the health scan and preview a local projection rebuild. Projection
+maintenance reads canonical files and never requires provider credentials.
 
 **Q: How do I clear my data?**
 
@@ -305,7 +276,8 @@ A: Back up your data directory:
 
 **Q: Can I use Roadmap offline?**
 
-A: Yes! All data is stored locally. GitHub sync requires internet, but core functionality works offline.
+A: Yes. Core functionality is local and requires no network account. Network
+access is used only when you invoke Git against a remote.
 
 **Q: Is there a web UI?**
 

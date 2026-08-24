@@ -153,7 +153,6 @@ def temp_workspace():
                 "--project-name",
                 "Test Project",
                 "--non-interactive",
-                "--skip-github",
             ],
         )
 

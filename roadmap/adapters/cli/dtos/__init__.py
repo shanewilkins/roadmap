@@ -65,7 +65,6 @@ class IssueDTO(BaseDTO):
     # Extended fields for detailed views
     content: str | None = None
     labels: list[str] = field(default_factory=list)
-    github_issue: str | None = None
     comments: list["CommentDTO"] = field(default_factory=list)
 
 

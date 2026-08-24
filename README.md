@@ -138,20 +138,20 @@ Roadmap 0.2 keeps explicit local Git conveniences such as `roadmap git status`,
 install hooks, interpret commit prose to mutate issue state, store provider
 credentials, or synchronize directly with GitHub or another issue service.
 
-The 0.1.1 package still exposes some experimental remote-sync, provider, and
-automatic-hook commands. They are deprecated, are not part of the supported
-0.2 contract, and will be removed. Use normal Git commands for collaboration.
+The 0.2 codebase removes the experimental 0.1.1 remote-sync, provider, and
+automatic-hook commands. Use normal Git commands for collaboration. See the
+[0.2 removal guide](docs/user_guide/REMOTE_SYNC_REMOVAL_0_2.md) before upgrading
+an existing workspace.
 
 ## Data ownership and recovery
 
 Canonical Markdown and YAML are the durable data. SQLite is a local search and
 validation projection, not a second source of truth and not a remote sync
-target. The 0.2 migration will make projection rebuild and canonical-file
-recovery explicit and testable.
+target. Projection rebuild and canonical-file recovery are explicit and
+testable.
 
-Before the 0.2 migration lands, keep `.roadmap/` versioned and make a normal Git
-commit before testing prereleases. Do not treat the current internal SQLite
-schema as a public API.
+Keep `.roadmap/` versioned and make a normal Git commit before running the 0.2
+migration. Do not treat the internal SQLite schema as a public API.
 
 ## Documentation
 

@@ -18,19 +18,10 @@ IssueUpdateServiceParams = _models_mod.IssueUpdateServiceParams
 ProjectCreateServiceParams = _models_mod.ProjectCreateServiceParams
 ProjectUpdateServiceParams = _models_mod.ProjectUpdateServiceParams
 
-# Import service-owned compatibility models only after the lightweight values
-# above exist; service initialization imports this package in return.
-from roadmap.core.services.sync.sync_state import (  # noqa: E402
-    IssueBaseState,
-    SyncState,
-)
-
 __all__ = [
     "NOT_PROVIDED",
     "IssueCreateServiceParams",
     "IssueUpdateServiceParams",
     "ProjectCreateServiceParams",
     "ProjectUpdateServiceParams",
-    "IssueBaseState",
-    "SyncState",
 ]

@@ -195,27 +195,6 @@ class CoreInitializationPresenter:
         """Show health warning."""
         click.secho(f"⚠️  {message}", fg="yellow")
 
-    # ========== GitHub Integration Output ==========
-
-    def present_github_testing(self) -> None:
-        """Show message while testing GitHub connection."""
-        click.secho("🔍 Testing GitHub connection...", fg="yellow")
-
-    def present_github_credentials_stored(self) -> None:
-        """Show message that credentials were stored."""
-        click.secho("🔒 Credentials stored securely", fg="green")
-
-    def present_github_unavailable(self, reason: str) -> None:
-        """Show GitHub integration unavailable message."""
-        click.secho(
-            f"⚠️  GitHub integration not available: {reason}",
-            fg="yellow",
-        )
-
-    def present_github_setup_failed(self, error: str) -> None:
-        """Show GitHub setup failure."""
-        click.secho(f"❌ GitHub setup failed: {error}", fg="red")
-
     # ========== Generic Output Methods ==========
 
     def present_error(self, message: str) -> None:

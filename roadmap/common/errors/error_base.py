@@ -20,9 +20,7 @@ class ErrorCategory(Enum):
 
     FILE_OPERATION = "file_operation"
     VALIDATION = "validation"
-    NETWORK = "network"
     GIT_OPERATION = "git_operation"
-    GITHUB_API = "github_api"
     PARSING = "parsing"
     CONFIGURATION = "configuration"
     PERMISSION = "permission"

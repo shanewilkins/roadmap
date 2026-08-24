@@ -133,17 +133,7 @@ def test_unchanged_production_tree_matches_only_the_exact_reviewed_baseline() ->
     """The current migration debt passes only through reviewed exact entries."""
     result = check_repository(ROOT)
     assert result.passed, result.render()
-    assert len(result.violations) == 7
-
-
-def test_removing_a_used_baseline_entry_exposes_a_new_violation() -> None:
-    """Exceptions cannot be dropped while their violating import remains."""
-    violations = find_violations(ROOT / POLICY.production_root, POLICY)
-    baseline = load_baseline(ROOT / POLICY.baseline, POLICY)
-    removed = baseline[0]
-    result = compare_baseline(violations, baseline[1:])
-    assert [item.key for item in result.new] == [removed.key]
-    assert not result.passed
+    assert result.violations == ()
 
 
 def test_unused_baseline_entry_is_stale() -> None:

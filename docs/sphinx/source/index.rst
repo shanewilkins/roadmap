@@ -1,9 +1,9 @@
 ================================================================================
-Roadmap CLI - Enterprise Project Management Tool
+Roadmap CLI - Local Project Management Tool
 ================================================================================
 
-A powerful command-line tool for creating and managing project roadmaps with
-GitHub integration, data visualization, and advanced analytics.
+A Git-native command-line tool for local project planning with canonical files,
+structured reporting, and a rebuildable SQLite projection.
 
 .. toctree::
    :maxdepth: 2

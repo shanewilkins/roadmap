@@ -196,23 +196,22 @@ Mock external dependencies using `unittest.mock` or `pytest-mock`.
 
 **Example:**
 ```python
-def test_fetch_remote_issue(monkeypatch):
-    """Mock GitHub API instead of making real calls."""
+def test_local_git_status(monkeypatch):
+    """Mock the local Git subprocess instead of invoking Git."""
 
-    def mock_fetch(org, repo, issue_num):
-        return {"id": "123", "title": "Test"}
+    def mock_run(*args, **kwargs):
+        return CompletedProcess(args[0], 0, stdout="main\n", stderr="")
 
-    monkeypatch.setattr("roadmap.adapters.github_adapter.fetch_issue", mock_fetch)
+    monkeypatch.setattr("roadmap.adapters.outbound.git.subprocess.run", mock_run)
 
-    # Test uses mock instead of real API
-    result = fetch_remote_issue("org", "repo", 1)
-    assert result["id"] == "123"
+    result = adapter.inspect()
+    assert result.branch == "main"
 ```
 
 ### Benefits
 - **Fast tests**: No network latency
 - **Deterministic**: Same input always produces same output
-- **No external dependencies**: Tests pass even if GitHub is down
+- **No external dependencies**: Tests pass without invoking Git or a network
 - **CI-friendly**: Tests don't require authentication tokens
 
 ## Test Independence Checklist

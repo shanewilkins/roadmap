@@ -43,7 +43,7 @@ class RoadmapValidator:
             FieldValidator("issue_type", enum_values=[t.value for t in IssueType])
         ).add_field(
             FieldValidator(
-                "assignee", max_length=100, custom_validator=self._validate_assignee
+                "assignee", max_length=39, custom_validator=self._validate_assignee
             )
         ).add_field(FieldValidator("milestone", max_length=100)).add_field(
             FieldValidator(
@@ -97,7 +97,7 @@ class RoadmapValidator:
                 "must contain only alphanumeric characters, hyphens, and underscores",
             )
 
-        if len(str_value) > 39:  # GitHub username limit
+        if len(str_value) > 39:
             return False, "must be 39 characters or less"
 
         return True, ""
@@ -265,24 +265,6 @@ class RoadmapValidator:
         except Exception as e:
             logger.error("path_validation_failed", path=str(path_value), error=str(e))
             result.add_error(f"Invalid {field_name}: {str(e)}")
-
-        return result
-
-    def validate_github_issue_number(
-        self, issue_number: Any, field_name: str = "github_issue"
-    ) -> ValidationResult:
-        """Validate GitHub issue number."""
-        result = ValidationResult(field=field_name)
-
-        if issue_number is None:
-            return result
-
-        try:
-            num = int(issue_number)
-            if num <= 0:
-                result.add_error(f"{field_name} must be a positive integer")
-        except (ValueError, TypeError):
-            result.add_error(f"{field_name} must be a valid integer")
 
         return result
 

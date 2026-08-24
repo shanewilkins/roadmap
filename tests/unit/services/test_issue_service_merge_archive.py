@@ -68,7 +68,6 @@ def _issue(issue_id: str, title: str = "Issue") -> Issue:
         git_branches=[],
         git_commits=[],
         comments=[],
-        remote_ids={},
         created=datetime(2024, 1, 1, tzinfo=UTC),
         updated=datetime(2024, 1, 2, tzinfo=UTC),
     )
@@ -135,7 +134,6 @@ def test_merge_issues_merges_fields_and_saves() -> None:
             updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         )
     ]
-    canonical.remote_ids = {"github": 1}
     canonical.updated = datetime(2024, 1, 2, tzinfo=UTC)
 
     duplicate = _issue("duplicate", "Duplicate")
@@ -154,7 +152,6 @@ def test_merge_issues_merges_fields_and_saves() -> None:
             updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         )
     ]
-    duplicate.remote_ids = {"jira": "PRJ-1"}
     duplicate.updated = datetime(2024, 1, 3, tzinfo=UTC)
 
     repo.items[canonical.id] = canonical
@@ -172,7 +169,6 @@ def test_merge_issues_merges_fields_and_saves() -> None:
     assert set(merged.git_branches) == {"feat/a", "feat/b"}
     assert merged.git_commits == [{"sha": "c1"}, {"sha": "c2"}]
     assert [comment.body for comment in merged.comments] == ["note1", "note2"]
-    assert merged.remote_ids == {"github": 1, "jira": "PRJ-1"}
     assert merged.updated == datetime(2024, 1, 3, tzinfo=UTC)
 
 
@@ -198,7 +194,7 @@ def test_archive_issue_returns_err_when_not_found() -> None:
     assert "Issue missing not found" == result.unwrap_err()
 
 
-def test_archive_issue_sets_metadata_and_status(monkeypatch) -> None:
+def test_archive_issue_sets_local_archive_state(monkeypatch) -> None:
     repo = _Repo()
     issue = _issue("i1")
     repo.items[issue.id] = issue
@@ -215,10 +211,8 @@ def test_archive_issue_sets_metadata_and_status(monkeypatch) -> None:
     assert result.is_ok()
     archived = result.unwrap()
     assert archived.status == Status.ARCHIVED
-    assert archived.github_sync_metadata is not None
-    assert archived.github_sync_metadata["resolution_type"] == "merge"
-    assert archived.github_sync_metadata["duplicate_of_id"] == "i0"
-    assert archived.github_sync_metadata["archived_at"] == fixed_now.isoformat()
+    assert archived.archived is True
+    assert archived.updated == fixed_now
 
 
 def test_archive_issue_returns_err_when_save_fails() -> None:

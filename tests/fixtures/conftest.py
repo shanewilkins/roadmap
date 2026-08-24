@@ -5,7 +5,6 @@ This module imports fixtures from specialized modules for better organization:
 - workspace.py: Workspace isolation and temporary directories
 - mocks.py: Core object mocks
 - performance.py: Performance-optimized fixtures
-- github.py: GitHub integration fixtures
 - assertions.py: Assertion helpers
 - presenter_and_dto_fixtures.py: Presenter and DTO fixtures
 
@@ -19,13 +18,6 @@ import pytest
 from .assertions import (
     assert_cli,
     assert_file,
-)
-from .github import (
-    github_api_response,
-    github_webhook_payload,
-    mock_github_client,
-    patch_github_integration,
-    webhook_signature_creator,
 )
 from .io import (
     assert_output,
@@ -43,7 +35,6 @@ from .mocks import (
     mock_core,
     mock_core_initialized,
     mock_core_simple,
-    mock_core_with_github,
     mock_core_with_projects,
     mock_directory,
     mock_file_handle,
@@ -73,7 +64,6 @@ from .performance import (
     patch_filesystem_operations,
     performance_test_config,
     selective_git_mock,
-    session_mock_github_client,
     shared_git_repo,
 )
 from .presenter_and_dto_fixtures import (
@@ -159,7 +149,6 @@ __all__ = [
     "mock_core",
     "mock_core_initialized",
     "mock_core_simple",
-    "mock_core_with_github",
     "mock_core_with_projects",
     "mock_config",
     "mock_console",
@@ -169,7 +158,6 @@ __all__ = [
     "cli_test_data",
     # Mock fixtures - Services
     "mock_git_service",
-    "mock_github_client",
     "mock_repo",
     "mock_sync_service",
     # Mock fixtures - Filesystem
@@ -215,12 +203,7 @@ __all__ = [
     "patch_filesystem_operations",
     "mock_git_operations",
     "selective_git_mock",
-    "session_mock_github_client",
     # GitHub fixtures
-    "github_webhook_payload",
-    "webhook_signature_creator",
-    "github_api_response",
-    "patch_github_integration",
     # Assertion fixtures
     "assert_cli",
     "assert_file",

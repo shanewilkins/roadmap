@@ -19,13 +19,13 @@ class TestIssueQueryService:
 
     @pytest.fixture
     def mock_core(self, mock_core_simple):
-        """Create mock RoadmapCore with team, issues, milestones.
+        """Create mock RoadmapCore with local issue and identity services.
 
         Uses centralized mock_core_simple fixture and adds services.
         """
-        mock_core_simple.team = Mock()
         mock_core_simple.issues = Mock()
         mock_core_simple.milestones = Mock()
+        mock_core_simple.current_identity = Mock()
         return mock_core_simple
 
     @pytest.fixture
@@ -50,23 +50,25 @@ class TestIssueQueryService:
 
     def test_get_filtered_issues_my_issues(self, service, mock_core, sample_issues):
         """Test getting my issues."""
-        mock_core.team.get_my_issues.return_value = sample_issues
+        sample_issues[0].assignee = "user1"
+        mock_core.current_identity.current_identity.return_value = "user1"
+        mock_core.issues.list.return_value = sample_issues
 
         issues, description = service.get_filtered_issues(my_issues=True)
 
-        assert issues == sample_issues
+        assert issues == [sample_issues[0]]
         assert description == "my"
-        mock_core.team.get_my_issues.assert_called_once()
+        mock_core.current_identity.current_identity.assert_called_once()
 
     def test_get_filtered_issues_assignee(self, service, mock_core, sample_issues):
         """Test getting issues by assignee."""
-        mock_core.team.get_assigned_issues.return_value = sample_issues
+        sample_issues[1].assignee = "user1"
+        mock_core.issues.list.return_value = sample_issues
 
         issues, description = service.get_filtered_issues(assignee="user1")
 
-        assert issues == sample_issues
+        assert issues == [sample_issues[1]]
         assert "assigned to user1" in description
-        mock_core.team.get_assigned_issues.assert_called_once_with("user1")
 
     def test_get_filtered_issues_backlog(self, service, mock_core, sample_issues):
         """Test getting backlog issues."""

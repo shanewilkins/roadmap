@@ -85,7 +85,6 @@ def smoke_test(artifact: Path, python: Path) -> None:
                 str(roadmap),
                 "init",
                 "--non-interactive",
-                "--skip-github",
                 "--skip-project",
             ],
             cwd=workspace,

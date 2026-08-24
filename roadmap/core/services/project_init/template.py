@@ -171,9 +171,6 @@ created: {current_date}
 updated: {current_date}
 """
 
-        if detected_info.get("git_repo"):
-            content += f"github_repo: {detected_info['git_repo']}\n"
-
         content += (
             """timeline:
   start_date: """

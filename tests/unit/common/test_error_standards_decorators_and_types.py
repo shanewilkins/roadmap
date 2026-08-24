@@ -158,12 +158,9 @@ class TestOperationType:
             (OperationType.READ, "read"),
             (OperationType.UPDATE, "update"),
             (OperationType.DELETE, "delete"),
-            (OperationType.SYNC, "sync"),
             (OperationType.IMPORT, "import"),
             (OperationType.EXPORT, "export"),
             (OperationType.VALIDATE, "validate"),
-            (OperationType.AUTHENTICATE, "authenticate"),
-            (OperationType.FETCH, "fetch"),
             (OperationType.SAVE, "save"),
         ],
     )
@@ -201,10 +198,10 @@ class TestErrorHandlingIntegration:
     def test_nested_error_context(self):
         """Test using nested error contexts."""
 
-        @safe_operation(OperationType.SYNC, "Issues")
-        def sync_issues(project_id: str):
+        @safe_operation(OperationType.READ, "Issues")
+        def read_issues(project_id: str):
             # Simulate work
             raise RuntimeError("Database connection failed")
 
         with pytest.raises(RoadmapException):
-            sync_issues("PROJECT-1")
+            read_issues("PROJECT-1")

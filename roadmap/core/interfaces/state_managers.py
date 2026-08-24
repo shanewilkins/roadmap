@@ -79,18 +79,6 @@ class IssueStateManager(Protocol):
         ...
 
 
-class SyncStateManager(Protocol):
-    """Protocol for sync state persistence."""
-
-    def get_sync_state(self, key: str) -> str | None:
-        """Get sync state value."""
-        ...
-
-    def set_sync_state(self, key: str, value: str):
-        """Set sync state value."""
-        ...
-
-
 class QueryStateManager(Protocol):
     """Protocol for complex query operations on state."""
 

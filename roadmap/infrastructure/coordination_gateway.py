@@ -74,37 +74,6 @@ class CoordinationGateway:
         return YAMLIssueRepository(db, issues_dir)
 
     @staticmethod
-    def get_git_sync_monitor(
-        repo_path: Path | None = None, state_manager: Any = None
-    ) -> Any:
-        """Get GitSyncMonitor for git sync tracking.
-
-        Args:
-            repo_path: Path to git repository
-            state_manager: State manager instance
-
-        Returns:
-            GitSyncMonitor instance from adapters
-        """
-        from roadmap.adapters.git.sync_monitor import GitSyncMonitor
-
-        return GitSyncMonitor(repo_path=repo_path, state_manager=state_manager)
-
-    @staticmethod
-    def get_git_hook_manager(core: Any) -> Any:
-        """Get GitHookManager for git hook operations.
-
-        Args:
-            core: RoadmapCore instance (required)
-
-        Returns:
-            GitHookManager instance from adapters
-        """
-        from roadmap.adapters.git.git_hooks import GitHookManager
-
-        return GitHookManager(core)
-
-    @staticmethod
     def parse_issue(file_path: Any) -> Any:
         """Parse issue from file.
 

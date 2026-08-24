@@ -26,7 +26,6 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
 
     def __init__(self):
         """Initialize issue formatter with headers and columns."""
-        self.show_github_ids = False
         self.columns_config = [
             {"name": "ID", "style": "cyan", "width": 8},
             {"name": "Title", "style": "white", "width": 25, "no_wrap": True},
@@ -38,8 +37,6 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
             {"name": "Estimate", "style": "green", "width": 10},
             {"name": "Milestone", "style": "blue", "width": 15},
         ]
-        # Add GitHub ID column if needed (will be shown if flag is set)
-        self.github_id_column = {"name": "GitHub #", "style": "cyan", "width": 10}
 
     def create_table(self) -> Any:
         """Create a rich table with issue columns."""
@@ -52,13 +49,6 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
                 style=col["style"],
                 width=col["width"],
                 no_wrap=col.get("no_wrap", False),
-            )
-        # Add GitHub ID column if showing them
-        if self.show_github_ids:
-            table.add_column(
-                self.github_id_column["name"],
-                style=self.github_id_column["style"],
-                width=self.github_id_column["width"],
             )
         return table
 
@@ -108,13 +98,6 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
             Text(item.milestone_name, style="dim" if item.is_backlog else "blue"),
             Text(comment_display, style="cyan" if comment_count > 0 else "dim"),
         ]
-
-        # Add GitHub ID if showing them
-        if self.show_github_ids:
-            github_id_text = (
-                f"#{item.github_issue}" if item.github_issue else Text("-", style="dim")
-            )
-            cells.append(github_id_text)
 
         table.add_row(*cells)
 
@@ -229,11 +212,9 @@ class IssueTableFormatter(BaseTableFormatter[Issue]):
         issues: Sequence[Issue],
         title: str = "Issues",
         description: str = "",
-        show_github_ids: bool = False,
     ) -> TableData:
         """Convert Issue list to TableData for structured output (backward compatible)."""
         formatter = IssueTableFormatter()
-        formatter.show_github_ids = show_github_ids
         return formatter.items_to_table_data(list(issues), title, description)
 
     @staticmethod

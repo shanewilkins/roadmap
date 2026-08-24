@@ -27,15 +27,12 @@ COMMAND_REGISTRY: dict[str, CommandLocation] = {
     "today": ("roadmap.adapters.cli.today", "today", "Show your daily workflow summary for the upcoming milestone."),
     "cleanup": ("roadmap.infrastructure.maintenance", "cleanup", "Preview or remove retention-qualified legacy backups."),
     "analysis": ("roadmap.adapters.cli.analysis", "analysis", "Analysis and insights commands."),
-    "comment": ("roadmap.adapters.cli.comment", "comment", "Manage comments on issues and milestones."),
     "config": ("roadmap.adapters.cli.config", "config", "Manage roadmap configuration."),
     "data": ("roadmap.adapters.cli.data", "data", "Export canonical Roadmap data."),
     "git": ("roadmap.adapters.cli.git", "git", "Inspect local Git and link issue branches."),
     "issue": ("roadmap.adapters.cli.issues", "issue", "Manage issues."),
     "milestone": ("roadmap.adapters.cli.milestones", "milestone", "Manage milestones."),
     "project": ("roadmap.adapters.cli.projects", "project", "Manage projects (top-level planning documents)."),
-    "sync": ("roadmap.adapters.cli.sync", "sync", "Sync roadmap with remote repository."),
-    "validate-links": ("roadmap.adapters.cli.sync_validation", "validate_links", "Validate remote links in the database against YAML files."),
 }
 # fmt: on
 

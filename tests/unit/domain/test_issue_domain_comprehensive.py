@@ -5,7 +5,7 @@ Tests focus on:
 - Status transitions and validity
 - Field validation and constraints
 - Relationship handling (milestones, comments, dependencies)
-- Backwards compatibility (legacy github_issue field)
+- Local Git metadata and serialization
 
 Uses parameterization for status combinations and data variations.
 Minimal mocking - testing real Pydantic validation.
@@ -366,48 +366,6 @@ class TestIssueGitTracking:
         assert issue.git_commits == []
 
 
-class TestIssueRemoteIds:
-    """Test remote ID tracking for sync integration."""
-
-    def test_github_issue_stored_in_remote_ids(self):
-        """Issue should store GitHub issue ID in remote_ids dict."""
-        issue = Issue(title="Test", remote_ids={"github": 42})
-
-        assert issue.remote_ids["github"] == 42
-
-    def test_multiple_remote_ids(self):
-        """Issue should support multiple remote system IDs."""
-        issue = Issue(title="Test", remote_ids={"github": 42, "gitlab": 123})
-
-        assert issue.remote_ids["github"] == 42
-        assert issue.remote_ids["gitlab"] == 123
-
-    def test_github_issue_backwards_compatibility_property(self):
-        """Issue should provide github_issue property for backwards compatibility."""
-        issue = Issue(title="Test")
-        issue.github_issue = 42
-
-        assert issue.github_issue == 42
-        assert issue.remote_ids["github"] == 42
-
-    def test_github_issue_setter_validates_positive(self):
-        """Setting github_issue should validate positive integer."""
-        issue = Issue(title="Test")
-
-        with pytest.raises(ValueError, match="must be a positive integer"):
-            issue.github_issue = 0
-
-    def test_github_issue_migration_from_legacy_field(self):
-        """Issue should migrate legacy github_issue field to remote_ids."""
-        # Note: github_issue is a property, not a constructor parameter
-        # It's accessible via property setter/getter for backwards compatibility
-        issue = Issue(title="Test")
-        issue.github_issue = 42
-
-        assert issue.remote_ids.get("github") == 42
-        assert issue.github_issue == 42
-
-
 class TestIssueComments:
     """Test comment associations."""
 
@@ -506,15 +464,11 @@ class TestIssueSerialization:
 
         assert isinstance(data, dict)
 
-    def test_issue_model_dump_exclude_internal_fields(self, p8_complete_issue_data):
-        """Issue should exclude internal file_path and sync metadata."""
+    def test_issue_model_dump_excludes_internal_file_path(self, p8_complete_issue_data):
+        """Issue should exclude its internal file path."""
         issue = Issue(**p8_complete_issue_data)
         issue.file_path = "/some/path"
-        issue.github_sync_metadata = {"synced": True}
 
         data = issue.model_dump()
 
-        # file_path and github_sync_metadata are marked with exclude=True
-        # so they shouldn't appear in the dump by default
         assert "file_path" not in data
-        assert "github_sync_metadata" not in data

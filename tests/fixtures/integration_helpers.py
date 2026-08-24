@@ -39,7 +39,6 @@ class IntegrationTestBase:
     def init_roadmap(
         cli_runner: CliRunner,
         project_name: str = "Test Project",
-        skip_github: bool = True,
     ) -> RoadmapCore:
         """Initialize roadmap in isolated filesystem.
 
@@ -49,7 +48,6 @@ class IntegrationTestBase:
         Args:
             cli_runner: Click CliRunner instance
             project_name: Project name for initialization
-            skip_github: Whether to skip GitHub integration
 
         Returns:
             RoadmapCore instance for the initialized project
@@ -64,8 +62,7 @@ class IntegrationTestBase:
                 "--project-name",
                 project_name,
                 "--non-interactive",
-            ]
-            + (["--skip-github"] if skip_github else []),
+            ],
         )
 
         if result.exit_code != 0:

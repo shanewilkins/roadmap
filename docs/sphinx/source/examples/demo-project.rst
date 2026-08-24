@@ -18,7 +18,7 @@ working example of a Roadmap CLI setup. It demonstrates:
 - Project structure
 - Best practices
 - Real-world workflows
-- GitHub integration
+- Git collaboration with canonical files
 
 Running the Demo
 ================
@@ -38,7 +38,7 @@ The demo project will include:
 
 - Sample projects
 - Multiple milestones
-- Real GitHub synchronization
+- Local projection rebuild and health recovery
 - Example reports and metrics
 
 Status

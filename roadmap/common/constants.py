@@ -56,13 +56,6 @@ class IssueType(StrEnum):
     OTHER = "other"
 
 
-class SyncBackend(StrEnum):
-    """Sync backend types."""
-
-    GITHUB = "github"
-    GIT = "git"
-
-
 # Application Configuration Defaults
 # ============================================================================
 
@@ -71,12 +64,6 @@ DEFAULT_ROADMAP_FILE = "ROADMAP.md"
 DEFAULT_CONFIG_FILE = ".roadmaprc"
 DEFAULT_DATA_DIR = ".roadmap"
 DEFAULT_CACHE_FILE = ".roadmap_cache.json"
-
-# GitHub API defaults
-GITHUB_API_BASE = "https://api.github.com"
-GITHUB_GRAPHQL_ENDPOINT = "https://api.github.com/graphql"
-GITHUB_API_TIMEOUT = 30  # seconds
-GITHUB_RATE_LIMIT_THRESHOLD = 10  # remaining requests before warning
 
 # Display defaults
 DEFAULT_TABLE_WIDTH = 80
@@ -106,10 +93,6 @@ LOG_FORMAT_DEFAULT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 # Error handling defaults
 ERROR_MESSAGE_MAX_LENGTH = 500
 VALIDATION_ERROR_MAX_FIELDS = 10
-
-# Authentication defaults
-AUTH_TOKEN_ENV_VAR = "GITHUB_TOKEN"
-AUTH_TIMEOUT = 30  # seconds
 
 # Git defaults
 GIT_TIMEOUT = 60  # seconds

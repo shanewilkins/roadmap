@@ -7,9 +7,9 @@
 - Implementation specification: [refactor-implementation.md](refactor-implementation.md)
 - Detailed execution and checkpoint protocol:
   [refactor-execution-plan.md](refactor-execution-plan.md)
-- Detailed execution status: Phase 10 operational-boundaries checkpoint
-  accepted on 2026-08-24; work is stopped before Phase 11 of the detailed
-  execution plan.
+- Detailed execution status: Phase 11 remote-sync-removal checkpoint accepted
+  on 2026-08-24; work is stopped before Phase 12 of the detailed execution
+  plan.
 
 ## Decision
 

@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 class RoadmapCore:
     """Legacy coordination API whose concrete graph is owned by Bootstrap."""
 
-    _git = db = git_sync_monitor = github_service = milestone_service = project_service = _init_manager = issues = milestones = projects = team = git = validation = planning = issue_queries = issue_mutations = configuration = resolved_configuration = _console_factory = _git_hook_manager_factory = cast(Any, None)  # fmt: skip
+    _git = db = milestone_service = project_service = _init_manager = issues = milestones = projects = git = planning = issue_queries = issue_mutations = configuration = resolved_configuration = _console_factory = local_git = health = current_identity = cast(Any, None)  # fmt: skip
     issue_service: Any = None
 
     def __init__(
@@ -91,134 +91,6 @@ class RoadmapCore:
         """Update .gitignore to exclude roadmap local data from version control."""
         self._init_manager._update_gitignore()
 
-    def _sync_with_progress(self, message: str) -> dict | None:
-        """Run database sync with progress display.
-
-        Args:
-            message: Progress message to display
-
-        Returns:
-            Sync result dictionary or None
-        """
-        from rich.progress import Progress, SpinnerColumn, TextColumn
-
-        with Progress(
-            SpinnerColumn(),
-            TextColumn(f"[bold blue]{message}..."),
-            transient=True,
-        ) as progress:
-            progress.add_task("sync", total=None)
-            return self.db.smart_sync()
-
-    def _sync_without_progress(self) -> dict | None:
-        """Run database sync without progress display.
-
-        Returns:
-            Sync result dictionary or None
-        """
-        return self.db.smart_sync()
-
-    def _display_sync_result(self, console, message: str, files_synced: int) -> None:
-        """Display sync result message.
-
-        Args:
-            console: Rich console instance
-            message: Message to display
-            files_synced: Number of files synced
-        """
-        console.print(f"✅ {message}: {files_synced} files synced")
-
-    def _handle_first_time_setup(
-        self, console, show_progress: bool, force_rebuild: bool
-    ) -> None:
-        """Handle first-time database initialization.
-
-        Args:
-            console: Rich console instance
-            show_progress: Whether to show progress
-            force_rebuild: Whether full rebuild was requested
-        """
-        if show_progress:
-            sync_result = self._sync_with_progress(
-                "Initializing database from .roadmap/ files"
-            )
-        else:
-            sync_result = self._sync_without_progress()
-
-        if show_progress and sync_result:
-            files_synced = sync_result.get("files_synced", 0)
-            total_files = sync_result.get("total_files", 0)
-            console.print(
-                f"✅ Database initialized: {files_synced}/{total_files} files synced"
-            )
-
-        if not force_rebuild and self._git.is_git_repository():
-            self._ensure_git_hooks_installed(console, show_progress)
-
-    def _handle_incremental_sync(self, console, show_progress: bool) -> None:
-        """Handle incremental database sync.
-
-        Args:
-            console: Rich console instance
-            show_progress: Whether to show progress
-        """
-        if not self.db.has_file_changes():
-            return
-
-        if show_progress:
-            sync_result = self._sync_with_progress(
-                "Updating database with recent changes"
-            )
-        else:
-            sync_result = self._sync_without_progress()
-
-        if show_progress and sync_result:
-            files_synced = sync_result.get("files_synced", 0)
-            self._display_sync_result(console, "Database updated", files_synced)
-
-    def ensure_database_synced(
-        self, force_rebuild: bool = False, show_progress: bool = True
-    ) -> None:
-        """Ensure database is synced with .roadmap/ files.
-
-        This is called automatically on CLI startup to keep SQLite in sync with git files.
-
-        Args:
-            force_rebuild: Force a full rebuild even if database exists
-            show_progress: Show progress indicators during sync
-        """
-        console = self._console_factory()
-
-        if not self.is_initialized():
-            return
-
-        first_time_setup = not self.db.database_exists()
-
-        if first_time_setup or force_rebuild:
-            self._handle_first_time_setup(console, show_progress, first_time_setup)
-        else:
-            self._handle_incremental_sync(console, show_progress)
-
-    def _ensure_git_hooks_installed(self, console, show_progress: bool = True) -> None:
-        """Ensure git hooks are installed for automatic sync."""
-        try:
-            hook_manager = self._git_hook_manager_factory()
-
-            if show_progress:
-                console.print("[dim]Installing git hooks for automatic sync...[/dim]")
-
-            success = hook_manager.install_hooks()
-
-            if show_progress:
-                if success:
-                    console.print("✅ Git hooks installed successfully")
-                else:
-                    console.print("[yellow]⚠️  Git hooks installation failed[/yellow]")
-
-        except Exception as e:
-            if show_progress:
-                console.print(f"[yellow]⚠️  Git hooks setup failed: {e}[/yellow]")
-
     # ========== BACKWARD COMPATIBILITY WRAPPERS ==========
     # These methods delegate to domain coordinators for backward compatibility
     # New code should use: core.issues.method(), core.milestones.method(), etc.
@@ -251,13 +123,6 @@ class RoadmapCore:
             config_data["milestones"] = {
                 "auto_sequence": True,
                 "version_format": "v{major}.{minor}.{patch}",
-            }
-
-        if "sync" not in config_data:
-            config_data["sync"] = {
-                "github_enabled": False,
-                "auto_sync": False,
-                "sync_interval_seconds": 300,
             }
 
         if "display" not in config_data:

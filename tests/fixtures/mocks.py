@@ -41,20 +41,6 @@ def mock_core_initialized():
 
 
 @pytest.fixture(scope="function")
-def mock_core_with_github():
-    """Create mock RoadmapCore with GitHub integration.
-
-    Use this when testing GitHub-related operations.
-
-    Returns:
-        Mock RoadmapCore with GitHub service
-    """
-    return TestDataFactory.create_mock_core(
-        is_initialized=True, github_service=MagicMock()
-    )
-
-
-@pytest.fixture(scope="function")
 def mock_core_simple():
     """Create simple MagicMock core for basic tests.
 
@@ -205,16 +191,6 @@ def mock_git_service():
 
     Returns:
         MagicMock with git service spec
-    """
-    return MagicMock()
-
-
-@pytest.fixture
-def mock_github_client():
-    """Create mock GitHub client for testing.
-
-    Returns:
-        MagicMock with GitHub backend interface spec
     """
     return MagicMock()
 
@@ -461,7 +437,7 @@ def mock_roadmap_core_factory(tmp_path):
     """
     from roadmap.infrastructure.coordination.core import RoadmapCore
 
-    def _factory(roadmap_dir=None, has_github=False, has_repository=True):
+    def _factory(roadmap_dir=None, has_repository=True):
         if roadmap_dir is None:
             roadmap_dir = tmp_path / ".roadmap"
 
@@ -474,9 +450,6 @@ def mock_roadmap_core_factory(tmp_path):
             mock_core.issue_service.repository.list = Mock(return_value=[])
             mock_core.issue_service.repository.get = Mock(return_value=None)
             mock_core.issue_service.repository.save = Mock(return_value=None)
-
-        if has_github:
-            mock_core.github_service = Mock()
 
         return mock_core
 
@@ -970,45 +943,6 @@ def mock_git_factory():
 
 
 @pytest.fixture
-def mock_github_integration_factory():
-    """Factory fixture for GitHub integration mocks (Tier 2: 24 occurrences).
-
-    Returns:
-        Function that creates customized mock GitHub integration objects
-
-    Usage:
-        def test_github_sync(mock_github_integration_factory):
-            integration = mock_github_integration_factory(authenticated=True)
-            # OR with issues
-            integration = mock_github_integration_factory(
-                authenticated=True,
-                issues=[{"id": 1, "title": "Test"}]
-            )
-    """
-
-    def _factory(authenticated=True, sync_result=None, issues=None):
-        """Create mock GitHub integration.
-
-        Args:
-            authenticated: Whether authenticated (default: True)
-            sync_result: Result from sync operation (default: None)
-            issues: List of issues to return (default: [])
-
-        Returns:
-            Mock GitHub integration object
-        """
-        integration = Mock()
-        integration.authenticate.return_value = authenticated
-        integration.sync.return_value = sync_result
-        integration.get_issues.return_value = issues or []
-        integration.is_authenticated.return_value = authenticated
-        integration.close.return_value = None
-        return integration
-
-    return _factory
-
-
-@pytest.fixture
 def mock_git_executor_factory():
     """Factory fixture for Git executor mocks (Tier 3: 17 + 14 = 31 occurrences).
 
@@ -1054,80 +988,31 @@ def mock_git_executor_factory():
 
 @pytest.fixture
 def mock_config_factory():
-    """Factory fixture for configuration mocks (Tier 3: 15 occurrences).
+    """Factory fixture for generic configuration mocks.
 
     Returns:
         Function that creates customized mock config objects
 
     Usage:
-        def test_github_config(mock_config_factory):
-            config = mock_config_factory()
-            # OR with specific values
-            config = mock_config_factory(
-                github_token="token_123",
-                repo_owner="user",
-                repo_name="repo"
-            )
+        def test_config(mock_config_factory):
+            config = mock_config_factory(table_width=120)
     """
 
-    def _factory(github_token="token", repo_owner="owner", repo_name="repo"):
+    def _factory(**values):
         """Create mock configuration.
 
         Args:
-            github_token: GitHub token (default: "token")
-            repo_owner: Repository owner (default: "owner")
-            repo_name: Repository name (default: "repo")
+            values: Attribute values exposed by the mock.
 
         Returns:
             Mock config object
         """
         config = Mock()
-        config.github_token = github_token
-        config.repo_owner = repo_owner
-        config.repo_name = repo_name
+        for key, value in values.items():
+            setattr(config, key, value)
         config.get = Mock(
-            side_effect=lambda key, default=None: {
-                "github_token": github_token,
-                "repo_owner": repo_owner,
-                "repo_name": repo_name,
-            }.get(key, default)
+            side_effect=lambda key, default=None: values.get(key, default)
         )
         return config
-
-    return _factory
-
-
-@pytest.fixture
-def mock_github_manager_factory():
-    """Factory fixture for GitHub manager mocks (Tier 4: 10 occurrences).
-
-    Returns:
-        Function that creates customized mock GitHub manager objects
-
-    Usage:
-        def test_github_ops(mock_github_manager_factory):
-            manager = mock_github_manager_factory()
-            # OR with custom behavior
-            manager = mock_github_manager_factory(
-                list_issues_result=[{"id": 1}]
-            )
-    """
-
-    def _factory(list_issues_result=None, create_issue_result=None):
-        """Create mock GitHub manager.
-
-        Args:
-            list_issues_result: Result from list_issues (default: [])
-            create_issue_result: Result from create_issue (default: {})
-
-        Returns:
-            Mock GitHub manager object
-        """
-        manager = Mock()
-        manager.list_issues.return_value = list_issues_result or []
-        manager.create_issue.return_value = create_issue_result or {}
-        manager.update_issue.return_value = None
-        manager.delete_issue.return_value = None
-        return manager
 
     return _factory

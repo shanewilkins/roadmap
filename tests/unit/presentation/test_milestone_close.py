@@ -10,9 +10,7 @@ class TestMilestoneClose:
         """Test the milestone close convenience command."""
         with cli_runner.isolated_filesystem():
             # Initialize first
-            init_result = cli_runner.invoke(
-                main, ["init", "-y", "--skip-github", "--skip-project"]
-            )
+            init_result = cli_runner.invoke(main, ["init", "-y", "--skip-project"])
             assert init_result.exit_code == 0
 
             # Create a milestone

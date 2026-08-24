@@ -1,7 +1,7 @@
 """Initialization service for roadmap CLI.
 
 This module handles project initialization workflow including
-project detection, creation, GitHub setup, and validation.
+project detection, creation, and validation.
 """
 
 from pathlib import Path

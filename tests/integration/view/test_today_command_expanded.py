@@ -303,7 +303,6 @@ class TestTodayCommandErrorHandling:
                     "--project-name",
                     "Empty Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0
@@ -360,7 +359,6 @@ class TestTodayCommandErrorHandling:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0
@@ -553,7 +551,6 @@ class TestTodayCommandMultipleScenarios:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0
@@ -617,7 +614,6 @@ class TestTodayCommandMultipleScenarios:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0
@@ -671,7 +667,6 @@ class TestTodayCommandMultipleScenarios:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0

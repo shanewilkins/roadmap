@@ -43,7 +43,7 @@ def get_infrastructure_logger(name: str) -> structlog.stdlib.BoundLogger:
     """Get logger for infrastructure layer.
 
     Args:
-        name: Component name (e.g., "github", "storage")
+        name: Component name (for example, "storage")
 
     Returns:
         Logger with infrastructure namespace

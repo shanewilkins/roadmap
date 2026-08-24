@@ -73,7 +73,6 @@ class TestCLIInit:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
                 lambda result: (
                     result.exit_code == 0
@@ -92,7 +91,6 @@ class TestCLIInit:
                     "--description",
                     "Test project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
                 lambda result: (
                     result.exit_code == 0
@@ -109,7 +107,6 @@ class TestCLIInit:
                     "--project-name",
                     "Test",
                     "--non-interactive",
-                    "--skip-github",
                 ],
                 lambda result: result.exit_code == 0 and Path(".roadmap").exists(),
             ),

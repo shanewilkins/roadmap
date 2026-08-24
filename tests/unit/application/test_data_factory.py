@@ -90,7 +90,6 @@ class TestDataFactory:
         issue.estimated_hours = kwargs.get("estimated_hours", None)
         issue.created_at = kwargs.get("created_at", datetime.now(UTC))
         issue.updated_at = kwargs.get("updated_at", datetime.now(UTC))
-        issue.github_issue_number = kwargs.get("github_issue_number", None)
 
         return issue
 

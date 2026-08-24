@@ -10,9 +10,7 @@ class TestIssueBranchCreation:
         """Test creating an issue with --git-branch flag."""
         with cli_runner.isolated_filesystem():
             # Initialize roadmap first
-            init_result = cli_runner.invoke(
-                main, ["init", "-y", "--skip-github", "--skip-project"]
-            )
+            init_result = cli_runner.invoke(main, ["init", "-y", "--skip-project"])
             assert init_result.exit_code == 0
 
             # Create issue with git branch flag

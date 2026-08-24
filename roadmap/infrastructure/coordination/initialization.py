@@ -148,7 +148,6 @@ priority: "medium"
 status: "todo"
 milestone: ""
 labels: []
-github_issue: null
 created: "{{ created_date }}"
 updated: "{{ updated_date }}"
 assignee: ""
@@ -188,7 +187,6 @@ name: "{{ milestone_name }}"
 description: "{{ description }}"
 due_date: "{{ due_date }}"
 status: "open"
-github_milestone: null
 created: "{{ created_date }}"
 updated: "{{ updated_date }}"
 ---

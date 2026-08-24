@@ -31,7 +31,6 @@ class TestCleanupCommand:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -56,7 +55,6 @@ class TestCleanupCommand:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -76,7 +74,6 @@ class TestCleanupCommand:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -95,7 +92,6 @@ class TestCleanupCommand:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -114,7 +110,6 @@ class TestCleanupCommand:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -133,7 +128,6 @@ class TestCleanupCommand:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -159,7 +153,6 @@ class TestProjectCommands:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -190,7 +183,6 @@ class TestProjectCommands:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -218,7 +210,6 @@ class TestProjectCommands:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -243,7 +234,6 @@ class TestProjectCommands:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -280,7 +270,6 @@ class TestProjectCommands:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -335,7 +324,6 @@ class TestCommentCommands:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"
@@ -390,7 +378,6 @@ class TestCommentCommands:
                     "--project-name",
                     "Test Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0, f"Init failed: {result.output}"

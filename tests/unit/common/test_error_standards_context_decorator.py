@@ -153,8 +153,8 @@ class TestSafeOperationDecorator:
         call_count = 0
 
         @safe_operation(
-            OperationType.SYNC,
-            "GitHub",
+            OperationType.READ,
+            "LocalStore",
             retryable=True,
             max_retries=3,
             retry_delay=0.01,
@@ -175,8 +175,8 @@ class TestSafeOperationDecorator:
         call_count = 0
 
         @safe_operation(
-            OperationType.SYNC,
-            "GitHub",
+            OperationType.READ,
+            "LocalStore",
             retryable=True,
             max_retries=3,
             retry_delay=0.01,
@@ -195,8 +195,8 @@ class TestSafeOperationDecorator:
         call_count = 0
 
         @safe_operation(
-            OperationType.SYNC,
-            "GitHub",
+            OperationType.READ,
+            "LocalStore",
             retryable=True,
             max_retries=3,
             retry_delay=0.01,
@@ -242,8 +242,8 @@ class TestSafeOperationDecorator:
         call_count = 0
 
         @safe_operation(
-            OperationType.SYNC,
-            "GitHub",
+            OperationType.READ,
+            "LocalStore",
             retryable=True,
             max_retries=4,
             retry_delay=0.1,

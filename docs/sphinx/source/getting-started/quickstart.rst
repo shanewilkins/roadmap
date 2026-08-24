@@ -8,7 +8,7 @@ What is Roadmap CLI?
 ====================
 
 Roadmap CLI is a git-native command-line tool for managing project roadmaps
-with local files, structured reporting, and optional GitHub integration.
+with canonical local files, structured reporting, and ordinary Git collaboration.
 
 Think of it as a structured way to plan projects using:
 
@@ -155,17 +155,16 @@ Common Workflows
     # Monitor progress
     roadmap milestone view "v2.0"
 
-**GitHub Integration** (Optional)
+**Git collaboration** (Optional)
 
-Connect to GitHub for syncing:
+Share canonical files using ordinary Git:
 
 .. code-block:: bash
 
-    # Initialize with GitHub
-    roadmap init my-project --github-token <your-token>
-
-    # Sync with GitHub
-    roadmap git sync
+    git add .roadmap/
+    git commit -m "Update roadmap"
+    git pull --rebase
+    git push
 
 See :doc:`../user-guide/workflows` for detailed workflow guides.
 
@@ -224,7 +223,7 @@ You now understand the basics. Explore more:
 
 - Create multiple projects
 - Add many issues to track
-- Use GitHub integration for team collaboration
+- Use the repository's normal Git review workflow for team collaboration
 - Automate with scripts
 
 Happy planning! 🎉

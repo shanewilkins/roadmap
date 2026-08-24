@@ -88,14 +88,12 @@ def build_mock_repo(
 
 
 def build_mock_core(
-    has_github: bool = False,
     has_repository: bool = True,
     **kwargs: Any,
 ) -> Mock:
     """Build a mock RoadmapCore instance with optional customization.
 
     Args:
-        has_github: If True, add github_service to mock
         has_repository: If True, add issue_service.repository to mock
         **kwargs: Additional attributes to set on the mock
 
@@ -107,9 +105,6 @@ def build_mock_core(
     if has_repository:
         mock_core.issue_service = Mock()
         mock_core.issue_service.repository = build_mock_repo()
-
-    if has_github:
-        mock_core.github_service = Mock()
 
     return mock_core
 
@@ -205,7 +200,6 @@ class CoreMockBuilder:
 
     Example:
         mock_core = (CoreMockBuilder()
-                     .with_github()
                      .with_repository(has_issues=True)
                      .build())
     """
@@ -213,14 +207,8 @@ class CoreMockBuilder:
     def __init__(self) -> None:
         """Initialize builder."""
         self._attrs: dict[str, Any] = {}
-        self._has_github = False
         self._has_repository = False
         self._repo_config: dict[str, Any] = {}
-
-    def with_github(self) -> "CoreMockBuilder":
-        """Add GitHub service to mock."""
-        self._has_github = True
-        return self
 
     def with_repository(self, **kwargs: Any) -> "CoreMockBuilder":
         """Add repository to mock."""
@@ -241,9 +229,6 @@ class CoreMockBuilder:
             mock_core.issue_service = Mock()
             mock_core.issue_service.repository = build_mock_repo(**self._repo_config)
 
-        if self._has_github:
-            mock_core.github_service = Mock()
-
         return mock_core
 
 
@@ -253,14 +238,12 @@ class CoreMockBuilder:
 
 
 def build_mock_roadmap_core(
-    has_github: bool = False,
     has_repository: bool = True,
     **kwargs: Any,
 ) -> Mock:
     """Build a mock RoadmapCore instance with custom attributes.
 
     Args:
-        has_github: If True, add github_service
         has_repository: If True, add issue_service with repository
         **kwargs: Additional attributes (e.g., roadmap_dir)
 
@@ -276,9 +259,6 @@ def build_mock_roadmap_core(
     if has_repository:
         mock_core.issue_service = Mock()
         mock_core.issue_service.repository = build_mock_repo()
-
-    if has_github:
-        mock_core.github_service = Mock()
 
     return mock_core
 

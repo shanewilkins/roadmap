@@ -5,7 +5,6 @@ This package organizes test fixtures into logical modules:
   - workspace.py: Workspace isolation and temporary directories
   - mocks.py: Core object mocks
   - performance.py: Performance-optimized fixtures
-  - github.py: GitHub integration fixtures
   - assertions.py: Assertion helpers
   - integration_helpers.py: Integration test utilities
   - data_factories.py: Data factories for test scenarios
@@ -44,13 +43,6 @@ from .data_factories import (
     MilestoneScenarioFactory,
     TestDataBuilder,
 )
-from .github import (
-    github_api_response,
-    github_webhook_payload,
-    mock_github_client,
-    patch_github_integration,
-    webhook_signature_creator,
-)
 from .integration_helpers import IntegrationTestBase
 from .io import (
     assert_output,
@@ -86,15 +78,12 @@ from .mocks import (
     mock_core,
     mock_core_initialized,
     mock_core_simple,
-    mock_core_with_github,
     mock_core_with_projects,
     mock_core_with_repo_factory,
     mock_database_connection_factory,
     mock_git_executor_factory,
     mock_git_factory,
     mock_git_service,
-    mock_github_integration_factory,
-    mock_github_manager_factory,
     mock_issue,
     mock_issue_entity,
     mock_issue_factory,
@@ -114,7 +103,6 @@ from .patch_helpers import (
     with_file_and_git,
     with_file_operations,
     with_git_service,
-    with_github_client,
     with_parser,
     with_persistence,
 )
@@ -124,7 +112,6 @@ from .performance import (
     patch_filesystem_operations,
     performance_test_config,
     selective_git_mock,
-    session_mock_github_client,
     shared_git_repo,
 )
 from .presenter_and_dto_fixtures import (
@@ -164,7 +151,6 @@ __all__ = [
     # Phase 1 Fixtures & Utilities
     "IssueFactory",
     "with_file_operations",
-    "with_github_client",
     "with_git_service",
     "with_parser",
     "with_persistence",
@@ -213,7 +199,6 @@ __all__ = [
     "mock_core",
     "mock_core_initialized",
     "mock_core_simple",
-    "mock_core_with_github",
     "mock_core_with_projects",
     "mock_database_connection_factory",
     "mock_config",
@@ -226,7 +211,6 @@ __all__ = [
     "mock_project_entity",
     "mock_persistence",
     "mock_git_service",
-    "mock_github_client",
     "mock_path_factory",
     "roadmap_core",
     "lightweight_mock_core",
@@ -236,10 +220,8 @@ __all__ = [
     "mock_response_factory",
     "mock_console_factory",
     "mock_git_factory",
-    "mock_github_integration_factory",
     "mock_git_executor_factory",
     "mock_config_factory",
-    "mock_github_manager_factory",
     "mock_issue_factory",
     "mock_milestone_factory",
     "mock_comment_factory",
@@ -254,12 +236,7 @@ __all__ = [
     "patch_filesystem_operations",
     "mock_git_operations",
     "selective_git_mock",
-    "session_mock_github_client",
     # GitHub fixtures
-    "github_webhook_payload",
-    "webhook_signature_creator",
-    "github_api_response",
-    "patch_github_integration",
     # Assertion fixtures and classes
     "assert_cli",
     "assert_file",

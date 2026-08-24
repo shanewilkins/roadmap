@@ -291,7 +291,6 @@ def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
             "--project-name",
             "Checkpoint Project",
             "--non-interactive",
-            "--skip-github",
         ],
         workspace,
     )

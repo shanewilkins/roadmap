@@ -10,8 +10,6 @@ from structlog import get_logger
 from roadmap.adapters.cli.presentation.core_initialization_presenter import (
     CoreInitializationPresenter,
 )
-from roadmap.common.constants import SyncBackend
-from roadmap.common.initialization.github import GitHubInitializationService
 from roadmap.core.services.initialization import (
     InitializationLock,
     InitializationManifest,
@@ -29,7 +27,7 @@ presenter = CoreInitializationPresenter()
 
 
 def show_dry_run_info(
-    name: str, is_initialized: bool, force: bool, skip_project: bool, skip_github: bool
+    name: str, is_initialized: bool, force: bool, skip_project: bool
 ) -> None:
     """Display dry-run information without making changes."""
     click.secho("🚀 Roadmap CLI Initialization", fg="cyan", bold=True)
@@ -50,9 +48,6 @@ def show_dry_run_info(
         ]
         if not skip_project:
             actions.append("Create main project")
-        if not skip_github:
-            actions.append("Optionally configure GitHub")
-
         click.echo("Planned actions:")
         for action in actions:
             click.echo(f" - {action}")
@@ -138,16 +133,13 @@ def _handle_force_reinitialization(custom_core, workflow, name):
     return True
 
 
-def _handle_init_dry_run(
-    name: str, force: bool, skip_project: bool, skip_github: bool, log
-) -> bool:
+def _handle_init_dry_run(name: str, force: bool, skip_project: bool, log) -> bool:
     """Handle dry-run mode for init.
 
     Args:
         name: Roadmap name
         force: Force flag
         skip_project: Skip project setup
-        skip_github: Skip GitHub setup
         log: Logger instance
 
     Returns:
@@ -157,7 +149,7 @@ def _handle_init_dry_run(
     config_file = roadmap_dir / "config.yaml"
     is_initialized = roadmap_dir.exists() and config_file.exists()
     log.info("dry_run_mode", is_initialized=is_initialized)
-    show_dry_run_info(name, is_initialized, force, skip_project, skip_github)
+    show_dry_run_info(name, is_initialized, force, skip_project)
     return False
 
 
@@ -281,18 +273,6 @@ def _present_project_results(project_info: dict | None) -> None:
             presenter.present_project_joined(project_info.get("name", ""))
 
 
-def _persist_sync_backend_config(custom_core: Any, sync_backend: str, log) -> None:
-    """Do not persist provider transport policy in Roadmap configuration.
-
-    Args:
-        custom_core: The roadmap core instance
-        sync_backend: The sync backend to persist
-        log: Logger instance for recording operations
-    """
-    del custom_core
-    log.info("sync_backend_owned_by_git", requested_backend=sync_backend)
-
-
 def _finalize_initialization(
     custom_core: Any,
     name: str,
@@ -352,27 +332,6 @@ def _finalize_initialization(
     help="Skip project creation",
 )
 @click.option(
-    "--skip-github",
-    is_flag=True,
-    help="Skip GitHub integration setup",
-)
-@click.option(
-    "--sync-backend",
-    type=click.Choice(["github", "git"]),
-    default="github",
-    help="Sync backend to use: 'github' for GitHub API, 'git' for vanilla Git push/pull",
-)
-@click.option(
-    "--github-repo",
-    default=None,
-    help="GitHub repository (owner/repo)",
-)
-@click.option(
-    "--github-token",
-    default=None,
-    help="GitHub personal access token",
-)
-@click.option(
     "--interactive/--non-interactive",
     default=True,
     help="Run in interactive mode with prompts (default: interactive)",
@@ -412,10 +371,6 @@ def init(
     project_name: str | None,
     description: str | None,
     skip_project: bool,
-    skip_github: bool,
-    sync_backend: str,
-    github_repo: str | None,
-    github_token: str | None,
     interactive: bool,
     yes: bool,
     dry_run: bool,
@@ -432,10 +387,6 @@ def init(
         project_name=project_name,
         description=description,
         skip_project=skip_project,
-        skip_github=skip_github,
-        sync_backend=sync_backend,
-        github_repo=github_repo,
-        github_token=github_token,
         interactive=interactive,
         yes=yes,
         dry_run=dry_run,
@@ -447,7 +398,6 @@ def init(
     log = logger.bind(
         operation="init",
         roadmap_name=params.name,
-        skip_github=params.skip_github,
         interactive=params.interactive,
         dry_run=params.dry_run,
         force=params.force,
@@ -462,9 +412,7 @@ def init(
 
     # Handle dry-run mode
     if params.dry_run:
-        _handle_init_dry_run(
-            params.name, params.force, params.skip_project, params.skip_github, log
-        )
+        _handle_init_dry_run(params.name, params.force, params.skip_project, log)
         return
 
     # Setup environment
@@ -512,23 +460,6 @@ def init(
 
         # Present project results
         _present_project_results(project_info)
-
-        # Configure GitHub
-        github_service = GitHubInitializationService(custom_core)
-        sync_backend_enum = SyncBackend(params.sync_backend)
-        github_service.setup(
-            params.skip_github,
-            params.github_repo,
-            detected_info,
-            params.interactive,
-            params.yes,
-            github_token,
-            presenter,
-            sync_backend=sync_backend_enum,
-        )
-
-        # Persist sync backend configuration
-        _persist_sync_backend_config(custom_core, params.sync_backend, log)
 
         # Finalize and validate
         _finalize_initialization(

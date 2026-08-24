@@ -16,9 +16,9 @@ Example:
     def create_issue(title: str) -> Issue:
         return Issue(title)  # Errors automatically caught, logged, wrapped
 
-    @safe_operation(OperationType.SYNC, "GitHub", retryable=True, max_retries=3)
-    def fetch_issues(project_id: str) -> list[dict]:
-        return github_api.get_issues(project_id)  # Retries on transient failures
+    @safe_operation(OperationType.READ, "Issue")
+    def load_issue(issue_id: str) -> Issue:
+        return repository.get(issue_id)
 """
 
 import time
@@ -51,12 +51,9 @@ class OperationType:
     READ = "read"
     UPDATE = "update"
     DELETE = "delete"
-    SYNC = "sync"
     IMPORT = "import"
     EXPORT = "export"
     VALIDATE = "validate"
-    AUTHENTICATE = "authenticate"
-    FETCH = "fetch"
     SAVE = "save"
 
 

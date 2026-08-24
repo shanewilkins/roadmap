@@ -8,7 +8,6 @@ Fixture organization:
   tests/fixtures/workspace.py   - Workspace isolation and temp directories
   tests/fixtures/mocks.py       - Core object mocks
   tests/fixtures/performance.py - Performance-optimized fixtures
-  tests/fixtures/github.py      - GitHub integration fixtures
   tests/fixtures/assertions.py  - Assertion helpers
   tests/fixtures/validators.py  - Infrastructure validator fixtures
 """
@@ -47,9 +46,6 @@ from tests.fixtures import (
     fast_mock_core,
     # Phase 9: Temporary directory factories
     git_repo_factory,
-    github_api_response,
-    # GitHub fixtures
-    github_webhook_payload,
     # Workspace fixtures
     isolate_roadmap_workspace,
     isolated_workspace,
@@ -71,16 +67,12 @@ from tests.fixtures import (
     mock_core,
     mock_core_initialized,
     mock_core_simple,
-    mock_core_with_github,
     mock_core_with_projects,
     mock_core_with_repo_factory,
     mock_database_connection_factory,
     mock_git_executor_factory,
     mock_git_factory,
     mock_git_operations,
-    mock_github_client,
-    mock_github_integration_factory,
-    mock_github_manager_factory,
     mock_in_progress_issue,
     mock_issue,
     mock_issue_entity,
@@ -98,7 +90,6 @@ from tests.fixtures import (
     mock_roadmap_core_factory,
     optimized_git_repo,
     patch_filesystem_operations,
-    patch_github_integration,
     # Performance fixtures
     performance_test_config,
     progress_data,
@@ -110,7 +101,6 @@ from tests.fixtures import (
     roadmap_structure_factory,
     roadmap_workspace,
     selective_git_mock,
-    session_mock_github_client,
     session_temp_workspace,
     shared_git_repo,
     # IO fixtures
@@ -123,7 +113,6 @@ from tests.fixtures import (
     temp_roadmap_with_git_context,
     temp_roadmap_with_projects,
     temp_workspace,
-    webhook_signature_creator,
 )
 from tests.fixtures.conftest import pytest_collection_modifyitems, setup_test_logging
 
@@ -158,8 +147,6 @@ __all__ = [
     "cli_test_data",
     "effort_data",
     "fast_mock_core",
-    "github_api_response",
-    "github_webhook_payload",
     "isolate_roadmap_workspace",
     "large_effort_data",
     "lightweight_mock_core",
@@ -178,16 +165,12 @@ __all__ = [
     "mock_core",
     "mock_core_initialized",
     "mock_core_simple",
-    "mock_core_with_github",
     "mock_core_with_projects",
     "mock_core_with_repo_factory",
     "mock_database_connection_factory",
     "mock_git_factory",
     "mock_git_executor_factory",
     "mock_git_operations",
-    "mock_github_client",
-    "mock_github_integration_factory",
-    "mock_github_manager_factory",
     "mock_in_progress_issue",
     "mock_issue",
     "mock_issue_entity",
@@ -205,7 +188,6 @@ __all__ = [
     "mock_roadmap_core_factory",
     "optimized_git_repo",
     "patch_filesystem_operations",
-    "patch_github_integration",
     "performance_test_config",
     "progress_data",
     "project_description_content",
@@ -219,7 +201,6 @@ __all__ = [
     "roadmap_structure_factory",
     "roadmap_workspace",
     "selective_git_mock",
-    "session_mock_github_client",
     "session_temp_workspace",
     "shared_git_repo",
     "strip_ansi_fixture",
@@ -231,7 +212,6 @@ __all__ = [
     "temp_roadmap_with_git_context",
     "temp_roadmap_with_projects",
     "temp_workspace",
-    "webhook_signature_creator",
     # Builder functions (deprecated - use fixture factories instead)
     "build_mock_repo",
     "build_mock_core",

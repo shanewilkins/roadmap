@@ -54,12 +54,19 @@ class IssueQueryService:
         self, my_issues: bool, assignee: str | None
     ) -> tuple[list[Issue], str] | None:
         """Get issues for assignee-based filters. Returns None if no match."""
+        selected_assignee = assignee
         if my_issues:
-            return self.core.team.get_my_issues(), "my"
-        if assignee:
-            return self.core.team.get_assigned_issues(
-                assignee
-            ), f"assigned to {assignee}"
+            selected_assignee = self.core.current_identity.current_identity()
+        if selected_assignee:
+            issues = [
+                issue
+                for issue in self.core.issues.list()
+                if issue.assignee == selected_assignee
+            ]
+            description = "my" if my_issues else f"assigned to {selected_assignee}"
+            return issues, description
+        if my_issues:
+            return [], "my"
         return None
 
     def _get_issues_for_collection_filters(

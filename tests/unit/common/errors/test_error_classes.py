@@ -9,7 +9,6 @@ from roadmap.common.errors.error_file import (
     FileWriteError,
 )
 from roadmap.common.errors.error_git import ConfigurationError, GitOperationError
-from roadmap.common.errors.error_network import NetworkError
 from roadmap.common.errors.error_security import SecurityError
 
 
@@ -152,27 +151,6 @@ class TestSecurityError:
         assert error.message == "Access denied"
 
 
-class TestNetworkError:
-    """Tests for NetworkError."""
-
-    def test_network_error_basic(self):
-        """Test basic NetworkError."""
-        error = NetworkError("Connection failed")
-
-        assert error.message == "Connection failed"
-        assert error.category == ErrorCategory.NETWORK
-
-    def test_network_error_with_details(self):
-        """Test NetworkError with endpoint/status."""
-        error = NetworkError(
-            "API error", url="https://api.github.com/repos", status_code=403
-        )
-
-        assert error.message == "API error"
-        assert error.url == "https://api.github.com/repos"
-        assert error.status_code == 403
-
-
 class TestErrorInheritance:
     """Tests for error class hierarchy."""
 
@@ -199,9 +177,4 @@ class TestErrorInheritance:
     def test_security_error_is_roadmap_error(self):
         """Test that SecurityError is a RoadmapError."""
         error = SecurityError("Test")
-        assert isinstance(error, RoadmapError)
-
-    def test_network_error_is_roadmap_error(self):
-        """Test that NetworkError is a RoadmapError."""
-        error = NetworkError("Test")
         assert isinstance(error, RoadmapError)

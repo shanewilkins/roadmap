@@ -15,9 +15,9 @@ recreatable without changing the semantic content of those files.
 
 ## Does Roadmap synchronize with GitHub Issues?
 
-Not in 0.2. Experimental 0.1.1 provider-sync commands are deprecated and will
-be removed. Store an external URL or ID as ordinary issue content if useful,
-and use normal Git commands to collaborate on Roadmap files.
+No. Experimental 0.1.1 provider-sync commands are absent in 0.2. Store an
+external URL or ID as ordinary issue content if useful, and use normal Git
+commands to collaborate on Roadmap files.
 
 ## Does a commit message close an issue automatically?
 

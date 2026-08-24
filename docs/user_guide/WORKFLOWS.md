@@ -117,9 +117,9 @@ Make a Git commit or backup before applying repair. The 0.2 repair contract is
 diagnosis-first and scoped; canonical files remain authoritative, and a damaged
 SQLite projection must be rebuildable without changing their semantic content.
 
-## Deprecated 0.1.1 workflows
+## Removed 0.1.1 workflows
 
-Do not build new automation around these experimental surfaces:
+These experimental surfaces are absent in 0.2:
 
 - `roadmap sync` or `roadmap git sync`;
 - GitHub link, lookup, unlink, or link-validation commands;
@@ -130,4 +130,5 @@ Do not build new automation around these experimental surfaces:
 Use Git directly for network collaboration and explicit Roadmap commands for
 planning state. See the
 [0.2 public contract](../architecture/public-contract-0.2.md) for migration
-guidance and the complete compatibility inventory.
+guidance, the [removal guide](REMOTE_SYNC_REMOVAL_0_2.md), and the complete
+compatibility inventory.

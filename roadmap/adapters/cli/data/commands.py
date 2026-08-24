@@ -213,18 +213,3 @@ def _render(records: tuple[IssueQueryRecord, ...], format_name: str) -> str:
 
 def _markdown(value: object) -> str:
     return str(value).replace("|", "\\|").replace("\n", "<br>")
-
-
-@data.command("generate-report", hidden=True)
-@click.option(
-    "--type",
-    "report_type",
-    type=click.Choice(["summary", "detailed", "analytics"]),
-)
-@click.option("--output", "-o")
-def generate_report(report_type: str | None, output: str | None) -> None:
-    """Deprecated placeholder retained only until Phase 11 command removal."""
-    del report_type, output
-    raise click.ClickException(
-        "The placeholder report command is not supported; use 'roadmap data export'."
-    )

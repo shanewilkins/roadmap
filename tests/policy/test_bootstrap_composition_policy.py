@@ -37,13 +37,11 @@ import socket
 import sys
 from unittest.mock import patch
 
-import keyring
 from click.testing import CliRunner
 
 with (
     patch.object(pathlib.Path, "cwd", side_effect=AssertionError("cwd accessed")),
     patch.object(pathlib.Path, "exists", side_effect=AssertionError("filesystem accessed")),
-    patch.object(keyring, "get_password", side_effect=AssertionError("keyring accessed")),
     patch.object(socket, "create_connection", side_effect=AssertionError("network accessed")),
 ):
     import roadmap.adapters.cli

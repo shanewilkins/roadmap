@@ -82,8 +82,8 @@ class UnifiedDateTimeParser:
         Returns:
             Parsed datetime or None
         """
-        if source_type == "github" or cls._is_github_format(value):
-            return cls.parse_github_timestamp(value)
+        if source_type == "utc" or cls._is_utc_format(value):
+            return cls.parse_utc_timestamp(value)
         elif source_type == "iso" or cls._is_iso_format(value):
             return cls.parse_iso_datetime(value, assumed_timezone)
         elif source_type == "file":
@@ -101,13 +101,13 @@ class UnifiedDateTimeParser:
         - String datetime values in various formats
         - Existing datetime objects (ensures timezone awareness)
         - None values (returns None)
-        - GitHub API timestamps (Z suffix)
+        - UTC timestamps (Z suffix)
         - File frontmatter datetimes
         - User input in multiple formats
 
         Args:
             value: Any datetime-like value (string, datetime, None)
-            source_type: Hint for parsing behavior ("user", "github", "file", "iso")
+            source_type: Hint for parsing behavior ("user", "utc", "file", "iso")
             assumed_timezone: Timezone to assume for naive datetimes
 
         Returns:
@@ -130,14 +130,14 @@ class UnifiedDateTimeParser:
         )
 
     @classmethod
-    def parse_github_timestamp(cls, github_timestamp: str) -> datetime:
-        """Specialized GitHub API timestamp parsing.
+    def parse_utc_timestamp(cls, utc_timestamp: str) -> datetime:
+        """Specialized UTC timestamp parsing.
 
-        Handles GitHub's ISO format timestamps which typically end with 'Z' (UTC).
+        Handles UTC ISO format timestamps which typically end with 'Z' (UTC).
         Also handles malformed test timestamps with mixed timezone formats.
 
         Args:
-            github_timestamp: GitHub API timestamp string
+            utc_timestamp: UTC timestamp string
 
         Returns:
             Timezone-aware datetime in UTC
@@ -145,25 +145,23 @@ class UnifiedDateTimeParser:
         Raises:
             ValueError: If timestamp cannot be parsed
         """
-        if not github_timestamp:
+        if not utc_timestamp:
             return datetime.min.replace(tzinfo=UTC)
 
         # Handle malformed timestamps from tests (e.g., "2025-01-01T00:00:00+00:00Z")
-        if github_timestamp.endswith("Z") and "+00:00" in github_timestamp:
+        if utc_timestamp.endswith("Z") and "+00:00" in utc_timestamp:
             # Remove the trailing Z if there's already timezone info
-            github_timestamp = github_timestamp[:-1]
-        elif github_timestamp.endswith("Z"):
-            # Standard GitHub API format: replace Z with +00:00
-            github_timestamp = github_timestamp.replace("Z", "+00:00")
+            utc_timestamp = utc_timestamp[:-1]
+        elif utc_timestamp.endswith("Z"):
+            # Standard UTC ISO format: replace Z with +00:00
+            utc_timestamp = utc_timestamp.replace("Z", "+00:00")
 
         try:
             # Parse the timestamp and ensure it's in UTC
-            dt = datetime.fromisoformat(github_timestamp)
+            dt = datetime.fromisoformat(utc_timestamp)
             return ensure_timezone_aware(dt, "UTC")
         except ValueError as e:
-            raise ValueError(
-                f"Invalid GitHub timestamp format: {github_timestamp}"
-            ) from e
+            raise ValueError(f"Invalid UTC timestamp format: {utc_timestamp}") from e
 
     @classmethod
     def parse_file_datetime(
@@ -249,8 +247,8 @@ class UnifiedDateTimeParser:
             return None
 
     @classmethod
-    def _is_github_format(cls, value: str) -> bool:
-        """Check if string looks like a GitHub API timestamp."""
+    def _is_utc_format(cls, value: str) -> bool:
+        """Check if string looks like a UTC timestamp."""
         return value.endswith("Z") or (
             "T" in value and (":" in value) and ("+" in value or "Z" in value)
         )
@@ -298,11 +296,6 @@ def parse_datetime(
     return UnifiedDateTimeParser.parse_any_datetime(
         value, source_type, assumed_timezone
     )
-
-
-def parse_github_datetime(github_timestamp: str) -> datetime:
-    """Parse GitHub timestamp format."""
-    return UnifiedDateTimeParser.parse_github_timestamp(github_timestamp)
 
 
 def parse_file_datetime(

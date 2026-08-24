@@ -1,7 +1,7 @@
 """Assignee validator interface.
 
 Defines the contract for assignee validation implementations that can be
-swapped based on the configured sync backend.
+implemented without a provider dependency.
 """
 
 from typing import Protocol
@@ -10,9 +10,7 @@ from typing import Protocol
 class AssigneeValidator(Protocol):
     """Protocol for assignee validation.
 
-    Implementations validate assignees according to their backend's rules.
-    For example, GitHub validator checks against repository collaborators,
-    while a no-op validator always accepts any assignee.
+    Implementations validate and normalize local assignee identities.
     """
 
     def validate(self, assignee: str) -> tuple[bool, str]:

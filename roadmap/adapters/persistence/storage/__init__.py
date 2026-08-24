@@ -6,7 +6,6 @@ Organizes large query and conflict operations into separate service files:
 - project_storage.py: Project CRUD operations (80 LOC)
 - milestone_storage.py: Milestone CRUD operations (70 LOC)
 - issue_storage.py: Issue CRUD operations (80 LOC)
-- sync_state_storage.py: Sync state and file synchronization (180 LOC)
 - queries.py: Complex database queries and aggregations (190 LOC)
 - conflicts.py: Git conflict detection and handling (80 LOC)
 """
@@ -21,7 +20,6 @@ from .state_manager import (
     get_state_manager,
     initialize_state_manager,
 )
-from .sync_state_storage import SyncStateStorage
 
 __all__ = [
     "ConnectionManager",
@@ -30,7 +28,6 @@ __all__ = [
     "MilestoneStorage",
     "ProjectStorage",
     "StateManager",
-    "SyncStateStorage",
     "get_state_manager",
     "initialize_state_manager",
 ]

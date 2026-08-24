@@ -17,9 +17,7 @@ class TestProjectCommand:
         """Test project subcommands work with initialized roadmap."""
         with cli_runner.isolated_filesystem():
             # Initialize roadmap first
-            init_result = cli_runner.invoke(
-                main, ["init", "-y", "--skip-github", "--skip-project"]
-            )
+            init_result = cli_runner.invoke(main, ["init", "-y", "--skip-project"])
             assert init_result.exit_code == 0
 
             # Test create command

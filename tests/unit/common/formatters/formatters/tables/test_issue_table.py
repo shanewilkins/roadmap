@@ -23,7 +23,6 @@ class MockIssue:
         estimated_time_display="0h",
         milestone_name="v1-0",
         is_backlog=False,
-        github_issue=None,
         progress_percentage=0,
         estimated_hours=0,
         headline="Test Headline",
@@ -39,7 +38,6 @@ class MockIssue:
         self.estimated_time_display = estimated_time_display
         self.milestone_name = milestone_name
         self.is_backlog = is_backlog
-        self.github_issue = github_issue
         self.progress_percentage = progress_percentage
         self.estimated_hours = estimated_hours
 
@@ -71,7 +69,6 @@ class TestIssueTableFormatter:
         formatter = IssueTableFormatter()
         assert formatter is not None
         assert formatter.columns_config is not None
-        assert formatter.show_github_ids is False
 
     def test_init_sets_columns_config(self):
         """Test columns config is properly initialized."""
@@ -86,18 +83,6 @@ class TestIssueTableFormatter:
         table = formatter.create_table()
         assert table is not None
         assert hasattr(table, "add_row")
-
-    def test_create_table_without_github_ids(self, formatter):
-        """Test table without GitHub ID column."""
-        formatter.show_github_ids = False
-        table = formatter.create_table()
-        assert hasattr(table, "columns")
-
-    def test_create_table_with_github_ids(self, formatter):
-        """Test table with GitHub ID column."""
-        formatter.show_github_ids = True
-        table = formatter.create_table()
-        assert hasattr(table, "columns")
 
     @pytest.mark.parametrize(
         "priority",
@@ -119,14 +104,6 @@ class TestIssueTableFormatter:
         """Test adding row without assignee."""
         table = formatter.create_table()
         issue = MockIssue(assignee=None)
-        formatter.add_row(table, issue)
-        assert len(table.rows) == 1
-
-    def test_add_row_with_github_id(self, formatter):
-        """Test adding row with GitHub ID."""
-        formatter.show_github_ids = True
-        table = formatter.create_table()
-        issue = MockIssue(github_issue="12345")
         formatter.add_row(table, issue)
         assert len(table.rows) == 1
 
@@ -261,15 +238,6 @@ class TestIssueTableFormatter:
     def test_issues_to_table_data_static_method(self, multiple_issues):
         """Test backward compatible static method."""
         result = IssueTableFormatter.issues_to_table_data(multiple_issues)
-
-        assert isinstance(result, TableData)
-        assert len(result.rows) == 3
-
-    def test_issues_to_table_data_with_github_ids(self, multiple_issues):
-        """Test static method with GitHub IDs."""
-        result = IssueTableFormatter.issues_to_table_data(
-            multiple_issues, show_github_ids=True
-        )
 
         assert isinstance(result, TableData)
         assert len(result.rows) == 3

@@ -10,76 +10,9 @@ Fixture Hierarchy:
 3. tests/unit/core/conftest.py (core services - this file)
 """
 
-from pathlib import Path
-from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock
-
 import pytest
 
-from roadmap.core.interfaces.parsers import IssueParserInterface
-from roadmap.core.interfaces.persistence import PersistenceInterface
-from roadmap.core.services.baseline.baseline_state_retriever import (
-    BaselineStateRetriever,
-)
 from tests.fixtures.issue_factory import IssueFactory
-
-# ============================================================================
-# BaselineStateRetriever Fixtures
-# ============================================================================
-
-
-@pytest.fixture
-def temp_issues_dir():
-    """Temporary directory for issue files in baseline tests.
-
-    Returns:
-        Path to temporary directory cleaned up after test
-    """
-    with TemporaryDirectory() as tmpdir:
-        yield Path(tmpdir)
-
-
-@pytest.fixture
-def mock_persistence():
-    """Shared mock for PersistenceInterface.
-
-    Returns:
-        MagicMock with PersistenceInterface spec
-    """
-    return MagicMock(spec=PersistenceInterface)
-
-
-@pytest.fixture
-def mock_parser():
-    """Shared mock for IssueParserInterface.
-
-    Returns:
-        MagicMock with IssueParserInterface spec
-    """
-    return MagicMock(spec=IssueParserInterface)
-
-
-@pytest.fixture
-def baseline_retriever(temp_issues_dir, mock_persistence, mock_parser):
-    """Create a BaselineStateRetriever with mock dependencies.
-
-    Args:
-        temp_issues_dir: Temporary directory fixture
-        mock_persistence: Mock persistence interface
-        mock_parser: Mock parser interface
-
-    Returns:
-        Configured BaselineStateRetriever instance
-    """
-    return BaselineStateRetriever(
-        temp_issues_dir,
-        mock_persistence,
-    )
-
-
-# ============================================================================
-# Issue Factory Fixtures
-# ============================================================================
 
 
 @pytest.fixture

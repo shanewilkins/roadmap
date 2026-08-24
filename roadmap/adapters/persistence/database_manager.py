@@ -250,38 +250,7 @@ class DatabaseManager:
             FOREIGN KEY (issue_id) REFERENCES issues (id) ON DELETE CASCADE
         );
 
-        -- Sync base state (three-way merge baseline from last successful sync)
-        -- Note: issue_id does NOT have a foreign key constraint because sync baseline
-        -- can be saved before issues are persisted to the database (during sync operations)
-        CREATE TABLE IF NOT EXISTS sync_base_state (
-            issue_id TEXT PRIMARY KEY,
-            status TEXT NOT NULL,
-            assignee TEXT,
-            milestone TEXT,
-            description TEXT,
-            labels TEXT,  -- JSON array of label strings
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        -- Sync metadata (overall sync state)
-        CREATE TABLE IF NOT EXISTS sync_metadata (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        -- File synchronization tracking
-        CREATE TABLE IF NOT EXISTS file_sync_state (
-            file_path TEXT PRIMARY KEY,
-            content_hash TEXT NOT NULL,
-            file_size INTEGER,
-            last_modified TIMESTAMP,
-            last_synced TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
         -- Indexes for performance
-        CREATE INDEX IF NOT EXISTS idx_sync_base_state_synced_at ON sync_base_state (synced_at);
         CREATE INDEX IF NOT EXISTS idx_milestones_project_id ON milestones (project_id);
         CREATE INDEX IF NOT EXISTS idx_issues_project_id ON issues (project_id);
         CREATE INDEX IF NOT EXISTS idx_issues_milestone_id ON issues (milestone_id);
@@ -339,52 +308,6 @@ class DatabaseManager:
                 )
         return result
 
-    def _migration_sync_base_state(self, cursor) -> list[str]:
-        """Migration 2: create sync_base_state table."""
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_base_state'"
-        )
-        if cursor.fetchone():
-            return []
-        return [
-            """
-            CREATE TABLE sync_base_state (
-                issue_id TEXT PRIMARY KEY,
-                status TEXT NOT NULL,
-                assignee TEXT,
-                milestone TEXT,
-                description TEXT,
-                labels TEXT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            CREATE INDEX idx_sync_base_state_synced_at ON sync_base_state (synced_at);
-        """
-        ]
-
-    def _migration_issue_remote_links(self, cursor) -> list[str]:
-        """Migration 3: create issue_remote_links table."""
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='issue_remote_links'"
-        )
-        if cursor.fetchone():
-            return []
-        return [
-            """
-            CREATE TABLE issue_remote_links (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                issue_uuid TEXT NOT NULL,
-                backend_name TEXT NOT NULL,
-                remote_id TEXT NOT NULL,
-                linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(issue_uuid, backend_name),
-                FOREIGN KEY (issue_uuid) REFERENCES issues (id) ON DELETE CASCADE
-            );
-            CREATE INDEX idx_issue_remote_links_backend ON issue_remote_links (backend_name);
-            CREATE INDEX idx_issue_remote_links_issue_uuid ON issue_remote_links (issue_uuid);
-        """
-        ]
-
     def _migration_headline_column(self, cursor) -> list[str]:
         """Migration 4: add headline column to issues table."""
         cursor.execute("PRAGMA table_info(issues)")
@@ -395,40 +318,15 @@ class DatabaseManager:
             return []
         return ["ALTER TABLE issues ADD COLUMN headline TEXT DEFAULT '';"]
 
-    def _migration_sync_base_state_columns(self, cursor) -> list[str]:
-        """Migration 5: add headline and content columns to sync_base_state."""
-        cursor.execute("PRAGMA table_info(sync_base_state)")
-        columns = [row[1] for row in cursor.fetchall()] if cursor.fetchone() else []
-        if "headline" in columns or "content" in columns:
-            return []
+    @staticmethod
+    def _migration_remove_provider_state() -> list[str]:
+        """Delete obsolete provider and cache protocol tables from legacy databases."""
         return [
-            """
-            ALTER TABLE sync_base_state ADD COLUMN headline TEXT DEFAULT '';
-            ALTER TABLE sync_base_state ADD COLUMN content TEXT DEFAULT '';
-        """
-        ]
-
-    def _migration_sync_metrics(self, cursor) -> list[str]:
-        """Migration 6: create sync_metrics table."""
-        cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='sync_metrics'"
-        )
-        if cursor.fetchone():
-            return []
-        return [
-            """
-            CREATE TABLE sync_metrics (
-                id TEXT PRIMARY KEY,
-                operation_id TEXT NOT NULL UNIQUE,
-                backend_type TEXT NOT NULL,
-                duration_seconds REAL NOT NULL DEFAULT 0.0,
-                metrics_json TEXT NOT NULL,  -- Full SyncMetrics.to_dict() as JSON
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            CREATE INDEX IF NOT EXISTS idx_sync_metrics_backend_type ON sync_metrics (backend_type);
-            CREATE INDEX IF NOT EXISTS idx_sync_metrics_created_at ON sync_metrics (created_at);
-            CREATE INDEX IF NOT EXISTS idx_sync_metrics_operation_id ON sync_metrics (operation_id);
-        """
+            "DROP TABLE IF EXISTS issue_remote_links;",
+            "DROP TABLE IF EXISTS sync_metrics;",
+            "DROP TABLE IF EXISTS sync_base_state;",
+            "DROP TABLE IF EXISTS sync_metadata;",
+            "DROP TABLE IF EXISTS file_sync_state;",
         ]
 
     def _run_migrations(self):
@@ -438,11 +336,8 @@ class DatabaseManager:
 
         migrations = (
             self._migration_archive_columns(cursor)
-            + self._migration_sync_base_state(cursor)
-            + self._migration_issue_remote_links(cursor)
             + self._migration_headline_column(cursor)
-            + self._migration_sync_base_state_columns(cursor)
-            + self._migration_sync_metrics(cursor)
+            + self._migration_remove_provider_state()
         )
 
         for migration_sql in migrations:

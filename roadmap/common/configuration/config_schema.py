@@ -4,7 +4,7 @@ SECURITY NOTICE:
 - The config.yaml file is LOCAL ONLY and should NOT be committed to version control
 - It is added to .gitignore to prevent accidental exposure
 - It should contain only local user preferences, NOT secrets
-- GitHub tokens and other credentials should be stored in environment variables or .env files
+- Credentials belong to the operating system or native Git tooling.
 - The config.yaml file should have restrictive permissions (e.g., mode 0600)
 """
 
@@ -41,35 +41,6 @@ class PathsConfig:
 
 
 @dataclass
-class GitHubConfig:
-    """GitHub integration configuration - DOES NOT store credentials.
-
-    Contains only repository metadata and sync preferences.
-
-    SECURITY WARNING:
-    - Do NOT store GitHub tokens or PATs (Personal Access Tokens) in this config
-    - Use GITHUB_TOKEN environment variable for authentication instead
-    - webhook_secret is stored locally but should be kept secure
-    - Never commit config.yaml with webhook_secret to version control
-    """
-
-    owner: str | None = None
-    repo: str | None = None
-    enabled: bool = False
-    sync_enabled: bool = False
-    sync_backend: str = "github"  # "github" or "git"
-    webhook_secret: str | None = None
-    sync_settings: dict = field(
-        default_factory=lambda: {
-            "bidirectional": True,
-            "auto_close": True,
-            "sync_labels": True,
-            "sync_milestones": True,
-        }
-    )
-
-
-@dataclass
 class DisplayConfig:
     """Display preferences and UI customization (LOCAL ONLY).
 
@@ -100,7 +71,7 @@ class RoadmapConfig:
     """Complete roadmap configuration - LOCAL ONLY, NEVER commit to version control.
 
     This is the root configuration object stored in .roadmap/config.yaml.
-    It aggregates user, paths, GitHub, display, and behavior settings.
+    It aggregates user, paths, display, and behavior settings.
 
     SECURITY REMINDER:
     - This entire config object is user-specific and must not be shared
@@ -111,7 +82,6 @@ class RoadmapConfig:
 
     user: UserConfig
     paths: PathsConfig = field(default_factory=PathsConfig)
-    github: GitHubConfig = field(default_factory=GitHubConfig)
     display: DisplayConfig = field(default_factory=DisplayConfig)
     behavior: BehaviorConfig = field(default_factory=BehaviorConfig)
 
@@ -128,9 +98,6 @@ class RoadmapConfig:
         paths_data = data.get("paths", {}) or {}
         paths = PathsConfig(**paths_data)
 
-        github_data = data.get("github", {}) or {}
-        github = GitHubConfig(**github_data)
-
         display_data = data.get("display", {}) or {}
         display = DisplayConfig(**display_data)
 
@@ -140,6 +107,4 @@ class RoadmapConfig:
         if not user:
             raise ValueError("User configuration is required")
 
-        return RoadmapConfig(
-            user=user, paths=paths, github=github, display=display, behavior=behavior
-        )
+        return RoadmapConfig(user=user, paths=paths, display=display, behavior=behavior)

@@ -28,7 +28,6 @@ from roadmap.application.use_cases import (
 )
 from roadmap.common.logging import get_logger
 from roadmap.core.services import (
-    GitHubIntegrationService,
     IssueService,
     MilestoneService,
     ProjectService,
@@ -45,11 +44,6 @@ from roadmap.infrastructure.coordination.milestone_coordinator import (
 from roadmap.infrastructure.coordination.milestone_operations import MilestoneOperations
 from roadmap.infrastructure.coordination.project_coordinator import ProjectCoordinator
 from roadmap.infrastructure.coordination.project_operations import ProjectOperations
-from roadmap.infrastructure.coordination.team_coordinator import TeamCoordinator
-from roadmap.infrastructure.coordination.user_operations import UserOperations
-from roadmap.infrastructure.coordination.validation_coordinator import (
-    ValidationCoordinator,
-)
 from roadmap.infrastructure.coordination_gateway import CoordinationGateway
 from roadmap.infrastructure.git.git_integration_ops import GitIntegrationOps
 from roadmap.infrastructure.validation.vanilla_assignee_validator import (
@@ -96,22 +90,6 @@ def wire_legacy_core(core: RoadmapCore) -> None:
     core._git = CoordinationGateway.get_git_integration()
     core._git.root_path = core.root_path
     core.db = CoordinationGateway.get_state_manager(db_path=core.db_dir / "state.db")
-    core.git_sync_monitor = CoordinationGateway.get_git_sync_monitor()
-    core.git_sync_monitor.repo_path = core.root_path
-    core.git_sync_monitor.state_manager = core.db
-    try:
-        core.db.initialize_remote_links(core.root_path)
-    except Exception as error:
-        logger.warning(
-            "failed_to_initialize_remote_links_in_core",
-            error=str(error),
-            severity="operational",
-        )
-    core.db._git_sync_monitor = core.git_sync_monitor
-
-    core.github_service = GitHubIntegrationService(
-        root_path=core.root_path, config_file=core.config_file
-    )
     issue_repository = CoordinationGateway.get_yaml_issue_repository(
         db=core.db, issues_dir=core.issues_dir
     )
@@ -131,16 +109,13 @@ def wire_legacy_core(core: RoadmapCore) -> None:
     milestone_ops = MilestoneOperations(core.milestone_service)
     project_ops = ProjectOperations(core.project_service)
     assignees = VanillaAssigneeValidator()
-    user_ops = UserOperations(core.github_service, core.issue_service, assignees)
     git_ops = GitIntegrationOps(core._git, core)
     core.issues = IssueCoordinator(issue_ops, core=core)
     core.milestones = MilestoneCoordinator(
         milestone_ops, core.milestones_dir, core=core
     )
     core.projects = ProjectCoordinator(project_ops, core=core)
-    core.team = TeamCoordinator(user_ops, core=core)
     core.git = GitCoordinator(git_ops, core=core)
-    core.validation = ValidationCoordinator(core.github_service, core=core)
     documents = DocumentRepository(core.roadmap_dir)
     projection = SQLiteProjection(core.db_dir / "projection.db", documents)
     local_git_adapter = SubprocessLocalGit(core.root_path)
@@ -168,9 +143,6 @@ def wire_legacy_core(core: RoadmapCore) -> None:
         FilesystemWorkspaceDiagnostics(documents, projection)
     )
     core._console_factory = Console
-    core._git_hook_manager_factory = lambda: CoordinationGateway.get_git_hook_manager(
-        core
-    )
 
 
 def create_core(root_path: Path, roadmap_dir_name: str = ".roadmap") -> RoadmapCore:

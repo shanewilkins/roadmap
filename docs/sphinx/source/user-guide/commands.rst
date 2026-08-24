@@ -312,25 +312,17 @@ View Comments
 
 Show all comments on an issue.
 
-GitHub Integration
+Local Git workflow
 ==================
 
-Sync with GitHub
-----------------
-
 .. code-block:: bash
 
-    roadmap git sync
+    roadmap git status                # Inspect the local worktree
+    roadmap git branch <issue-id>     # Create and link an issue branch
+    roadmap git link <issue-id>       # Link the current local branch
 
-Synchronize roadmap with GitHub issues. Requires GitHub token in config.
-
-Git Workflow
------------
-
-.. code-block:: bash
-
-    roadmap git log                   # Show sync history
-    roadmap git status                # Check sync status
+Use ordinary Git commands for remote collaboration. Roadmap does not store
+provider credentials or synchronize hosted issues.
 
 Data & Reporting
 ================

@@ -1,6 +1,5 @@
 """Git repository information retrieval."""
 
-import re
 from pathlib import Path
 from typing import Any
 
@@ -28,8 +27,7 @@ class GitRepositoryInfo:
         """Get general repository information.
 
         Returns:
-            Dictionary with repo metadata: origin_url, github_owner, github_repo,
-            current_branch, repo_root, total_commits
+            Dictionary with local repository metadata.
         """
         if not self.executor.is_git_repository():
             return {}
@@ -40,12 +38,6 @@ class GitRepositoryInfo:
         origin_url = self.executor.run(["config", "--get", "remote.origin.url"])
         if origin_url:
             info["origin_url"] = origin_url
-
-            # Try to extract GitHub repo info
-            github_match = re.search(r"github\.com[:/]([^/]+)/([^/.]+)", origin_url)
-            if github_match:
-                info["github_owner"] = github_match.group(1)
-                info["github_repo"] = github_match.group(2)
 
         # Current branch
         current_branch = self.branch_manager.get_current_branch()

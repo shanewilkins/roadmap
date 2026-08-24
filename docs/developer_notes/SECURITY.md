@@ -26,11 +26,10 @@ If you discover a security vulnerability in Roadmap CLI, please report it respon
 
 ### Credential Security
 
-- ✅ GitHub tokens stored in secure OS credential storage (Keyring/SecretService)
-- ✅ Credentials never logged or printed
-- ✅ Environment variable fallback with validation
-- ✅ Token masking in error messages (`ghp_****...`)
-- ✅ Automatic token refresh with atomic updates
+- Roadmap 0.2 stores no provider tokens or remote credentials.
+- Core workflows require no account and make no provider network requests.
+- Git and its native credential helpers own remote authentication.
+- Generic secret-shaped log fields are redacted defensively.
 
 ### Input Validation
 
@@ -38,7 +37,7 @@ If you discover a security vulnerability in Roadmap CLI, please report it respon
 - ✅ YAML/JSON parsing with strict mode enabled
 - ✅ Special character escaping for git operations
 - ✅ Path traversal prevention via absolute path validation
-- ✅ URL scheme validation for remote repositories
+- ✅ Local repository paths and branch names are validated
 
 ### File System Security
 
@@ -51,7 +50,6 @@ If you discover a security vulnerability in Roadmap CLI, please report it respon
 ### Git Integration Security
 
 - ✅ Git commands constructed as list (prevents shell injection)
-- ✅ Remote URLs validated before operations
 - ✅ Branch names validated with regex
 - ✅ Commit messages sanitized
 - ✅ Git hooks use absolute paths

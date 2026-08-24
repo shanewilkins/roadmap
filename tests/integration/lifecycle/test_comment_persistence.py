@@ -33,7 +33,6 @@ class TestCommentPersistence:
                     "--project-name",
                     "Comment Project",
                     "--non-interactive",
-                    "--skip-github",
                 ],
             )
             assert result.exit_code == 0

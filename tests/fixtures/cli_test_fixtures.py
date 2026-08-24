@@ -153,7 +153,6 @@ def cli_runner_with_init(cli_runner):
             [
                 "init",
                 "--yes",
-                "--skip-github",
                 "--skip-project",
             ],
         )

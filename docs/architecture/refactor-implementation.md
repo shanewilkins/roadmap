@@ -3,9 +3,9 @@
 - Status: Approved
 - Date: 2026-08-10
 - Last updated: 2026-08-24
-- Implementation status: Phases 0 through 10 complete; reporting, health,
-  bounded recovery, and retained local Git now use explicit target contracts,
-  and execution is stopped before Phase 11
+- Implementation status: Phases 0 through 11 complete; remote/provider
+  synchronization is absent, local projection maintenance remains supported,
+  and execution is stopped before Phase 12
 - Governing decisions: ADR-0001 through ADR-0010
 
 ## Purpose

@@ -9,7 +9,7 @@ Prerequisites
 
 - **Python 3.10 or higher** - Check with ``python --version``
 - **pip** (included with Python) or **Poetry** (for development)
-- **Git** (optional, for GitHub integration features)
+- **Git** (optional, for versioning and sharing canonical roadmap files)
 
 Quick Install (Recommended)
 ===========================

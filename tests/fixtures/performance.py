@@ -143,19 +143,3 @@ def selective_git_mock():
 
     with patch("subprocess.run", side_effect=mock_selective_run):
         yield
-
-
-@pytest.fixture(scope="session")
-def session_mock_github_client():
-    """Session-scoped GitHub client mock for performance.
-
-    Returns:
-        Mock GitHub client with basic methods
-    """
-    mock_client = Mock()
-    mock_client.is_authenticated = True
-    mock_client.owner = "test-owner"
-    mock_client.repo = "test-repo"
-    mock_client.get_issues.return_value = []
-    mock_client.get_milestones.return_value = []
-    return mock_client

@@ -24,7 +24,6 @@ class TestInitTemplate:
                 [
                     "init",
                     "--non-interactive",
-                    "--skip-github",
                     "--template-path",
                     str(tpl),
                     "--project-name",

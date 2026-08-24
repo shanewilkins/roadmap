@@ -1,6 +1,6 @@
 [architecture]
 version = 1
-current_phase = 10
+current_phase = 11
 final_phase = 13
 production_root = "roadmap"
 baseline = "architecture-baseline.toml"
@@ -77,4 +77,8 @@ namespaces = [
   "roadmap.core.services.baseline",
   "roadmap.core.services.github",
   "roadmap.core.services.sync",
+  "roadmap.common.configuration.github",
+  "roadmap.common.initialization.github",
+  "roadmap.infrastructure.github_gateway",
+  "roadmap.infrastructure.sync_gateway",
 ]

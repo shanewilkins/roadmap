@@ -1,1 +1,1 @@
-"""External system adapters for GitHub, Git, and synchronization."""
+"""Adapters for the CLI, local Git, documents, and SQLite projection."""

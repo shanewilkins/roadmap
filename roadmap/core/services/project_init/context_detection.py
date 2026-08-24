@@ -19,13 +19,11 @@ class ProjectContextDetectionService:
 
         Returns:
             Dictionary with detected context:
-            - git_repo: Repository in owner/repo format if detected
             - project_name: Project name from git, package files, or directory
             - git_user: Git user name if available
             - has_git: Whether in a git repository
         """
         context = {
-            "git_repo": None,
             "project_name": None,
             "git_user": None,
             "has_git": False,
@@ -42,7 +40,6 @@ class ProjectContextDetectionService:
             context["has_git"] = git_check.returncode == 0
 
             if context["has_git"]:
-                ProjectContextDetectionService._detect_git_repo(context)
                 ProjectContextDetectionService._detect_git_user(context)
 
         except (
@@ -61,43 +58,6 @@ class ProjectContextDetectionService:
             ProjectContextDetectionService._detect_from_package_files(context)
 
         return context
-
-    @staticmethod
-    def _detect_git_repo(context: dict) -> None:
-        """Detect git repository and populate context."""
-        try:
-            result = subprocess.run(
-                ["git", "remote", "get-url", "origin"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0:
-                origin_url = result.stdout.strip()
-                # Parse GitHub repository from URL
-                if "github.com" in origin_url:
-                    # Handle both SSH and HTTPS URLs
-                    if origin_url.startswith("git@github.com:"):
-                        repo_part = origin_url.replace("git@github.com:", "").replace(
-                            ".git", ""
-                        )
-                    elif "github.com/" in origin_url:
-                        repo_part = origin_url.split("github.com/")[1].replace(
-                            ".git", ""
-                        )
-                    else:
-                        repo_part = None
-
-                    if repo_part and "/" in repo_part:
-                        context["git_repo"] = repo_part
-                        context["project_name"] = repo_part.split("/")[1]
-        except Exception as e:
-            logger.debug(
-                "git_context_detection_failed",
-                operation="detect_git_context",
-                error=str(e),
-                action="Continuing with partial context",
-            )
 
     @staticmethod
     def _detect_git_user(context: dict) -> None:

@@ -17,12 +17,10 @@ Benefits:
 """
 
 from .domain import CommentBuilder, IssueBuilder, MilestoneBuilder, ProjectBuilder
-from .sync_issue_factory import SyncIssueFactory
 
 __all__ = [
     "IssueBuilder",
     "MilestoneBuilder",
     "ProjectBuilder",
     "CommentBuilder",
-    "SyncIssueFactory",
 ]

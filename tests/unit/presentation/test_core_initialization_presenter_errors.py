@@ -111,34 +111,6 @@ class TestInitializationPresenterMethods:
             presenter.present_health_warning("Check logs for details")
             assert mock_secho.called
 
-    def test_github_testing(self):
-        """Test GitHub testing message."""
-        presenter = CoreInitializationPresenter()
-        with mock.patch("click.secho") as mock_secho:
-            presenter.present_github_testing()
-            assert mock_secho.called
-
-    def test_github_credentials_stored(self):
-        """Test GitHub credentials stored message."""
-        presenter = CoreInitializationPresenter()
-        with mock.patch("click.secho") as mock_secho:
-            presenter.present_github_credentials_stored()
-            assert mock_secho.called
-
-    def test_github_unavailable(self):
-        """Test GitHub unavailable message."""
-        presenter = CoreInitializationPresenter()
-        with mock.patch("click.secho") as mock_secho:
-            presenter.present_github_unavailable("Not configured")
-            assert mock_secho.called
-
-    def test_github_setup_failed(self):
-        """Test GitHub setup failed message."""
-        presenter = CoreInitializationPresenter()
-        with mock.patch("click.secho") as mock_secho:
-            presenter.present_github_setup_failed("Invalid token")
-            assert mock_secho.called
-
     def test_present_error(self):
         """Test generic error message."""
         presenter = CoreInitializationPresenter()

@@ -138,16 +138,6 @@ class TestIssueBuilder:
         issue = IssueBuilder().with_progress(50.0).build()
         assert issue.progress_percentage == 50.0
 
-    def test_builder_with_github_issue(self):
-        """Test linking to GitHub issue."""
-        issue = IssueBuilder().with_github_issue(42).build()
-        assert issue.github_issue == 42
-
-    def test_builder_with_github_issue_string(self):
-        """Test linking to GitHub issue with string number."""
-        issue = IssueBuilder().with_github_issue("42").build()
-        assert issue.github_issue == 42
-
     def test_builder_with_due_date(self):
         """Test setting due date."""
         due_date = datetime.now(UTC)
@@ -260,11 +250,6 @@ class TestMilestoneBuilder:
         content = "## Goals\n\n- Goal 1\n- Goal 2"
         milestone = MilestoneBuilder().with_content(content).build()
         assert milestone.content == content
-
-    def test_builder_with_github_milestone(self):
-        """Test linking to GitHub milestone."""
-        milestone = MilestoneBuilder().with_github_milestone(1).build()
-        assert milestone.github_milestone == 1
 
     def test_builder_with_dates(self):
         """Test setting created and updated dates."""

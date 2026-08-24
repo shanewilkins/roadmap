@@ -342,7 +342,6 @@ def test_something(cli_runner):
                 "--project-name",
                 "Test Project",
                 "--non-interactive",
-                "--skip-github",
             ],
         )
         assert result.exit_code == 0

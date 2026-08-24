@@ -237,12 +237,11 @@ Creating and tracking a feature:
     # Verify closure
     roadmap issue view "Implement OAuth login"
 
-GitHub Integration
-==================
+External references
+===================
 
-Issues can be synced with GitHub issues.
-
-See :doc:`../user-guide/github` for details.
+An external tracker URL can remain ordinary issue content. Roadmap does not
+authenticate to, synchronize, or reconcile the referenced service.
 
 Navigation
 ==========

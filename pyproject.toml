@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 # ============================================================================
-# ROADMAP CLI - Enterprise Project Management Tool
+# ROADMAP CLI - Local Project Management Tool
 # ============================================================================
 # USER INSTALLATION: uv tool install roadmap-cli
 #   Installs the CLI and runtime dependencies in an isolated environment.
@@ -14,7 +14,7 @@ build-backend = "hatchling.build"
 # ============================================================================
 name = "roadmap-cli"
 version = "0.1.1"
-description = "Git-native command line tool for project roadmap management with GitHub integration and structured reporting"
+description = "Git-native command line tool for local project roadmap management"
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
 license = {text = "MIT"}
@@ -24,7 +24,6 @@ keywords = [
     "roadmap",
     "planning",
     "project-management",
-    "github",
     "agile",
     "scrum",
     "milestone",
@@ -56,17 +55,11 @@ dependencies = [
     "rich>=15.0.0,<16.0.0",
     "pydantic>=2.13.4,<3.0.0",
     "pyyaml>=6.0.3,<7.0.0",
-    "requests>=2.34.2,<3.0.0",
-    "keyring>=25.7.0,<26.0.0",
     "toml>=0.10.2,<1.0.0",
     "structlog>=25.5.0,<27.0.0",
-    "dynaconf>=3.2.13,<4.0.0",
-    "asyncclick>=8.3.0.7,<9.0.0",
-    "tabulate>=0.10.0,<1.0.0",
     "opentelemetry-api>=1.42.0,<2.0.0",
     "opentelemetry-sdk>=1.42.0,<2.0.0",
     "opentelemetry-exporter-otlp>=1.42.0,<2.0.0",
-    "urllib3>=2.6.3,<3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -153,7 +146,6 @@ markers = [
     "no_xdist: Tests that should not run in parallel (disables xdist parallelization)"
 ]
 filterwarnings = [
-    "ignore::DeprecationWarning:dynaconf.base",
     "ignore::pytest_benchmark.logger.PytestBenchmarkWarning"
 ]
 

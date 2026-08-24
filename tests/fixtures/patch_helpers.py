@@ -31,16 +31,7 @@ GIT_REPO_PATCH = "roadmap.adapters.git.repo"
 # === Git & Version Control ===
 GIT_SERVICE_PATCH = "roadmap.core.services.git.GitService"
 GIT_RUN_COMMAND_PATCH = "roadmap.adapters.persistence.git_history._run_git_command"
-GIT_HOOK_AUTO_SYNC_PATCH = (
-    "roadmap.core.services.git.git_hook_auto_sync_service.SyncMetadataService"
-)
 SUBPROCESS_RUN_PATCH = "subprocess.run"
-
-# === GitHub Integration ===
-GITHUB_CLIENT_PATCH = "roadmap.adapters.github.client.GitHubClient"
-GITHUB_CONFIG_VALIDATOR_REQUESTS_PATCH = (
-    "roadmap.core.services.github.github_config_validator.requests.get"
-)
 
 # === Persistence & Interfaces ===
 PERSISTENCE_PATCH = "roadmap.core.interfaces.persistence.PersistenceInterface"
@@ -96,24 +87,6 @@ def with_git_service(test_func: Callable) -> Callable:
     """
 
     @patch(GIT_SERVICE_PATCH)
-    @wraps(test_func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return test_func(*args, **kwargs)
-
-    return wrapper
-
-
-def with_github_client(test_func: Callable) -> Callable:
-    """Decorator that patches the GitHub client.
-
-    Args:
-        test_func: Test function to decorate
-
-    Returns:
-        Decorated test function with GitHub client mocked
-    """
-
-    @patch(GITHUB_CLIENT_PATCH)
     @wraps(test_func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         return test_func(*args, **kwargs)
@@ -261,24 +234,6 @@ def with_git_run_command(test_func: Callable) -> Callable:
     return wrapper
 
 
-def with_sync_metadata_service(test_func: Callable) -> Callable:
-    """Decorator that patches SyncMetadataService (21 occurrences).
-
-    Args:
-        test_func: Test function to decorate
-
-    Returns:
-        Decorated test function with SyncMetadataService mocked
-    """
-
-    @patch(GIT_HOOK_AUTO_SYNC_PATCH)
-    @wraps(test_func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return test_func(*args, **kwargs)
-
-    return wrapper
-
-
 # ============================================================================
 # Console/UI Presentation Patches (30+ occurrences)
 # ============================================================================
@@ -402,29 +357,6 @@ def with_file_system_operations(test_func: Callable) -> Callable:
 
 
 # ============================================================================
-# GitHub and HTTP Request Patches (13+ occurrences)
-# ============================================================================
-
-
-def with_github_requests_get(test_func: Callable) -> Callable:
-    """Decorator that patches requests.get in github_config_validator (13 occurrences).
-
-    Args:
-        test_func: Test function to decorate
-
-    Returns:
-        Decorated test function with requests.get mocked
-    """
-
-    @patch(GITHUB_CONFIG_VALIDATOR_REQUESTS_PATCH)
-    @wraps(test_func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return test_func(*args, **kwargs)
-
-    return wrapper
-
-
-# ============================================================================
 # Combined Multi-Patch Decorators
 # ============================================================================
 
@@ -465,28 +397,6 @@ def with_all_consoles(test_func: Callable) -> Callable:
     @patch(MILESTONE_LIST_CONSOLE_PATCH)
     @patch(PROJECT_STATUS_CONSOLE_PATCH)
     @patch(DAILY_SUMMARY_CONSOLE_PATCH)
-    @wraps(test_func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return test_func(*args, **kwargs)
-
-    return wrapper
-
-
-def with_git_integration(test_func: Callable) -> Callable:
-    """Decorator that patches all git-related operations.
-
-    Patches: subprocess.run, _run_git_command, SyncMetadataService
-
-    Args:
-        test_func: Test function to decorate
-
-    Returns:
-        Decorated test function with git operations mocked
-    """
-
-    @patch(GIT_HOOK_AUTO_SYNC_PATCH)
-    @patch(GIT_RUN_COMMAND_PATCH)
-    @patch(SUBPROCESS_RUN_PATCH)
     @wraps(test_func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         return test_func(*args, **kwargs)

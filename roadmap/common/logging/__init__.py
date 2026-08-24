@@ -45,7 +45,6 @@ from roadmap.common.logging.performance_tracking import (
     track_database_operation,
     track_file_operation,
     track_operation_time,
-    track_sync_operation,
 )
 from roadmap.common.logging.utils import (
     configure_for_testing,
@@ -102,5 +101,4 @@ __all__ = [
     "track_database_operation",
     "track_file_operation",
     "track_operation_time",
-    "track_sync_operation",
 ]

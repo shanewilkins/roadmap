@@ -26,9 +26,7 @@ class TestIssueCommands:
         """Test creating an issue with and without initialized roadmap."""
         with cli_runner.isolated_filesystem():
             if initialized:
-                init_result = cli_runner.invoke(
-                    main, ["init", "-y", "--skip-github", "--skip-project"]
-                )
+                init_result = cli_runner.invoke(main, ["init", "-y", "--skip-project"])
                 assert init_result.exit_code == 0
 
             result = cli_runner.invoke(
@@ -52,9 +50,7 @@ class TestIssueCommands:
         """Test listing issues with and without initialized roadmap."""
         with cli_runner.isolated_filesystem():
             if initialized:
-                init_result = cli_runner.invoke(
-                    main, ["init", "-y", "--skip-github", "--skip-project"]
-                )
+                init_result = cli_runner.invoke(main, ["init", "-y", "--skip-project"])
                 assert init_result.exit_code == 0
 
             result = cli_runner.invoke(main, ["issue", "list"])

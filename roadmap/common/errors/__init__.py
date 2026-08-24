@@ -5,7 +5,6 @@ This package provides organized error classes, categorized by concern:
 - error_base: Core exception classes and enums
 - error_file: File and I/O related errors
 - error_validation: Data validation errors
-- error_network: Network and GitHub API errors
 - error_git: Git operation errors and configuration errors
 - error_security: Security and parsing errors
 - error_handler: Error handling utilities
@@ -30,11 +29,6 @@ from roadmap.common.errors.error_file import (
 )
 from roadmap.common.errors.error_git import ConfigurationError, GitOperationError
 from roadmap.common.errors.error_handler import ErrorHandler, handle_errors
-from roadmap.common.errors.error_network import (
-    AuthenticationError,
-    GitHubAPIError,
-    NetworkError,
-)
 from roadmap.common.errors.error_security import (
     ParseError,
     PathValidationError,
@@ -66,7 +60,6 @@ from roadmap.common.errors.exceptions import (
     EntityNotFoundError,
     GitConfigError,
     GitError,
-    GitHubError,
     InvalidPriorityError,
     InvalidStatusError,
     NoGitRepositoryError,
@@ -100,9 +93,6 @@ __all__ = [
     "PersistenceError",
     "FileLockError",
     "ValidationError",
-    "NetworkError",
-    "AuthenticationError",
-    "GitHubAPIError",
     "GitOperationError",
     "SecurityError",
     "PathValidationError",
@@ -130,7 +120,6 @@ __all__ = [
     "DeleteError",
     "DatabaseError",
     "GitError",
-    "GitHubError",
     "GitConfigError",
     "NoGitRepositoryError",
     # Standardized error handling decorators and utilities

@@ -310,7 +310,7 @@ class FileOperationError(PersistenceError):
 
 
 # ============================================================================
-# Git/GitHub Errors
+# Git errors
 # ============================================================================
 
 
@@ -329,24 +329,6 @@ class GitError(RoadmapException):
         super().__init__(
             domain_message=f"Git operation '{operation}' failed: {reason}",
             user_message=f"Git operation failed: {reason}",
-        )
-
-
-class GitHubError(RoadmapException):
-    """GitHub integration failed."""
-
-    exit_code = 1
-
-    def __init__(self, operation: str, reason: str):
-        """Initialize GitHubError.
-
-        Args:
-            operation: Name of the GitHub operation that failed.
-            reason: Reason for failure.
-        """
-        super().__init__(
-            domain_message=f"GitHub operation '{operation}' failed: {reason}",
-            user_message=f"GitHub operation failed: {reason}",
         )
 
 

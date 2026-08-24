@@ -61,18 +61,13 @@ If you get permission errors:
     # Fix if needed
     chmod -R u+rw .roadmap/
 
-GitHub Sync Issues
-==================
+Removed synchronization commands
+================================
 
-Authentication Failures
------------------------
-
-If GitHub sync fails with authentication errors:
-
-1. Verify your GitHub token
-2. Check token permissions
-3. Ensure token is not expired
-4. See :doc:`user-guide/workflows` for setup
+Roadmap 0.2 does not authenticate to an issue provider or synchronize hosted
+issues. Use ordinary Git commands to share canonical ``.roadmap/`` files. A
+``No such command`` response for the experimental 0.1.1 sync commands is the
+expected migration behavior.
 
 Common Errors
 =============

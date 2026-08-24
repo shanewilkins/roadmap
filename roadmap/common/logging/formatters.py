@@ -10,7 +10,6 @@ SENSITIVE_KEYS = {
     "api_key",
     "auth",
     "credential",
-    "github_token",
 }
 
 

@@ -468,7 +468,6 @@ def isolated_roadmap_cli(isolated_cli_runner, click_test_result_wrapper):
             args = [
                 "init",
                 "--non-interactive",
-                "--skip-github",
                 "--project-name",
                 project_name,
             ]

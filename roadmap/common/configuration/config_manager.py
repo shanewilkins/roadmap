@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from .config_schema import GitHubConfig, PathsConfig, RoadmapConfig, UserConfig
+from .config_schema import PathsConfig, RoadmapConfig, UserConfig
 
 
 class ConfigManager:
@@ -112,53 +112,11 @@ class ConfigManager:
         return None
 
     @staticmethod
-    def auto_detect_github_username() -> str | None:
-        """Auto-detect GitHub username from git remote."""
-        try:
-            result = subprocess.run(
-                ["git", "config", "user.github"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                return result.stdout.strip()
-        except (subprocess.TimeoutExpired, FileNotFoundError):
-            pass
-
-        # Try to extract from git remote origin url
-        try:
-            result = subprocess.run(
-                ["git", "config", "remote.origin.url"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0:
-                url = result.stdout.strip()
-                # Parse github.com:owner/repo.git or https://github.com/owner/repo.git
-                if "github.com" in url:
-                    parts = url.split("/")[-2:]  # Get last 2 parts
-                    if parts and parts[0]:
-                        return parts[0]
-        except (subprocess.TimeoutExpired, FileNotFoundError):
-            pass
-
-        return None
-
-    @staticmethod
     def create_default_config(
         user_name: str,
         user_email: str | None = None,
-        github_owner: str | None = None,
-        github_repo: str | None = None,
-        github_enabled: bool = False,
     ) -> RoadmapConfig:
         """Create a default configuration."""
         user = UserConfig(name=user_name, email=user_email)
         paths = PathsConfig()
-        github = GitHubConfig(
-            owner=github_owner, repo=github_repo, enabled=github_enabled
-        )
-
-        return RoadmapConfig(user=user, paths=paths, github=github)
+        return RoadmapConfig(user=user, paths=paths)

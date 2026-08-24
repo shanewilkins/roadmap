@@ -77,7 +77,7 @@ class TestCLIInitAdvanced:
         "args,expected_codes",
         [
             (
-                ["init", "--template", "basic", "--non-interactive", "--skip-github"],
+                ["init", "--template", "basic", "--non-interactive"],
                 (0, 1),
             ),
             (["init", "--dry-run", "--non-interactive"], (0, 1, 2)),

@@ -71,7 +71,6 @@ release condition, not a filtered warning exemption.
 
 ## Deferred route migration
 
-The target adapters are not yet the command query path. Phases 6 through 8 move
-issue, milestone, and project slices through the new ports. The retained local
-file-to-SQLite refresh remains available during that migration; provider and
-remote synchronization removal remains Phase 11 work.
+Phases 6 through 8 moved issue, milestone, and project slices through the new
+ports. Phase 11 removed provider and remote synchronization while retaining the
+local canonical-file-to-SQLite refresh and rebuild pipeline.

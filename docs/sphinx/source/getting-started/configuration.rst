@@ -20,26 +20,17 @@ The default configuration includes:
 
 .. code-block:: yaml
 
-    # Data storage format
-    data_format: json
-
-    # Project root directory
-    project_root: .
-
-    # GitHub configuration (optional)
-    github:
-      token: null
-      auto_sync: false
-
-    # Logging configuration
-    logging:
-      level: INFO
-      format: structured
-
-    # Performance settings
-    cache:
-      enabled: true
-      ttl_seconds: 3600
+    user:
+      name: alice
+      email: alice@example.test
+    paths:
+      roadmap_dir: .roadmap
+      logs_dir: .roadmap/logs
+      db_dir: .roadmap/db
+    display:
+      table_width: 100
+    behavior:
+      confirm_destructive: true
 
 Configuration Options
 =====================
@@ -67,21 +58,12 @@ Directory where roadmap data is stored:
 
 All roadmap data lives in ``.roadmap/`` subdirectory of this root.
 
-GitHub Integration
-------------------
+Provider and Git transport settings
+-----------------------------------
 
-Optional GitHub integration settings:
-
-.. code-block:: yaml
-
-    github:
-      token: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-      auto_sync: false
-      sync_interval: 3600
-
-- ``token`` - Your GitHub personal access token (see :doc:`../user-guide/workflows`)
-- ``auto_sync`` - Automatically sync with GitHub (beta)
-- ``sync_interval`` - Seconds between auto-syncs
+Provider credentials, remotes, transport, and synchronization policy are not
+Roadmap configuration. Configure remote collaboration through Git and its
+native credential helpers. Roadmap core workflows require no network account.
 
 Logging
 -------
@@ -132,7 +114,6 @@ All Supported Variables
 
 - ``ROADMAP_DATA_FORMAT`` - Data format (json/yaml)
 - ``ROADMAP_PROJECT_ROOT`` - Project root directory
-- ``ROADMAP_GITHUB_TOKEN`` - GitHub API token
 - ``ROADMAP_LOG_LEVEL`` - Logging level
 - ``ROADMAP_CACHE_ENABLED`` - Enable/disable caching
 - ``ROADMAP_CACHE_TTL`` - Cache TTL in seconds
@@ -254,13 +235,11 @@ Troubleshooting Configuration
     # Environment variables must be exported
     export ROADMAP_PROJECT_ROOT=/path/to/project
 
-**GitHub token issues**
+**Old provider settings**
 
-.. code-block:: bash
-
-    # Don't commit tokens to git!
-    # Use .roadmap/config.local.yaml instead
-    echo "config.local.yaml" >> .roadmap/.gitignore
+The experimental 0.1.1 provider keys are ignored by the 0.2 product contract.
+Remove Roadmap-specific tokens from local configuration, CI secrets, and
+credential stores, and revoke tokens created solely for Roadmap.
 
 See Also
 ========

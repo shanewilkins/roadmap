@@ -35,12 +35,11 @@ Using Roadmap CLI for sprint management.
 
 [Example coming in v.0.7.0]
 
-GitHub Synchronization
-======================
+Git collaboration
+=================
 
-Syncing with GitHub issues.
-
-[Example coming in v.0.7.0]
+Commit canonical ``.roadmap/`` files and use the repository's ordinary pull,
+review, and push workflow. Roadmap does not synchronize hosted issues.
 
 Generating Reports
 ==================

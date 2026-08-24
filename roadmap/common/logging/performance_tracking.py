@@ -27,8 +27,8 @@ def track_operation_time(
         log_level: Log level to use for normal operations (debug or info)
 
     Example:
-        with track_operation_time("sync_issues", warn_threshold_ms=5000):
-            sync_to_github()
+        with track_operation_time("rebuild_projection", warn_threshold_ms=5000):
+            rebuild_projection()
     """
     start_time = time.time()
     result = {"duration_ms": 0, "exceeded_threshold": False}
@@ -113,13 +113,13 @@ def track_file_operation(
     """Context manager to track file I/O operation timing.
 
     Args:
-        operation: Type of operation (read, write, sync)
+        operation: Type of operation (read or write)
         file_path: Path to the file
         warn_threshold_ms: Warn if operation exceeds this time
 
     Example:
-        with track_file_operation("sync", "issue.md"):
-            sync_issue_file(...)
+        with track_file_operation("write", "issue.md"):
+            write_issue_file(...)
     """
     start_time = time.time()
     result = {"duration_ms": 0, "exceeded_threshold": False}
@@ -145,59 +145,6 @@ def track_file_operation(
                 operation=operation,
                 file_path=file_path,
                 duration_ms=duration_ms,
-            )
-
-
-@contextmanager
-def track_sync_operation(
-    operation_name: str,
-    entity_count: int | None = None,
-    warn_threshold_ms: int = 10000,
-) -> Generator[dict, None, None]:
-    """Context manager to track sync operation timing and throughput.
-
-    Args:
-        operation_name: Name of the sync operation
-        entity_count: Number of entities being synced
-        warn_threshold_ms: Warn if operation exceeds this time
-
-    Example:
-        with track_sync_operation("sync_to_github", entity_count=10):
-            github_client.sync_issues(...)
-    """
-    start_time = time.time()
-    result = {
-        "duration_ms": 0,
-        "exceeded_threshold": False,
-        "throughput_items_per_sec": 0,
-    }
-
-    try:
-        yield result
-    finally:
-        duration_ms = (time.time() - start_time) * 1000
-        result["duration_ms"] = duration_ms
-
-        if entity_count:
-            result["throughput_items_per_sec"] = (entity_count * 1000) / duration_ms
-
-        if duration_ms > warn_threshold_ms:
-            result["exceeded_threshold"] = True
-            logger.warning(
-                "operation_slow",
-                operation_name=operation_name,
-                duration_ms=duration_ms,
-                entity_count=entity_count,
-                threshold_ms=warn_threshold_ms,
-                throughput_items_per_sec=result.get("throughput_items_per_sec"),
-            )
-        else:
-            logger.info(
-                "operation_completed",
-                operation_name=operation_name,
-                duration_ms=duration_ms,
-                entity_count=entity_count,
-                throughput_items_per_sec=result.get("throughput_items_per_sec"),
             )
 
 

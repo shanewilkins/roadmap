@@ -6,7 +6,6 @@ These tests verify end-to-end workflows and cross-module integration.
 import os
 from pathlib import Path
 from typing import Any
-from unittest.mock import Mock, patch
 
 import pytest
 import yaml
@@ -23,30 +22,6 @@ from tests.unit.common.formatters.test_assertion_helpers import (
 )
 
 pytestmark = pytest.mark.filesystem
-
-
-@pytest.fixture
-def mock_github_client():
-    """Mock GitHub client for integration operations."""
-    with patch("roadmap.adapters.github.github.GitHubClient") as mock_client_class:
-        mock_client = Mock()
-        mock_client_class.return_value = mock_client
-
-        # Mock successful API responses
-        mock_client.test_connection.return_value = (True, "Connected successfully")
-        mock_client.create_issue.return_value = {
-            "number": 1,
-            "html_url": "https://github.com/test/repo/issues/1",
-        }
-        mock_client.update_issue.return_value = {"number": 1}
-        mock_client.create_milestone.return_value = {
-            "number": 1,
-            "html_url": "https://github.com/test/repo/milestones/1",
-        }
-        mock_client.get_issues.return_value = []
-        mock_client.get_milestones.return_value = []
-
-        yield mock_client
 
 
 class TestEndToEndWorkflows:
@@ -67,7 +42,6 @@ class TestEndToEndWorkflows:
             [
                 "init",
                 "--non-interactive",
-                "--skip-github",
                 "--project-name",
                 "Test Lifecycle",
             ],
@@ -204,7 +178,6 @@ class TestEndToEndWorkflows:
             [
                 "init",
                 "--non-interactive",
-                "--skip-github",
                 "--project-name",
                 "test-project",
             ],
@@ -245,7 +218,6 @@ class TestEndToEndWorkflows:
             [
                 "init",
                 "--non-interactive",
-                "--skip-github",
                 "--project-name",
                 "test-project",
             ],
@@ -282,7 +254,6 @@ class TestEndToEndWorkflows:
             [
                 "init",
                 "--non-interactive",
-                "--skip-github",
                 "--project-name",
                 "test-project",
             ],
@@ -365,7 +336,6 @@ class TestEndToEndWorkflows:
             [
                 "init",
                 "--non-interactive",
-                "--skip-github",
                 "--project-name",
                 "test-project",
             ],

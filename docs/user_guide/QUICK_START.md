@@ -1,8 +1,7 @@
 # Quick start
 
 This guide describes the supported local workflow. Provider synchronization
-and automatic Git mutation exposed experimentally in 0.1.1 are deprecated and
-will be removed in 0.2.
+and automatic Git mutation exposed experimentally in 0.1.1 are absent in 0.2.
 
 ## Install
 
@@ -98,8 +97,8 @@ git push
 
 Git is the collaboration layer. SQLite remains a rebuildable local projection
 of canonical files; refreshing or rebuilding it is local maintenance, not
-remote synchronization. Do not use `roadmap sync` or `roadmap git sync` for a
-new workflow: those experimental 0.1.1 commands are scheduled for removal.
+remote synchronization. The experimental 0.1.1 `roadmap sync` and
+`roadmap git sync` commands are absent in 0.2.
 
 ## Recover safely
 
@@ -119,4 +118,5 @@ explicit canonical-file edits.
 - [Workflows](WORKFLOWS.md)
 - [Installation](INSTALLATION.md)
 - [FAQ](FAQ.md)
+- [0.2 remote-sync removal](REMOTE_SYNC_REMOVAL_0_2.md)
 - [Roadmap 0.2 public contract](../architecture/public-contract-0.2.md)

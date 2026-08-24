@@ -148,16 +148,6 @@ class TestRoadmapValidator:
         # Missing required field should produce errors
         assert not result.is_valid
 
-    def test_github_issue_number_valid(self, validator):
-        """Test validating valid GitHub issue number."""
-        result = validator.validate_github_issue_number("12345", "github_issue")
-        assert isinstance(result, ValidationResult)
-
-    def test_github_issue_number_invalid(self, validator):
-        """Test validating invalid GitHub issue number."""
-        result = validator.validate_github_issue_number("not_a_number", "github_issue")
-        assert isinstance(result, ValidationResult)
-
     def test_labels_valid(self, validator):
         """Test validating valid labels."""
         result = validator.validate_labels(["bug", "feature"], "labels")

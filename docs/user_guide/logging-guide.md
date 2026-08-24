@@ -68,9 +68,9 @@ Logs include `duration_ms` and `success` fields.
 Automatically redacts sensitive information:
 
 ```python
-logger.info("Authenticating", github_token="abc123", user="alice")
+logger.info("Loading config", api_token="abc123", user="alice")
 
-# Logged as: {"event": "Authenticating", "github_token": "***REDACTED***", "user": "alice"}
+# Logged as: {"event": "Loading config", "api_token": "***REDACTED***", "user": "alice"}
 
 ```text
 
@@ -333,7 +333,7 @@ except ValidationError as e:
    ```python
    # Good - key name triggers automatic redaction
 
-   logger.info("Authenticating", github_token=token)
+   logger.info("Loading config", api_token=token)
 
    # Better - don't log it at all
 

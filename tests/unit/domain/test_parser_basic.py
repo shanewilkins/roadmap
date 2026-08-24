@@ -108,15 +108,13 @@ class TestMilestoneParser:
     """Test cases for MilestoneParser."""
 
     @pytest.mark.parametrize(
-        "name,headline,status,due_date_str,github_milestone,expected_has_due_date,expected_has_github_milestone,body_content",
+        "name,headline,status,due_date_str,expected_has_due_date,body_content",
         [
             (
                 "v1-0",
                 "First release",
                 "open",
                 None,
-                None,
-                False,
                 False,
                 "This is the first release milestone.\n\n## Goals\n\n- Feature A\n- Feature B",
             ),
@@ -125,8 +123,6 @@ class TestMilestoneParser:
                 "Second release",
                 "closed",
                 "2024-12-31T23:59:59",
-                456,
-                True,
                 True,
                 "Second release content.",
             ),
@@ -138,9 +134,7 @@ class TestMilestoneParser:
         headline,
         status,
         due_date_str,
-        github_milestone,
         expected_has_due_date,
-        expected_has_github_milestone,
         body_content,
     ):
         """Test parsing milestone files with various configurations."""
@@ -151,8 +145,6 @@ class TestMilestoneParser:
         ]
         if due_date_str:
             frontmatter_lines.append(f'due_date: "{due_date_str}"')
-        if github_milestone:
-            frontmatter_lines.append(f"github_milestone: {github_milestone}")
         frontmatter_lines.extend(
             [
                 'created: "2024-01-01T00:00:00"',
@@ -177,8 +169,6 @@ class TestMilestoneParser:
 
         if expected_has_due_date:
             assert milestone.due_date == datetime(2024, 12, 31, 23, 59, 59, tzinfo=UTC)
-        if expected_has_github_milestone:
-            assert milestone.github_milestone == 456
 
     def test_save_milestone_file(self):
         """Test saving milestone to file."""
