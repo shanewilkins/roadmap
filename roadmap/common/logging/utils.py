@@ -4,6 +4,7 @@ import logging
 import logging.config
 import logging.handlers
 import random
+import sys
 import time
 import traceback
 from contextlib import contextmanager
@@ -330,6 +331,6 @@ def configure_for_testing():
             structlog.dev.ConsoleRenderer(),
         ],
         wrapper_class=structlog.stdlib.BoundLogger,
-        logger_factory=structlog.PrintLoggerFactory(),
+        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
         cache_logger_on_first_use=True,
     )

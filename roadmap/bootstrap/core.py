@@ -6,9 +6,11 @@ from typing import Any
 
 from rich.console import Console
 
+from roadmap.adapters.outbound.git import SubprocessLocalGit
 from roadmap.adapters.outbound.persistence import (
     CanonicalIssueUnitOfWorkFactory,
     DocumentIssueQueries,
+    FilesystemWorkspaceDiagnostics,
 )
 from roadmap.adapters.outbound.persistence.configuration import ConfigurationFiles
 from roadmap.adapters.outbound.persistence.documents import DocumentRepository
@@ -20,7 +22,9 @@ from roadmap.adapters.persistence.yaml_repositories import (
 from roadmap.application.use_cases import (
     IssueMutations,
     IssueQueries,
+    LocalGit,
     Planning,
+    WorkspaceHealth,
 )
 from roadmap.common.logging import get_logger
 from roadmap.core.services import (
@@ -58,14 +62,12 @@ logger = get_logger(__name__)
 class _ConfiguredCurrentIdentity:
     """Current identity resolved once from user configuration by Bootstrap."""
 
-    def __init__(self, core: RoadmapCore):
-        self._core = core
+    def __init__(self, configured_name: str | None, local_git: SubprocessLocalGit):
+        git_name, _git_email = local_git.user_identity()
+        self._identity = configured_name or git_name
 
     def current_identity(self) -> str | None:
-        return (
-            self._core.resolved_configuration.user.name
-            or self._core.git.get_current_user()
-        )
+        return self._identity
 
 
 class _SystemClock:
@@ -141,20 +143,29 @@ def wire_legacy_core(core: RoadmapCore) -> None:
     core.validation = ValidationCoordinator(core.github_service, core=core)
     documents = DocumentRepository(core.roadmap_dir)
     projection = SQLiteProjection(core.db_dir / "projection.db", documents)
-    dynamic_core: Any = core
-    dynamic_core.issue_queries = IssueQueries(
-        DocumentIssueQueries(documents, projection),
-        _ConfiguredCurrentIdentity(core),
-        _SystemClock(),
+    local_git_adapter = SubprocessLocalGit(core.root_path)
+    identity = _ConfiguredCurrentIdentity(
+        core.resolved_configuration.user.name, local_git_adapter
     )
-    dynamic_core.issue_mutations = IssueMutations(
+    issue_queries = IssueQueries(
+        DocumentIssueQueries(documents, projection), identity, _SystemClock()
+    )
+    issue_mutations = IssueMutations(
         CanonicalIssueUnitOfWorkFactory(documents, projection),
-        _ConfiguredCurrentIdentity(core),
+        identity,
         _LocalAssigneeDirectory(assignees),
         _SystemClock(),
     )
+    dynamic_core: Any = core
+    dynamic_core.issue_queries = issue_queries
+    dynamic_core.issue_mutations = issue_mutations
+    dynamic_core.current_identity = identity
+    dynamic_core.local_git = LocalGit(local_git_adapter, issue_queries, issue_mutations)
     dynamic_core.planning = Planning(
         CanonicalIssueUnitOfWorkFactory(documents, projection), _SystemClock()
+    )
+    dynamic_core.health = WorkspaceHealth(
+        FilesystemWorkspaceDiagnostics(documents, projection)
     )
     core._console_factory = Console
     core._git_hook_manager_factory = lambda: CoordinationGateway.get_git_hook_manager(

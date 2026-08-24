@@ -5,7 +5,14 @@ from typing import Protocol
 from roadmap.domain.aggregates import Issue, Milestone, Project
 from roadmap.domain.types import EntityId, Timestamp
 
-from .contracts import GitSnapshot, IssueQueryRecord, MigrationPlan, MigrationResult
+from .contracts import (
+    GitSnapshot,
+    HealthReport,
+    IssueQueryRecord,
+    MigrationPlan,
+    MigrationResult,
+    RepairAction,
+)
 
 
 class Clock(Protocol):
@@ -46,8 +53,10 @@ class ProjectionMaintenance(Protocol):
     def rebuild(self) -> None: ...
 
 
-class InspectLocalGit(Protocol):
+class LocalGitPort(Protocol):
     def inspect_local_git(self) -> GitSnapshot: ...
+    def create_branch(self, name: str, *, checkout: bool) -> None: ...
+    def user_identity(self) -> tuple[str | None, str | None]: ...
 
 
 class ReadIssueRecords(Protocol):
@@ -104,3 +113,11 @@ class WorkspaceMigrationPort(Protocol):
 
     def preflight(self) -> MigrationPlan: ...
     def execute(self, fingerprint: str) -> MigrationResult: ...
+
+
+class WorkspaceDiagnosticsPort(Protocol):
+    """Read-only diagnosis and bounded derived-state recovery."""
+
+    def scan(self) -> HealthReport: ...
+    def preview(self, repair_type: str) -> tuple[RepairAction, ...]: ...
+    def apply(self, actions: tuple[RepairAction, ...]) -> None: ...

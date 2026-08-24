@@ -1,7 +1,5 @@
 """Canonical daily planning view."""
 
-import os
-
 import click
 
 from roadmap.adapters.cli.cli_command_helpers import require_initialized
@@ -20,14 +18,10 @@ from roadmap.common.logging import verbose_output
 def today(ctx: click.Context, verbose: bool = False) -> None:  # noqa: ARG001
     """Show assigned work for the next open milestone."""
     core = ctx.obj["core"]
-    current_user = (
-        os.getenv("ROADMAP_USER")
-        or core.resolved_configuration.user.name
-        or core.git.get_current_user()
-    )
+    current_user = core.current_identity.current_identity()
     if not current_user:
         raise click.ClickException(
-            "No user configured. Initialize Roadmap or set ROADMAP_USER."
+            "No descriptive identity is configured. Set user identity.name or Git user.name."
         )
     summary = invoke(lambda: core.planning.daily_summary(current_user))
     DailySummaryPresenter().render(summary)

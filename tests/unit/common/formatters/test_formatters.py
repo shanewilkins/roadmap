@@ -143,18 +143,6 @@ class TestFormatterIntegration:
 class TestFormatterModuleExports:
     """Test that all formatters are properly imported and exported."""
 
-    def test_formatters_module_import(self):
-        """Test that formatters module can be imported."""
-        from roadmap.common import formatters
-
-        assert hasattr(formatters, "IssueExporter")
-
-    def test_issue_exporter_available(self):
-        """Test that IssueExporter is available in formatters."""
-        from roadmap.common.formatters.export.issue_exporter import IssueExporter
-
-        assert IssueExporter is not None
-
     def test_kanban_organizer_available(self):
         """Test that KanbanOrganizer is available in formatters."""
         from roadmap.common.formatters.kanban import KanbanOrganizer

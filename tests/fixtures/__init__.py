@@ -115,7 +115,6 @@ from .patch_helpers import (
     with_file_operations,
     with_git_service,
     with_github_client,
-    with_health_validator,
     with_parser,
     with_persistence,
 )
@@ -167,7 +166,6 @@ __all__ = [
     "with_file_operations",
     "with_github_client",
     "with_git_service",
-    "with_health_validator",
     "with_parser",
     "with_persistence",
     "with_file_and_git",

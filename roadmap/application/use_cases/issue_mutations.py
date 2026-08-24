@@ -219,6 +219,18 @@ class IssueMutations:
         except DomainFailure as error:
             raise self._invalid(error) from error
 
+    def link_branch(self, issue_id: EntityId, branch: str) -> IssueMutationResult:
+        """Persist one explicit local branch reference on an issue."""
+        at = self._clock.now()
+        try:
+            with self._units.create() as unit:
+                issue = self._load(unit, issue_id)
+                changed = issue.link_branch(branch, at)
+                unit.save_issue(changed)
+                return self._commit(unit, changed)
+        except DomainFailure as error:
+            raise self._invalid(error) from error
+
     def add_dependency(
         self, issue_id: EntityId, dependency_id: EntityId
     ) -> IssueMutationResult:

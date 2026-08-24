@@ -29,6 +29,14 @@ class IssueQueries:
     def ids(self) -> tuple[EntityId, ...]:
         return tuple(record.issue.id for record in self._records.list_issue_records())
 
+    def list_all(self) -> tuple[IssueQueryRecord, ...]:
+        """Return deterministic canonical records for another Application use case."""
+        return tuple(
+            sorted(
+                self._records.list_issue_records(), key=lambda item: str(item.issue.id)
+            )
+        )
+
     def view(self, issue_id: EntityId) -> IssueQueryRecord:
         record = self._records.load_issue_record(issue_id)
         if record is None:

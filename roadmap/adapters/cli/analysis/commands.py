@@ -52,15 +52,26 @@ def critical_path(
     if output is None:
         click.echo(content)
         return
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(content, encoding="utf-8")
-    click.echo(f"Exported to {output}")
+    try:
+        with output.open("x", encoding="utf-8", newline="") as stream:
+            stream.write(content)
+            if not content.endswith("\n"):
+                stream.write("\n")
+    except FileExistsError as error:
+        raise click.ClickException(
+            f"Refusing to overwrite existing export: {output}"
+        ) from error
+    except OSError as error:
+        raise click.ClickException(f"Cannot write export {output}: {error}") from error
+    click.echo(f"Exported critical path to {output}", err=True)
 
 
 def _export(result: CriticalPathResult, format_name: str) -> str:
     if format_name == "json":
         return json.dumps(
             {
+                "schema_version": 1,
+                "kind": "roadmap.critical-path",
                 "critical_path": [
                     {
                         "issue_id": str(node.issue_id),
@@ -87,11 +98,13 @@ def _export(result: CriticalPathResult, format_name: str) -> str:
                 },
             },
             indent=2,
+            sort_keys=True,
         )
     stream = io.StringIO()
     writer = csv.writer(stream, lineterminator="\n")
     writer.writerow(
         (
+            "schema_version",
             "issue_id",
             "title",
             "duration_hours",
@@ -103,6 +116,7 @@ def _export(result: CriticalPathResult, format_name: str) -> str:
     for node in result.critical_path:
         writer.writerow(
             (
+                1,
                 node.issue_id,
                 node.issue_title,
                 node.duration_hours,

@@ -126,9 +126,20 @@ class IssueBatchResult:
 
 @dataclass(frozen=True, slots=True)
 class GitSnapshot:
+    is_repository: bool
     branch: str | None
     head: str | None
     changed_paths: tuple[str, ...]
+    linked_issue_ids: tuple[EntityId, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class GitBranchResult:
+    branch: str
+    issue_id: EntityId
+    checked_out: bool
+    dirty_paths: tuple[str, ...]
+    projection_stale: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -248,6 +259,61 @@ class CriticalPathResult:
     critical_issue_ids: tuple[EntityId, ...]
     blocking_issues: tuple[tuple[EntityId, tuple[EntityId, ...]], ...]
     project_end_at: Timestamp | None = None
+
+
+class HealthSeverity(StrEnum):
+    """Stable diagnostic severity used by CLI and automation."""
+
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+
+@dataclass(frozen=True, slots=True)
+class HealthFinding:
+    """One deterministic finding from a read-only workspace scan."""
+
+    finding_id: str
+    severity: HealthSeverity
+    scope: str
+    message: str
+    entity_id: str | None = None
+    safe_action: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class HealthReport:
+    """Versioned diagnostic result independent of presentation."""
+
+    findings: tuple[HealthFinding, ...]
+
+    @property
+    def exit_code(self) -> int:
+        severities = {finding.severity for finding in self.findings}
+        if severities & {HealthSeverity.ERROR, HealthSeverity.CRITICAL}:
+            return 2
+        if HealthSeverity.WARNING in severities:
+            return 1
+        return 0
+
+
+@dataclass(frozen=True, slots=True)
+class RepairAction:
+    """One bounded derived-state or recovery action."""
+
+    action_id: str
+    description: str
+    targets: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class RepairResult:
+    """Preview or applied repair with post-check evidence."""
+
+    dry_run: bool
+    actions: tuple[RepairAction, ...]
+    report: HealthReport
 
 
 @dataclass(frozen=True, slots=True)

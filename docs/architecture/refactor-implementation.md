@@ -3,10 +3,9 @@
 - Status: Approved
 - Date: 2026-08-10
 - Last updated: 2026-08-24
-- Implementation status: Phases 0 through 9 complete; explicit workspace
-  migration, stable canonical paths, schema versions, scoped configuration, and
-  rebuildable projections now use the target contracts, and execution is
-  stopped before Phase 10
+- Implementation status: Phases 0 through 10 complete; reporting, health,
+  bounded recovery, and retained local Git now use explicit target contracts,
+  and execution is stopped before Phase 11
 - Governing decisions: ADR-0001 through ADR-0010
 
 ## Purpose
@@ -39,7 +38,6 @@ roadmap/
       documents/
       sqlite/
       git/
-      keyring/
       telemetry/
   bootstrap/
 ```
@@ -60,8 +58,8 @@ cohesion, but they do not create new architectural layers.
 | Click commands, presenters, and output translation | `roadmap.adapters.inbound.cli` |
 | Markdown/YAML parsing and canonical persistence | `roadmap.adapters.outbound.documents` |
 | SQLite state and query indexes | `roadmap.adapters.outbound.sqlite` |
-| Local repository inspection, hooks, branches, and commit metadata | `roadmap.adapters.outbound.git` |
-| Credential-store mechanisms | `roadmap.adapters.outbound.keyring` |
+| Local repository inspection, branch creation, and explicit issue references | `roadmap.adapters.outbound.git` |
+| Roadmap credential-store mechanisms | Remove under ADR-0002; Git owns remote credentials |
 | Logging and optional telemetry mechanisms | `roadmap.adapters.outbound.telemetry` |
 | Concrete construction currently mixed into coordination | `roadmap.bootstrap` |
 | `common` utilities | Domain, Application, or the owning adapter according to meaning |

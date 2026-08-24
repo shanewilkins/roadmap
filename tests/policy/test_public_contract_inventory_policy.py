@@ -201,12 +201,21 @@ def test_inventory_schema_references_and_remove_guidance() -> None:
 
 
 def test_current_cli_config_and_canonical_surfaces_are_exactly_inventoried() -> None:
-    """Actual 0.1.1 surfaces cannot grow or disappear without a contract decision."""
+    """CLI surfaces cannot grow or lose retained commands without a decision."""
     _, rows = _read_csv(INVENTORY)
 
     cli_rows = {row["surface"]: row for row in rows if row["category"] == "cli"}
     actual_cli = _cli_surfaces()
-    _assert_complete(set(actual_cli), set(cli_rows), "CLI")
+    unreviewed = set(actual_cli) - set(cli_rows)
+    missing_retained = {
+        surface
+        for surface, row in cli_rows.items()
+        if row["disposition"] != "Remove" and surface not in actual_cli
+    }
+    assert not unreviewed and not missing_retained, (
+        "CLI inventory mismatch; "
+        f"unreviewed={sorted(unreviewed)}, missing_retained={sorted(missing_retained)}"
+    )
     for surface, signature in actual_cli.items():
         assert cli_rows[surface]["current_signature"] == signature
 

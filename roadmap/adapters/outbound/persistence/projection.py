@@ -138,6 +138,30 @@ class SQLiteProjection:
         """Report projection state without changing canonical or derived files."""
         return not self._is_compatible()
 
+    def inspect_state(self) -> str:
+        """Inspect compatibility and content identity without refreshing state."""
+        if not self.path.exists():
+            return "missing"
+        if self.stale_path.exists():
+            return "stale"
+        if not self._is_compatible():
+            return "corrupt"
+        canonical = {
+            (item.kind, item.identity): content_identity(item.path.read_bytes())
+            for item in self.repository.scan()
+        }
+        try:
+            with self._connection() as connection:
+                projected = {
+                    (row["kind"], row["entity_id"]): row["digest"]
+                    for row in connection.execute(
+                        "SELECT kind, entity_id, digest FROM documents"
+                    )
+                }
+        except ProjectionError:
+            return "corrupt"
+        return "current" if canonical == projected else "outdated"
+
     def rebuild(self) -> None:
         """Replace any missing, corrupt, or incompatible projection from documents."""
         envelopes = self.repository.scan()

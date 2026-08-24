@@ -37,8 +37,11 @@ def _initialize_logging() -> None:
 
     from roadmap.common.logging import setup_logging
 
-    if not structlog.is_configured():
-        setup_logging(log_level="INFO", debug_mode=False, log_to_file=True)
+    # Bootstrap owns process configuration. Test helpers and imported libraries
+    # may have configured structlog with a stdout PrintLogger; always replace
+    # that ambient state so machine-readable command output remains clean.
+    structlog.reset_defaults()
+    setup_logging(log_level="INFO", debug_mode=False, log_to_file=True)
 
 
 def _create_console() -> Any:

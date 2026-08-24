@@ -280,20 +280,6 @@ def _extract_created_issue_id(output: str) -> str:
     return match.group(1)
 
 
-def _rebuild_projection(roadmap: Path, workspace: Path) -> dict[str, Any]:
-    for database_file in (workspace / ".roadmap" / "db").glob("state.db*"):
-        database_file.unlink()
-    python = roadmap.parent / ("python.exe" if os.name == "nt" else "python")
-    program = (
-        "from pathlib import Path; "
-        "from roadmap.infrastructure.coordination.core import RoadmapCore; "
-        "core=RoadmapCore(Path.cwd()); "
-        "stats=core.db.full_rebuild_from_git(Path.cwd()/'.roadmap'); "
-        "core.close(); print(__import__('json').dumps(stats, default=str))"
-    )
-    return _run([str(python), "-c", program], workspace, parse_json=True)
-
-
 def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
     """Exercise cumulative retained behavior in a new disposable workspace."""
     _run([str(roadmap), "--help"], workspace)
@@ -418,27 +404,69 @@ def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
     ):
         raise RuntimeError("Roadmap did not observe a manual canonical edit")
 
+    exported = _run(
+        [str(roadmap), "data", "export", "--format", "json"],
+        workspace,
+        parse_json=True,
+    )
+    if exported["kind"] != "roadmap.issue-export":
+        raise RuntimeError("Canonical issue export schema was not available")
+
     before_rebuild = canonical_digests(workspace)
-    stats = _rebuild_projection(roadmap, workspace)
-    if stats.get("files_failed"):
-        raise RuntimeError("SQLite projection rebuild failed")
+    preview = _run(
+        [
+            str(roadmap),
+            "health",
+            "fix",
+            "--fix-type",
+            "projection",
+            "--dry-run",
+            "--format",
+            "json",
+        ],
+        workspace,
+        parse_json=True,
+    )
+    if preview["mode"] != "dry-run":
+        raise RuntimeError("Projection repair preview was not non-mutating")
+    applied = _run(
+        [
+            str(roadmap),
+            "health",
+            "fix",
+            "--fix-type",
+            "projection",
+            "--yes",
+            "--format",
+            "json",
+        ],
+        workspace,
+        parse_json=True,
+    )
+    if applied["post_check"]["status"] != "healthy":
+        raise RuntimeError("SQLite projection repair did not pass its post-check")
     if canonical_digests(workspace) != before_rebuild:
         raise RuntimeError("SQLite rebuild changed canonical documents")
-    with sqlite3.connect(workspace / ".roadmap" / "db" / "state.db") as connection:
+    with sqlite3.connect(workspace / ".roadmap" / "db" / "projection.db") as connection:
         row = connection.execute(
-            "SELECT id FROM issues WHERE id = ?", (issue_id,)
+            "SELECT entity_id FROM documents WHERE entity_id = ?", (issue_id,)
         ).fetchone()
     if row is None:
         raise RuntimeError("SQLite projection rebuild omitted the active issue")
 
-    _run([str(roadmap), "health", "--format", "json"], workspace, parse_json=True)
-    _run(
-        [str(roadmap), "health", "fix", "--dry-run", "--format", "json"],
+    health = _run(
+        [str(roadmap), "health", "--format", "json"],
         workspace,
         parse_json=True,
     )
+    if health["kind"] != "roadmap.health" or health["status"] != "healthy":
+        raise RuntimeError("Versioned health output did not report a clean workspace")
     _run(["git", "init"], workspace)
     _run([str(roadmap), "git", "status"], workspace)
+    _run([str(roadmap), "git", "branch", issue_id], workspace)
+    linked = _run([str(roadmap), "git", "status"], workspace)
+    if issue_id not in linked:
+        raise RuntimeError("Local Git branch was not linked to the canonical issue")
 
 
 def run_checkpoint(roadmap: Path, fixture: Path, workspace: Path) -> dict[str, Any]:

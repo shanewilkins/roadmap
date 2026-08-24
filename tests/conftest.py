@@ -17,7 +17,6 @@ import gc
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -247,120 +246,6 @@ __all__ = [
     "build_mock_directory",
     "build_mock_database_connection",
 ]
-
-
-# ============================================================================
-# Infrastructure Validator Fixtures (Phase 2.2)
-# ============================================================================
-# These fixtures consolidate multi-decorator patterns used for mocking
-# validators across test files (40+ @patch.object decorators reduced)
-
-
-@pytest.fixture
-def all_validators_mocked():
-    """Fixture that mocks all 6 infrastructure validators.
-
-    Returns a SimpleNamespace with attributes for each mocked validator:
-    - roadmap_validator
-    - state_validator
-    - issues_validator
-    - milestones_validator
-    - git_validator
-    - db_validator
-
-    Usage:
-        def test_something(all_validators_mocked):
-            all_validators_mocked.roadmap_validator.return_value = (HealthStatus.HEALTHY, "OK")
-            ...
-    """
-    from roadmap.core.services.health.infrastructure_validator_service import (
-        DatabaseIntegrityValidator,
-        GitRepositoryValidator,
-        IssuesDirectoryValidator,
-        MilestonesDirectoryValidator,
-        RoadmapDirectoryValidator,
-        StateFileValidator,
-    )
-
-    with (
-        patch.object(RoadmapDirectoryValidator, "check") as mock_roadmap,
-        patch.object(StateFileValidator, "check") as mock_state,
-        patch.object(IssuesDirectoryValidator, "check") as mock_issues,
-        patch.object(MilestonesDirectoryValidator, "check") as mock_milestones,
-        patch.object(GitRepositoryValidator, "check") as mock_git,
-        patch.object(DatabaseIntegrityValidator, "check") as mock_db,
-    ):
-        # Return as SimpleNamespace for clean attribute access
-        yield SimpleNamespace(
-            roadmap_validator=mock_roadmap,
-            state_validator=mock_state,
-            issues_validator=mock_issues,
-            milestones_validator=mock_milestones,
-            git_validator=mock_git,
-            db_validator=mock_db,
-        )
-
-
-@pytest.fixture
-def path_operations_mocked():
-    """Fixture that mocks common pathlib.Path operations.
-
-    Returns a SimpleNamespace with mocked Path methods:
-    - exists
-    - stat
-    - unlink
-    - glob
-
-    Usage:
-        def test_something(path_operations_mocked):
-            path_operations_mocked.exists.return_value = True
-            ...
-    """
-    with (
-        patch("pathlib.Path.exists") as mock_exists,
-        patch("pathlib.Path.stat") as mock_stat,
-        patch("pathlib.Path.unlink") as mock_unlink,
-        patch("pathlib.Path.glob") as mock_glob,
-    ):
-        yield SimpleNamespace(
-            exists=mock_exists,
-            stat=mock_stat,
-            unlink=mock_unlink,
-            glob=mock_glob,
-        )
-
-
-@pytest.fixture
-def backup_cleanup_mocked(path_operations_mocked):
-    """Fixture for backup cleanup service tests.
-
-    Mocks: logger, Path operations, and backup selection method.
-
-    Returns a SimpleNamespace with:
-    - logger
-    - path_ops (pathlib.Path operations)
-    - select_backups (BackupCleanupService._select_backups_for_deletion)
-
-    Usage:
-        def test_cleanup(backup_cleanup_mocked):
-            backup_cleanup_mocked.logger.info.assert_called()
-            ...
-    """
-    from roadmap.core.services.health.backup_cleanup_service import BackupCleanupService
-
-    with (
-        patch(
-            "roadmap.core.services.health.backup_cleanup_service.logger"
-        ) as mock_logger,
-        patch.object(
-            BackupCleanupService, "_select_backups_for_deletion"
-        ) as mock_select,
-    ):
-        yield SimpleNamespace(
-            logger=mock_logger,
-            path_ops=path_operations_mocked,
-            select_backups=mock_select,
-        )
 
 
 @pytest.fixture

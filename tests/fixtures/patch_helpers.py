@@ -4,7 +4,7 @@ This module centralizes commonly-used patch patterns to reduce repetition
 of @patch decorators across the test suite.
 
 Usage:
-    from tests.fixtures.patch_helpers import with_file_operations, with_health_validator
+    from tests.fixtures.patch_helpers import with_file_operations
 
     @with_file_operations
     def test_something(mock_builtin_open, mock_git_repo):
@@ -23,12 +23,6 @@ from typing import Any
 from unittest.mock import patch
 
 # Common patch targets - centralized for easy maintenance
-
-# === Health & Backup Services ===
-HEALTH_VALIDATOR_PATCH = "roadmap.core.services.health.infrastructure_validator"
-BACKUP_CLEANUP_LOGGER_PATCH = (
-    "roadmap.core.services.health.backup_cleanup_service.logger"
-)
 
 # === File Operations ===
 BUILTIN_OPEN_PATCH = "builtins.open"
@@ -70,27 +64,6 @@ MILESTONE_LIST_CONSOLE_PATCH = (
 # === Path Operations ===
 PATH_EXISTS_PATCH = "pathlib.Path.exists"
 PATH_STAT_PATCH = "pathlib.Path.stat"
-INFRASTRUCTURE_VALIDATOR_PATH_PATCH = (
-    "roadmap.core.services.health.infrastructure_validator_service.Path"
-)
-
-
-def with_health_validator(test_func: Callable) -> Callable:
-    """Decorator that patches the infrastructure health validator.
-
-    Args:
-        test_func: Test function to decorate
-
-    Returns:
-        Decorated test function with health validator mocked
-    """
-
-    @patch(HEALTH_VALIDATOR_PATCH)
-    @wraps(test_func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return test_func(*args, **kwargs)
-
-    return wrapper
 
 
 def with_file_operations(test_func: Callable) -> Callable:
@@ -240,24 +213,6 @@ def with_error_logging_logger(test_func: Callable) -> Callable:
     """
 
     @patch(ERROR_LOGGING_LOGGER_PATCH)
-    @wraps(test_func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return test_func(*args, **kwargs)
-
-    return wrapper
-
-
-def with_backup_cleanup_logger(test_func: Callable) -> Callable:
-    """Decorator that patches backup cleanup logger (9 occurrences).
-
-    Args:
-        test_func: Test function to decorate
-
-    Returns:
-        Decorated test function with backup logger mocked
-    """
-
-    @patch(BACKUP_CLEANUP_LOGGER_PATCH)
     @wraps(test_func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         return test_func(*args, **kwargs)
@@ -446,24 +401,6 @@ def with_file_system_operations(test_func: Callable) -> Callable:
     return wrapper
 
 
-def with_infrastructure_validator_path(test_func: Callable) -> Callable:
-    """Decorator that patches Path in infrastructure_validator_service (9 occurrences).
-
-    Args:
-        test_func: Test function to decorate
-
-    Returns:
-        Decorated test function with infrastructure validator Path mocked
-    """
-
-    @patch(INFRASTRUCTURE_VALIDATOR_PATH_PATCH)
-    @wraps(test_func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        return test_func(*args, **kwargs)
-
-    return wrapper
-
-
 # ============================================================================
 # GitHub and HTTP Request Patches (13+ occurrences)
 # ============================================================================
@@ -495,7 +432,7 @@ def with_github_requests_get(test_func: Callable) -> Callable:
 def with_all_loggers(test_func: Callable) -> Callable:
     """Decorator that patches all common loggers.
 
-    Patches: performance tracking logger, error logging logger, backup cleanup logger
+    Patches: performance tracking logger and error logging logger
 
     Args:
         test_func: Test function to decorate
@@ -504,7 +441,6 @@ def with_all_loggers(test_func: Callable) -> Callable:
         Decorated test function with all loggers mocked
     """
 
-    @patch(BACKUP_CLEANUP_LOGGER_PATCH)
     @patch(ERROR_LOGGING_LOGGER_PATCH)
     @patch(PERFORMANCE_TRACKING_LOGGER_PATCH)
     @wraps(test_func)
@@ -561,25 +497,3 @@ def with_git_integration(test_func: Callable) -> Callable:
 # ============================================================================
 # Service-Specific Patches
 # ============================================================================
-
-
-def patch_backup_cleanup_service_select() -> Callable:
-    """Decorator that patches BackupCleanupService._select_backups_for_deletion.
-
-    Returns:
-        Decorator function
-    """
-
-    def decorator(test_func: Callable) -> Callable:
-        from roadmap.core.services.health.backup_cleanup_service import (
-            BackupCleanupService,
-        )
-
-        @patch.object(BackupCleanupService, "_select_backups_for_deletion")
-        @wraps(test_func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return test_func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator

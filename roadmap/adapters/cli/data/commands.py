@@ -1,148 +1,230 @@
-"""Data management commands for export and reporting."""
+"""Deterministic canonical issue exports."""
+
+from __future__ import annotations
+
+import csv
+import io
+import json
+from pathlib import Path
+from typing import Any
 
 import click
 
-from roadmap.common.console import get_console
-from roadmap.common.logging import verbose_output
-from roadmap.core.domain import Issue
+from roadmap.adapters.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.cli.planning_resolution import invoke
+from roadmap.application.contracts import IssueListQuery, IssueQueryRecord, IssueScope
 
-console = get_console()
-
-
-def _serialize_issue(issue: Issue) -> dict:
-    """Convert an Issue model to a JSON-serializable dict."""
-    # Use pydantic's dict but convert datetimes to isoformat strings
-    d = issue.model_dump()
-    for k, v in d.items():
-        if hasattr(v, "isoformat"):
-            try:
-                d[k] = v.isoformat()
-            except Exception:
-                d[k] = str(v)
-    return d
+EXPORT_SCHEMA_VERSION = 1
+CSV_FIELDS = (
+    "schema_version",
+    "id",
+    "title",
+    "status",
+    "retention",
+    "priority",
+    "issue_type",
+    "assignee",
+    "milestone_id",
+    "estimated_hours",
+    "due_at",
+    "created",
+    "updated",
+    "labels",
+    "depends_on",
+    "blocks",
+)
 
 
 @click.group()
-def data():
-    """Export, import, and analyze roadmap data."""
-    pass
+def data() -> None:
+    """Export and inspect canonical Roadmap data."""
 
 
 @data.command("export")
 @click.option(
     "--format",
+    "format_name",
     type=click.Choice(["json", "csv", "markdown"]),
     default="json",
-    help="Export format",
+    show_default=True,
 )
-@click.option("--output", "-o", help="Output file path")
-@click.option("--filter", help="Filter criteria (simple key=value)")
+@click.option("--output", "-o", type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--filter", "filter_value", help="One documented key=value filter")
 @click.pass_context
-@verbose_output
-def export(ctx: click.Context, format: str, output: str, filter: str):
-    """Export roadmap issues to JSON, CSV or Markdown.
+@require_initialized
+def export(
+    ctx: click.Context, format_name: str, output: Path | None, filter_value: str | None
+) -> None:
+    """Export canonical issues without provider or projection metadata."""
+    result = invoke(lambda: ctx.obj["core"].issue_queries.list(_query(filter_value)))
+    records = tuple(sorted(result.records, key=lambda item: str(item.issue.id)))
+    content = _render(records, format_name)
+    if output is None:
+        click.echo(content, nl=False)
+        return
+    try:
+        with output.open("x", encoding="utf-8", newline="") as stream:
+            stream.write(content)
+    except FileExistsError as error:
+        raise click.ClickException(
+            f"Refusing to overwrite existing export: {output}"
+        ) from error
+    except OSError as error:
+        raise click.ClickException(f"Cannot write export {output}: {error}") from error
+    click.echo(f"Exported {len(records)} issues to {output}", err=True)
 
-    The --filter argument supports a simple key=value filter (e.g. assignee=alice).
-    """
-    console.print(f"📊 Exporting issues in {format} format...", style="bold blue")
 
-    # Get core and issues
-    core = _get_core(ctx)
-    if not core or not core.is_initialized():
-        console.print(
-            "❌ Roadmap not initialized. Run 'roadmap init' first or run this command inside a roadmap.",
-            style="bold red",
+def _query(value: str | None) -> IssueListQuery:
+    if value is None:
+        return IssueListQuery(scope=IssueScope.ALL)
+    if "=" not in value:
+        raise click.BadParameter("filter must use key=value", param_hint="--filter")
+    key, expected = (part.strip() for part in value.split("=", 1))
+    if not key or not expected:
+        raise click.BadParameter("filter must use key=value", param_hint="--filter")
+    if key == "status":
+        return IssueListQuery(
+            scope=IssueScope.ALL,
+            open_only=expected == "open",
+            status=None if expected == "open" else expected,
         )
-        return
-
-    issues = _load_and_filter_issues(core, filter)
-    if not issues:
-        console.print("ℹ️  No issues to export.", style="yellow")
-        return
-
-    # Format and output
-    _export_and_write(issues, format, output)
-
-
-def _get_core(ctx: click.Context):
-    """Get RoadmapCore from context or discover existing roadmap."""
-    try:
-        core = ctx.obj.get("core") if ctx.obj else None
-    except Exception:
-        core = None
-
-    if core is None:
+    if key == "priority":
+        return IssueListQuery(scope=IssueScope.ALL, priority=expected)
+    if key == "issue_type":
+        return IssueListQuery(scope=IssueScope.ALL, issue_type=expected)
+    if key == "assignee":
+        return IssueListQuery(scope=IssueScope.ALL, assignee=expected)
+    if key == "retention":
         try:
-            factory = ctx.obj.get("existing_core_factory") if ctx.obj else None
-            core = factory() if factory else None
-        except Exception:
-            core = None
-
-    return core
-
-
-def _load_and_filter_issues(core, filter_str: str):
-    """Load issues and apply filter if provided."""
-    try:
-        issues = core.issues.list()
-    except Exception as e:
-        console.print(f"❌ Failed to list issues: {e}", style="bold red")
-        return []
-
-    if filter_str:
-        try:
-            key, val = filter_str.split("=", 1)
-            key = key.strip()
-            val = val.strip()
-            issues = [
-                i for i in issues if str(getattr(i, key, "")).lower() == val.lower()
-            ]
-        except Exception:
-            console.print("⚠️  Unable to parse filter, ignoring.", style="yellow")
-
-    return issues
+            return IssueListQuery(scope=IssueScope(expected))
+        except ValueError as error:
+            raise click.BadParameter(
+                "retention must be visible, closed, archived, or all",
+                param_hint="--filter",
+            ) from error
+    raise click.BadParameter(
+        "supported filter keys are status, priority, issue_type, assignee, and retention",
+        param_hint="--filter",
+    )
 
 
-def _export_and_write(issues, format_type: str, output_path: str):
-    """Format issues and write to file or stdout."""
-    from roadmap.common.formatters import IssueExporter
+def _timestamp(value: Any) -> str | None:
+    return None if value is None else value.value.isoformat()
 
-    try:
-        if format_type == "json":
-            out_text = IssueExporter.to_json(issues, _serialize_issue)
-        elif format_type == "csv":
-            out_text = IssueExporter.to_csv(issues, _serialize_issue)
-        else:  # markdown
-            out_text = IssueExporter.to_markdown(issues)
 
-        # Write to file or print
-        if output_path:
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(out_text)
-            console.print(
-                f"✅ Exported {len(issues)} issues to {output_path}", style="bold green"
+def _issue_record(record: IssueQueryRecord) -> dict[str, Any]:
+    issue = record.issue
+    return {
+        "schema_version": EXPORT_SCHEMA_VERSION,
+        "id": str(issue.id),
+        "title": str(issue.title),
+        "headline": issue.headline,
+        "content": issue.content,
+        "status": issue.status.value,
+        "retention": issue.retention.value,
+        "priority": issue.priority.value,
+        "issue_type": issue.issue_type.value,
+        "assignee": issue.assignee,
+        "milestone_id": str(issue.relations.milestone_id)
+        if issue.relations.milestone_id is not None
+        else None,
+        "depends_on": sorted(map(str, issue.relations.depends_on)),
+        "blocks": sorted(map(str, issue.relations.blocks)),
+        "labels": sorted(issue.labels),
+        "estimated_hours": issue.estimated_hours,
+        "due_at": _timestamp(issue.due_at),
+        "progress_percentage": issue.progress_percentage,
+        "actual_start_at": _timestamp(issue.actual_start_at),
+        "actual_end_at": _timestamp(issue.actual_end_at),
+        "git_branches": sorted(issue.git_branches),
+        "created": _timestamp(issue.created),
+        "updated": _timestamp(issue.updated),
+        "comments": [
+            {
+                "id": comment.id,
+                "author": comment.author,
+                "body": comment.body,
+                "created_at": _timestamp(comment.created_at),
+                "updated_at": _timestamp(comment.updated_at),
+                "in_reply_to": comment.in_reply_to,
+            }
+            for comment in sorted(issue.comments, key=lambda item: item.id)
+        ],
+        "history": [
+            {"action": event.action, "at": _timestamp(event.at), "reason": event.reason}
+            for event in issue.history
+        ],
+    }
+
+
+def _render(records: tuple[IssueQueryRecord, ...], format_name: str) -> str:
+    rows = [_issue_record(record) for record in records]
+    if format_name == "json":
+        return (
+            json.dumps(
+                {
+                    "schema_version": EXPORT_SCHEMA_VERSION,
+                    "kind": "roadmap.issue-export",
+                    "issues": rows,
+                },
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
             )
-        else:
-            console.print(out_text)
+            + "\n"
+        )
+    if format_name == "csv":
+        stream = io.StringIO(newline="")
+        writer = csv.DictWriter(stream, fieldnames=CSV_FIELDS, lineterminator="\n")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(
+                {
+                    field: json.dumps(
+                        row[field], ensure_ascii=False, separators=(",", ":")
+                    )
+                    if field in {"labels", "depends_on", "blocks"}
+                    else row[field]
+                    for field in CSV_FIELDS
+                }
+            )
+        return stream.getvalue()
+    lines = [
+        "---",
+        f"schema_version: {EXPORT_SCHEMA_VERSION}",
+        "kind: roadmap.issue-export",
+        "---",
+        "",
+        "| ID | Title | Status | Priority | Assignee | Milestone |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in rows:
+        cells = (
+            row["id"],
+            row["title"],
+            row["status"],
+            row["priority"],
+            row["assignee"] or "",
+            row["milestone_id"] or "",
+        )
+        lines.append("| " + " | ".join(_markdown(cell) for cell in cells) + " |")
+    return "\n".join(lines) + "\n"
 
-    except Exception as e:
-        console.print(f"❌ Failed to export issues: {e}", style="bold red")
+
+def _markdown(value: object) -> str:
+    return str(value).replace("|", "\\|").replace("\n", "<br>")
 
 
-@data.command("generate-report")
+@data.command("generate-report", hidden=True)
 @click.option(
     "--type",
+    "report_type",
     type=click.Choice(["summary", "detailed", "analytics"]),
-    default="summary",
-    help="Report type",
 )
-@click.option("--output", "-o", help="Output file path")
-@click.pass_context
-@verbose_output
-def generate_report(ctx: click.Context, type: str, output: str):
-    """Generate detailed reports and analytics."""
-    console.print(f"📈 Generating {type} report...", style="bold blue")
-    # Implementation would go here
-    console.print(
-        "✅ Report generation functionality will be implemented", style="green"
+@click.option("--output", "-o")
+def generate_report(report_type: str | None, output: str | None) -> None:
+    """Deprecated placeholder retained only until Phase 11 command removal."""
+    del report_type, output
+    raise click.ClickException(
+        "The placeholder report command is not supported; use 'roadmap data export'."
     )

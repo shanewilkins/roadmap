@@ -40,13 +40,6 @@ from .github.github_conflict_detector import GitHubConflictDetector  # noqa: F40
 from .github.github_entity_classifier import GitHubEntityClassifier  # noqa: F401
 from .github.github_integration_service import GitHubIntegrationService  # noqa: F401
 from .github.github_issue_client import GitHubIssueClient  # noqa: F401
-from .health.backup_cleanup_service import BackupCleanupService  # noqa: F401
-from .health.entity_health_scanner import EntityHealthScanner  # noqa: F401
-from .health.file_repair_service import (  # noqa: F401
-    FileRepairResult,
-    FileRepairService,
-)
-from .health.issue_health_scanner import IssueHealthScanner  # noqa: F401
 from .issue.issue_creation_service import IssueCreationService  # noqa: F401
 from .issue.issue_matching_service import IssueMatchingService  # noqa: F401
 from .issue.issue_service import IssueService  # noqa: F401
@@ -76,13 +69,6 @@ if TYPE_CHECKING:
     from .git.git_hook_auto_sync_service import (  # noqa: F401
         GitHookAutoSyncConfig,
         GitHookAutoSyncService,
-    )
-    from .health.data_integrity_validator_service import (  # noqa: F401
-        DataIntegrityValidatorService,
-    )
-    from .health.health_check_service import HealthCheckService  # noqa: F401
-    from .health.infrastructure_validator_service import (
-        InfrastructureValidator,  # noqa: F401
     )
     from .project.project_service import ProjectService  # noqa: F401
     from .sync.sync_change_computer import (  # noqa: F401
@@ -131,18 +117,6 @@ def __getattr__(name: str):  # noqa: ANN001, ANN201
         "GitHookAutoSyncConfig": (
             "roadmap.core.services.git.git_hook_auto_sync_service",
             "GitHookAutoSyncConfig",
-        ),
-        "DataIntegrityValidatorService": (
-            "roadmap.core.services.health.data_integrity_validator_service",
-            "DataIntegrityValidatorService",
-        ),
-        "HealthCheckService": (
-            "roadmap.core.services.health.health_check_service",
-            "HealthCheckService",
-        ),
-        "InfrastructureValidator": (
-            "roadmap.core.services.health.infrastructure_validator_service",
-            "InfrastructureValidator",
         ),
         "ProjectService": (
             "roadmap.core.services.project.project_service",

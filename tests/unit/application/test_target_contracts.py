@@ -22,7 +22,7 @@ def test_request_and_response_contracts_are_immutable() -> None:
 
 
 def test_local_git_response_contains_data_without_running_git() -> None:
-    snapshot = GitSnapshot("main", "abc123", (".roadmap/issues/issue-id.md",))
+    snapshot = GitSnapshot(True, "main", "abc123", (".roadmap/issues/issue-id.md",))
 
     assert snapshot.changed_paths == (".roadmap/issues/issue-id.md",)
 

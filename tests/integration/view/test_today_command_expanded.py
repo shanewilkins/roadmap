@@ -6,6 +6,7 @@ assignment filtering, and time-based calculations.
 """
 
 import re
+from typing import Any
 
 from roadmap.bootstrap import cli as main
 from tests.fixtures.integration_helpers import IntegrationTestBase
@@ -456,7 +457,7 @@ class TestTodayCommandOutput:
     def test_today_shows_user_name(self, cli_runner):
         """Test that current user is shown in output."""
         with cli_runner.isolated_filesystem():
-            IntegrationTestBase.init_roadmap(cli_runner)
+            core = IntegrationTestBase.init_roadmap(cli_runner)
 
             # Create milestone and issues
             IntegrationTestBase.create_milestone(cli_runner, name="v1-0")
@@ -475,7 +476,10 @@ class TestTodayCommandOutput:
 
             assert result.exit_code == 0
             clean_output = clean_cli_output(result.output)
-            assert "testuser" in clean_output or "user" in clean_output.lower()
+            identity_source: Any = core
+            identity = identity_source.current_identity.current_identity()
+            assert identity is not None
+            assert identity in clean_output
 
     def test_today_shows_numeric_summary(self, cli_runner):
         """Test that summary includes numeric information."""

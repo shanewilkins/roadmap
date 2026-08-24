@@ -5,6 +5,7 @@ Integration tests for root/help CLI commands.
 Uses Click's CliRunner for testing CLI interactions.
 """
 
+import json
 import os
 from pathlib import Path
 
@@ -173,6 +174,18 @@ class TestCLIStatus:
             result = cli_runner2.invoke(main, cmd)
             assert check(result)
 
+    def test_status_json_is_versioned_and_deterministic(self, isolated_roadmap):
+        cli_runner, _core = isolated_roadmap
+
+        first = cli_runner.invoke(main, ["status", "--format", "json"])
+        second = cli_runner.invoke(main, ["status", "--format", "json"])
+
+        assert first.exit_code == 0
+        assert first.stdout == second.stdout
+        payload = json.loads(first.stdout)
+        assert payload["schema_version"] == 1
+        assert payload["kind"] == "roadmap.status"
+
 
 class TestCLIHealth:
     """Test health command."""
@@ -186,7 +199,7 @@ class TestCLIHealth:
                 ["health"],
                 "init",
                 lambda result: (
-                    result.exit_code == 0
+                    result.exit_code in {0, 1}
                     and (
                         "health" in _output_lower(result)
                         or "status" in _output_lower(result)
@@ -205,6 +218,36 @@ class TestCLIHealth:
             cli_runner2, core = isolated_roadmap
             result = cli_runner2.invoke(main, cmd)
             assert check(result)
+
+    def test_health_json_and_confirmed_projection_repair(self, isolated_roadmap):
+        cli_runner, _core = isolated_roadmap
+
+        before = cli_runner.invoke(main, ["health", "--format", "json"])
+        preview = cli_runner.invoke(
+            main,
+            [
+                "health",
+                "fix",
+                "--fix-type",
+                "projection",
+                "--dry-run",
+                "--format",
+                "json",
+            ],
+        )
+        applied = cli_runner.invoke(
+            main,
+            ["health", "fix", "--fix-type", "projection", "--yes", "--format", "json"],
+        )
+
+        before_payload = json.loads(before.stdout)
+        preview_payload = json.loads(preview.stdout)
+        applied_payload = json.loads(applied.stdout)
+        assert before_payload["kind"] == "roadmap.health"
+        assert preview_payload["mode"] == "dry-run"
+        assert preview_payload["actions"][0]["action_id"] == "rebuild-projection"
+        assert applied.exit_code == 0
+        assert applied_payload["post_check"]["status"] == "healthy"
 
 
 class TestCLIHelpCommands:

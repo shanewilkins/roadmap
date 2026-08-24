@@ -110,8 +110,9 @@ roadmap health fix --dry-run
 ```
 
 Preview repair before applying it, and commit or back up `.roadmap/` first. The
-0.2 implementation will narrow repair operations further and document a
-versioned projection-rebuild workflow.
+0.2 repair surface is limited to interrupted canonical transactions and
+rebuilding the disposable SQLite projection; unsafe heuristic rewrites require
+explicit canonical-file edits.
 
 ## Next steps
 

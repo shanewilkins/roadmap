@@ -1,8 +1,5 @@
-"""Health commands for roadmap.
+"""Workspace health commands."""
 
-Provides health scanning and diagnostics for entities.
-"""
+from roadmap.adapters.cli.health.commands import db_integrity, fix_health, health, scan
 
-from roadmap.adapters.cli.health.scan import scan
-
-__all__ = ["scan"]
+__all__ = ["db_integrity", "fix_health", "health", "scan"]

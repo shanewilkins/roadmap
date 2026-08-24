@@ -5,6 +5,10 @@ Integration tests for CLI data export and git integration commands.
 Uses Click's CliRunner for testing CLI interactions.
 """
 
+import csv
+import io
+import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -86,8 +90,13 @@ class TestCLIDataExport:
         )
 
         assert result.exit_code == 0
-        # Should have output
-        assert len(result.output) > 0
+        payload = json.loads(result.stdout)
+        assert payload["schema_version"] == 1
+        assert payload["kind"] == "roadmap.issue-export"
+        assert [item["id"] for item in payload["issues"]] == sorted(
+            item["id"] for item in payload["issues"]
+        )
+        assert "Exporting" not in result.stdout
 
     def test_export_with_filter(self, isolated_roadmap_with_issues):
         """Test export with filter option."""
@@ -111,6 +120,59 @@ class TestCLIDataExport:
         # Command should succeed even if no matching data
         assert result.exit_code == 0
 
+    def test_empty_export_is_valid_and_versioned(self, isolated_roadmap):
+        cli_runner, _core = isolated_roadmap
+
+        json_result = cli_runner.invoke(main, ["data", "export", "--format", "json"])
+        csv_result = cli_runner.invoke(main, ["data", "export", "--format", "csv"])
+
+        assert json.loads(json_result.stdout) == {
+            "issues": [],
+            "kind": "roadmap.issue-export",
+            "schema_version": 1,
+        }
+        rows = list(csv.DictReader(io.StringIO(csv_result.stdout)))
+        assert rows == []
+        assert "schema_version" in csv_result.stdout.splitlines()[0]
+
+    def test_export_refuses_to_overwrite(self, isolated_roadmap_with_issues):
+        cli_runner, _core = isolated_roadmap_with_issues
+        output_file = Path.cwd() / "existing.json"
+        output_file.write_text("keep me\n", encoding="utf-8")
+
+        result = cli_runner.invoke(
+            main, ["data", "export", "--format", "json", "-o", str(output_file)]
+        )
+
+        assert result.exit_code != 0
+        assert output_file.read_text(encoding="utf-8") == "keep me\n"
+
+    def test_export_rejects_unknown_filter(self, isolated_roadmap_with_issues):
+        cli_runner, _core = isolated_roadmap_with_issues
+
+        result = cli_runner.invoke(main, ["data", "export", "--filter", "wat=nope"])
+
+        assert result.exit_code != 0
+        assert result.stdout == ""
+
+    def test_json_export_preserves_unicode_and_explicit_nulls(
+        self, isolated_roadmap_with_issues
+    ):
+        cli_runner, _core = isolated_roadmap_with_issues
+        IntegrationTestBase.create_issue(cli_runner, title="Résumé planning 🚀")
+
+        result = cli_runner.invoke(main, ["data", "export", "--format", "json"])
+
+        assert result.exit_code == 0
+        exported = next(
+            issue
+            for issue in json.loads(result.stdout)["issues"]
+            if issue["title"] == "Résumé planning 🚀"
+        )
+        assert exported["assignee"] is None or isinstance(exported["assignee"], str)
+        assert exported["due_at"] is None
+        assert exported["milestone_id"] is None
+
 
 class TestCLIDataGroup:
     """Test data command group."""
@@ -132,8 +194,6 @@ class TestCLIGitIntegration:
         cli_runner, core = isolated_roadmap_with_issues
 
         # Initialize git repo
-        import subprocess
-
         temp_dir = Path.cwd()
         subprocess.run(["git", "init"], cwd=temp_dir, check=True, capture_output=True)
         subprocess.run(
@@ -159,11 +219,12 @@ class TestCLIGitIntegration:
             capture_output=True,
         )
 
-        return cli_runner, temp_dir
+        issue_id = str(core.issue_queries.ids()[0])
+        return cli_runner, temp_dir, core, issue_id
 
     def test_git_status(self, isolated_git_repo):
         """Test git status command."""
-        cli_runner, temp_dir = isolated_git_repo
+        cli_runner, _temp_dir, _core, _issue_id = isolated_git_repo
 
         result = cli_runner.invoke(main, ["git", "status"])
 
@@ -182,31 +243,64 @@ class TestCLIGitIntegration:
 
     def test_git_branch_create(self, isolated_git_repo):
         """Test creating git branch for issue."""
-        cli_runner, temp_dir = isolated_git_repo
+        cli_runner, temp_dir, core, issue_id = isolated_git_repo
 
         result = cli_runner.invoke(
             main,
-            ["git", "branch", "1", "--no-checkout"],
+            ["git", "branch", issue_id, "--no-checkout"],
         )
 
-        # Should create branch
-        assert result.exit_code == 0 or "branch" in result.output.lower()
+        assert result.exit_code == 0, result.output
+        branch = result.output.split("Created branch: ", 1)[1].splitlines()[0]
+        branches = subprocess.run(
+            ["git", "branch", "--format=%(refname:short)"],
+            cwd=temp_dir,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        assert branch in branches
+        assert branch in core.issue_queries.view(issue_id).issue.git_branches
 
     def test_git_branch_with_checkout(self, isolated_git_repo):
         """Test creating and checking out git branch."""
-        cli_runner, temp_dir = isolated_git_repo
+        cli_runner, temp_dir, core, issue_id = isolated_git_repo
 
         result = cli_runner.invoke(
             main,
-            ["git", "branch", "1", "--checkout"],
+            ["git", "branch", issue_id, "--checkout"],
         )
 
-        # Should create and checkout branch
-        assert result.exit_code == 0 or "branch" in result.output.lower()
+        assert result.exit_code == 0, result.output
+        branch = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=temp_dir,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        assert branch.startswith(f"issue/{issue_id}-")
+        assert branch in core.issue_queries.view(issue_id).issue.git_branches
+
+    def test_git_link_current_branch(self, isolated_git_repo):
+        cli_runner, temp_dir, core, issue_id = isolated_git_repo
+        subprocess.run(
+            ["git", "switch", "-c", "work/manual-link"],
+            cwd=temp_dir,
+            check=True,
+            capture_output=True,
+        )
+
+        result = cli_runner.invoke(main, ["git", "link", issue_id])
+
+        assert result.exit_code == 0, result.output
+        assert (
+            "work/manual-link" in core.issue_queries.view(issue_id).issue.git_branches
+        )
 
     def test_git_branch_nonexistent_issue(self, isolated_git_repo):
         """Test creating branch for nonexistent issue."""
-        cli_runner, temp_dir = isolated_git_repo
+        cli_runner, _temp_dir, _core, _issue_id = isolated_git_repo
 
         result = cli_runner.invoke(
             main,
@@ -234,8 +328,15 @@ class TestCLIGitGroup:
 
     def test_all_git_subcommands_have_help(self, cli_runner):
         """Test that all git subcommands have help."""
-        subcommands = ["status", "branch", "setup", "link", "sync"]
+        subcommands = ["status", "branch", "link"]
 
         for cmd in subcommands:
             result = cli_runner.invoke(main, ["git", cmd, "--help"])
             assert result.exit_code == 0, f"{cmd} help failed"
+
+    def test_git_group_excludes_remote_auth_and_hook_commands(self, cli_runner):
+        result = cli_runner.invoke(main, ["git", "--help"])
+
+        assert result.exit_code == 0
+        for removed in ("setup", "sync", "auth", "hooks", "connectivity"):
+            assert removed not in result.output.lower()

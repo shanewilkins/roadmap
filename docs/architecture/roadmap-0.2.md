@@ -7,8 +7,9 @@
 - Implementation specification: [refactor-implementation.md](refactor-implementation.md)
 - Detailed execution and checkpoint protocol:
   [refactor-execution-plan.md](refactor-execution-plan.md)
-- Detailed execution status: Phase 9 workspace-migration checkpoint accepted on
-  2026-08-24; work is stopped before Phase 10 of the detailed execution plan.
+- Detailed execution status: Phase 10 operational-boundaries checkpoint
+  accepted on 2026-08-24; work is stopped before Phase 11 of the detailed
+  execution plan.
 
 ## Decision
 
@@ -95,6 +96,14 @@ reported separately and cannot offset an increase in production code.
   cases;
 - replacement of SQLite without measured evidence; and
 - a documentation framework migration or broad Sphinx rebuild.
+
+The road to 1.0 also includes an explicit authentication decision gate. Roadmap
+will remain account-free unless a future hosted or genuinely multi-user trust
+boundary demonstrates a need that operating-system access, Git credentials,
+and repository-host authorization cannot meet. Authentication is a conditional
+candidate, not a committed feature; any adoption requires concrete requirements,
+threat modeling, recovery and offline semantics, and a separate ADR. See
+[Product direction](../developer_notes/FUTURE_FEATURES.md#road-to-10-authentication-decision-gate).
 
 The CSV requirement registers remain governance and planning artifacts during
 0.2. This lets the project use requirement IDs immediately without forcing a

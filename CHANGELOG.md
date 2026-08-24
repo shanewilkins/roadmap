@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   output, recovery, and idempotent rerun for supported 0.1.1 workspaces.
 - Added versioned workspace/document schemas and scoped project/user
   configuration resolved once into an immutable Bootstrap snapshot.
+- Added versioned canonical issue exports, deterministic status and
+  critical-path output, read-only workspace diagnosis, previewable projection
+  rebuild and interrupted-transaction recovery, and explicit local Git
+  status/branch/link use cases.
 
 ### Changed
 
@@ -21,11 +25,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   projection after canonical commit.
 - New entity IDs use complete UUID4 values while existing IDs are preserved
   exactly during migration.
+- Machine-readable report and health payloads are deterministic and isolated
+  on stdout; diagnostics and file-write confirmations use stderr.
+- `roadmap cleanup` now removes only explicitly enumerated, retention-qualified
+  legacy backup files and never heuristically rewrites canonical documents.
 
 ### Removed
 
 - Removed ambient Dynaconf settings, duplicate configuration models/loaders,
   provider and machine-path configuration writers, and their superseded tests.
+- Removed duplicate health scanners/fixers/exporters and Roadmap Git
+  authentication, connectivity, setup, and automatic-hook command handlers.
+  Remote/provider synchronization internals remain scheduled for Phase 11.
 
 ## [0.1.1] - 2026-08-09
 
