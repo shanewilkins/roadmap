@@ -108,7 +108,7 @@ def test_valid_fixture_obeys_every_architecture_rule() -> None:
         ),
         (
             "removed_namespace",
-            11,
+            12,
             Violation(
                 "roadmap.adapters.sync.legacy",
                 "roadmap.adapters.sync",
@@ -193,7 +193,7 @@ def test_malformed_or_duplicate_baseline_fails(tmp_path: Path, body: str) -> Non
 def test_removed_namespace_rule_is_inactive_before_its_declared_phase() -> None:
     """Scheduled removal does not rewrite the unchanged Phase 2 tree."""
     fixture = FIXTURES / "invalid" / "removed_namespace" / "roadmap"
-    assert find_violations(fixture, POLICY, current_phase=10) == ()
+    assert find_violations(fixture, POLICY, current_phase=11) == ()
 
 
 def test_pyright_configuration_keeps_meaningful_error_rules() -> None:

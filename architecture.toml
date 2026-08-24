@@ -1,6 +1,6 @@
 [architecture]
 version = 1
-current_phase = 11
+current_phase = 12
 final_phase = 13
 production_root = "roadmap"
 baseline = "architecture-baseline.toml"
@@ -70,15 +70,17 @@ kind = "zone_cycle"
 [[rules]]
 id = "removed-namespace"
 kind = "removed_namespace"
-active_phase = 11
+active_phase = 12
 namespaces = [
+  "roadmap.core",
+  "roadmap.common",
+  "roadmap.infrastructure",
+  "roadmap.presentation",
+  "roadmap.adapters.cli",
+  "roadmap.adapters.git",
+  "roadmap.adapters.persistence",
   "roadmap.adapters.github",
   "roadmap.adapters.sync",
-  "roadmap.core.services.baseline",
-  "roadmap.core.services.github",
-  "roadmap.core.services.sync",
-  "roadmap.common.configuration.github",
-  "roadmap.common.initialization.github",
-  "roadmap.infrastructure.github_gateway",
-  "roadmap.infrastructure.sync_gateway",
+  "roadmap.application.services",
+  "roadmap.adapters.inbound.cli.services",
 ]

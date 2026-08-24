@@ -4,12 +4,55 @@ Provides utilities for initializing roadmap, creating test data,
 and asserting on CLI commands in a robust way.
 """
 
+from pathlib import Path
 from typing import Any
 
 from click.testing import CliRunner
 
 from roadmap.bootstrap import cli as main
-from roadmap.infrastructure.coordination.core import RoadmapCore
+from roadmap.bootstrap.core import create_core
+
+
+class _Entities:
+    def __init__(self, loader):
+        self._loader = loader
+
+    def list(self):
+        return list(self._loader())
+
+    def get(self, supplied: str):
+        folded = supplied.casefold()
+        return next(
+            (
+                item
+                for item in self._loader()
+                if str(item.id) == supplied
+                or str(getattr(item, "name", "")).casefold() == folded
+            ),
+            None,
+        )
+
+
+class TestWorkspace:
+    """Small assertion view over Bootstrap-composed Application services."""
+
+    __test__ = False
+
+    def __init__(self):
+        self.services = create_core(Path.cwd())
+        self.issues = _Entities(
+            lambda: tuple(
+                record.issue for record in self.services.issue_queries.list_all()
+            )
+        )
+        self.milestones = _Entities(self.services.planning.all_milestones)
+        self.projects = _Entities(self.services.planning.all_projects)
+
+    def __getattr__(self, name: str):
+        return getattr(self.services, name)
+
+    def close(self) -> None:
+        return None
 
 
 class IntegrationTestBase:
@@ -19,10 +62,10 @@ class IntegrationTestBase:
     and improve test robustness.
     """
 
-    _open_cores: list[RoadmapCore] = []
+    _open_cores: list[TestWorkspace] = []
 
     @classmethod
-    def _register_core(cls, core: RoadmapCore) -> RoadmapCore:
+    def _register_core(cls, core: TestWorkspace) -> TestWorkspace:
         cls._open_cores.append(core)
         return core
 
@@ -39,7 +82,7 @@ class IntegrationTestBase:
     def init_roadmap(
         cli_runner: CliRunner,
         project_name: str = "Test Project",
-    ) -> RoadmapCore:
+    ) -> TestWorkspace:
         """Initialize roadmap in isolated filesystem.
 
         Uses the CLI init command to ensure proper initialization,
@@ -73,7 +116,7 @@ class IntegrationTestBase:
                 error_msg += f"\nException: {result.exception}"
             raise AssertionError(error_msg)
 
-        return IntegrationTestBase._register_core(RoadmapCore())
+        return IntegrationTestBase._register_core(TestWorkspace())
 
     @staticmethod
     def create_milestone(
@@ -113,14 +156,14 @@ class IntegrationTestBase:
             raise AssertionError(error_msg)
 
         # Return milestone object from core
-        core = IntegrationTestBase._register_core(RoadmapCore())
+        core = IntegrationTestBase._register_core(TestWorkspace())
         try:
             milestone = core.milestones.get(name)
             if milestone is not None:
                 return {
                     "name": milestone.name,
                     "headline": milestone.headline,
-                    "due_date": str(milestone.due_date) if milestone.due_date else None,
+                    "due_date": str(milestone.due_at) if milestone.due_at else None,
                 }
         except Exception:
             pass
@@ -290,13 +333,13 @@ class IntegrationTestBase:
         raise AssertionError("\n".join(error_msg))
 
     @staticmethod
-    def get_roadmap_core() -> RoadmapCore:
+    def get_roadmap_core() -> TestWorkspace:
         """Get RoadmapCore instance for the current workspace.
 
         Returns:
             RoadmapCore instance
         """
-        return IntegrationTestBase._register_core(RoadmapCore())
+        return IntegrationTestBase._register_core(TestWorkspace())
 
     @staticmethod
     def roadmap_state() -> dict[str, Any]:
@@ -307,7 +350,7 @@ class IntegrationTestBase:
         Returns:
             Dictionary with issues, milestones, and other state
         """
-        core = IntegrationTestBase._register_core(RoadmapCore())
+        core = IntegrationTestBase._register_core(TestWorkspace())
         try:
             return {
                 "issues": core.issues.list(),

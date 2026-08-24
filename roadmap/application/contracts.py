@@ -27,6 +27,26 @@ class IssueScope(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class WorkspaceInitializationRequest:
+    """One explicit request to establish a canonical local workspace."""
+
+    project_name: Name | None = None
+    description: str = ""
+    skip_project: bool = False
+    dry_run: bool = False
+    force: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class WorkspaceInitializationResult:
+    """Stable outcome reported by the initialization use case."""
+
+    created_workspace: bool
+    created_project: Project | None = None
+    dry_run: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class IssueCommentView:
     id: int
     author: str

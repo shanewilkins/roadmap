@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import re
+from dataclasses import fields
 from datetime import date
 from pathlib import Path
 
@@ -12,9 +13,7 @@ import pytest
 
 from roadmap.adapters.outbound.persistence.configuration import PROJECT_KEYS, USER_KEYS
 from roadmap.bootstrap import cli as main
-from roadmap.core.domain.issue import Issue
-from roadmap.core.domain.milestone import Milestone
-from roadmap.core.domain.project import Project
+from roadmap.domain.aggregates import Issue, Milestone, Project
 
 ROOT = Path(__file__).resolve().parents[2]
 INVENTORY = ROOT / "docs/architecture/compatibility-inventory-0.2.csv"
@@ -119,7 +118,7 @@ def _canonical_surfaces() -> set[str]:
     return {
         f"canonical.{entity}.{field}"
         for entity, model in models.items()
-        for field in model.model_fields
+        for field in fields(model)
     }
 
 

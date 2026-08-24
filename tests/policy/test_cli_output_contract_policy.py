@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 import click
+from click.testing import CliRunner
 
 _RAW_ASSERT_ALLOWLIST = {
     "tests/integration/archive/test_archive_duplicate_prevention.py",
@@ -95,9 +96,9 @@ def _stream_contract_probe() -> None:
     click.echo("diagnostic-on-stderr", err=True)
 
 
-def test_cli_runner_strict_streams_contract(cli_runner_strict_streams) -> None:
+def test_cli_runner_strict_streams_contract() -> None:
     """Canonical strict runner must separate stdout and stderr."""
-    result = cli_runner_strict_streams.invoke(_stream_contract_probe)
+    result = CliRunner().invoke(_stream_contract_probe)
 
     assert result.exit_code == 0
     assert "payload-on-stdout" in result.output

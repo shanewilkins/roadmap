@@ -5,6 +5,7 @@ from .issue_mutations import IssueMutations
 from .issues import IssueQueries
 from .local_git import LocalGit
 from .planning import Planning
+from .workspace_initialization import WorkspaceInitialization
 from .workspace_migration import WorkspaceMigration
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "LocalGit",
     "Planning",
     "WorkspaceHealth",
+    "WorkspaceInitialization",
     "WorkspaceMigration",
 ]

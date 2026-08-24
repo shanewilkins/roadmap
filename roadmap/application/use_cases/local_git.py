@@ -51,7 +51,12 @@ class LocalGit:
         )
 
     def create_issue_branch(
-        self, issue_id: EntityId, *, checkout: bool
+        self,
+        issue_id: EntityId,
+        *,
+        checkout: bool,
+        branch_name: str | None = None,
+        force: bool = False,
     ) -> GitBranchResult:
         snapshot = self._repository.inspect_local_git()
         if not snapshot.is_repository:
@@ -61,7 +66,14 @@ class LocalGit:
             )
         issue = self._issues.view(issue_id).issue
         slug = _UNSAFE_SLUG.sub("-", str(issue.title).casefold()).strip("-")[:48]
-        branch = f"issue/{issue.id}-{slug}" if slug else f"issue/{issue.id}"
+        branch = branch_name or (
+            f"issue/{issue.id}-{slug}" if slug else f"issue/{issue.id}"
+        )
+        if snapshot.changed_paths and not force:
+            raise ApplicationFailure(
+                FailureCategory.CONFLICT,
+                "Working tree has uncommitted changes; use --force to create the branch",
+            )
         self._repository.create_branch(branch, checkout=checkout)
         receipt = self._mutations.link_branch(issue.id, branch)
         return GitBranchResult(

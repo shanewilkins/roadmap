@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from roadmap.adapters.cli import (
+from roadmap.adapters.inbound.cli import (
     COMMAND_REGISTRY,
     CliRuntime,
     CommandLocation,
@@ -27,27 +27,23 @@ def _find_existing_core(root_path: Path) -> Any | None:
 
 
 def _initialize_tracing() -> None:
-    from roadmap.common.observability.otel_init import initialize_tracing
-
-    initialize_tracing()
+    """Tracing is intentionally disabled for the local-only CLI."""
 
 
 def _initialize_logging() -> None:
-    import structlog
-
-    from roadmap.common.logging import setup_logging
-
-    # Bootstrap owns process configuration. Test helpers and imported libraries
-    # may have configured structlog with a stdout PrintLogger; always replace
-    # that ambient state so machine-readable command output remains clean.
-    structlog.reset_defaults()
-    setup_logging(log_level="INFO", debug_mode=False, log_to_file=True)
+    """The CLI emits deliberate user output; libraries stay quiet by default."""
 
 
 def _create_console() -> Any:
-    from roadmap.common.console import get_console
+    from rich.console import Console
 
-    return get_console()
+    return Console()
+
+
+def _create_initialization(root_path: Path, roadmap_dir_name: str) -> Any:
+    from roadmap.bootstrap.core import create_initialization
+
+    return create_initialization(root_path, roadmap_dir_name)
 
 
 def _create_workspace_migration(root_path: Path) -> Any:
@@ -81,6 +77,7 @@ class BootstrapInputs:
     tracing_initializer: Callable[[], None] = _initialize_tracing
     console_factory: Callable[[], Any] = _create_console
     migration_builder: Callable[[Path], Any] = _create_workspace_migration
+    initialization_builder: Callable[[Path, str], Any] = _create_initialization
 
 
 def build_cli(
@@ -102,6 +99,9 @@ def build_cli(
         console_factory=selected.console_factory,
         migration_factory=lambda: selected.migration_builder(
             selected.working_directory()
+        ),
+        initialization_factory=lambda name: selected.initialization_builder(
+            selected.working_directory(), name
         ),
     )
     return create_cli(runtime, command_registry=command_registry)

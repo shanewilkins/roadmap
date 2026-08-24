@@ -12,10 +12,10 @@ import click
 from click.testing import CliRunner
 
 from roadmap.bootstrap import BootstrapInputs, build_cli
-from roadmap.infrastructure.coordination.core import RoadmapCore
+from roadmap.bootstrap.core import create_core
 
 ROOT = Path(__file__).resolve().parents[2]
-CLI_ROOT = ROOT / "roadmap" / "adapters" / "cli"
+CLI_ROOT = ROOT / "roadmap" / "adapters" / "inbound" / "cli"
 
 
 def _imports(path: Path) -> set[str]:
@@ -44,7 +44,7 @@ with (
     patch.object(pathlib.Path, "exists", side_effect=AssertionError("filesystem accessed")),
     patch.object(socket, "create_connection", side_effect=AssertionError("network accessed")),
 ):
-    import roadmap.adapters.cli
+    import roadmap.adapters.inbound.cli
     import roadmap.bootstrap
     result = CliRunner().invoke(roadmap.bootstrap.cli, ["--help"])
     assert result.exit_code == 0, result.exception
@@ -53,9 +53,9 @@ for forbidden in (
     "roadmap.bootstrap.core",
     "roadmap.infrastructure.coordination.core",
     "roadmap.common.services.profiling",
-    "roadmap.adapters.cli.issues",
-    "roadmap.adapters.cli.projects",
-    "roadmap.adapters.cli.sync",
+    "roadmap.adapters.inbound.cli.issues",
+    "roadmap.adapters.inbound.cli.projects",
+    "roadmap.adapters.inbound.cli.sync",
 ):
     assert forbidden not in sys.modules, forbidden
 """
@@ -131,30 +131,38 @@ def test_bootstrap_construction_is_deterministic_from_explicit_inputs() -> None:
     ]
 
 
-def test_legacy_facade_accepts_only_bootstrap_supplied_component_builder(
+def test_bootstrap_returns_only_the_retained_command_capabilities(
     tmp_path: Path,
 ) -> None:
-    """The compatibility facade does not select concrete components itself."""
-    calls: list[RoadmapCore] = []
-    core = RoadmapCore(tmp_path, component_builder=calls.append)
-    assert calls == [core]
-    imports = _imports(ROOT / "roadmap" / "infrastructure" / "coordination" / "core.py")
-    assert "roadmap.infrastructure.coordination_gateway" not in imports
-    assert not any(name.startswith("roadmap.adapters") for name in imports)
+    """The old facade and coordinator graph cannot leak back into commands."""
+    services = create_core(tmp_path)
+
+    assert set(services.__dataclass_fields__) == {
+        "root_path",
+        "roadmap_dir",
+        "configuration",
+        "current_identity",
+        "issue_queries",
+        "issue_mutations",
+        "local_git",
+        "planning",
+        "health",
+    }
+    assert not hasattr(services, "issues")
+    assert not hasattr(services, "milestones")
+    assert not hasattr(services, "projects")
 
 
-def test_cli_modules_do_not_import_or_construct_roadmap_core() -> None:
-    """Inbound commands receive the retained facade through Click context."""
-    forbidden_import = "roadmap.infrastructure.coordination.core"
+def test_cli_modules_do_not_import_removed_ownership_zones() -> None:
+    """Inbound commands receive Application capabilities through Click context."""
+    forbidden_prefixes = (
+        "roadmap.core",
+        "roadmap.common",
+        "roadmap.infrastructure",
+        "roadmap.adapters.outbound",
+    )
     offenders: list[str] = []
-    constructors: list[str] = []
     for path in sorted(CLI_ROOT.rglob("*.py")):
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        if forbidden_import in _imports(path):
+        if any(imported.startswith(forbidden_prefixes) for imported in _imports(path)):
             offenders.append(str(path.relative_to(ROOT)))
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-                if node.func.id == "RoadmapCore":
-                    constructors.append(str(path.relative_to(ROOT)))
     assert offenders == []
-    assert constructors == []
