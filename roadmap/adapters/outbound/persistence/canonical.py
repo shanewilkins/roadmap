@@ -93,6 +93,14 @@ class _Delete:
     expected: str
 
 
+@dataclass(slots=True)
+class _RawWrite:
+    path: Path
+    content: bytes
+    expected: str | None
+    final: bool = False
+
+
 def _atomic_write(path: Path, content: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, raw_temp = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
@@ -145,6 +153,8 @@ class CanonicalUnitOfWork:
         self._identities: dict[Path, str | None] = {}
         self._writes: dict[tuple[DocumentKind, EntityId], _Write] = {}
         self._deletes: dict[tuple[DocumentKind, EntityId], _Delete] = {}
+        self._raw_writes: dict[Path, _RawWrite] = {}
+        self._raw_deletes: dict[Path, _Delete] = {}
         self.projection_stale = False
         self._entered = False
 
@@ -273,6 +283,22 @@ class CanonicalUnitOfWork:
     def save_project(self, project: Project) -> None:
         self._save("project", project)
 
+    def stage_file(self, relative: str, content: bytes, *, final: bool = False) -> None:
+        """Stage an enumerated workspace file for migration or recovery."""
+        self._require_lock()
+        path = self._target(relative)
+        expected = content_identity(path.read_bytes()) if path.exists() else None
+        self._raw_deletes.pop(path, None)
+        self._raw_writes[path] = _RawWrite(path, content, expected, final)
+
+    def stage_delete(self, relative: str) -> None:
+        """Stage deletion of one enumerated workspace file."""
+        self._require_lock()
+        path = self._target(relative)
+        self._raw_writes.pop(path, None)
+        if path.exists():
+            self._raw_deletes[path] = _Delete(path, content_identity(path.read_bytes()))
+
     def _validate(self) -> None:
         for write in self._writes.values():
             path = write.envelope.path
@@ -287,6 +313,22 @@ class CanonicalUnitOfWork:
             )
             if actual != deletion.expected:
                 raise CanonicalConflict(f"canonical document changed: {deletion.path}")
+        for write in self._raw_writes.values():
+            actual = (
+                content_identity(write.path.read_bytes())
+                if write.path.exists()
+                else None
+            )
+            if actual != write.expected:
+                raise CanonicalConflict(f"canonical file changed: {write.path}")
+        for deletion in self._raw_deletes.values():
+            actual = (
+                content_identity(deletion.path.read_bytes())
+                if deletion.path.exists()
+                else None
+            )
+            if actual != deletion.expected:
+                raise CanonicalConflict(f"canonical file changed: {deletion.path}")
 
     def _journal(self, directory: Path) -> list[dict[str, Any]]:
         entries: list[dict[str, Any]] = []
@@ -315,6 +357,53 @@ class CanonicalUnitOfWork:
                     ),
                     "before": before_name,
                     "after": None,
+                }
+            )
+        offset = len(entries)
+        ordinary_writes = tuple(
+            write for write in self._raw_writes.values() if not write.final
+        )
+        final_writes = tuple(
+            write for write in self._raw_writes.values() if write.final
+        )
+        for index, write in enumerate(ordinary_writes, start=offset):
+            before_name = f"{index}.before"
+            after_name = f"{index}.after"
+            if write.path.exists():
+                (directory / before_name).write_bytes(write.path.read_bytes())
+            (directory / after_name).write_bytes(write.content)
+            entries.append(
+                {
+                    "target": str(write.path.relative_to(self.repository.roadmap_dir)),
+                    "before": before_name if write.path.exists() else None,
+                    "after": after_name,
+                }
+            )
+        offset = len(entries)
+        for index, deletion in enumerate(self._raw_deletes.values(), start=offset):
+            before_name = f"{index}.before"
+            (directory / before_name).write_bytes(deletion.path.read_bytes())
+            entries.append(
+                {
+                    "target": str(
+                        deletion.path.relative_to(self.repository.roadmap_dir)
+                    ),
+                    "before": before_name,
+                    "after": None,
+                }
+            )
+        offset = len(entries)
+        for index, write in enumerate(final_writes, start=offset):
+            before_name = f"{index}.before"
+            after_name = f"{index}.after"
+            if write.path.exists():
+                (directory / before_name).write_bytes(write.path.read_bytes())
+            (directory / after_name).write_bytes(write.content)
+            entries.append(
+                {
+                    "target": str(write.path.relative_to(self.repository.roadmap_dir)),
+                    "before": before_name if write.path.exists() else None,
+                    "after": after_name,
                 }
             )
         journal = directory / "journal.json"
@@ -374,7 +463,12 @@ class CanonicalUnitOfWork:
 
     def commit(self) -> None:
         self._require_lock()
-        if not self._writes and not self._deletes:
+        if (
+            not self._writes
+            and not self._deletes
+            and not self._raw_writes
+            and not self._raw_deletes
+        ):
             return
         self._inject("before_validate", None)
         self._validate()
@@ -396,6 +490,8 @@ class CanonicalUnitOfWork:
         changed_ids = tuple(key[1] for key in (*self._writes, *self._deletes))
         self._writes.clear()
         self._deletes.clear()
+        self._raw_writes.clear()
+        self._raw_deletes.clear()
         if self._projection is not None:
             try:
                 self._projection.refresh(changed_ids)
@@ -406,6 +502,8 @@ class CanonicalUnitOfWork:
     def rollback(self) -> None:
         self._writes.clear()
         self._deletes.clear()
+        self._raw_writes.clear()
+        self._raw_deletes.clear()
 
 
 class CanonicalIssueUnitOfWorkFactory:

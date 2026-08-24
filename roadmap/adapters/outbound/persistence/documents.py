@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
-from uuid import UUID
 
 import yaml
 
@@ -325,7 +324,6 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
     if isinstance(aggregate, Issue):
         data.update(
             title=str(aggregate.title),
-            archived=aggregate.retention is RetentionState.ARCHIVED,
             headline=aggregate.headline,
             priority=aggregate.priority.value,
             status=aggregate.status.value,
@@ -413,7 +411,7 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
 
 
 class DocumentRepository:
-    """Canonical lookup for the retained 0.1.1 directory layout."""
+    """Canonical lookup with read compatibility for the 0.1.1 layout."""
 
     _patterns = {
         "project": ("projects/**/*.md", "archive/projects/**/*.md"),
@@ -446,21 +444,4 @@ class DocumentRepository:
         return matches[0] if matches else None
 
     def default_path(self, kind: DocumentKind, aggregate: Aggregate) -> Path:
-        if kind == "issue":
-            assert isinstance(aggregate, Issue)
-            try:
-                UUID(str(aggregate.id))
-            except ValueError:
-                filename = f"{aggregate.id}.md"
-            else:
-                safe_title = "".join(
-                    character
-                    for character in aggregate.title
-                    if character.isalnum() or character in (" ", "-", "_")
-                ).strip()
-                filename = f"{aggregate.id}-{safe_title.replace(' ', '-').lower()}.md"
-            return self.roadmap_dir / "issues" / "backlog" / filename
-        if kind == "milestone":
-            assert isinstance(aggregate, Milestone)
-            return self.roadmap_dir / "milestones" / f"{aggregate.name}.md"
-        return self.roadmap_dir / "projects" / f"{aggregate.id}.md"
+        return self.roadmap_dir / f"{kind}s" / f"{aggregate.id}.md"

@@ -5,7 +5,7 @@ from typing import Protocol
 from roadmap.domain.aggregates import Issue, Milestone, Project
 from roadmap.domain.types import EntityId, Timestamp
 
-from .contracts import GitSnapshot, IssueQueryRecord
+from .contracts import GitSnapshot, IssueQueryRecord, MigrationPlan, MigrationResult
 
 
 class Clock(Protocol):
@@ -97,3 +97,10 @@ class PlanningUnitOfWork(IssueUnitOfWork, Protocol):
 
 class PlanningUnitOfWorkFactory(Protocol):
     def create(self) -> PlanningUnitOfWork: ...
+
+
+class WorkspaceMigrationPort(Protocol):
+    """Explicit one-time workspace schema transition owned by a boundary."""
+
+    def preflight(self) -> MigrationPlan: ...
+    def execute(self, fingerprint: str) -> MigrationResult: ...

@@ -3,83 +3,12 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-import yaml
 
 from roadmap.common.constants import SyncBackend
 from roadmap.common.initialization.github.setup_service import (
-    GitHubConfigManager,
     GitHubInitializationService,
     show_github_setup_instructions,
 )
-
-
-class TestGitHubConfigManager:
-    """Test GitHub configuration management."""
-
-    def test_save_github_config_new_file(self, mock_core):
-        """Test saving GitHub config to new file."""
-        manager = GitHubConfigManager(mock_core)
-
-        manager.save_github_config("owner/repo", sync_backend=SyncBackend.GITHUB)
-
-        assert manager.config_file.exists()
-        # Verify file contains github config
-        with open(manager.config_file) as f:
-            content = f.read()
-            assert "github" in content
-            assert "owner/repo" in content
-            assert "sync_backend: github" in content
-
-    def test_save_github_config_existing_file(self, mock_core):
-        """Test saving GitHub config to existing file."""
-        manager = GitHubConfigManager(mock_core)
-
-        # Create existing config
-        existing_config = {"other_setting": "value"}
-        with open(manager.config_file, "w") as f:
-            yaml.dump(existing_config, f)
-
-        # Save new config
-        manager.save_github_config("owner/repo", sync_backend=SyncBackend.GITHUB)
-
-        # Verify both settings exist
-        with open(manager.config_file) as f:
-            config = yaml.safe_load(f)
-            assert isinstance(config, dict)
-            assert config["other_setting"] == "value"
-            assert isinstance(config["github"], dict)
-            assert config["github"]["repository"] == "owner/repo"
-
-    def test_save_github_config_with_git_backend(self, mock_core):
-        """Test saving GitHub config with git backend."""
-        manager = GitHubConfigManager(mock_core)
-
-        manager.save_github_config("owner/repo", sync_backend=SyncBackend.GIT)
-
-        with open(manager.config_file) as f:
-            config = yaml.safe_load(f)
-            assert isinstance(config, dict)
-            assert isinstance(config["github"], dict)
-            assert config["github"]["sync_backend"] == "git"
-
-    def test_save_github_config_invalid_repo_format(self, mock_core):
-        """Test saving config with invalid repository format raises error."""
-        manager = GitHubConfigManager(mock_core)
-
-        with pytest.raises(ValueError, match="Invalid GitHub repository format"):
-            manager.save_github_config("invalid_repo", sync_backend=SyncBackend.GITHUB)
-
-        # Verify file was not created
-        assert not manager.config_file.exists()
-
-    def test_save_github_config_empty_repo(self, mock_core):
-        """Test saving config with empty repository raises error."""
-        manager = GitHubConfigManager(mock_core)
-
-        with pytest.raises(ValueError, match="Invalid GitHub repository format"):
-            manager.save_github_config("", sync_backend=SyncBackend.GITHUB)
-
-        assert not manager.config_file.exists()
 
 
 class TestShowGitHubSetupInstructions:
@@ -329,12 +258,13 @@ class TestGitHubInitializationServiceCoverage:
                 )
                 assert result
 
-    def test_store_credentials_and_config_new_token(self, mock_core):
+    def test_store_credentials_and_config_new_token(self, mock_core, tmp_path):
         """Test storing new credentials.
 
         Covers lines 343, 348: Store new token path
         """
         service = GitHubInitializationService(mock_core)
+        mock_core.config_file = tmp_path / "config.yaml"
 
         with patch(
             "roadmap.common.initialization.github.setup_service.CredentialManager"
@@ -342,29 +272,17 @@ class TestGitHubInitializationServiceCoverage:
             mock_cred_mgr = MagicMock()
             MockCredMgr.return_value = mock_cred_mgr
 
-            with patch(
-                "roadmap.common.initialization.github.setup_service.GitHubConfigManager"
-            ) as MockConfigMgr:
-                mock_config_mgr = MagicMock()
-                MockConfigMgr.return_value = mock_config_mgr
+            with patch("roadmap.common.initialization.github.setup_service.console"):
+                service._store_credentials_and_config(
+                    "new_token", "old_token", "owner/repo"
+                )
+                mock_cred_mgr.store_token.assert_called_once_with("new_token")
+                assert not mock_core.config_file.exists()
 
-                with patch(
-                    "roadmap.common.initialization.github.setup_service.console"
-                ):
-                    service._store_credentials_and_config(
-                        "new_token", "old_token", "owner/repo"
-                    )
-
-                    # Should store the new token
-                    mock_cred_mgr.store_token.assert_called_once_with("new_token")
-                    # Always pass sync_backend explicitly (defaults to GITHUB)
-                    mock_config_mgr.save_github_config.assert_called_once_with(
-                        "owner/repo", sync_backend=SyncBackend.GITHUB
-                    )
-
-    def test_store_credentials_same_token(self, mock_core):
+    def test_store_credentials_same_token(self, mock_core, tmp_path):
         """Test when token hasn't changed."""
         service = GitHubInitializationService(mock_core)
+        mock_core.config_file = tmp_path / "config.yaml"
 
         with patch(
             "roadmap.common.initialization.github.setup_service.CredentialManager"
@@ -372,25 +290,12 @@ class TestGitHubInitializationServiceCoverage:
             mock_cred_mgr = MagicMock()
             MockCredMgr.return_value = mock_cred_mgr
 
-            with patch(
-                "roadmap.common.initialization.github.setup_service.GitHubConfigManager"
-            ) as MockConfigMgr:
-                mock_config_mgr = MagicMock()
-                MockConfigMgr.return_value = mock_config_mgr
-
-                with patch(
-                    "roadmap.common.initialization.github.setup_service.console"
-                ):
-                    service._store_credentials_and_config(
-                        "same_token", "same_token", "owner/repo"
-                    )
-
-                    # Should NOT store token again
-                    mock_cred_mgr.store_token.assert_not_called()
-                    # Always pass sync_backend explicitly (defaults to GITHUB)
-                    mock_config_mgr.save_github_config.assert_called_once_with(
-                        "owner/repo", sync_backend=SyncBackend.GITHUB
-                    )
+            with patch("roadmap.common.initialization.github.setup_service.console"):
+                service._store_credentials_and_config(
+                    "same_token", "same_token", "owner/repo"
+                )
+                mock_cred_mgr.store_token.assert_not_called()
+                assert not mock_core.config_file.exists()
 
     def test_store_credentials_with_presenter(self, mock_core):
         """Test storing credentials with presenter."""
@@ -404,18 +309,10 @@ class TestGitHubInitializationServiceCoverage:
             mock_cred_mgr = MagicMock()
             MockCredMgr.return_value = mock_cred_mgr
 
-            with patch(
-                "roadmap.common.initialization.github.setup_service.GitHubConfigManager"
-            ) as MockConfigMgr:
-                mock_config_mgr = MagicMock()
-                MockConfigMgr.return_value = mock_config_mgr
-
-                service._store_credentials_and_config(
-                    "new_token", "old_token", "owner/repo"
-                )
-
-                # Should call presenter method
-                presenter.present_github_credentials_stored.assert_called_once()
+            service._store_credentials_and_config(
+                "new_token", "old_token", "owner/repo"
+            )
+            presenter.present_github_credentials_stored.assert_called_once()
 
 
 class TestSyncBackendValidation:

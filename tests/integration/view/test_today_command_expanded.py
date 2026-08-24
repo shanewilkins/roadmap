@@ -273,8 +273,8 @@ class TestTodayCommandPriorities:
 class TestTodayCommandErrorHandling:
     """Test error handling and edge cases."""
 
-    def test_today_with_no_user_configured(self, cli_runner):
-        """Test today command fails gracefully with no user."""
+    def test_today_falls_back_to_git_identity(self, cli_runner):
+        """A missing user preference falls back to the Git-owned identity."""
         with cli_runner.isolated_filesystem():
             IntegrationTestBase.init_roadmap(cli_runner)
 
@@ -287,15 +287,10 @@ class TestTodayCommandErrorHandling:
                 assignee="testuser",
             )
 
-            # Don't set ROADMAP_USER and no user in config
             result = cli_runner.invoke(main, ["today"])
 
-            # Should fail or show helpful message
-            assert (
-                result.exit_code != 0
-                or "user" in clean_cli_output(result.output).lower()
-                or "configure" in clean_cli_output(result.output).lower()
-            )
+            assert result.exit_code == 0
+            assert "Daily Summary" in clean_cli_output(result.output)
 
     def test_today_with_empty_roadmap(self, cli_runner):
         """Test today command with no milestones or issues."""

@@ -179,7 +179,7 @@ def test_serialized_comments_remain_readable_by_released_legacy_model(tmp_path):
         unit.commit()
 
     raw = yaml.safe_load(
-        (tmp_path / ".roadmap/issues/backlog/issue-1.md").read_text().split("---", 2)[1]
+        (tmp_path / ".roadmap/issues/issue-1.md").read_text().split("---", 2)[1]
     )
     assert raw["comments"][0]["issue_id"] == "issue-1"
     assert "github_url" in raw["comments"][0]

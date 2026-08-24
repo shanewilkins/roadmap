@@ -248,3 +248,41 @@ class CriticalPathResult:
     critical_issue_ids: tuple[EntityId, ...]
     blocking_issues: tuple[tuple[EntityId, tuple[EntityId, ...]], ...]
     project_end_at: Timestamp | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class MigrationChange:
+    """One deterministic canonical change proposed by workspace migration."""
+
+    operation: str
+    source: str | None
+    target: str
+    entity_kind: str | None = None
+    entity_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class MigrationPlan:
+    """Complete, fingerprinted 0.1.1-to-0.2 migration preflight."""
+
+    source_version: int
+    target_version: int
+    fingerprint: str
+    changes: tuple[MigrationChange, ...]
+    conflicts: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+
+    @property
+    def required(self) -> bool:
+        return self.source_version < self.target_version or bool(self.changes)
+
+
+@dataclass(frozen=True, slots=True)
+class MigrationResult:
+    """Result of an explicit migration execution."""
+
+    source_version: int
+    target_version: int
+    changed: int
+    projection_rebuilt: bool
+    already_current: bool = False

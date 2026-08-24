@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added explicit `roadmap migrate` preflight, dry-run, confirmed execution, JSON
+  output, recovery, and idempotent rerun for supported 0.1.1 workspaces.
+- Added versioned workspace/document schemas and scoped project/user
+  configuration resolved once into an immutable Bootstrap snapshot.
+
+### Changed
+
+- Canonical projects, milestones, and issues now use flat stable-ID paths;
+  archive state is lifecycle metadata and SQLite is rebuilt only as a derived
+  projection after canonical commit.
+- New entity IDs use complete UUID4 values while existing IDs are preserved
+  exactly during migration.
+
+### Removed
+
+- Removed ambient Dynaconf settings, duplicate configuration models/loaders,
+  provider and machine-path configuration writers, and their superseded tests.
+
 ## [0.1.1] - 2026-08-09
 
 ### Fixed

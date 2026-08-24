@@ -3,10 +3,10 @@
 - Status: Approved
 - Date: 2026-08-10
 - Last updated: 2026-08-24
-- Implementation status: Phases 0 through 8 complete; issues, projects,
-  milestones, relationships, lifecycle, progress, and planning views now share
-  Application-owned use cases and canonical adapters, and execution is stopped
-  before Phase 9
+- Implementation status: Phases 0 through 9 complete; explicit workspace
+  migration, stable canonical paths, schema versions, scoped configuration, and
+  rebuildable projections now use the target contracts, and execution is
+  stopped before Phase 10
 - Governing decisions: ADR-0001 through ADR-0010
 
 ## Purpose

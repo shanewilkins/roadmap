@@ -65,10 +65,11 @@ def verify_fixture_digests(fixture: Path) -> dict[str, str]:
     return actual
 
 
-def _clean_environment() -> dict[str, str]:
+def _clean_environment(overrides: dict[str, str] | None = None) -> dict[str, str]:
     environment = os.environ.copy()
     environment.pop("PYTHONHOME", None)
     environment.pop("PYTHONPATH", None)
+    environment.update(overrides or {})
     return environment
 
 
@@ -77,12 +78,13 @@ def _run(
     workspace: Path,
     *,
     parse_json: bool = False,
+    environment: dict[str, str] | None = None,
 ) -> str | Any:
     print(f"+ {' '.join(command)}", flush=True)
     result = subprocess.run(
         command,
         cwd=workspace,
-        env=_clean_environment(),
+        env=_clean_environment(environment),
         check=True,
         capture_output=True,
         text=True,
@@ -114,18 +116,73 @@ def _materialize_fixture(fixture: Path, workspace: Path) -> None:
         connection.executescript((fixture / "projection.sql").read_text())
 
 
+def _workspace_digests(workspace: Path) -> dict[str, str]:
+    """Hash every workspace file so a migration dry run proves non-mutation."""
+    return {
+        str(path.relative_to(workspace)): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(workspace.rglob("*"))
+        if path.is_file()
+    }
+
+
 def inspect_fixture(roadmap: Path, fixture: Path, workspace: Path) -> dict[str, Any]:
-    """Load the compatibility fixture and return a stable semantic snapshot."""
+    """Migrate the compatibility fixture and return a semantic snapshot."""
     verify_fixture_digests(fixture)
     _materialize_fixture(fixture, workspace)
     expected = json.loads((fixture / "expected.json").read_text())
+    home = workspace.parent / f"{workspace.name}-home"
+    home.mkdir()
+    environment = {"HOME": str(home)}
 
-    projects = _run([str(roadmap), "project", "list"], workspace)
-    milestones = _run([str(roadmap), "milestone", "list"], workspace)
+    before_dry_run = _workspace_digests(workspace)
+    dry_run = _run(
+        [str(roadmap), "migrate", "--dry-run", "--format", "json"],
+        workspace,
+        parse_json=True,
+        environment=environment,
+    )
+    if not dry_run["required"] or dry_run["conflicts"]:
+        raise RuntimeError("Compatibility fixture migration preflight was invalid")
+    if _workspace_digests(workspace) != before_dry_run or any(home.rglob("*")):
+        raise RuntimeError("Migration dry run changed workspace or user files")
+
+    migrated = _run(
+        [str(roadmap), "migrate", "--yes", "--format", "json"],
+        workspace,
+        parse_json=True,
+        environment=environment,
+    )
+    if migrated["status"] != "migrated" or not migrated["projection_rebuilt"]:
+        raise RuntimeError("Compatibility fixture migration did not complete")
+
+    roadmap_dir = workspace / ".roadmap"
+    expected_paths = {
+        roadmap_dir / "projects" / f"{expected['project_id']}.md",
+        roadmap_dir / "milestones" / f"{expected['milestone']}.md",
+        roadmap_dir / "issues" / f"{expected['visible_issue_id']}.md",
+        roadmap_dir / "issues" / f"{expected['closed_issue_id']}.md",
+        roadmap_dir / "issues" / f"{expected['archived_issue_id']}.md",
+    }
+    if not all(path.is_file() for path in expected_paths):
+        raise RuntimeError("Migration did not produce stable flat canonical paths")
+    config = (roadmap_dir / "config.yaml").read_text()
+    if "workspace_schema_version: 1" not in config:
+        raise RuntimeError("Migration did not write the workspace schema marker")
+    user_config = home / ".config" / "roadmap" / "config.yaml"
+    if not user_config.is_file():
+        raise RuntimeError("Migration did not externalize user preferences")
+
+    projects = _run(
+        [str(roadmap), "project", "list"], workspace, environment=environment
+    )
+    milestones = _run(
+        [str(roadmap), "milestone", "list"], workspace, environment=environment
+    )
     issues = _run(
         [str(roadmap), "issue", "list", "--format", "json"],
         workspace,
         parse_json=True,
+        environment=environment,
     )
     comments = _run(
         [
@@ -139,11 +196,18 @@ def inspect_fixture(roadmap: Path, fixture: Path, workspace: Path) -> dict[str, 
         ],
         workspace,
         parse_json=True,
+        environment=environment,
     )
     closed_issue = _run(
-        [str(roadmap), "issue", "view", expected["closed_issue_id"]], workspace
+        [str(roadmap), "issue", "view", expected["closed_issue_id"]],
+        workspace,
+        environment=environment,
     )
-    archived = _run([str(roadmap), "issue", "archive", "--list"], workspace)
+    archived = _run(
+        [str(roadmap), "issue", "archive", "--list"],
+        workspace,
+        environment=environment,
+    )
 
     visible_ids = sorted(row[0] for row in issues["rows"])
     snapshot = {
@@ -170,20 +234,39 @@ def inspect_fixture(roadmap: Path, fixture: Path, workspace: Path) -> dict[str, 
         raise RuntimeError("Compatibility fixture relationship was not visible")
 
     before_rebuild = canonical_digests(workspace)
-    stats = _rebuild_projection(roadmap, workspace)
-    if stats.get("files_failed"):
+    projection_path = workspace / ".roadmap" / "db" / "projection.db"
+    projection_path.write_bytes(b"deliberately corrupt projection")
+    repair = _run(
+        [str(roadmap), "migrate", "--yes", "--format", "json"],
+        workspace,
+        parse_json=True,
+        environment=environment,
+    )
+    if not repair["projection_rebuilt"]:
         raise RuntimeError("Compatibility fixture projection rebuild failed")
     if canonical_digests(workspace) != before_rebuild:
         raise RuntimeError("Fixture projection rebuild changed canonical documents")
-    with sqlite3.connect(workspace / ".roadmap" / "db" / "state.db") as connection:
-        projected = dict(connection.execute("SELECT id, archived FROM issues"))
+    with sqlite3.connect(projection_path) as connection:
+        projected = dict(
+            connection.execute(
+                "SELECT entity_id, retention FROM documents WHERE kind = 'issue'"
+            )
+        )
     expected_projection = {
-        expected["visible_issue_id"]: 0,
-        expected["closed_issue_id"]: 0,
-        expected["archived_issue_id"]: 1,
+        expected["visible_issue_id"]: "visible",
+        expected["closed_issue_id"]: "visible",
+        expected["archived_issue_id"]: "archived",
     }
     if projected != expected_projection:
         raise RuntimeError("Fixture projection rebuild was not semantically equivalent")
+    repeated = _run(
+        [str(roadmap), "migrate", "--yes", "--format", "json"],
+        workspace,
+        parse_json=True,
+        environment=environment,
+    )
+    if repeated["required"]:
+        raise RuntimeError("Repeated migration was not idempotent")
     return snapshot
 
 
@@ -364,6 +447,9 @@ def run_checkpoint(roadmap: Path, fixture: Path, workspace: Path) -> dict[str, A
     if workspace.exists() and any(workspace.iterdir()):
         raise ValueError("Checkpoint workspace must be empty")
     workspace.mkdir(parents=True, exist_ok=True)
+    checkpoint_home = workspace / "home"
+    checkpoint_home.mkdir()
+    os.environ["HOME"] = str(checkpoint_home)
     fresh = workspace / "fresh"
     compatibility = workspace / "compatibility"
     fresh.mkdir()
@@ -372,6 +458,7 @@ def run_checkpoint(roadmap: Path, fixture: Path, workspace: Path) -> dict[str, A
     first = inspect_fixture(roadmap, fixture, compatibility)
 
     shutil.rmtree(compatibility)
+    shutil.rmtree(workspace / "compatibility-home")
     compatibility.mkdir()
     second = inspect_fixture(roadmap, fixture, compatibility)
     if first != second:

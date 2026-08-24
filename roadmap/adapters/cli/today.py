@@ -20,7 +20,11 @@ from roadmap.common.logging import verbose_output
 def today(ctx: click.Context, verbose: bool = False) -> None:  # noqa: ARG001
     """Show assigned work for the next open milestone."""
     core = ctx.obj["core"]
-    current_user = os.getenv("ROADMAP_USER") or core.team.get_current_user()
+    current_user = (
+        os.getenv("ROADMAP_USER")
+        or core.resolved_configuration.user.name
+        or core.git.get_current_user()
+    )
     if not current_user:
         raise click.ClickException(
             "No user configured. Initialize Roadmap or set ROADMAP_USER."

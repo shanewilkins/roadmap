@@ -3,19 +3,15 @@
 from __future__ import annotations
 
 import csv
-import dataclasses
 import re
 from datetime import date
 from pathlib import Path
-from typing import Any
 
 import click
 import pytest
-from pydantic import BaseModel
 
+from roadmap.adapters.outbound.persistence.configuration import PROJECT_KEYS, USER_KEYS
 from roadmap.bootstrap import cli as main
-from roadmap.common.configuration.config_schema import RoadmapConfig as LegacyConfig
-from roadmap.common.models.config_models import RoadmapConfig as ActiveConfig
 from roadmap.core.domain.issue import Issue
 from roadmap.core.domain.milestone import Milestone
 from roadmap.core.domain.project import Project
@@ -114,33 +110,8 @@ def _cli_surfaces() -> dict[str, str]:
     return surfaces
 
 
-def _pydantic_keys(model: type[BaseModel], prefix: str = "") -> set[str]:
-    keys: set[str] = set()
-    for name, field in model.model_fields.items():
-        key = f"{prefix}.{name}" if prefix else name
-        annotation = field.annotation
-        if isinstance(annotation, type) and issubclass(annotation, BaseModel):
-            keys.update(_pydantic_keys(annotation, key))
-        else:
-            keys.add(key)
-    return keys
-
-
-def _dataclass_keys(model: type[Any], prefix: str = "") -> set[str]:
-    keys: set[str] = set()
-    for field in dataclasses.fields(model):
-        key = f"{prefix}.{field.name}" if prefix else field.name
-        annotation = field.type
-        if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
-            keys.update(_dataclass_keys(annotation, key))
-        else:
-            keys.add(key)
-    return keys
-
-
 def _config_surfaces() -> set[str]:
-    keys = _pydantic_keys(ActiveConfig) | _dataclass_keys(LegacyConfig)
-    return {f"config.{key}" for key in keys}
+    return {f"config.{key}" for key in PROJECT_KEYS | USER_KEYS}
 
 
 def _canonical_surfaces() -> set[str]:
@@ -239,7 +210,11 @@ def test_current_cli_config_and_canonical_surfaces_are_exactly_inventoried() -> 
     for surface, signature in actual_cli.items():
         assert cli_rows[surface]["current_signature"] == signature
 
-    config_rows = {row["surface"] for row in rows if row["category"] == "config"}
+    config_rows = {
+        row["surface"].replace("config.user.", "config.identity.")
+        for row in rows
+        if row["category"] == "config" and row["disposition"] != "Remove"
+    }
     _assert_complete(_config_surfaces(), config_rows, "configuration")
 
     canonical_rows = {row["surface"] for row in rows if row["category"] == "canonical"}
@@ -259,6 +234,10 @@ def test_inventory_guard_rejects_an_unreviewed_documented_config_key() -> None:
     """Negative proof: a new public config key fails until inventoried."""
     actual = _config_surfaces() | {"config.unreviewed.key"}
     _, rows = _read_csv(INVENTORY)
-    inventoried = {row["surface"] for row in rows if row["category"] == "config"}
+    inventoried = {
+        row["surface"].replace("config.user.", "config.identity.")
+        for row in rows
+        if row["category"] == "config" and row["disposition"] != "Remove"
+    }
     with pytest.raises(AssertionError, match="unreviewed.key"):
         _assert_complete(actual, inventoried, "configuration")

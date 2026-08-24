@@ -61,7 +61,6 @@ from .status_change_service import (
     extract_milestone_status_update,  # noqa: F401
     parse_status_change,  # noqa: F401
 )
-from .utils.configuration_service import ConfigurationService  # noqa: F401
 from .utils.dependency_analyzer import (  # noqa: F401
     DependencyAnalysisResult,
     DependencyAnalyzer,
@@ -289,7 +288,6 @@ __all__ = [
     "SyncStateComparator",
     "SyncStateManager",
     # Utils
-    "ConfigurationService",
     "DependencyAnalyzer",
     "DependencyAnalysisResult",
     "FieldConflictDetector",

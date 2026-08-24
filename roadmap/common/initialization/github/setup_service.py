@@ -4,7 +4,6 @@ import click
 from structlog import get_logger
 
 from roadmap.adapters.github.github import GitHubClient
-from roadmap.common.configuration.github.config_manager import GitHubConfigManager
 from roadmap.common.configuration.github.token_resolver import GitHubTokenResolver
 from roadmap.common.console import get_console
 from roadmap.common.constants import SyncBackend
@@ -172,9 +171,8 @@ class GitHubInitializationService:
             else:
                 console.print("✅ GitHub credentials stored", style="green")
 
-        config_manager = GitHubConfigManager(self.core)
-        # Always pass sync_backend explicitly for consistency and clarity
-        config_manager.save_github_config(github_repo, sync_backend=sync_backend)
+        # Repository identity and transport remain owned by native Git. Provider
+        # state is deliberately absent from Roadmap's canonical configuration.
 
     def _configure_integration(
         self,

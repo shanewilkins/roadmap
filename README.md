@@ -107,6 +107,21 @@ roadmap health --format json
 Run `roadmap <command> --help` for the exact options supported by the installed
 version.
 
+## Migrating an existing workspace
+
+The 0.2 development line upgrades 0.1.1 workspaces explicitly. Preview the
+complete validated write set first, then confirm the migration:
+
+```bash
+roadmap migrate --dry-run
+roadmap migrate --yes
+```
+
+Migration preserves existing IDs and user-authored content, moves canonical
+documents to flat stable-ID paths, externalizes user preferences, and rebuilds
+SQLite from canonical files. Resolve every reported conflict before retrying;
+ordinary reads never migrate files automatically.
+
 ## Collaborating through Git
 
 Roadmap data is shared the same way as source code:

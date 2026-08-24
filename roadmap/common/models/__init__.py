@@ -5,14 +5,6 @@ from .cli_models import (  # noqa: F401
     InitParams,
     IssueListParams,
 )
-from .config_models import (  # noqa: F401
-    BehaviorConfig,
-    ExportConfig,
-    GitConfig,
-    GitHubConfig,
-    OutputConfig,
-    RoadmapConfig,
-)
 from .output_models import (  # noqa: F401
     ColumnDef,
     ColumnType,
@@ -24,13 +16,6 @@ __all__ = [
     "CleanupParams",
     "InitParams",
     "IssueListParams",
-    # Config models
-    "BehaviorConfig",
-    "ExportConfig",
-    "GitConfig",
-    "GitHubConfig",
-    "OutputConfig",
-    "RoadmapConfig",
     # Output models
     "ColumnDef",
     "ColumnType",

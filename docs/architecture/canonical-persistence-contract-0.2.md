@@ -30,9 +30,10 @@ deferred known fields, and supported unknown fields round-trip. Duplicate IDs,
 malformed YAML, invalid required fields, and invalid timestamps fail at the
 document boundary.
 
-Phase 5 does not move retained documents into ADR-0010's final flat ID layout.
-That explicit migration remains Phase 9 work. New target-adapter documents use
-an ID filename while existing documents retain their current path.
+Phase 9 supplies the explicit, idempotent migration into ADR-0010's flat ID
+layout. Legacy documents remain readable without mutation until a maintainer
+runs `roadmap migrate`; new and migrated documents use complete stable IDs as
+filenames and lifecycle metadata instead of archive directories.
 
 ## Mutation protocol
 

@@ -10,11 +10,11 @@ Implementation changes require separate, explicitly scoped work.
 
 ## Current execution state
 
-- Accepted checkpoint: Phase 8, projects, milestones, and planning views.
-- Next approved work after maintainer authorization: Phase 9, configuration,
-  schemas, paths, and lifecycle storage.
+- Accepted checkpoint: Phase 9, versioned workspace migration and configuration.
+- Next approved work after maintainer authorization: Phase 10, reporting,
+  health, recovery, and local Git awareness.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
-- Current production Python CLOC ceiling: 52,338.
+- Current production Python CLOC ceiling: 52,329.
 - Every phase ends with the complete checkpoint and a hard approval stop.
 
 ## Accepted decisions
@@ -54,3 +54,4 @@ Implementation changes require separate, explicitly scoped work.
 - [Phase 6 issue queries — 2026-08-17](checkpoints/phase-6-issue-queries-2026-08-17.md)
 - [Phase 7 issue mutations — 2026-08-17](checkpoints/phase-7-issue-mutations-2026-08-17.md)
 - [Phase 8 planning path — 2026-08-24](checkpoints/phase-8-planning-2026-08-24.md)
+- [Phase 9 workspace migration — 2026-08-24](checkpoints/phase-9-workspace-migration-2026-08-24.md)

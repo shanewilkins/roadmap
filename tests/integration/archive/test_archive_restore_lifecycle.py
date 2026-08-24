@@ -94,7 +94,12 @@ class TestIssueArchiveRestore:
         canonical_file = next(
             (Path(temp_dir) / ".roadmap" / "issues").rglob(f"{done_issue['id']}*.md")
         )
-        assert IssueParser.parse_issue_file(canonical_file).archived is True
+        from roadmap.adapters.outbound.persistence.documents import parse_document
+
+        assert (
+            parse_document(canonical_file, "issue").aggregate.retention.value
+            == "archived"
+        )
         assert not list(
             (Path(temp_dir) / ".roadmap" / "archive" / "issues").rglob("*.md")
         )

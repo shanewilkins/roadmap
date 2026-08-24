@@ -255,12 +255,9 @@ def _setup_project_and_context(
 
     # Save default project ID if created
     if project_info and project_info.get("action") == "created":
-        from roadmap.common.configuration import ConfigManager
-
-        config_manager = ConfigManager(custom_core.config_file)
-        config = config_manager.load()
-        config.behavior.default_project_id = project_info.get("id")
-        config_manager.save(config)
+        custom_core.configuration.set(
+            "behavior.default_project_id", project_info.get("id"), "project"
+        )
 
     return project_info
 
@@ -285,55 +282,15 @@ def _present_project_results(project_info: dict | None) -> None:
 
 
 def _persist_sync_backend_config(custom_core: Any, sync_backend: str, log) -> None:
-    """Persist sync backend selection to configuration.
+    """Do not persist provider transport policy in Roadmap configuration.
 
     Args:
         custom_core: The roadmap core instance
         sync_backend: The sync backend to persist
         log: Logger instance for recording operations
     """
-    if sync_backend == "github":
-        return
-
-    try:
-        from roadmap.common.configuration import ConfigManager
-
-        config_manager = ConfigManager(custom_core.config_file)
-        config = config_manager.load()
-
-        if not config.github:
-            log.warning("github_config_not_initialized", sync_backend=sync_backend)
-            return
-
-        log.info(
-            "persisting_sync_backend",
-            sync_backend=sync_backend,
-            config_file=str(custom_core.config_file),
-        )
-        config.github.sync_backend = sync_backend
-        config_manager.save(config)
-
-        # Verify persistence
-        verify_config = config_manager.load()
-        persisted_backend = verify_config.github.sync_backend
-        if persisted_backend == sync_backend:
-            log.info("sync_backend_persisted_verified", sync_backend=sync_backend)
-        else:
-            log.warning(
-                "sync_backend_persistence_mismatch",
-                expected=sync_backend,
-                actual=persisted_backend,
-            )
-    except Exception as e:
-        log.error(
-            "sync_backend_persistence_failed",
-            sync_backend=sync_backend,
-            error=str(e),
-            error_type=type(e).__name__,
-        )
-        presenter.present_initialization_warning(
-            f"⚠️  Could not persist sync backend selection: {str(e)}"
-        )
+    del custom_core
+    log.info("sync_backend_owned_by_git", requested_backend=sync_backend)
 
 
 def _finalize_initialization(

@@ -134,6 +134,10 @@ class SQLiteProjection:
         self.stale_path.parent.mkdir(parents=True, exist_ok=True)
         self.stale_path.write_text("canonical state is newer than this projection\n")
 
+    def needs_rebuild(self) -> bool:
+        """Report projection state without changing canonical or derived files."""
+        return not self._is_compatible()
+
     def rebuild(self) -> None:
         """Replace any missing, corrupt, or incompatible projection from documents."""
         envelopes = self.repository.scan()

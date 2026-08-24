@@ -10,6 +10,7 @@ Tests cover:
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+from uuid import UUID
 
 from roadmap.core.services.project_init import (
     ProjectContextDetectionService,
@@ -320,7 +321,7 @@ class TestProjectCreationService:
         )
 
         assert result is not None
-        assert len(result["id"]) == 8  # UUID-like ID (8 chars)
+        assert str(UUID(result["id"])) == result["id"]
         assert result["name"] == "Test Project"
 
     @patch("roadmap.core.services.project_init.creation.RoadmapCore")
@@ -345,7 +346,7 @@ class TestProjectCreationService:
         )
 
         assert result is not None
-        assert result["filename"] == f"{result['id']}-test-project.md"
+        assert result["filename"] == f"{result['id']}.md"
 
         # Verify file was created
         project_file = mock_core.roadmap_dir / "projects" / result["filename"]
@@ -430,7 +431,7 @@ class TestProjectCreationService:
         )
 
         assert result is not None
-        assert len(result["id"]) == 8  # UUID-like ID
+        assert str(UUID(result["id"])) == result["id"]
         project_file = mock_core.roadmap_dir / "projects" / result["filename"]
         content = project_file.read_text()
         # Should have software template content since custom template doesn't exist

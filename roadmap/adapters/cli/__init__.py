@@ -23,6 +23,7 @@ COMMAND_REGISTRY: dict[str, CommandLocation] = {
     "init": ("roadmap.adapters.cli.core", "init", "Initialize a new roadmap structure."),
     "status": ("roadmap.adapters.cli.core", "status", "Show the current status of the roadmap."),
     "health": ("roadmap.adapters.cli.core", "health", "Health and diagnostics commands."),
+    "migrate": ("roadmap.adapters.cli.migrate", "migrate", "Upgrade a 0.1.1 workspace to the 0.2 canonical layout."),
     "today": ("roadmap.adapters.cli.today", "today", "Show your daily workflow summary for the upcoming milestone."),
     "cleanup": ("roadmap.infrastructure.maintenance", "cleanup", "Comprehensive roadmap cleanup - fix backups, folders, duplicates, and malformed files."),
     "analysis": ("roadmap.adapters.cli.analysis", "analysis", "Analysis and insights commands."),
@@ -48,6 +49,7 @@ class CliRuntime:
     logging_initializer: Callable[[], None]
     tracing_initializer: Callable[[], None]
     console_factory: Callable[[], Any]
+    migration_factory: Callable[[], Any]
     initialized: bool = False
 
     def initialize(self) -> None:
@@ -134,9 +136,14 @@ def create_cli(
         ctx.obj.setdefault("core_factory", runtime.core_factory)
         ctx.obj.setdefault("existing_core_factory", runtime.existing_core_factory)
         ctx.obj.setdefault("console_factory", runtime.console_factory)
-        runtime.initialize()
+        ctx.obj.setdefault("migration_factory", runtime.migration_factory)
+        if ctx.invoked_subcommand != "migrate":
+            runtime.initialize()
 
-        if ctx.invoked_subcommand not in {None, "init"} and "core" not in ctx.obj:
+        if (
+            ctx.invoked_subcommand not in {None, "init", "migrate"}
+            and "core" not in ctx.obj
+        ):
             try:
                 ctx.obj["core"] = runtime.core_factory(".roadmap")
             except Exception as error:

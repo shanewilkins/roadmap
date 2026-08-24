@@ -4,7 +4,6 @@ Orchestrates the core initialization workflow steps.
 """
 
 import shutil
-from pathlib import Path
 
 import structlog
 
@@ -105,7 +104,7 @@ class InitializationWorkflow:
         self.core._init_manager._create_default_templates()
 
     def generate_config_file(self, user_name: str | None = None) -> None:
-        """Generate the config file with user information.
+        """Generate scoped project and user configuration.
 
         Args:
             user_name: User name to store in config, auto-detected if None
@@ -118,49 +117,10 @@ class InitializationWorkflow:
             if not user_name:
                 user_name = "unknown"
 
-        # Auto-detect GitHub info
-        github_owner = ConfigManager.auto_detect_github_username()
-
-        # Create default config
-        config = ConfigManager.create_default_config(
-            user_name=user_name,
-            github_owner=github_owner,
-            github_repo=None,  # User would configure repo separately
-            github_enabled=False,  # Disabled by default
-        )
-
-        # Save config
-        manager = ConfigManager(self.core.config_file)
-        manager.save(config)
+        self.core.configuration.initialize(user_name)
 
     def ensure_gitignore_entry(self) -> None:
-        """Ensure config.yaml is in .gitignore to prevent accidental commits."""
-        gitignore_path = Path.cwd() / ".gitignore"
-        config_entry = ".roadmap/config.yaml"
-        config_entry_with_comment = (
-            ".roadmap/config.yaml  # Local user configuration (not to be shared)"
-        )
-
-        # If .gitignore doesn't exist, create it
-        if not gitignore_path.exists():
-            gitignore_path.write_text(
-                f"{config_entry_with_comment}\n.env.local\n.env.*.local\n"
-            )
-            return
-
-        # Read existing .gitignore
-        content = gitignore_path.read_text()
-
-        # Check if entry already exists (with or without comment)
-        if config_entry in content:
-            return  # Already there
-
-        # Append entry to .gitignore
-        if not content.endswith("\n"):
-            content += "\n"
-
-        content += f"\n{config_entry_with_comment}\n"
-        gitignore_path.write_text(content)
+        """Project configuration is canonical and remains commit-visible."""
 
     def record_created_paths(self, manifest: InitializationManifest) -> None:
         """Record all created paths in the manifest."""

@@ -136,7 +136,11 @@ class ProjectTemplateService:
 
     @staticmethod
     def generate_project_template(
-        project_name: str, description: str, template: str, detected_info: dict
+        project_name: str,
+        description: str,
+        template: str,
+        detected_info: dict,
+        project_id: str | None = None,
     ) -> str:
         """Generate project content based on template.
 
@@ -152,13 +156,17 @@ class ProjectTemplateService:
         current_date = datetime.now(UTC).isoformat()
         owner = detected_info.get("git_user", getpass.getuser())
 
+        identity = project_id or "{{ project_id }}"
         # Base project content
         content = f"""---
+schema_version: 1
+id: {identity}
 name: {project_name}
 description: {description}
 owner: {owner}
 priority: high
 status: active
+retention: visible
 created: {current_date}
 updated: {current_date}
 """

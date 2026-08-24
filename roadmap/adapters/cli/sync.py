@@ -990,22 +990,16 @@ def _execute_sync_workflow(
     show_metrics,
 ) -> None:
     """Execute main sync workflow."""
-    # Get thresholds from config
-    sync_config = core.config_service.get_sync_config()
     title_threshold = (
-        duplicate_title_threshold
-        if duplicate_title_threshold is not None
-        else sync_config["duplicate_title_threshold"]
+        duplicate_title_threshold if duplicate_title_threshold is not None else 0.90
     )
     content_threshold = (
-        duplicate_content_threshold
-        if duplicate_content_threshold is not None
-        else sync_config["duplicate_content_threshold"]
+        duplicate_content_threshold if duplicate_content_threshold is not None else 0.85
     )
     auto_resolve_threshold = (
         duplicate_auto_resolve_threshold
         if duplicate_auto_resolve_threshold is not None
-        else sync_config["duplicate_auto_resolve_threshold"]
+        else 0.95
     )
 
     # Initialize sync context

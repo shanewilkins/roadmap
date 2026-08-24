@@ -277,32 +277,15 @@ Project notes and additional context.
             f.write(project_template)
 
     def _create_default_config(self) -> None:
-        """Create default configuration file."""
+        """Create canonical versioned project configuration."""
         import yaml
 
         config_data = {
-            "project_name": "My Roadmap",
-            "github": {
-                "owner": None,
-                "repo": None,
-                "enabled": False,
-                "sync_enabled": False,
-                "sync_backend": "github",  # Default to github backend
-                "webhook_secret": None,
-                "sync_settings": {
-                    "bidirectional": True,
-                    "auto_close": True,
-                    "sync_labels": True,
-                    "sync_milestones": True,
-                },
-            },
-            "defaults": {
-                "priority": "medium",
-                "issue_type": "other",
-            },
-            "features": {
-                "github_integration": False,
-                "git_sync": False,
+            "schema_version": 1,
+            "workspace_schema_version": 1,
+            "behavior": {
+                "default_project_id": None,
+                "include_closed_in_critical_path": False,
             },
         }
 

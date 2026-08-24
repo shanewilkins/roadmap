@@ -47,6 +47,26 @@ def _create_console() -> Any:
     return get_console()
 
 
+def _create_workspace_migration(root_path: Path) -> Any:
+    from roadmap.adapters.outbound.persistence.documents import DocumentRepository
+    from roadmap.adapters.outbound.persistence.migration import (
+        FilesystemWorkspaceMigration,
+    )
+    from roadmap.adapters.outbound.persistence.projection import SQLiteProjection
+    from roadmap.application.use_cases import WorkspaceMigration
+
+    roadmap_dir = root_path / ".roadmap"
+    documents = DocumentRepository(roadmap_dir)
+    projection = SQLiteProjection(roadmap_dir / "db" / "projection.db", documents)
+    return WorkspaceMigration(
+        FilesystemWorkspaceMigration(
+            roadmap_dir,
+            projection,
+            Path.home() / ".config" / "roadmap" / "config.yaml",
+        )
+    )
+
+
 @dataclass(frozen=True)
 class BootstrapInputs:
     """Explicit environment and factories used to build one CLI process."""
@@ -57,6 +77,7 @@ class BootstrapInputs:
     logging_initializer: Callable[[], None] = _initialize_logging
     tracing_initializer: Callable[[], None] = _initialize_tracing
     console_factory: Callable[[], Any] = _create_console
+    migration_builder: Callable[[Path], Any] = _create_workspace_migration
 
 
 def build_cli(
@@ -76,6 +97,9 @@ def build_cli(
         logging_initializer=selected.logging_initializer,
         tracing_initializer=selected.tracing_initializer,
         console_factory=selected.console_factory,
+        migration_factory=lambda: selected.migration_builder(
+            selected.working_directory()
+        ),
     )
     return create_cli(runtime, command_registry=command_registry)
 
