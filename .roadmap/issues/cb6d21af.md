@@ -1,0 +1,48 @@
+---
+remote_ids:
+  github: 3654
+handoff_notes: null
+previous_assignee: null
+handoff_date: null
+git_commits: []
+completed_date: null
+github_issue: 3654
+schema_version: 1
+id: cb6d21af
+created: '2026-02-05T15:17:52.362769+00:00'
+updated: '2026-02-11T20:23:47.333783+00:00'
+retention: visible
+title: Build predictive analytics for milestone completion
+headline: '# Build predictive analytics for milestone completion'
+priority: medium
+status: closed
+issue_type: other
+milestone: backlog
+depends_on: []
+blocks: []
+labels:
+- priority:high
+- status:todo
+- synced:from-github
+assignee: null
+estimated_hours: null
+due_date: null
+progress_percentage: 100.0
+actual_start_date: null
+actual_end_date: null
+git_branches: []
+comments: []
+history: []
+---
+
+# Build predictive analytics for milestone completion
+
+## Description
+
+Brief description of the issue or feature request.
+
+## Acceptance Criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3

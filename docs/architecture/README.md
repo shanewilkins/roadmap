@@ -14,7 +14,7 @@ Implementation changes require separate, explicitly scoped work.
 - Next approved work after maintainer authorization: Phase 10, reporting,
   health, recovery, and local Git awareness.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
-- Current production Python CLOC ceiling: 52,329.
+- Current production Python CLOC ceiling: 52,330.
 - Every phase ends with the complete checkpoint and a hard approval stop.
 
 ## Accepted decisions

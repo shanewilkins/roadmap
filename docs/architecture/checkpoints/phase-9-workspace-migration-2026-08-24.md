@@ -110,9 +110,9 @@ Fixed command and tool: CLOC 2.10 with Python-only input under `roadmap/` and
 | Python files | 488 | 487 | -1 |
 | Blank lines | 14,465 | 14,303 | -162 |
 | Comment lines | 17,732 | 17,376 | -356 |
-| Code lines | 52,338 | 52,329 | -9 (-0.02%) |
+| Code lines | 52,338 | 52,330 | -8 (-0.02%) |
 
-The CLOC ratchet passes. The Phase 10 ceiling becomes 52,329 production Python
+The CLOC ratchet passes. The Phase 10 ceiling becomes 52,330 production Python
 code lines. Phase 9 added the migration/configuration boundary while deleting
 the superseded ambient and duplicate implementations rather than carrying both.
 
@@ -127,7 +127,7 @@ the superseded ambient and duplicate implementations rather than carrying both.
 | Bandit high-severity gate | Passed; 0 high findings (64 low, 5 medium). |
 | Radon/Xenon | Passed at absolute C, module C, average A; migration preflight is C (20), with no D-ranked block. |
 | `git diff --check` | Passed. |
-| Production CLOC ratchet | Passed at 52,329 code lines. |
+| Production CLOC ratchet | Passed at 52,330 code lines. |
 
 ## Requirements traceability
 

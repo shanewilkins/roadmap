@@ -407,7 +407,8 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
             repo_url=aggregate.repository_url,
         )
     yaml_text = yaml.safe_dump(data, sort_keys=False, allow_unicode=True).rstrip()
-    return f"---\n{yaml_text}\n---\n\n{aggregate.content}".encode()
+    separator = "\n\n" if aggregate.content else "\n"
+    return f"---\n{yaml_text}\n---{separator}{aggregate.content}".encode()
 
 
 class DocumentRepository:

@@ -1,0 +1,21 @@
+---
+github_milestone: 3
+calculated_progress: null
+last_progress_update: null
+completion_velocity: null
+risk_level: low
+actual_start_date: null
+actual_end_date: null
+comments: []
+schema_version: 1
+id: v.0.3.0
+created: '2026-02-05T15:18:01.992016+00:00'
+updated: '2026-02-10T21:20:14.349100+00:00'
+retention: archived
+name: v.0.3.0
+headline: Developer Experience & Workflow - Git integration, CI/CD automation, and
+  developer productivity tool
+status: closed
+project_id: 99d80769
+due_date: '2025-10-24T00:00:00+00:00'
+---

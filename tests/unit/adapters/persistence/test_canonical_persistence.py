@@ -18,12 +18,14 @@ from roadmap.adapters.outbound.persistence.canonical import (
     CanonicalConflict,
     CanonicalUnitOfWork,
     WorkspaceBusy,
+    WorkspaceLock,
 )
 from roadmap.adapters.outbound.persistence.documents import (
     DocumentError,
     DocumentRepository,
     DuplicateDocument,
     parse_document,
+    serialize_document,
 )
 from roadmap.adapters.outbound.persistence.projection import SQLiteProjection
 from roadmap.domain.aggregates import Issue, Milestone
@@ -94,6 +96,26 @@ def test_document_mapping_preserves_unicode_unknown_fields_and_markdown(tmp_path
     assert envelope.aggregate.content == "# Héllo\n\n- authored  \n- markdown\n"
     assert envelope.extra_frontmatter["custom"] == {"nested": "café ☕"}
     assert envelope.extra_frontmatter["remote_ids"] == {"tracker": 42}
+
+
+def test_empty_document_serialization_has_exactly_one_final_newline(tmp_path):
+    path = _write(
+        tmp_path / ".roadmap/milestones/milestone-1.md",
+        _milestone_values(),
+        body="",
+    )
+
+    rendered = serialize_document(parse_document(path, "milestone"))
+
+    assert rendered.endswith(b"\n")
+    assert not rendered.endswith(b"\n\n")
+
+
+def test_workspace_lock_metadata_has_final_newline(tmp_path):
+    path = tmp_path / ".roadmap/db/canonical-write.lock"
+
+    with WorkspaceLock(path):
+        assert path.read_text().endswith("\n")
 
 
 def test_legacy_naive_timestamps_are_normalized_at_the_boundary(tmp_path):

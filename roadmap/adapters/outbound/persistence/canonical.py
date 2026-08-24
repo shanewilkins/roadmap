@@ -66,7 +66,7 @@ class WorkspaceLock:
                         f"workspace lock timed out: {self.path}"
                     ) from error
                 time.sleep(0.05)
-        metadata = json.dumps({"pid": os.getpid(), "acquired_at": time.time()})
+        metadata = json.dumps({"pid": os.getpid(), "acquired_at": time.time()}) + "\n"
         self._file.seek(0)
         self._file.truncate()
         self._file.write(metadata)
