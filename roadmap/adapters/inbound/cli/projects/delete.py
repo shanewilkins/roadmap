@@ -3,7 +3,6 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command
 from roadmap.adapters.inbound.cli.planning_resolution import invoke, resolve_project_id
 
 
@@ -12,7 +11,6 @@ from roadmap.adapters.inbound.cli.planning_resolution import invoke, resolve_pro
 @click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt")
 @click.pass_context
 @require_initialized
-@log_command("project_delete", entity_type="project", track_duration=True)
 def delete_project(ctx, project_id: str, yes: bool) -> None:
     """Purge an archived, unreferenced project."""
     core = ctx.obj["core"]

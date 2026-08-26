@@ -6,6 +6,7 @@ from roadmap.application.contracts import (
     WorkspaceInitializationResult,
 )
 from roadmap.application.ports import WorkspaceLayoutPort
+from roadmap.domain.aggregates import Project
 
 from .planning import Planning
 
@@ -31,4 +32,6 @@ class WorkspaceInitialization:
             project = self._planning.create_project(
                 ProjectCreateCommand(request.project_name, request.description)
             ).aggregate
+            if not isinstance(project, Project):
+                raise RuntimeError("project creation returned an invalid aggregate")
         return WorkspaceInitializationResult(not existed, project)

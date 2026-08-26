@@ -4,7 +4,6 @@ import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.inbound.cli.datetime_parser import parse_user_datetime
-from roadmap.adapters.inbound.cli.instrumentation import log_command
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
     projection_warning,
@@ -32,7 +31,6 @@ def _start_time(value: str | None):
 @click.option("--branch-name", default=None, help="Override suggested branch name")
 @click.option("--force", is_flag=True, help="Allow branch creation with changes")
 @click.pass_context
-@log_command("issue_start", entity_type="issue", track_duration=True)
 @require_initialized
 def start_issue(
     ctx: click.Context,

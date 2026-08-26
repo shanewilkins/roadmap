@@ -6,7 +6,6 @@ import json
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command, verbose_output
 from roadmap.adapters.inbound.cli.issues.resolution import invoke, resolve_issue_id
 
 
@@ -22,8 +21,6 @@ def comment_group() -> None:
 @click.option("--reply-to", "-r", type=int, default=None, help="Parent comment ID")
 @click.pass_context
 @require_initialized
-@verbose_output
-@log_command("issue_comment_add", entity_type="comment", track_duration=True)
 def add_comment(
     ctx: click.Context,
     issue_id: str,

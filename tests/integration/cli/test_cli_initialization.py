@@ -17,7 +17,7 @@ def test_dry_run_reports_complete_plan_without_writing(cli_runner) -> None:
         result = _invoke(cli_runner, "--dry-run", "--project-name", "Demo")
 
         assert result.exit_code == 0, result.exception
-        assert "Would create canonical workspace" in result.output
+        assert "Would create canonical workspace" in result.stdout
         assert not Path(".roadmap").exists()
 
 
@@ -55,7 +55,7 @@ def test_repeated_initialization_preserves_existing_canonical_data(cli_runner) -
         second = _invoke(cli_runner, "--project-name", "Different", "--force")
 
         assert first.exit_code == second.exit_code == 0
-        assert "already initialized" in second.output
+        assert "already initialized" in second.stdout
         assert tuple(Path(".roadmap/projects").rglob("*.md"))[0].read_bytes() == before
         assert len(create_core(Path.cwd()).planning.all_projects()) == 1
 
@@ -74,5 +74,5 @@ def test_initialization_rejects_path_traversal(cli_runner) -> None:
         result = _invoke(cli_runner, "--name", "../outside", "--skip-project")
 
         assert result.exit_code == 2
-        assert "one local directory name" in result.output
+        assert "one local directory name" in result.stderr
         assert not Path("../outside").exists()

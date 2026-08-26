@@ -3,7 +3,6 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command
 from roadmap.adapters.inbound.cli.planning_resolution import (
     date_value,
     invoke,
@@ -24,7 +23,6 @@ from roadmap.domain.types import MilestoneStatus, Name
 @click.option("--project", "-p", default=None)
 @click.pass_context
 @require_initialized
-@log_command("milestone_update", entity_type="milestone", track_duration=True)
 def update_milestone(
     ctx,
     milestone_id: str,

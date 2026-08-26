@@ -4,7 +4,6 @@ import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.inbound.cli.daily_summary import DailySummaryPresenter
-from roadmap.adapters.inbound.cli.instrumentation import verbose_output
 from roadmap.adapters.inbound.cli.planning_resolution import invoke
 
 
@@ -12,7 +11,6 @@ from roadmap.adapters.inbound.cli.planning_resolution import invoke
 @click.option("--verbose", "-v", is_flag=True, help="Show verbose output")
 @click.pass_context
 @require_initialized
-@verbose_output
 def today(ctx: click.Context, verbose: bool = False) -> None:  # noqa: ARG001
     """Show assigned work for the next open milestone."""
     core = ctx.obj["core"]

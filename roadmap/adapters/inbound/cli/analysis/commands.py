@@ -9,7 +9,6 @@ import click
 
 from roadmap.adapters.inbound.cli.analysis.presenter import CriticalPathPresenter
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import verbose_output
 from roadmap.adapters.inbound.cli.planning_resolution import invoke
 from roadmap.application.contracts import CriticalPathResult
 
@@ -26,7 +25,6 @@ def analysis() -> None:
 @click.option("--output", "-o", type=click.Path(dir_okay=False, path_type=Path))
 @click.pass_context
 @require_initialized
-@verbose_output
 def critical_path(
     ctx: click.Context,
     milestone: str | None,

@@ -3,7 +3,6 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command, verbose_output
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
     projection_warning,
@@ -41,8 +40,6 @@ from roadmap.domain.types import IssueType, Priority, Title
 @click.option("--branch-name", default=None, help="Override suggested branch name")
 @click.option("--force", is_flag=True, help="Allow branch creation with changes")
 @click.pass_context
-@verbose_output
-@log_command("issue_create", entity_type="issue", track_duration=True)
 @require_initialized
 def create_issue(
     ctx: click.Context,

@@ -2,10 +2,10 @@
 
 - Status: Approved
 - Date: 2026-08-10
-- Last updated: 2026-08-24
-- Implementation status: Phases 0 through 11 complete; remote/provider
-  synchronization is absent, local projection maintenance remains supported,
-  and execution is stopped before Phase 12
+- Last updated: 2026-08-26
+- Implementation status: Phases 0 through 12 complete; the production package
+  contains only Domain, Application, inbound/outbound Adapters, and Bootstrap,
+  with no architecture exceptions, and execution is stopped before Phase 13
 - Governing decisions: ADR-0001 through ADR-0010
 
 ## Purpose

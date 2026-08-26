@@ -4,7 +4,6 @@ import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.inbound.cli.datetime_parser import parse_user_datetime
-from roadmap.adapters.inbound.cli.instrumentation import log_command
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
     projection_warning,
@@ -30,7 +29,6 @@ def _completion_time(value: str | None):
 @click.option("--record-time", "-t", is_flag=True, help="Record completion time")
 @click.option("--date", help="Completion date (requires --record-time)")
 @click.pass_context
-@log_command("issue_close", entity_type="issue", track_duration=True)
 @require_initialized
 def close_issue(
     ctx: click.Context,

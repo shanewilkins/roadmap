@@ -69,7 +69,7 @@ for forbidden in (
     assert result.returncode == 0, result.stderr
 
 
-def test_help_and_version_do_not_construct_workspace_or_telemetry() -> None:
+def test_help_and_version_do_not_construct_workspace() -> None:
     """Eager informational options stay independent of workspace state."""
 
     def forbidden(*_args: Any, **_kwargs: Any) -> Any:
@@ -79,8 +79,6 @@ def test_help_and_version_do_not_construct_workspace_or_telemetry() -> None:
         working_directory=forbidden,
         core_builder=forbidden,
         existing_core_builder=forbidden,
-        logging_initializer=forbidden,
-        tracing_initializer=forbidden,
         console_factory=forbidden,
     )
     command = build_cli(inputs)
@@ -93,7 +91,7 @@ def test_help_and_version_do_not_construct_workspace_or_telemetry() -> None:
 
 
 def test_bootstrap_construction_is_deterministic_from_explicit_inputs() -> None:
-    """One explicit input set controls tracing, location, and core construction."""
+    """One explicit input set controls location and core construction."""
     calls: list[tuple[Any, ...]] = []
     core = object()
 
@@ -105,8 +103,6 @@ def test_bootstrap_construction_is_deterministic_from_explicit_inputs() -> None:
         working_directory=lambda: Path("/explicit/workspace"),
         core_builder=build_core,
         existing_core_builder=lambda root: calls.append(("existing", root)),
-        logging_initializer=lambda: calls.append(("logging",)),
-        tracing_initializer=lambda: calls.append(("tracing",)),
         console_factory=lambda: calls.append(("console",)),
     )
     command = build_cli(inputs, command_registry={})
@@ -124,8 +120,6 @@ def test_bootstrap_construction_is_deterministic_from_explicit_inputs() -> None:
     assert result.stdout.strip() == "True"
     assert second_result.exit_code == 0, second_result.exception
     assert calls == [
-        ("logging",),
-        ("tracing",),
         ("core", Path("/explicit/workspace"), ".roadmap"),
         ("core", Path("/explicit/workspace"), ".roadmap"),
     ]

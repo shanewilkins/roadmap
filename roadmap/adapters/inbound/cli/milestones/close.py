@@ -3,7 +3,6 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command
 from roadmap.adapters.inbound.cli.planning_resolution import (
     invoke,
     projection_warning,
@@ -16,7 +15,6 @@ from roadmap.adapters.inbound.cli.planning_resolution import (
 @click.option("--force", is_flag=True, help="Skip open-issue guard")
 @click.pass_context
 @require_initialized
-@log_command("milestone_close", entity_type="milestone", track_duration=True)
 def close_milestone(ctx, milestone_name: str, force: bool) -> None:
     """Close a milestone without changing linked issues."""
     core = ctx.obj["core"]

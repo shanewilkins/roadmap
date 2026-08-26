@@ -116,7 +116,7 @@ def _config_surfaces() -> set[str]:
 def _canonical_surfaces() -> set[str]:
     models = {"issue": Issue, "milestone": Milestone, "project": Project}
     return {
-        f"canonical.{entity}.{field}"
+        f"canonical.{entity}.{field.name}"
         for entity, model in models.items()
         for field in fields(model)
     }

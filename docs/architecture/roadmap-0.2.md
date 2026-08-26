@@ -7,9 +7,9 @@
 - Implementation specification: [refactor-implementation.md](refactor-implementation.md)
 - Detailed execution and checkpoint protocol:
   [refactor-execution-plan.md](refactor-execution-plan.md)
-- Detailed execution status: Phase 11 remote-sync-removal checkpoint accepted
-  on 2026-08-24; work is stopped before Phase 12 of the detailed execution
-  plan.
+- Detailed execution status: Phase 12 legacy-zone-dissolution checkpoint
+  accepted on 2026-08-26; work is stopped before Phase 13 of the detailed
+  execution plan.
 
 ## Decision
 
@@ -102,8 +102,7 @@ will remain account-free unless a future hosted or genuinely multi-user trust
 boundary demonstrates a need that operating-system access, Git credentials,
 and repository-host authorization cannot meet. Authentication is a conditional
 candidate, not a committed feature; any adoption requires concrete requirements,
-threat modeling, recovery and offline semantics, and a separate ADR. See
-[Product direction](../developer_notes/FUTURE_FEATURES.md#road-to-10-authentication-decision-gate).
+threat modeling, recovery and offline semantics, and a separate ADR.
 
 The CSV requirement registers remain governance and planning artifacts during
 0.2. This lets the project use requirement IDs immediately without forcing a

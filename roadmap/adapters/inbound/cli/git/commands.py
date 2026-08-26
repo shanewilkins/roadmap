@@ -37,14 +37,21 @@ def git_status(ctx: click.Context) -> None:
 @git.command("branch")
 @click.argument("issue_id")
 @click.option("--checkout/--no-checkout", default=True, show_default=True)
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Create the branch even when the working tree has uncommitted changes.",
+)
 @click.pass_context
 @require_initialized
-def git_branch(ctx: click.Context, issue_id: str, checkout: bool) -> None:
+def git_branch(ctx: click.Context, issue_id: str, checkout: bool, force: bool) -> None:
     """Create and link a safe local branch for one canonical issue."""
     core = ctx.obj["core"]
     identity = resolve_issue_id(core, issue_id)
     result = invoke(
-        lambda: core.local_git.create_issue_branch(identity, checkout=checkout)
+        lambda: core.local_git.create_issue_branch(
+            identity, checkout=checkout, force=force
+        )
     )
     if result.dirty_paths:
         click.echo(

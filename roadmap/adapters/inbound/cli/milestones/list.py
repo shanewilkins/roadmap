@@ -4,7 +4,6 @@ import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.inbound.cli.decorators import with_output_support
-from roadmap.adapters.inbound.cli.instrumentation import verbose_output
 from roadmap.adapters.inbound.cli.models import ColumnDef, ColumnType, TableData
 
 
@@ -30,7 +29,6 @@ from roadmap.adapters.inbound.cli.models import ColumnDef, ColumnType, TableData
     },
 )
 @require_initialized
-@verbose_output
 def list_milestones(ctx, overdue: bool):
     """List milestones from canonical documents."""
     planning = ctx.obj["core"].planning

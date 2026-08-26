@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from roadmap import __version__
 from roadmap.adapters.inbound.cli import (
     COMMAND_REGISTRY,
     CliRuntime,
@@ -24,14 +25,6 @@ def _find_existing_core(root_path: Path) -> Any | None:
     from roadmap.bootstrap.core import find_existing_core
 
     return find_existing_core(root_path)
-
-
-def _initialize_tracing() -> None:
-    """Tracing is intentionally disabled for the local-only CLI."""
-
-
-def _initialize_logging() -> None:
-    """The CLI emits deliberate user output; libraries stay quiet by default."""
 
 
 def _create_console() -> Any:
@@ -73,8 +66,6 @@ class BootstrapInputs:
     working_directory: Callable[[], Path] = Path.cwd
     core_builder: Callable[[Path, str], Any] = _create_core
     existing_core_builder: Callable[[Path], Any | None] = _find_existing_core
-    logging_initializer: Callable[[], None] = _initialize_logging
-    tracing_initializer: Callable[[], None] = _initialize_tracing
     console_factory: Callable[[], Any] = _create_console
     migration_builder: Callable[[Path], Any] = _create_workspace_migration
     initialization_builder: Callable[[Path, str], Any] = _create_initialization
@@ -94,8 +85,6 @@ def build_cli(
         existing_core_factory=lambda: selected.existing_core_builder(
             selected.working_directory()
         ),
-        logging_initializer=selected.logging_initializer,
-        tracing_initializer=selected.tracing_initializer,
         console_factory=selected.console_factory,
         migration_factory=lambda: selected.migration_builder(
             selected.working_directory()
@@ -103,6 +92,7 @@ def build_cli(
         initialization_factory=lambda name: selected.initialization_builder(
             selected.working_directory(), name
         ),
+        version=__version__,
     )
     return create_cli(runtime, command_registry=command_registry)
 

@@ -3,7 +3,6 @@
 import click
 
 from roadmap.adapters.inbound.cli.decorators import with_output_support
-from roadmap.adapters.inbound.cli.instrumentation import verbose_output
 from roadmap.adapters.inbound.cli.models import ColumnDef, ColumnType, TableData
 
 
@@ -27,7 +26,6 @@ from roadmap.adapters.inbound.cli.models import ColumnDef, ColumnType, TableData
         "owner": ColumnType.STRING,
     },
 )
-@verbose_output
 def list_projects(
     ctx,
     status: str | None,

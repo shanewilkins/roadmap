@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from roadmap.adapters.outbound.git import SubprocessLocalGit
+from roadmap.application.ports import LocalGitPort
 from roadmap.domain.types import Timestamp
 
 
@@ -12,7 +12,7 @@ class SystemClock:
 
 
 class ConfiguredCurrentIdentity:
-    def __init__(self, configured_name: str | None, local_git: SubprocessLocalGit):
+    def __init__(self, configured_name: str | None, local_git: LocalGitPort):
         git_name, _git_email = local_git.user_identity()
         self._identity = configured_name or git_name
 

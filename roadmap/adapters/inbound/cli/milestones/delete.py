@@ -3,7 +3,6 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command
 from roadmap.adapters.inbound.cli.planning_resolution import (
     invoke,
     resolve_milestone_id,
@@ -15,7 +14,6 @@ from roadmap.adapters.inbound.cli.planning_resolution import (
 @click.option("--yes", "-y", is_flag=True)
 @click.pass_context
 @require_initialized
-@log_command("milestone_delete", entity_type="milestone", track_duration=True)
 def delete_milestone(ctx, milestone_id: str, yes: bool) -> None:
     """Purge an archived, unreferenced milestone."""
     core = ctx.obj["core"]

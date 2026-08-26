@@ -5,7 +5,6 @@ import re
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command, verbose_output
 from roadmap.adapters.inbound.cli.planning_resolution import (
     date_value,
     invoke,
@@ -37,8 +36,6 @@ def _validate_milestone_name(name: str) -> tuple[bool, str | None]:
 @click.option("--project", "-p", default=None, help="Project ID")
 @click.pass_context
 @require_initialized
-@verbose_output
-@log_command("milestone_create", entity_type="milestone", track_duration=True)
 def create_milestone(
     ctx, title: str, description: str, due_date: str | None, project: str | None
 ) -> None:

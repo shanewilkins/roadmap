@@ -3,7 +3,6 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command, verbose_output
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
     projection_warning,
@@ -23,8 +22,6 @@ from roadmap.domain.types import IssueStatus
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
 @click.option("--verbose", "-v", is_flag=True)
 @click.pass_context
-@verbose_output
-@log_command("issue_restore", entity_type="issue", track_duration=True)
 @require_initialized
 def restore_issue(
     ctx: click.Context,

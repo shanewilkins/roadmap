@@ -8,8 +8,6 @@ from typing import Any
 
 import click
 
-from roadmap import __version__
-
 
 def _handle_cli_exception(ctx: click.Context, error: Exception) -> Any:
     from roadmap.adapters.inbound.cli.exception_handler import handle_cli_exception
@@ -65,19 +63,10 @@ class CliRuntime:
 
     core_factory: Callable[[str], Any]
     existing_core_factory: Callable[[], Any | None]
-    logging_initializer: Callable[[], None]
-    tracing_initializer: Callable[[], None]
     console_factory: Callable[[], Any]
     migration_factory: Callable[[], Any]
     initialization_factory: Callable[[str], Any]
-    initialized: bool = False
-
-    def initialize(self) -> None:
-        if self.initialized:
-            return
-        self.logging_initializer()
-        self.tracing_initializer()
-        self.initialized = True
+    version: str
 
 
 class RoadmapClickGroup(click.Group):
@@ -148,7 +137,7 @@ def create_cli(
         command_registry=command_registry,
         console_factory=runtime.console_factory,
     )
-    @click.version_option(version=__version__)
+    @click.version_option(version=runtime.version)
     @click.pass_context
     def cli(ctx: click.Context) -> None:
         """Roadmap CLI - A command line tool for creating and managing roadmaps."""
@@ -158,9 +147,6 @@ def create_cli(
         ctx.obj.setdefault("console_factory", runtime.console_factory)
         ctx.obj.setdefault("migration_factory", runtime.migration_factory)
         ctx.obj.setdefault("initialization_factory", runtime.initialization_factory)
-        if ctx.invoked_subcommand != "migrate":
-            runtime.initialize()
-
         if (
             ctx.invoked_subcommand not in {None, "init", "migrate"}
             and "core" not in ctx.obj

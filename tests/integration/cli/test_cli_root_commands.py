@@ -219,6 +219,10 @@ class TestCLIHealth:
     def test_health_json_and_confirmed_projection_repair(self, isolated_roadmap):
         cli_runner, _core = isolated_roadmap
 
+        Path(".roadmap/db/projection.db.stale").write_text(
+            "test fixture: canonical state is newer\n", encoding="utf-8"
+        )
+
         before = cli_runner.invoke(main, ["health", "--format", "json"])
         preview = cli_runner.invoke(
             main,

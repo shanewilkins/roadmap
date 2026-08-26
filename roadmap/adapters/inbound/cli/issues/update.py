@@ -3,7 +3,6 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
     projection_warning,
@@ -33,7 +32,6 @@ from roadmap.domain.types import Priority, Title
 @click.option("--estimate", "-e", type=float, help="Update estimated hours")
 @click.option("--reason", "-r", help="Reason for the update")
 @click.pass_context
-@log_command("issue_update", entity_type="issue", track_duration=True)
 @require_initialized
 def update_issue(
     ctx: click.Context,

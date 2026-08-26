@@ -8,7 +8,6 @@ from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.inbound.cli.column_factory import create_issue_columns
 from roadmap.adapters.inbound.cli.console import get_console
 from roadmap.adapters.inbound.cli.decorators import with_output_support
-from roadmap.adapters.inbound.cli.instrumentation import verbose_output
 from roadmap.adapters.inbound.cli.models import ColumnType, TableData
 from roadmap.adapters.inbound.cli.planning_resolution import resolve_milestone_id
 from roadmap.application.contracts import IssueListQuery, IssueQueryRecord, IssueScope
@@ -134,7 +133,6 @@ def _workload(records: tuple[IssueQueryRecord, ...], assignee: str) -> None:
         "comment_count": ColumnType.STRING,
     },
 )
-@verbose_output
 @require_initialized
 def list_issues(  # noqa: F841
     ctx: click.Context,

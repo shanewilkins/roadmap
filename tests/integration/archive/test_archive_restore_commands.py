@@ -290,7 +290,7 @@ class TestCommentCommands:
     def test_comment_help(self, cli_runner):
         """Test comment command help."""
         with cli_runner.isolated_filesystem():
-            result = cli_runner.invoke(main, ["comment", "--help"])
+            result = cli_runner.invoke(main, ["issue", "comment", "--help"])
             assert result.exit_code == 0
             assert "comment" in result.output.lower()
 

@@ -3,7 +3,6 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
-from roadmap.adapters.inbound.cli.instrumentation import log_command
 from roadmap.adapters.inbound.cli.planning_resolution import (
     invoke,
     projection_warning,
@@ -18,7 +17,6 @@ from roadmap.adapters.inbound.cli.planning_resolution import (
 )
 @click.pass_context
 @require_initialized
-@log_command("project_close", entity_type="project", track_duration=True)
 def close_project(ctx, project_id: str, force: bool) -> None:
     """Mark a project completed without archiving it or its milestones."""
     core = ctx.obj["core"]

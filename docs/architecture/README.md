@@ -10,11 +10,12 @@ Implementation changes require separate, explicitly scoped work.
 
 ## Current execution state
 
-- Accepted checkpoint: Phase 11, remote/provider synchronization removal.
-- Next approved work after maintainer authorization: Phase 12, legacy
-  ownership-zone dissolution and dependency pruning.
+- Accepted checkpoint: Phase 12, legacy ownership-zone dissolution and
+  dependency pruning.
+- Next approved work after maintainer authorization: Phase 13, hardening and
+  0.2.0 release preparation.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
-- Current production Python CLOC ceiling: 24,545.
+- Current production Python CLOC ceiling: 9,200.
 - Every phase ends with the complete checkpoint and a hard approval stop.
 
 ## Accepted decisions
@@ -36,6 +37,7 @@ Implementation changes require separate, explicitly scoped work.
 - [Roadmap 0.2 public contract](public-contract-0.2.md)
 - [Roadmap 0.2 compatibility inventory](compatibility-inventory-0.2.csv)
 - [Canonical persistence and projection contract](canonical-persistence-contract-0.2.md)
+- [Runtime dependency boundaries](dependency-boundaries.md)
 
 ## Delivery plans
 
@@ -57,3 +59,4 @@ Implementation changes require separate, explicitly scoped work.
 - [Phase 9 workspace migration — 2026-08-24](checkpoints/phase-9-workspace-migration-2026-08-24.md)
 - [Phase 10 operational boundaries — 2026-08-24](checkpoints/phase-10-operational-boundaries-2026-08-24.md)
 - [Phase 11 remote sync removal — 2026-08-24](checkpoints/phase-11-remote-sync-removal-2026-08-24.md)
+- [Phase 12 legacy-zone dissolution — 2026-08-26](checkpoints/phase-12-legacy-zone-dissolution-2026-08-26.md)

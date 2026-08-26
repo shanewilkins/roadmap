@@ -12,7 +12,7 @@ class FailureCategory(StrEnum):
     PROJECTION_STALE = "projection-stale"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class ApplicationFailure(Exception):
     category: FailureCategory
     message: str

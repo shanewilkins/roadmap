@@ -54,8 +54,8 @@ def test_removed_commands_are_unknown_without_lazy_load_warning() -> None:
     for command in ("sync", "validate-links"):
         result = runner.invoke(cli, [command])
         assert result.exit_code == 2
-        assert f"No such command '{command}'" in result.output
-        assert "Failed to load command" not in result.output
+        assert f"No such command '{command}'" in result.stderr
+        assert "Failed to load command" not in result.stderr
 
 
 def test_retained_command_help_has_no_provider_controls() -> None:
@@ -74,8 +74,8 @@ def test_retained_command_help_has_no_provider_controls() -> None:
     ):
         result = runner.invoke(cli, arguments)
         assert result.exit_code == 0, result.exception
-        assert not any(item in result.output for item in forbidden)
-        assert "Failed to load command" not in result.output
+        assert not any(item in result.stdout for item in forbidden)
+        assert "Failed to load command" not in result.stdout
 
 
 def test_configuration_schema_has_only_local_product_settings() -> None:

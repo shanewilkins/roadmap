@@ -67,16 +67,21 @@ def test_inspect_enriches_local_snapshot_with_canonical_links() -> None:
     assert snapshot.changed_paths == ("file",)
 
 
-def test_create_branch_uses_safe_name_and_persists_explicit_link() -> None:
+def test_create_branch_requires_force_for_a_dirty_tree_and_persists_link() -> None:
     repository = _Repository(GitSnapshot(True, "main", "abc", ("notes.txt",)))
     issue = _issue("issue-7", "Fix Weird / Shell $(input)!")
     mutations = _Mutations()
 
-    result = LocalGit(
+    service = LocalGit(
         repository,
         cast(IssueQueries, _Issues(issue)),
         cast(IssueMutations, mutations),
-    ).create_issue_branch(issue.id, checkout=False)
+    )
+
+    with pytest.raises(ApplicationFailure, match="uncommitted changes"):
+        service.create_issue_branch(issue.id, checkout=False)
+
+    result = service.create_issue_branch(issue.id, checkout=False, force=True)
 
     assert result.branch == "issue/issue-7-fix-weird-shell-input"
     assert repository.created == [(result.branch, False)]

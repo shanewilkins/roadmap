@@ -294,6 +294,10 @@ def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
         ],
         workspace,
     )
+    _run(
+        [str(roadmap), "config", "set", "identity.name", "checkpoint-user"],
+        workspace,
+    )
     projects = _run(
         [str(roadmap), "project", "list", "--format", "json"],
         workspace,
@@ -462,7 +466,7 @@ def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
         raise RuntimeError("Versioned health output did not report a clean workspace")
     _run(["git", "init"], workspace)
     _run([str(roadmap), "git", "status"], workspace)
-    _run([str(roadmap), "git", "branch", issue_id], workspace)
+    _run([str(roadmap), "git", "branch", issue_id, "--force"], workspace)
     linked = _run([str(roadmap), "git", "status"], workspace)
     if issue_id not in linked:
         raise RuntimeError("Local Git branch was not linked to the canonical issue")
