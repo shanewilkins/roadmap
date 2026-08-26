@@ -314,7 +314,8 @@ def load_policy(path: Path) -> ArchitecturePolicy:
                 f"boolean flags are malformed for {rule.id}"
             )
         if rule.active_phase is not None and (
-            not isinstance(rule.active_phase, int) or rule.active_phase < current_phase
+            type(rule.active_phase) is not int
+            or not 0 <= rule.active_phase <= final_phase
         ):
             raise ArchitectureConfigurationError(
                 f"active_phase is malformed for {rule.id}"

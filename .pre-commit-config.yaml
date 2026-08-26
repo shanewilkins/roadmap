@@ -13,7 +13,9 @@ repos:
       - id: check-case-conflict
       - id: debug-statements
       - id: end-of-file-fixer
+        exclude: ^\.roadmap/
       - id: trailing-whitespace
+        exclude: ^\.roadmap/
 
   # Use the Ruff version pinned in pyproject.toml and uv.lock.
   - repo: local

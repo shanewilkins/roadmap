@@ -1,8 +1,8 @@
 # Roadmap 0.2 refactor execution plan
 
 - Status: Approved
-- Execution status: Phase 12 checkpoint passed on 2026-08-26; stop and obtain
-  maintainer approval before Phase 13
+- Execution status: Phase 13 checkpoint passed on 2026-08-26; stop and obtain
+  separate authorization before release versioning, tagging, or publishing
 - Date: 2026-08-16
 - Last updated: 2026-08-26
 - Baseline commit: `61595a6e`
@@ -816,8 +816,10 @@ CLOC less than or equal to the preceding accepted row. Tests and documentation
 may grow when they add useful evidence; production code cannot grow phase over
 phase.
 
-## First execution step
+## Final release boundary
 
-After the maintainer approves this plan, begin only Phase 0. Run the unchanged
-baseline checkpoint and return with the evidence. Do not begin requirement
-triage or architecture-policy implementation in the same turn.
+All planned implementation phases are complete. The accepted Phase 13
+checkpoint does not authorize changing the package version, creating a release
+commit or tag, pushing, or publishing. Those irreversible actions begin only
+after separate maintainer authorization and follow
+`docs/releases/0.2.0-checklist.md`.

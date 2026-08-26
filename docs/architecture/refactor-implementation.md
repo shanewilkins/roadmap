@@ -3,9 +3,10 @@
 - Status: Approved
 - Date: 2026-08-10
 - Last updated: 2026-08-26
-- Implementation status: Phases 0 through 12 complete; the production package
+- Implementation status: Phases 0 through 13 complete; the production package
   contains only Domain, Application, inbound/outbound Adapters, and Bootstrap,
-  with no architecture exceptions, and execution is stopped before Phase 13
+  with no architecture exceptions, and the 0.2 candidate is stopped before the
+  separately authorized version bump, tag, and publication
 - Governing decisions: ADR-0001 through ADR-0010
 
 ## Purpose
@@ -25,28 +26,28 @@ dependency rule and behavior contracts pass.
 ```text
 roadmap/
   domain/
-    entities/
-    policies/
-    value_objects/
+    aggregates.py
+    transitions.py
+    types.py
   application/
-    ports/
+    contracts.py
+    ports.py
     use_cases/
   adapters/
     inbound/
       cli/
     outbound/
-      documents/
-      sqlite/
+      persistence/
       git/
-      telemetry/
   bootstrap/
 ```
 
 `roadmap.bootstrap` is the final composition-root namespace. The console entry
 point delegates to Bootstrap and does not construct concrete adapters itself.
 
-Feature-level packages may be added within these zones when they improve
-cohesion, but they do not create new architectural layers.
+This is the implemented Phase 13 layout. Feature-level packages may be added
+within these zones when they improve cohesion, but they do not create new
+architectural layers.
 
 ### Current-to-target ownership guide
 

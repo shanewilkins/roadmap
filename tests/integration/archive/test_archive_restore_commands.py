@@ -5,8 +5,8 @@ and cleanup command for backup pruning.
 """
 
 from roadmap.bootstrap import cli as main
+from tests.fixtures.ansi import clean_cli_output
 from tests.fixtures.cli_test_helpers import CLIOutputParser
-from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 class TestCleanupCommand:

@@ -42,7 +42,10 @@ def test_governance_phase_state_is_consistent() -> None:
 
     assert phases == set(range(POLICY.final_phase + 1))
     assert f"Execution status: Phase {POLICY.current_phase} checkpoint passed" in header
-    assert f"approval before Phase {POLICY.current_phase + 1}" in header
+    if POLICY.current_phase < POLICY.final_phase:
+        assert f"approval before Phase {POLICY.current_phase + 1}" in header
+    else:
+        assert "separate authorization before release" in header
     assert f"Accepted checkpoint: Phase {POLICY.current_phase}" in index
     assert f"Final planned implementation phase: Phase {POLICY.final_phase}" in index
 
@@ -50,7 +53,10 @@ def test_governance_phase_state_is_consistent() -> None:
     assert len(checkpoints) == 1
     checkpoint = checkpoints[0].read_text(encoding="utf-8")
     assert "Decision: **GO**" in checkpoint
-    assert f"before Phase {POLICY.current_phase + 1}" in checkpoint
+    if POLICY.current_phase < POLICY.final_phase:
+        assert f"before Phase {POLICY.current_phase + 1}" in checkpoint
+    else:
+        assert "Separate authorization is required" in checkpoint
     assert checkpoints[0].name in index
 
 
@@ -194,6 +200,30 @@ def test_removed_namespace_rule_is_inactive_before_its_declared_phase() -> None:
     """Scheduled removal does not rewrite the unchanged Phase 2 tree."""
     fixture = FIXTURES / "invalid" / "removed_namespace" / "roadmap"
     assert find_violations(fixture, POLICY, current_phase=11) == ()
+
+
+def test_activated_rule_remains_enforced_after_its_declared_phase() -> None:
+    """Activation is permanent rather than invalidating the final policy."""
+    fixture = FIXTURES / "invalid" / "removed_namespace" / "roadmap"
+    violations = find_violations(fixture, POLICY, current_phase=POLICY.final_phase)
+    assert (
+        Violation(
+            "roadmap.adapters.sync.legacy",
+            "roadmap.adapters.sync",
+            "removed-namespace",
+        )
+        in violations
+    )
+
+
+def test_policy_rejects_an_active_phase_outside_the_plan(tmp_path: Path) -> None:
+    body = (ROOT / "architecture.toml").read_text(encoding="utf-8")
+    path = tmp_path / "architecture.toml"
+    path.write_text(
+        body.replace("active_phase = 12", "active_phase = 14"), encoding="utf-8"
+    )
+    with pytest.raises(ArchitectureConfigurationError, match="active_phase"):
+        load_policy(path)
 
 
 def test_pyright_configuration_keeps_meaningful_error_rules() -> None:

@@ -12,8 +12,8 @@ from pathlib import Path
 import pytest
 
 from roadmap.bootstrap import cli as main
+from tests.fixtures.ansi import clean_cli_output
 from tests.fixtures.integration_helpers import IntegrationTestBase
-from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 def _output_lower(result) -> str:

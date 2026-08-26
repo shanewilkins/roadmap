@@ -4,7 +4,7 @@ Roadmap has no application server to self-host. Canonical project data lives in
 the repository under `.roadmap/`, so any normal Git host can share it.
 
 ```bash
-roadmap init --name "My project"
+roadmap init --project-name "My project"
 roadmap issue create --title "Build API layer"
 
 git add .roadmap/

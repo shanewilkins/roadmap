@@ -10,13 +10,12 @@ Implementation changes require separate, explicitly scoped work.
 
 ## Current execution state
 
-- Accepted checkpoint: Phase 12, legacy ownership-zone dissolution and
-  dependency pruning.
-- Next approved work after maintainer authorization: Phase 13, hardening and
-  0.2.0 release preparation.
+- Accepted checkpoint: Phase 13, hardening and 0.2.0 release preparation.
+- Next work requires separate maintainer authorization: version bump, clean
+  release commit, tag, trusted publication, and post-publication verification.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
 - Current production Python CLOC ceiling: 9,200.
-- Every phase ends with the complete checkpoint and a hard approval stop.
+- All implementation phases are complete; package version remains 0.1.1.
 
 ## Accepted decisions
 
@@ -38,11 +37,16 @@ Implementation changes require separate, explicitly scoped work.
 - [Roadmap 0.2 compatibility inventory](compatibility-inventory-0.2.csv)
 - [Canonical persistence and projection contract](canonical-persistence-contract-0.2.md)
 - [Runtime dependency boundaries](dependency-boundaries.md)
+- [Measured 0.2 performance envelope](performance-envelope-0.2.md)
+- [Portfolio case study](portfolio-case-study.md)
 
 ## Delivery plans
 
 - [Roadmap 0.2 architecture simplification plan](roadmap-0.2.md)
 - [Roadmap 0.2 refactor execution plan](refactor-execution-plan.md)
+- [Roadmap 0.2.0 release checklist](../releases/0.2.0-checklist.md)
+- [Roadmap 0.2.0 rollback plan](../releases/0.2.0-rollback.md)
+- [Roadmap 0.1.1 to 0.2 migration guide](../user_guide/MIGRATING_TO_0_2.md)
 
 ## Execution checkpoints
 
@@ -60,3 +64,4 @@ Implementation changes require separate, explicitly scoped work.
 - [Phase 10 operational boundaries — 2026-08-24](checkpoints/phase-10-operational-boundaries-2026-08-24.md)
 - [Phase 11 remote sync removal — 2026-08-24](checkpoints/phase-11-remote-sync-removal-2026-08-24.md)
 - [Phase 12 legacy-zone dissolution — 2026-08-26](checkpoints/phase-12-legacy-zone-dissolution-2026-08-26.md)
+- [Phase 13 release candidate — 2026-08-26](checkpoints/phase-13-release-candidate-2026-08-26.md)

@@ -1,55 +1,53 @@
-"""Integration tests for CLI commands.
-
-Integration tests for CLI issue commands.
-
-Uses Click's CliRunner for testing CLI interactions.
-Refactored to use IntegrationTestBase helpers and data factories.
-"""
+"""CLI issue journeys through the composed application boundary."""
 
 import pytest
 
 from roadmap.bootstrap import cli as main
+from tests.fixtures.ansi import clean_cli_output
 from tests.fixtures.integration_helpers import IntegrationTestBase
-from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
+
+
+def _issues():
+    return IntegrationTestBase.get_roadmap_core().issues.list()
+
+
+def _created_issue_id(cli_runner, *, title: str = "Test Issue") -> str:
+    IntegrationTestBase.create_issue(cli_runner, title=title)
+    issues = _issues()
+    assert issues, "issue fixture did not persist an issue"
+    return str(issues[-1].id)
+
+
+def _issue(issue_id: str):
+    issue = IntegrationTestBase.get_roadmap_core().issues.get(issue_id)
+    assert issue is not None, f"issue {issue_id} was not persisted"
+    return issue
 
 
 class TestCLIIssueCreate:
-    """Test issue create command."""
-
     @pytest.mark.parametrize(
-        "title,options,should_succeed",
+        "title,options",
         [
-            ("Test Issue", [], True),  # Minimal
+            ("Test Issue", []),
             (
                 "Feature Request",
                 ["--type", "feature", "--priority", "high", "--estimate", "4.5"],
-                True,
             ),
-            ("Bug Report", ["--type", "bug"], True),
-            ("Task", ["--priority", "medium"], True),
+            ("Bug Report", ["--type", "bug"]),
+            ("Task", ["--priority", "medium"]),
         ],
     )
-    def test_create_issue(self, cli_runner, title, options, should_succeed):
-        """Test creating issues with various field combinations."""
+    def test_create_issue(self, cli_runner, title, options):
         with cli_runner.isolated_filesystem():
             IntegrationTestBase.init_roadmap(cli_runner)
-
             result = cli_runner.invoke(
-                main,
-                ["issue", "create", "--title", title] + options,
+                main, ["issue", "create", "--title", title, *options]
             )
-
-            if should_succeed:
-                IntegrationTestBase.assert_cli_success(
-                    result, f"Creating issue '{title}'"
-                )
-            else:
-                assert result.exit_code != 0
+            IntegrationTestBase.assert_cli_success(result)
+            assert any(str(issue.title) == title for issue in _issues())
 
     def test_create_issue_help(self, cli_runner):
-        """Test issue create help."""
         result = cli_runner.invoke(main, ["issue", "create", "--help"])
-
         IntegrationTestBase.assert_cli_success(result)
         output = clean_cli_output(result.output).lower()
         assert "create" in output
@@ -57,321 +55,126 @@ class TestCLIIssueCreate:
 
 
 class TestCLIIssueList:
-    """Test issue list command."""
-
     @pytest.mark.parametrize(
-        "filter_args,use_empty_roadmap",
-        [
-            ([], False),  # List all issues
-            (["--status", "todo"], False),  # With status filter
-            (["--priority", "high"], False),  # With priority filter
-            ([], True),  # Empty list
-        ],
+        "filter_args",
+        [[], ["--status", "todo"], ["--priority", "high"]],
     )
-    def test_list_issues(
-        self,
-        cli_runner,
-        filter_args,
-        use_empty_roadmap,
-    ):
-        """Test listing issues with various filters."""
+    def test_list_issues(self, cli_runner, filter_args):
         with cli_runner.isolated_filesystem():
-            if use_empty_roadmap:
-                IntegrationTestBase.init_roadmap(cli_runner)
-            else:
-                core = IntegrationTestBase.init_roadmap(cli_runner)
-                # Create multiple issues for testing
-                for _, priority in enumerate(["critical", "high", "medium", "low"], 1):
-                    IntegrationTestBase.create_issue(
-                        cli_runner,
-                        title=f"{priority.title()} Priority Issue",
-                        priority=priority,
-                    )
-
-            result = cli_runner.invoke(main, ["issue", "list"] + filter_args)
-
+            IntegrationTestBase.init_roadmap(cli_runner)
+            IntegrationTestBase.create_issue(
+                cli_runner, title="High Priority Issue", priority="high"
+            )
+            result = cli_runner.invoke(main, ["issue", "list", *filter_args])
             IntegrationTestBase.assert_cli_success(result)
-            if not use_empty_roadmap and not filter_args:
-                # With data and no filter, should show issues
-                core = IntegrationTestBase.get_roadmap_core()
-                assert len(core.issues.list()) > 0
+            assert "High Priority Issue" in clean_cli_output(result.output)
+
+    def test_list_issues_empty(self, cli_runner):
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
+            result = cli_runner.invoke(main, ["issue", "list"])
+            IntegrationTestBase.assert_cli_success(result)
+            assert not _issues()
 
     def test_list_issues_help(self, cli_runner):
-        """Test issue list help."""
         result = cli_runner.invoke(main, ["issue", "list", "--help"])
-
         IntegrationTestBase.assert_cli_success(result)
 
 
 class TestCLIIssueUpdate:
-    """Test issue update command."""
-
     @pytest.mark.parametrize(
-        "option,value",
+        "option,value,attribute,expected",
         [
-            ("--title", "Updated Title"),
-            ("--priority", "critical"),
-            ("--status", "in-progress"),
+            ("--title", "Updated Title", "title", "Updated Title"),
+            ("--priority", "critical", "priority", "critical"),
+            ("--status", "in-progress", "status", "in-progress"),
         ],
     )
-    def test_update_issue(self, cli_runner, option, value):
-        """Test updating issues with various fields."""
-        with cli_runner.isolated_filesystem():
-            core = IntegrationTestBase.init_roadmap(cli_runner)
-            # Create multiple issues for testing
-            for _, priority in enumerate(["critical", "high", "medium", "low"], 1):
-                IntegrationTestBase.create_issue(
-                    cli_runner,
-                    title=f"{priority.title()} Priority Issue",
-                    priority=priority,
-                )
-            # Refresh core to pick up newly created issues
-            core = IntegrationTestBase.get_roadmap_core()
-            issue_ids = [issue.id for issue in core.issues.list()]
-
-            # Use the first created issue
-            if not issue_ids:
-                pytest.skip("No issues created in fixture")
-
-            issue_id = issue_ids[0]
-
-            result = cli_runner.invoke(
-                main,
-                ["issue", "update", issue_id, option, value],
-            )
-
-            # Update should succeed (exit_code 0) or gracefully handle the update
-            output = clean_cli_output(result.output).lower()
-            assert result.exit_code == 0 or "updated" in output
-
-    def test_update_nonexistent_issue(self, cli_runner):
-        """Test updating non-existent issue."""
+    def test_update_issue(self, cli_runner, option, value, attribute, expected):
         with cli_runner.isolated_filesystem():
             IntegrationTestBase.init_roadmap(cli_runner)
-
+            issue_id = _created_issue_id(cli_runner)
             result = cli_runner.invoke(
-                main,
-                ["issue", "update", "999", "--title", "Test"],
+                main, ["issue", "update", issue_id, option, value]
             )
+            IntegrationTestBase.assert_cli_success(result)
+            actual = getattr(_issue(issue_id), attribute)
+            assert getattr(actual, "value", str(actual)) == expected
 
-            # Should not crash - either fail or handle gracefully
-            assert result.exit_code == 0 or result.exit_code != 0
+    def test_update_nonexistent_issue_fails(self, cli_runner):
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
+            result = cli_runner.invoke(
+                main, ["issue", "update", "999", "--title", "Test"]
+            )
+            assert result.exit_code != 0
+            assert "not found" in result.output.lower()
 
 
 class TestCLIIssueDelete:
-    """Test issue delete command."""
-
-    @pytest.mark.parametrize(
-        "use_yes",
-        [False, True],
-    )
-    def test_delete_issue(self, cli_runner, use_yes):
-        """Test deleting issues with various options."""
-        with cli_runner.isolated_filesystem():
-            core = IntegrationTestBase.init_roadmap(cli_runner)
-            # Create multiple issues for testing
-            for _, priority in enumerate(["critical", "high", "medium", "low"], 1):
-                IntegrationTestBase.create_issue(
-                    cli_runner,
-                    title=f"{priority.title()} Priority Issue",
-                    priority=priority,
-                )
-            # Refresh core to pick up newly created issues
-            core = IntegrationTestBase.get_roadmap_core()
-            issue_ids = [issue.id for issue in core.issues.list()]
-
-            if not issue_ids:
-                pytest.skip("No issues created in fixture")
-
-            issue_id = issue_ids[0]
-
-            args = ["issue", "delete", issue_id]
-            if use_yes:
-                args.append("--yes")
-
-            result = cli_runner.invoke(
-                main,
-                args,
-                input="y\n" if not use_yes else None,
-            )
-
-            # Delete should execute without crashing
-            output = clean_cli_output(result.output).lower()
-            assert result.exit_code == 0 or "deleted" in output
-
-    def test_delete_nonexistent_issue(self, cli_runner):
-        """Test deleting non-existent issue."""
+    @pytest.mark.parametrize("use_yes", [False, True])
+    def test_delete_archived_issue(self, cli_runner, use_yes):
         with cli_runner.isolated_filesystem():
             IntegrationTestBase.init_roadmap(cli_runner)
-
-            result = cli_runner.invoke(
-                main,
-                ["issue", "delete", "999", "--yes"],
+            issue_id = _created_issue_id(cli_runner)
+            archived = cli_runner.invoke(
+                main, ["issue", "archive", issue_id, "--force"]
             )
+            IntegrationTestBase.assert_cli_success(archived)
+            args = ["issue", "delete", issue_id, *(["--yes"] if use_yes else [])]
+            result = cli_runner.invoke(main, args, input=None if use_yes else "y\n")
+            IntegrationTestBase.assert_cli_success(result)
+            assert "deleted" in clean_cli_output(result.output).lower()
 
-            # Should not crash regardless of outcome
-            assert result.exit_code == 0 or result.exit_code != 0
+    def test_delete_nonexistent_issue_fails(self, cli_runner):
+        with cli_runner.isolated_filesystem():
+            IntegrationTestBase.init_roadmap(cli_runner)
+            result = cli_runner.invoke(main, ["issue", "delete", "999", "--yes"])
+            assert result.exit_code != 0
+            assert "not found" in result.output.lower()
 
 
 class TestCLIIssueWorkflow:
-    """Test issue workflow commands (start, close, progress)."""
-
-    def test_start_issue(self, cli_runner):
-        """Test starting work on an issue."""
+    def test_start_close_and_progress(self, cli_runner):
         with cli_runner.isolated_filesystem():
-            core = IntegrationTestBase.init_roadmap(cli_runner)
-            # Create multiple issues for testing
-            for _, priority in enumerate(["critical", "high", "medium", "low"], 1):
-                IntegrationTestBase.create_issue(
-                    cli_runner,
-                    title=f"{priority.title()} Priority Issue",
-                    priority=priority,
-                )
-            # Refresh core to pick up newly created issues
-            core = IntegrationTestBase.get_roadmap_core()
-            issue_ids = [issue.id for issue in core.issues.list()]
+            IntegrationTestBase.init_roadmap(cli_runner)
+            issue_id = _created_issue_id(cli_runner)
+            started = cli_runner.invoke(main, ["issue", "start", issue_id])
+            IntegrationTestBase.assert_cli_success(started)
+            assert _issue(issue_id).status.value == "in-progress"
 
-            if not issue_ids:
-                pytest.skip("No issues created in fixture")
+            progressed = cli_runner.invoke(main, ["issue", "progress", issue_id, "50"])
+            IntegrationTestBase.assert_cli_success(progressed)
+            assert _issue(issue_id).progress_percentage == 50
 
-            issue_id = issue_ids[0]
+            closed = cli_runner.invoke(main, ["issue", "close", issue_id])
+            IntegrationTestBase.assert_cli_success(closed)
+            issue = _issue(issue_id)
+            assert issue.status.value == "closed"
+            assert issue.progress_percentage == 100
 
-            result = cli_runner.invoke(main, ["issue", "start", issue_id])
-
-            # Start should succeed or handle gracefully
-            output = clean_cli_output(result.output).lower()
-            assert result.exit_code == 0 or "start" in output
-
-    def test_close_issue(self, cli_runner):
-        """Test closing an issue."""
+    def test_block_and_unblock(self, cli_runner):
         with cli_runner.isolated_filesystem():
-            core = IntegrationTestBase.init_roadmap(cli_runner)
-            # Create multiple issues for testing
-            for _, priority in enumerate(["critical", "high", "medium", "low"], 1):
-                IntegrationTestBase.create_issue(
-                    cli_runner,
-                    title=f"{priority.title()} Priority Issue",
-                    priority=priority,
-                )
-            # Refresh core to pick up newly created issues
-            core = IntegrationTestBase.get_roadmap_core()
-            issue_ids = [issue.id for issue in core.issues.list()]
-
-            if not issue_ids:
-                pytest.skip("No issues created in fixture")
-
-            issue_id = issue_ids[0]
-
-            # Start first
-            cli_runner.invoke(main, ["issue", "start", issue_id])
-
-            # Then close
-            result = cli_runner.invoke(main, ["issue", "close", issue_id])
-
-            # Close should handle gracefully
-            output = clean_cli_output(result.output).lower()
-            assert result.exit_code == 0 or "close" in output
-
-    def test_update_progress(self, cli_runner):
-        """Test updating issue progress."""
-        with cli_runner.isolated_filesystem():
-            core = IntegrationTestBase.init_roadmap(cli_runner)
-            # Create multiple issues for testing
-            for _, priority in enumerate(["critical", "high", "medium", "low"], 1):
-                IntegrationTestBase.create_issue(
-                    cli_runner,
-                    title=f"{priority.title()} Priority Issue",
-                    priority=priority,
-                )
-            # Refresh core to pick up newly created issues
-            core = IntegrationTestBase.get_roadmap_core()
-            issue_ids = [issue.id for issue in core.issues.list()]
-
-            if not issue_ids:
-                pytest.skip("No issues created in fixture")
-
-            issue_id = issue_ids[0]
-
-            result = cli_runner.invoke(main, ["issue", "progress", issue_id, "50"])
-
-            # Progress update should handle gracefully
-            output = clean_cli_output(result.output).lower()
-            assert result.exit_code == 0 or "progress" in output
-
-    def test_block_issue(self, cli_runner):
-        """Test blocking an issue."""
-        with cli_runner.isolated_filesystem():
-            core = IntegrationTestBase.init_roadmap(cli_runner)
-            # Create multiple issues for testing
-            for _, priority in enumerate(["critical", "high", "medium", "low"], 1):
-                IntegrationTestBase.create_issue(
-                    cli_runner,
-                    title=f"{priority.title()} Priority Issue",
-                    priority=priority,
-                )
-            # Refresh core to pick up newly created issues
-            core = IntegrationTestBase.get_roadmap_core()
-            issue_ids = [issue.id for issue in core.issues.list()]
-
-            if not issue_ids:
-                pytest.skip("No issues created in fixture")
-
-            issue_id = issue_ids[0]
-
-            result = cli_runner.invoke(
+            IntegrationTestBase.init_roadmap(cli_runner)
+            issue_id = _created_issue_id(cli_runner)
+            blocked = cli_runner.invoke(
                 main,
                 ["issue", "block", issue_id, "--reason", "Waiting for dependency"],
             )
+            IntegrationTestBase.assert_cli_success(blocked)
+            assert _issue(issue_id).status.value == "blocked"
 
-            # Block should succeed or handle gracefully
-            output = clean_cli_output(result.output).lower()
-            assert result.exit_code == 0 or "block" in output
-
-    def test_unblock_issue(self, cli_runner):
-        """Test unblocking an issue."""
-        with cli_runner.isolated_filesystem():
-            core = IntegrationTestBase.init_roadmap(cli_runner)
-            # Create multiple issues for testing
-            for _, priority in enumerate(["critical", "high", "medium", "low"], 1):
-                IntegrationTestBase.create_issue(
-                    cli_runner,
-                    title=f"{priority.title()} Priority Issue",
-                    priority=priority,
-                )
-            # Refresh core to pick up newly created issues
-            core = IntegrationTestBase.get_roadmap_core()
-            issue_ids = [issue.id for issue in core.issues.list()]
-
-            if not issue_ids:
-                pytest.skip("No issues created in fixture")
-
-            issue_id = issue_ids[0]
-
-            # Block first
-            cli_runner.invoke(
-                main,
-                ["issue", "block", issue_id, "--reason", "Test"],
-            )
-
-            # Then unblock
-            result = cli_runner.invoke(main, ["issue", "unblock", issue_id])
-
-            # Unblock should handle gracefully
-            output = clean_cli_output(result.output).lower()
-            assert result.exit_code == 0 or "unblock" in output
+            unblocked = cli_runner.invoke(main, ["issue", "unblock", issue_id])
+            IntegrationTestBase.assert_cli_success(unblocked)
+            assert _issue(issue_id).status.value == "in-progress"
 
 
 class TestCLIIssueHelp:
-    """Test issue command help."""
-
     def test_issue_group_help(self, cli_runner):
-        """Test issue group help."""
         result = cli_runner.invoke(main, ["issue", "--help"])
-
         IntegrationTestBase.assert_cli_success(result)
         output = clean_cli_output(result.output).lower()
         assert "issue" in output
-        # Should list subcommands
         assert "create" in output
         assert "list" in output
 
@@ -391,6 +194,5 @@ class TestCLIIssueHelp:
         ],
     )
     def test_issue_subcommand_help(self, cli_runner, subcommand):
-        """Test that issue subcommands have help."""
         result = cli_runner.invoke(main, ["issue", subcommand, "--help"])
         IntegrationTestBase.assert_cli_success(result)

@@ -18,18 +18,16 @@ description = "Git-native command line tool for local project roadmap management
 readme = "README.md"
 requires-python = ">=3.13,<4.0"
 license = {text = "MIT"}
-authors = [{name = "Roadmap CLI Team", email = "contact@roadmap-cli.com"}]
+authors = [{name = "Shane Wilkins"}]
 keywords = [
     "cli",
     "roadmap",
     "planning",
     "project-management",
-    "agile",
-    "scrum",
     "milestone",
     "issue-tracking",
-    "analytics",
-    "visualization",
+    "git",
+    "offline",
     "productivity"
 ]
 classifiers = [

@@ -93,7 +93,7 @@ class IntegrationTestBase:
             project_name: Project name for initialization
 
         Returns:
-            RoadmapCore instance for the initialized project
+            TestWorkspace instance for the initialized project
 
         Raises:
             AssertionError: If initialization fails
@@ -155,26 +155,14 @@ class IntegrationTestBase:
                 error_msg += f"\nException: {result.exception}"
             raise AssertionError(error_msg)
 
-        # Return milestone object from core
+        # Return the persisted milestone through the application boundary.
         core = IntegrationTestBase._register_core(TestWorkspace())
-        try:
-            milestone = core.milestones.get(name)
-            if milestone is not None:
-                return {
-                    "name": milestone.name,
-                    "headline": milestone.headline,
-                    "due_date": str(milestone.due_at) if milestone.due_at else None,
-                }
-        except Exception:
-            pass
-        finally:
-            core.close()
-
-        # If not found immediately, return dict with known values
+        milestone = core.milestones.get(name)
+        assert milestone is not None, f"Milestone '{name}' was not persisted"
         return {
-            "name": name,
-            "headline": headline,
-            "due_date": due_date,
+            "name": milestone.name,
+            "headline": milestone.headline,
+            "due_date": str(milestone.due_at) if milestone.due_at else None,
         }
 
     @staticmethod

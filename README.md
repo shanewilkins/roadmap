@@ -5,8 +5,10 @@ their planning data in reviewable Markdown and YAML files rather than a hosted
 service. It supports issues, dependencies, comments, projects, milestones,
 daily views, health checks, and machine-readable exports.
 
-The current release is 0.1.1. The codebase is being simplified for 0.2 under an
-explicit [public compatibility contract](docs/architecture/public-contract-0.2.md).
+The current release is 0.1.1. The 0.2 refactor is a completed release candidate
+under an explicit
+[public compatibility contract](docs/architecture/public-contract-0.2.md);
+versioning and publication remain separate release actions.
 
 ## What it does
 
@@ -70,7 +72,7 @@ Initialize a repository and create work:
 
 ```bash
 cd my-project
-roadmap init --name "My project"
+roadmap init --project-name "My project"
 roadmap issue create --title "Fix login timeout" --priority high
 roadmap issue list
 ```
@@ -120,7 +122,8 @@ roadmap migrate --yes
 Migration preserves existing IDs and user-authored content, moves canonical
 documents to flat stable-ID paths, externalizes user preferences, and rebuilds
 SQLite from canonical files. Resolve every reported conflict before retrying;
-ordinary reads never migrate files automatically.
+ordinary reads never migrate files automatically. Follow the complete
+[0.2 migration guide](docs/user_guide/MIGRATING_TO_0_2.md) before upgrading.
 
 ## Collaborating through Git
 
@@ -159,7 +162,10 @@ migration. Do not treat the internal SQLite schema as a public API.
 - [Installation](docs/user_guide/INSTALLATION.md)
 - [Workflows](docs/user_guide/WORKFLOWS.md)
 - [FAQ](docs/user_guide/FAQ.md)
+- [0.2 migration guide](docs/user_guide/MIGRATING_TO_0_2.md)
 - [Architecture decisions](docs/architecture/README.md)
+- [Refactor case study](docs/architecture/portfolio-case-study.md)
+- [0.2 release checklist](docs/releases/0.2.0-checklist.md)
 - [Requirements register](docs/requirements/README.md)
 - [Project governance](docs/governance/README.md)
 - [Security policy](SECURITY.md)
@@ -171,10 +177,10 @@ product direction.
 
 ## Project status
 
-The 0.2 refactor is proceeding in independently verified phases. Each phase
-must pass static checks, the complete test suite, isolated wheel and source
-installation smoke tests, application journeys, and a production-code line
-count ratchet before the next phase begins. See the
+The 0.2 refactor has completed its thirteen independently verified phases and
+is a release candidate. The package deliberately remains version 0.1.1 until a
+separate authorization completes the version bump, clean-commit CI matrix,
+tag, and trusted PyPI publication. See the
 [execution plan](docs/architecture/refactor-execution-plan.md) and published
 [checkpoint reports](docs/architecture/README.md#execution-checkpoints).
 

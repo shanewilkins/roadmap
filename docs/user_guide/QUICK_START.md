@@ -17,7 +17,7 @@ roadmap --version
 
 ```bash
 cd my-project
-roadmap init --name "My project"
+roadmap init --project-name "My project"
 roadmap status
 ```
 

@@ -9,8 +9,8 @@ Refactored to use IntegrationTestBase helpers and data factories.
 import pytest
 
 from roadmap.bootstrap import cli as main
+from tests.fixtures.ansi import clean_cli_output
 from tests.fixtures.integration_helpers import IntegrationTestBase
-from tests.unit.common.formatters.test_ansi_utilities import clean_cli_output
 
 
 @pytest.fixture
@@ -100,7 +100,7 @@ class TestCLIMilestoneAssign:
 
     def test_assign_issue_to_milestone(self, roadmap_with_milestones):
         """Test assigning an issue to a milestone."""
-        cli_runner, scenario = roadmap_with_milestones
+        cli_runner, _ = roadmap_with_milestones
 
         # First create an issue
         IntegrationTestBase.create_issue(cli_runner, title="Test Issue")
@@ -108,21 +108,22 @@ class TestCLIMilestoneAssign:
         # Verify the issue was created
         core = IntegrationTestBase.get_roadmap_core()
         issues = core.issues.list()
-        assert len(issues) > 0, "Issue was not created"
+        assert issues, "Issue was not created"
 
         # Get the ID of the created issue
-        issue_id = issues[0].id if hasattr(issues[0], "id") else "1"
+        issue_id = issues[0].id
 
         result = cli_runner.invoke(
             main,
             ["milestone", "assign", str(issue_id), "sprint-1"],
         )
 
-        # Should succeed or handle gracefully
-        clean_output = clean_cli_output(result.output).lower()
-        assert result.exit_code == 0 or "assigned" in clean_output, (
-            f"Exit code: {result.exit_code}, Output: {clean_output}"
-        )
+        IntegrationTestBase.assert_cli_success(result)
+        assigned = IntegrationTestBase.get_roadmap_core().issues.get(str(issue_id))
+        milestone = IntegrationTestBase.get_roadmap_core().milestones.get("sprint-1")
+        assert assigned is not None
+        assert milestone is not None
+        assert assigned.relations.milestone_id == milestone.id
 
     def test_assign_nonexistent_issue(self, roadmap_with_milestones):
         """Test assigning non-existent issue."""
@@ -133,8 +134,8 @@ class TestCLIMilestoneAssign:
             ["milestone", "assign", "999", "sprint-1"],
         )
 
-        # Should not crash
-        assert result.exit_code == 0 or result.exit_code != 0
+        assert result.exit_code != 0
+        assert "not found" in result.output.lower()
 
     def test_assign_to_nonexistent_milestone(self, empty_roadmap):
         """Test assigning to non-existent milestone."""
@@ -143,13 +144,14 @@ class TestCLIMilestoneAssign:
         # Create an issue first
         IntegrationTestBase.create_issue(cli_runner, title="Test Issue")
 
+        issue = IntegrationTestBase.get_roadmap_core().issues.list()[0]
         result = cli_runner.invoke(
             main,
-            ["milestone", "assign", "1", "Nonexistent"],
+            ["milestone", "assign", str(issue.id), "Nonexistent"],
         )
 
-        # Should not crash
-        assert result.exit_code == 0 or result.exit_code != 0
+        assert result.exit_code != 0
+        assert "not found" in result.output.lower()
 
 
 class TestCLIMilestoneUpdate:
@@ -157,15 +159,17 @@ class TestCLIMilestoneUpdate:
 
     def test_update_milestone_description(self, roadmap_with_milestones):
         """Test updating milestone description."""
-        cli_runner, scenario = roadmap_with_milestones
+        cli_runner, _ = roadmap_with_milestones
 
         result = cli_runner.invoke(
             main,
             ["milestone", "update", "sprint-1", "--description", "Updated description"],
         )
 
-        # Should succeed
-        assert result.exit_code == 0
+        IntegrationTestBase.assert_cli_success(result)
+        milestone = IntegrationTestBase.get_roadmap_core().milestones.get("sprint-1")
+        assert milestone is not None
+        assert milestone.content == "Updated description"
 
     def test_update_nonexistent_milestone(self, empty_roadmap):
         """Test updating non-existent milestone."""
@@ -176,8 +180,8 @@ class TestCLIMilestoneUpdate:
             ["milestone", "update", "Nonexistent", "--description", "Test"],
         )
 
-        # Should not crash
-        assert result.exit_code == 0 or result.exit_code != 0
+        assert result.exit_code != 0
+        assert "not found" in result.output.lower()
 
 
 class TestCLIMilestoneClose:
@@ -185,17 +189,17 @@ class TestCLIMilestoneClose:
 
     def test_close_milestone(self, roadmap_with_milestones):
         """Test closing a milestone."""
-        cli_runner, scenario = roadmap_with_milestones
+        cli_runner, _ = roadmap_with_milestones
 
         result = cli_runner.invoke(
             main,
             ["milestone", "close", "sprint-1"],
         )
 
-        # Should succeed or handle gracefully
-        assert (
-            result.exit_code == 0 or "close" in clean_cli_output(result.output).lower()
-        )
+        IntegrationTestBase.assert_cli_success(result)
+        milestone = IntegrationTestBase.get_roadmap_core().milestones.get("sprint-1")
+        assert milestone is not None
+        assert milestone.status.value == "closed"
 
     def test_close_nonexistent_milestone(self, empty_roadmap):
         """Test closing non-existent milestone."""
@@ -206,8 +210,8 @@ class TestCLIMilestoneClose:
             ["milestone", "close", "Nonexistent"],
         )
 
-        # Should not crash
-        assert result.exit_code == 0 or result.exit_code != 0
+        assert result.exit_code != 0
+        assert "not found" in result.output.lower()
 
 
 class TestCLIMilestoneDelete:
@@ -240,8 +244,8 @@ class TestCLIMilestoneDelete:
             ["milestone", "delete", "Nonexistent", "--yes"],
         )
 
-        # Should not crash
-        assert result.exit_code == 0 or result.exit_code != 0
+        assert result.exit_code != 0
+        assert "not found" in result.output.lower()
 
 
 class TestCLIMilestoneHelp:

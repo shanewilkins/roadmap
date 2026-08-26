@@ -80,11 +80,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            python-version: "3.13"
-          - os: macos-latest
-            python-version: "3.14"
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.13", "3.14"]
 
     steps:
       - name: Checkout repository
@@ -110,3 +107,13 @@ jobs:
 
       - name: Smoke test source distribution
         run: python scripts/smoke_package.py dist/*.tar.gz
+
+      - name: Install wheel for the cumulative journey
+        run: |
+          python -m venv .package-journey
+          .package-journey/bin/python -m pip install dist/*.whl
+
+      - name: Run cumulative installed journey
+        run: >-
+          python scripts/checkpoint_journey.py
+          --roadmap-command .package-journey/bin/roadmap

@@ -7,9 +7,9 @@
 - Implementation specification: [refactor-implementation.md](refactor-implementation.md)
 - Detailed execution and checkpoint protocol:
   [refactor-execution-plan.md](refactor-execution-plan.md)
-- Detailed execution status: Phase 12 legacy-zone-dissolution checkpoint
-  accepted on 2026-08-26; work is stopped before Phase 13 of the detailed
-  execution plan.
+- Detailed execution status: Phase 13 release-candidate checkpoint accepted on
+  2026-08-26; implementation is complete and stopped before separately
+  authorized release actions.
 
 ## Decision
 
