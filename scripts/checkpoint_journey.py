@@ -474,6 +474,7 @@ def run_fresh_journey(roadmap: Path, workspace: Path) -> None:
 
 def run_checkpoint(roadmap: Path, fixture: Path, workspace: Path) -> dict[str, Any]:
     """Run fresh and compatibility journeys below a validated workspace."""
+    roadmap = roadmap.resolve(strict=True)
     workspace = validate_workspace(workspace)
     if workspace.exists() and any(workspace.iterdir()):
         raise ValueError("Checkpoint workspace must be empty")
@@ -485,7 +486,7 @@ def run_checkpoint(roadmap: Path, fixture: Path, workspace: Path) -> dict[str, A
     compatibility = workspace / "compatibility"
     fresh.mkdir()
     compatibility.mkdir()
-    run_fresh_journey(roadmap.resolve(strict=True), fresh)
+    run_fresh_journey(roadmap, fresh)
     first = inspect_fixture(roadmap, fixture, compatibility)
 
     shutil.rmtree(compatibility)
