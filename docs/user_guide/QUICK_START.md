@@ -10,8 +10,8 @@ uv tool install roadmap-cli
 roadmap --version
 ```
 
-`pipx install roadmap-cli` is also supported. Roadmap requires Python 3.13 or
-3.14.
+`pipx install roadmap-cli` is also supported. Roadmap requires Python 3.12,
+3.13, or 3.14.
 
 ## Initialize a repository
 

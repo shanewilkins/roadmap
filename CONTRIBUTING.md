@@ -39,6 +39,11 @@ uv run --locked xenon --exclude '*/migrations/*' --max-absolute C --max-modules 
 uv run --locked pytest -q
 ```
 
+CI also validates workflow semantics with actionlint 1.7.12 and exercises the
+full suite on every supported Python minor. Package compatibility is verified
+from one exact wheel/source-distribution build on Ubuntu 24.04 x64 and macOS 15
+ARM64.
+
 Optional security check.
 
 ```bash

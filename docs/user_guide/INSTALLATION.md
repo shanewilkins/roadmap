@@ -1,8 +1,10 @@
 # Installation Guide
 
-Roadmap CLI supports Python 3.13 and 3.14 on macOS and Linux. Windows is not
-currently a supported runtime because parts of the local locking implementation
-use POSIX APIs.
+Roadmap CLI supports Python 3.12, 3.13, and 3.14 on contemporary macOS and
+Linux. CI tests Ubuntu 24.04 x64 and macOS 15 ARM64. Other current macOS and
+Linux environments are expected to work but are not continuously tested.
+Windows is not currently a supported runtime because parts of the local locking
+implementation use POSIX APIs.
 
 The distribution name is `roadmap-cli`; the command it installs is `roadmap`.
 Do not install the unrelated `roadmap` distribution from PyPI.
@@ -37,7 +39,7 @@ roadmap --version
 ### pip in a virtual environment
 
 ```bash
-python3.13 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install roadmap-cli
@@ -76,7 +78,7 @@ a fresh environment:
 
 ```bash
 uv build
-python3.13 -m venv /tmp/roadmap-package-check
+python3.12 -m venv /tmp/roadmap-package-check
 /tmp/roadmap-package-check/bin/python -m pip install dist/roadmap_cli-*.whl
 /tmp/roadmap-package-check/bin/roadmap --help
 /tmp/roadmap-package-check/bin/roadmap --version
@@ -98,12 +100,12 @@ Build the project before the final image so the runtime image receives the same
 wheel that is tested and released:
 
 ```dockerfile
-FROM python:3.13-slim AS builder
+FROM python:3.12-slim AS builder
 WORKDIR /src
 COPY . .
 RUN python -m pip install build && python -m build
 
-FROM python:3.13-slim
+FROM python:3.12-slim
 COPY --from=builder /src/dist/roadmap_cli-*.whl /tmp/
 RUN python -m pip install --no-cache-dir /tmp/roadmap_cli-*.whl \
     && rm /tmp/roadmap_cli-*.whl

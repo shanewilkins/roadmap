@@ -22,8 +22,10 @@ the internal architecture incrementally behind executable contracts.
 - Domain and Application code are framework-free. Inbound/outbound Adapters own
   translation and Bootstrap permanently owns composition.
 - Every phase ends in a green checkpoint and explicit maintainer approval.
-- Production CLOC may not increase between accepted phases without an explicit
-  exception.
+- Production CLOC could not increase between accepted refactor phases without
+  an explicit exception. That temporary execution control retired after Phase
+  13; the measurements remain as historical evidence rather than a permanent
+  product-quality gate.
 - Compatibility is decided item by item: preserve, replace with migration,
   remove explicitly, or keep internal.
 

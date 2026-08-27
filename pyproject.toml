@@ -16,7 +16,7 @@ name = "roadmap-cli"
 version = "0.1.1"
 description = "Git-native command line tool for local project roadmap management"
 readme = "README.md"
-requires-python = ">=3.13,<4.0"
+requires-python = ">=3.12,<4.0"
 license = {text = "MIT"}
 authors = [{name = "Shane Wilkins"}]
 keywords = [
@@ -37,6 +37,7 @@ classifiers = [
     "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",

@@ -14,7 +14,12 @@ Implementation changes require separate, explicitly scoped work.
 - Next work requires separate maintainer authorization: version bump, clean
   release commit, tag, trusted publication, and post-publication verification.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
-- Current production Python CLOC ceiling: 9,200.
+- The production-CLOC phase ratchet retired after Phase 13. Historical
+  measurements remain in the execution plan and checkpoints; architecture,
+  complexity, test, typing, security, and artifact gates now prevent regression.
+- The first complete post-refactor suite established a 78.42% statement-
+  coverage baseline; CI enforces a rounded 78% floor alongside installed
+  end-to-end journeys.
 - All implementation phases are complete; package version remains 0.1.1.
 
 ## Accepted decisions

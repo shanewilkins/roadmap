@@ -32,6 +32,9 @@ release checklist is approved and the version bump is separately authorized.
 - The package now has one Domain/Application/Adapters/Bootstrap architecture,
   one configuration path, one persistence path, and one implementation for
   each retained CLI journey.
+- Supported runtimes now include Python 3.12 through 3.14 on macOS and Linux;
+  CI verifies the full Python range and installed artifacts on Ubuntu x64 and
+  macOS ARM64.
 - Machine-readable stdout is isolated from diagnostics and confirmations on
   stderr.
 

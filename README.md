@@ -28,8 +28,8 @@ issue synchronization.
 
 ## Requirements
 
-- Python 3.13 or 3.14
-- macOS or Linux
+- Python 3.12, 3.13, or 3.14
+- macOS or Linux; CI tests Ubuntu 24.04 x64 and macOS 15 ARM64
 - Git when the `.roadmap/` data will be shared with collaborators
 
 ## Installation
@@ -51,7 +51,7 @@ roadmap --version
 Or in a virtual environment:
 
 ```bash
-python3.13 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 pip install roadmap-cli
 roadmap --version
