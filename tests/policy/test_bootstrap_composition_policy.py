@@ -87,7 +87,7 @@ def test_help_and_version_do_not_construct_workspace() -> None:
     version_result = runner.invoke(command, ["--version"])
     assert help_result.exit_code == 0, help_result.exception
     assert version_result.exit_code == 0, version_result.exception
-    assert "0.1.1" in version_result.stdout
+    assert "0.2.0" in version_result.stdout
 
 
 def test_bootstrap_construction_is_deterministic_from_explicit_inputs() -> None:

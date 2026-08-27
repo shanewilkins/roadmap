@@ -11,8 +11,7 @@ Implementation changes require separate, explicitly scoped work.
 ## Current execution state
 
 - Accepted checkpoint: Phase 13, hardening and 0.2.0 release preparation.
-- Next work requires separate maintainer authorization: version bump, clean
-  release commit, tag, trusted publication, and post-publication verification.
+- Current release: 0.2.0.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
 - The production-CLOC phase ratchet retired after Phase 13. Historical
   measurements remain in the execution plan and checkpoints; architecture,
@@ -20,7 +19,7 @@ Implementation changes require separate, explicitly scoped work.
 - The first complete post-refactor suite established a 78.42% statement-
   coverage baseline; CI enforces a rounded 78% floor alongside installed
   end-to-end journeys.
-- All implementation phases are complete; package version remains 0.1.1.
+- All planned 0.2 implementation phases are complete.
 
 ## Accepted decisions
 

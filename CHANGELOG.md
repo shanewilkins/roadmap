@@ -6,8 +6,7 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ## [Unreleased]
 
-Target: 0.2.0. The package metadata intentionally remains at 0.1.1 until the
-release checklist is approved and the version bump is separately authorized.
+## [0.2.0] - 2026-08-27
 
 ### Added
 

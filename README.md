@@ -5,10 +5,9 @@ their planning data in reviewable Markdown and YAML files rather than a hosted
 service. It supports issues, dependencies, comments, projects, milestones,
 daily views, health checks, and machine-readable exports.
 
-The current release is 0.1.1. The 0.2 refactor is a completed release candidate
-under an explicit
-[public compatibility contract](docs/architecture/public-contract-0.2.md);
-versioning and publication remain separate release actions.
+The current release is 0.2.0. Its deliberately contracted behavior is defined
+by an explicit
+[public compatibility contract](docs/architecture/public-contract-0.2.md).
 
 ## What it does
 
@@ -177,10 +176,8 @@ product direction.
 
 ## Project status
 
-The 0.2 refactor has completed its thirteen independently verified phases and
-is a release candidate. The package deliberately remains version 0.1.1 until a
-separate authorization completes the version bump, clean-commit CI matrix,
-tag, and trusted PyPI publication. See the
+Roadmap 0.2.0 is the result of thirteen independently verified refactor phases.
+See the
 [execution plan](docs/architecture/refactor-execution-plan.md) and published
 [checkpoint reports](docs/architecture/README.md#execution-checkpoints).
 
