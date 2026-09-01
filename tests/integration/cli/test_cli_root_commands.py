@@ -167,7 +167,7 @@ class TestCLIStatus:
                 result = cli_runner.invoke(main, cmd)
                 assert check(result)
         else:
-            cli_runner2, core = isolated_roadmap
+            cli_runner2, _core = isolated_roadmap
             result = cli_runner2.invoke(main, cmd)
             assert check(result)
 
@@ -212,7 +212,7 @@ class TestCLIHealth:
             result = cli_runner.invoke(main, cmd)
             assert check(result)
         else:
-            cli_runner2, core = isolated_roadmap
+            cli_runner2, _core = isolated_roadmap
             result = cli_runner2.invoke(main, cmd)
             assert check(result)
 

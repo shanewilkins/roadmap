@@ -66,7 +66,7 @@ class TestCLIDataExport:
     )
     def test_export_formats(self, isolated_roadmap_with_issues, format_type, extension):
         """Test exporting data in various formats."""
-        cli_runner, core = isolated_roadmap_with_issues
+        cli_runner, _core = isolated_roadmap_with_issues
 
         output_file = Path.cwd() / f"export{extension}"
         result = cli_runner.invoke(
@@ -82,7 +82,7 @@ class TestCLIDataExport:
 
     def test_export_without_output_file(self, isolated_roadmap_with_issues):
         """Test export outputs to stdout when no file specified."""
-        cli_runner, core = isolated_roadmap_with_issues
+        cli_runner, _core = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(
             main,
@@ -100,7 +100,7 @@ class TestCLIDataExport:
 
     def test_export_with_filter(self, isolated_roadmap_with_issues):
         """Test export with filter option."""
-        cli_runner, core = isolated_roadmap_with_issues
+        cli_runner, _core = isolated_roadmap_with_issues
 
         output_file = Path.cwd() / "filtered.json"
         result = cli_runner.invoke(
@@ -234,7 +234,7 @@ class TestCLIGitIntegration:
 
     def test_git_status_without_repo(self, isolated_roadmap_with_issues):
         """Test git status without git repo."""
-        cli_runner, core = isolated_roadmap_with_issues
+        cli_runner, _core = isolated_roadmap_with_issues
 
         result = cli_runner.invoke(main, ["git", "status"])
 
