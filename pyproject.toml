@@ -13,7 +13,7 @@ build-backend = "hatchling.build"
 #   Installs the locked runtime and development dependency sets.
 # ============================================================================
 name = "roadmap-cli"
-version = "0.2.0"
+version = "0.3.0"
 description = "Git-native command line tool for local project roadmap management"
 readme = "README.md"
 requires-python = ">=3.12,<4.0"

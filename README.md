@@ -5,9 +5,11 @@ their planning data in reviewable Markdown and YAML files rather than a hosted
 service. It supports issues, dependencies, comments, projects, milestones,
 daily views, health checks, and machine-readable exports.
 
-The current release is 0.2.0. Its deliberately contracted behavior is defined
+The current release is 0.3.0. Its deliberately contracted behavior is defined
 by an explicit
 [public compatibility contract](docs/architecture/public-contract-0.2.md).
+0.3 is an internal quality-hardening release; the 0.2 CLI and data contract is
+unchanged.
 
 ## What it does
 

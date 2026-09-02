@@ -6,7 +6,39 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-02
+
+### Changed
+
+- Migrated static type checking from Pyright-only to `ty` running alongside
+  Pyright, both enforced in CI and pre-commit; aligned their configured
+  Python-version floor with the declared `>=3.12` support range.
+- Reduced cyclomatic complexity across the codebase and enforced a
+  xenon B-or-better gate (absolute, per-module, and average) in CI and
+  pre-commit.
+- Raised the enforced test coverage floor from 78% to 85%, backed by a
+  targeted test-coverage sweep (CLI output formatting and issue query
+  presentation) that reached 85.70%.
+- Reduced DRY violations identified during the complexity-reduction pass.
+- Enabled GitHub's native Dependabot vulnerability alerts for the repository.
+
+### Fixed
+
+- Removed the stale, inaccurate `.env.production` file (unverifiable "0 known
+  CVEs" claim, an obsolete `poetry install` reference, and unused
+  environment variables that nothing in the codebase reads).
+- Removed the stale, tracked `output.txt` pytest-output artifact from version
+  control.
+- Fixed a broken `SECURITY.md` reference to a nonexistent developer-notes
+  file; it now points to the ADR that documents credential handling.
+
+### Removed
+
+- Removed `.env.production` and `output.txt` from version control (see
+  Fixed, above).
+
 ## [0.2.0] - 2026-08-27
+
 
 ### Added
 
