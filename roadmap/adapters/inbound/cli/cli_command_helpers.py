@@ -9,15 +9,65 @@ Provides decorators and functions to reduce duplication in CLI commands:
 
 import functools
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any, TypeVar
 
 import click  # type: ignore[import-not-found]
 from rich.console import Console  # type: ignore[import-not-found]
 
+from roadmap.application.failures import ApplicationFailure
+from roadmap.domain.failures import DomainFailure
+
 console = Console()
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+def invoke(operation: Callable[[], Any]) -> Any:
+    """Translate stable application/domain failures into Click failures."""
+    try:
+        return operation()
+    except (ApplicationFailure, DomainFailure, ValueError) as error:
+        raise click.ClickException(str(error)) from error
+
+
+def projection_warning(result: Any) -> None:
+    if getattr(result, "projection_stale", False):
+        click.echo("Warning: SQLite projection is stale; canonical Markdown was saved.")
+
+
+def echo_batch_result(
+    noun: str,
+    items: Sequence[Any],
+    dry_run: bool,
+    *,
+    action: str,
+    label: Callable[[Any], str] = lambda item: str(item.name),
+) -> None:
+    """Echo the "<verb> <noun> <id>: <label>" summary shared by batch
+    archive/restore commands. ``action`` is the base verb (e.g. "archive",
+    "restore"); both currently used verbs conjugate regularly to their past
+    tense for the non-dry-run wording.
+    """
+    past_tense = action + ("d" if action.endswith("e") else "ed")
+    verb = f"Would {action}" if dry_run else past_tense.capitalize()
+    for item in items:
+        click.echo(f"{verb} {noun} {item.id}: {label(item)}")
+    if not items:
+        click.echo(f"No matching {noun}s.")
+
+
+def echo_archived_list(
+    noun: str,
+    values: Sequence[Any],
+    label: Callable[[Any], str] = lambda item: str(item.name),
+) -> None:
+    """Echo the archived-entity listing shared by the "--list" branch of
+    the project/milestone archive commands."""
+    if not values:
+        click.echo(f"No archived {noun}s.")
+    for item in values:
+        click.echo(f"{item.id}  {label(item)}")
 
 
 def require_initialized(func: Callable) -> Callable:

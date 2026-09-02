@@ -4,9 +4,17 @@ from collections.abc import Iterable
 
 import click
 
-from roadmap.application.failures import ApplicationFailure
-from roadmap.domain.failures import DomainFailure
+from roadmap.adapters.inbound.cli.cli_command_helpers import invoke, projection_warning
 from roadmap.domain.types import EntityId, Timestamp
+
+__all__ = [
+    "entity_id",
+    "invoke",
+    "projection_warning",
+    "resolve_issue_id",
+    "resolve_issue_ids",
+    "timestamp",
+]
 
 
 def resolve_issue_id(core, supplied: str) -> EntityId:
@@ -48,16 +56,3 @@ def timestamp(value) -> Timestamp:
         return Timestamp(value)
     except ValueError as error:
         raise click.ClickException(str(error)) from error
-
-
-def invoke(operation):
-    """Translate stable application/domain failures into Click failures."""
-    try:
-        return operation()
-    except (ApplicationFailure, DomainFailure, ValueError) as error:
-        raise click.ClickException(str(error)) from error
-
-
-def projection_warning(result) -> None:
-    if getattr(result, "projection_stale", False):
-        click.echo("Warning: SQLite projection is stale; canonical Markdown was saved.")

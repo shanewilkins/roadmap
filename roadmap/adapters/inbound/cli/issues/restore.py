@@ -2,7 +2,10 @@
 
 import click
 
-from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    echo_batch_result,
+    require_initialized,
+)
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
     projection_warning,
@@ -47,9 +50,11 @@ def restore_issue(
             dry_run=dry_run,
         )
     )
-    verb = "Would restore" if dry_run else "Restored"
-    for issue in result.issues:
-        click.echo(f"{verb} issue {issue.id}: {issue.title}")
-    if not result.issues:
-        click.echo("No matching issues.")
+    echo_batch_result(
+        "issue",
+        result.issues,
+        dry_run,
+        action="restore",
+        label=lambda issue: issue.title,
+    )
     projection_warning(result)

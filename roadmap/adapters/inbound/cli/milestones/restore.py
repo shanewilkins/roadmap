@@ -2,7 +2,10 @@
 
 import click
 
-from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    echo_batch_result,
+    require_initialized,
+)
 from roadmap.adapters.inbound.cli.planning_resolution import invoke, projection_warning
 
 
@@ -32,9 +35,5 @@ def restore_milestone(
             milestone_name, restore_all=restore_all, dry_run=dry_run
         )
     )
-    verb = "Would restore" if dry_run else "Restored"
-    for item in result.aggregates:
-        click.echo(f"{verb} milestone {item.id}: {item.name}")
-    if not result.aggregates:
-        click.echo("No matching milestones.")
+    echo_batch_result("milestone", result.aggregates, dry_run, action="restore")
     projection_warning(result)

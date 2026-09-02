@@ -2,7 +2,11 @@
 
 import click
 
-from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    echo_archived_list,
+    echo_batch_result,
+    require_initialized,
+)
 from roadmap.adapters.inbound.cli.planning_resolution import invoke, projection_warning
 from roadmap.domain.types import RetentionState
 
@@ -13,18 +17,11 @@ def _list_archived_milestones(core) -> None:
         for item in core.planning.all_milestones()
         if item.retention is RetentionState.ARCHIVED
     ]
-    if not values:
-        click.echo("No archived milestones.")
-    for item in values:
-        click.echo(f"{item.id}  {item.name}")
+    echo_archived_list("milestone", values)
 
 
 def _report_archive_result(result, dry_run: bool) -> None:
-    verb = "Would archive" if dry_run else "Archived"
-    for item in result.aggregates:
-        click.echo(f"{verb} milestone {item.id}: {item.name}")
-    if not result.aggregates:
-        click.echo("No matching milestones.")
+    echo_batch_result("milestone", result.aggregates, dry_run, action="archive")
     projection_warning(result)
 
 

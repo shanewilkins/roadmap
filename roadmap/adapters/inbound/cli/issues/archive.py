@@ -2,7 +2,10 @@
 
 import click
 
-from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    echo_batch_result,
+    require_initialized,
+)
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
     projection_warning,
@@ -22,11 +25,13 @@ def _list_archived_issues(core) -> None:
 
 
 def _report_archive_result(result, dry_run: bool) -> None:
-    verb = "Would archive" if dry_run else "Archived"
-    for issue in result.issues:
-        click.echo(f"{verb} issue {issue.id}: {issue.title}")
-    if not result.issues:
-        click.echo("No matching issues.")
+    echo_batch_result(
+        "issue",
+        result.issues,
+        dry_run,
+        action="archive",
+        label=lambda issue: issue.title,
+    )
     projection_warning(result)
 
 

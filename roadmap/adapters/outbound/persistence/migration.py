@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import os
-import tempfile
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, replace
@@ -19,7 +17,8 @@ from roadmap.application.contracts import (
     MigrationResult,
 )
 
-from .canonical import CanonicalUnitOfWork
+from .canonical import CanonicalUnitOfWork, _atomic_write
+from .configuration import _is_valid_columns, _is_valid_table_width
 from .documents import (
     DocumentEnvelope,
     DocumentError,
@@ -87,19 +86,14 @@ def _validate_legacy_default_project(behavior: dict[str, Any]) -> list[str]:
 
 def _validate_legacy_table_width(display: dict[str, Any]) -> list[str]:
     width = display.get("table_width")
-    if width is not None and (
-        not isinstance(width, int) or isinstance(width, bool) or width < 20
-    ):
+    if width is not None and not _is_valid_table_width(width):
         return ["configuration key display.table_width must be >= 20"]
     return []
 
 
 def _validate_legacy_columns(output: dict[str, Any]) -> list[str]:
     columns = output.get("columns")
-    if columns is not None and (
-        not isinstance(columns, list)
-        or any(not isinstance(item, str) for item in columns)
-    ):
+    if columns is not None and not _is_valid_columns(columns):
         return ["configuration key output.columns must be a list of text"]
     return []
 
@@ -129,20 +123,6 @@ def _mapping(path: Path) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise MigrationError(f"configuration {path.name} must be a mapping")
     return dict(loaded)
-
-
-def _atomic_write(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, raw = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    temporary = Path(raw)
-    try:
-        with os.fdopen(descriptor, "wb") as stream:
-            stream.write(content)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
 
 
 class FilesystemWorkspaceMigration:

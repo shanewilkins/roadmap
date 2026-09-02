@@ -109,13 +109,23 @@ def _validate_boolean_value(key: str, value: Any) -> None:
         raise ConfigurationError(f"configuration key {key} must be a boolean")
 
 
+def _is_valid_table_width(value: Any) -> bool:
+    """Shared predicate for the current and legacy (migration) schemas."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 20
+
+
+def _is_valid_columns(value: Any) -> bool:
+    """Shared predicate for the current and legacy (migration) schemas."""
+    return isinstance(value, list) and all(isinstance(item, str) for item in value)
+
+
 def _validate_table_width_value(value: Any) -> None:
-    if not isinstance(value, int) or isinstance(value, bool) or value < 20:
+    if not _is_valid_table_width(value):
         raise ConfigurationError("configuration key display.table_width must be >= 20")
 
 
 def _validate_columns_value(value: Any) -> None:
-    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+    if not _is_valid_columns(value):
         raise ConfigurationError("configuration key output.columns must be a list")
 
 
