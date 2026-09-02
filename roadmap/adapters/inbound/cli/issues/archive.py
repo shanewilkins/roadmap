@@ -11,6 +11,25 @@ from roadmap.adapters.inbound.cli.issues.resolution import (
 from roadmap.application.contracts import IssueListQuery, IssueScope
 
 
+def _list_archived_issues(core) -> None:
+    records = invoke(
+        lambda: core.issue_queries.list(IssueListQuery(scope=IssueScope.ARCHIVED))
+    ).records
+    if not records:
+        click.echo("No archived issues.")
+    for record in records:
+        click.echo(f"{record.issue.id}  {record.issue.title}")
+
+
+def _report_archive_result(result, dry_run: bool) -> None:
+    verb = "Would archive" if dry_run else "Archived"
+    for issue in result.issues:
+        click.echo(f"{verb} issue {issue.id}: {issue.title}")
+    if not result.issues:
+        click.echo("No matching issues.")
+    projection_warning(result)
+
+
 @click.command("archive")
 @click.argument("issue_id", required=False)
 @click.option("--all-closed", is_flag=True, help="Archive every closed issue")
@@ -34,13 +53,7 @@ def archive_issue(
     """Archive issues in place; canonical Markdown files are not moved."""
     core = ctx.obj["core"]
     if list_archived:
-        records = invoke(
-            lambda: core.issue_queries.list(IssueListQuery(scope=IssueScope.ARCHIVED))
-        ).records
-        if not records:
-            click.echo("No archived issues.")
-        for record in records:
-            click.echo(f"{record.issue.id}  {record.issue.title}")
+        _list_archived_issues(core)
         return
     if sum((issue_id is not None, all_closed, orphaned)) != 1:
         raise click.UsageError(
@@ -58,9 +71,4 @@ def archive_issue(
             dry_run=dry_run,
         )
     )
-    verb = "Would archive" if dry_run else "Archived"
-    for issue in result.issues:
-        click.echo(f"{verb} issue {issue.id}: {issue.title}")
-    if not result.issues:
-        click.echo("No matching issues.")
-    projection_warning(result)
+    _report_archive_result(result, dry_run)

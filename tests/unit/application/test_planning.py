@@ -1,6 +1,7 @@
 """Phase 8 contracts for the canonical planning product."""
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 
@@ -29,7 +30,7 @@ NOW = Timestamp(datetime(2026, 8, 24, 12, tzinfo=UTC))
 
 
 def _issue(identity: str, **updates) -> Issue:
-    values = {
+    values: dict[str, Any] = {
         "id": EntityId(identity),
         "created": NOW,
         "updated": NOW,
@@ -40,7 +41,7 @@ def _issue(identity: str, **updates) -> Issue:
 
 
 def _milestone(identity: str, **updates) -> Milestone:
-    values = {
+    values: dict[str, Any] = {
         "id": EntityId(identity),
         "created": NOW,
         "updated": NOW,
@@ -51,7 +52,7 @@ def _milestone(identity: str, **updates) -> Milestone:
 
 
 def _project(identity: str, **updates) -> Project:
-    values = {
+    values: dict[str, Any] = {
         "id": EntityId(identity),
         "created": NOW,
         "updated": NOW,

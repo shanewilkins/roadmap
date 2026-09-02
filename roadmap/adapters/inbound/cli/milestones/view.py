@@ -6,6 +6,42 @@ from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
 from roadmap.adapters.inbound.cli.planning_resolution import invoke
 
 
+def _matches_filters(
+    item, status: tuple[str, ...], priority: tuple[str, ...], only_open: bool
+) -> bool:
+    return (
+        (not status or item.status.value in status)
+        and (not priority or item.priority.value in priority)
+        and (not only_open or item.status.value != "closed")
+    )
+
+
+def _print_summary(milestone, summary) -> None:
+    click.echo(f"Milestone: {milestone.name}")
+    click.echo(f"ID: {milestone.id}")
+    click.echo(f"Status: {milestone.status.value}")
+    click.echo(
+        f"Due: {milestone.due_at.value.date().isoformat() if milestone.due_at else 'None'}"
+    )
+    click.echo(f"Progress: {summary.progress:.1f}%")
+    click.echo(f"Issues: {summary.closed_count}/{summary.issue_count} closed")
+    click.echo(
+        f"Estimate: {summary.estimated_hours:.1f}h ({summary.remaining_hours:.1f}h remaining)"
+    )
+    if milestone.content:
+        click.echo("\n" + milestone.content)
+
+
+def _print_issues(issues) -> None:
+    if not issues:
+        return
+    click.echo("\nIssues:")
+    for issue in issues:
+        click.echo(
+            f"- [{issue.id}] {issue.title} ({issue.status.value}, {issue.priority.value})"
+        )
+
+
 @click.command("view")
 @click.argument("milestone_name")
 @click.option(
@@ -36,26 +72,7 @@ def view_milestone(
         item
         for item in planning.snapshot().issues
         if item.relations.milestone_id == milestone.id
-        and (not status or item.status.value in status)
-        and (not priority or item.priority.value in priority)
-        and (not only_open or item.status.value != "closed")
+        and _matches_filters(item, status, priority, only_open)
     ]
-    click.echo(f"Milestone: {milestone.name}")
-    click.echo(f"ID: {milestone.id}")
-    click.echo(f"Status: {milestone.status.value}")
-    click.echo(
-        f"Due: {milestone.due_at.value.date().isoformat() if milestone.due_at else 'None'}"
-    )
-    click.echo(f"Progress: {summary.progress:.1f}%")
-    click.echo(f"Issues: {summary.closed_count}/{summary.issue_count} closed")
-    click.echo(
-        f"Estimate: {summary.estimated_hours:.1f}h ({summary.remaining_hours:.1f}h remaining)"
-    )
-    if milestone.content:
-        click.echo("\n" + milestone.content)
-    if issues:
-        click.echo("\nIssues:")
-        for issue in issues:
-            click.echo(
-                f"- [{issue.id}] {issue.title} ({issue.status.value}, {issue.priority.value})"
-            )
+    _print_summary(milestone, summary)
+    _print_issues(issues)

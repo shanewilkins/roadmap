@@ -76,22 +76,62 @@ class IssueMutations:
         except DomainFailure as error:
             raise self._invalid(error) from error
 
+    def _resolved_update_assignee(
+        self, issue: Issue, command: IssueUpdateCommand
+    ) -> str | None:
+        if command.assignee is not None:
+            return self._resolve_assignee(command.assignee)
+        return issue.assignee
+
+    @staticmethod
+    def _resolved_update_relations(
+        issue: Issue, command: IssueUpdateCommand
+    ) -> IssueRelations:
+        if command.milestone_id is not None:
+            return IssueRelations(
+                command.milestone_id,
+                issue.relations.depends_on,
+                issue.relations.blocks,
+            )
+        return issue.relations
+
+    @staticmethod
+    def _update_unchanged(
+        issue: Issue,
+        *,
+        title: str,
+        content: str,
+        priority,
+        relations: IssueRelations,
+        assignee: str | None,
+        estimated_hours: float | None,
+    ) -> bool:
+        return (
+            title == issue.title
+            and content == issue.content
+            and priority is issue.priority
+            and relations == issue.relations
+            and assignee == issue.assignee
+            and estimated_hours == issue.estimated_hours
+        )
+
+    def _apply_update_status(
+        self, changed: Issue, command: IssueUpdateCommand, at: Timestamp
+    ) -> Issue:
+        if command.status is not None:
+            return self._transition(
+                changed, IssueStatus(command.status), at, command.reason
+            )
+        return changed.record_event("updated", at, command.reason)
+
     def update(self, command: IssueUpdateCommand) -> IssueMutationResult:
         at = self._clock.now()
         try:
             with self._units.create() as unit:
                 issue = self._load(unit, command.issue_id)
                 self._require_milestone(unit, command.milestone_id)
-                assignee = issue.assignee
-                if command.assignee is not None:
-                    assignee = self._resolve_assignee(command.assignee)
-                relations = issue.relations
-                if command.milestone_id is not None:
-                    relations = IssueRelations(
-                        command.milestone_id,
-                        relations.depends_on,
-                        relations.blocks,
-                    )
+                assignee = self._resolved_update_assignee(issue, command)
+                relations = self._resolved_update_relations(issue, command)
                 title = command.title or issue.title
                 content = (
                     command.content if command.content is not None else issue.content
@@ -102,13 +142,14 @@ class IssueMutations:
                     if command.estimated_hours is not None
                     else issue.estimated_hours
                 )
-                unchanged = (
-                    title == issue.title
-                    and content == issue.content
-                    and priority is issue.priority
-                    and relations == issue.relations
-                    and assignee == issue.assignee
-                    and estimated_hours == issue.estimated_hours
+                unchanged = self._update_unchanged(
+                    issue,
+                    title=title,
+                    content=content,
+                    priority=priority,
+                    relations=relations,
+                    assignee=assignee,
+                    estimated_hours=estimated_hours,
                 )
                 if unchanged and (
                     command.status is None
@@ -124,12 +165,7 @@ class IssueMutations:
                     assignee=assignee,
                     estimated_hours=estimated_hours,
                 )
-                if command.status is not None:
-                    changed = self._transition(
-                        changed, IssueStatus(command.status), at, command.reason
-                    )
-                else:
-                    changed = changed.record_event("updated", at, command.reason)
+                changed = self._apply_update_status(changed, command, at)
                 unit.save_issue(changed)
                 return self._commit(unit, changed)
         except (DomainFailure, ValueError) as error:
@@ -282,6 +318,28 @@ class IssueMutations:
         except DomainFailure as error:
             raise self._invalid(error) from error
 
+    @staticmethod
+    def _require_closed_for_archive(selected: tuple[Issue, ...], force: bool) -> None:
+        if not force and any(
+            item.status is not IssueStatus.CLOSED for item in selected
+        ):
+            raise ApplicationFailure(
+                FailureCategory.INVALID_REQUEST,
+                "Only closed issues may be archived without --force",
+            )
+
+    @staticmethod
+    def _archive_changes(
+        selected: tuple[Issue, ...], at: Timestamp
+    ) -> tuple[Issue, ...]:
+        return tuple(
+            item.change_retention(RetentionState.ARCHIVED, at).record_event(
+                "archived", at
+            )
+            for item in selected
+            if item.retention is RetentionState.VISIBLE
+        )
+
     def archive(
         self,
         issue_id: EntityId | None = None,
@@ -303,20 +361,8 @@ class IssueMutations:
                     for item in selected
                     if item.retention is RetentionState.VISIBLE
                 )
-                if not force and any(
-                    item.status is not IssueStatus.CLOSED for item in selected
-                ):
-                    raise ApplicationFailure(
-                        FailureCategory.INVALID_REQUEST,
-                        "Only closed issues may be archived without --force",
-                    )
-                changed = tuple(
-                    item.change_retention(RetentionState.ARCHIVED, at).record_event(
-                        "archived", at
-                    )
-                    for item in selected
-                    if item.retention is RetentionState.VISIBLE
-                )
+                self._require_closed_for_archive(selected, force)
+                changed = self._archive_changes(selected, at)
                 if not dry_run:
                     for item in changed:
                         unit.save_issue(item)

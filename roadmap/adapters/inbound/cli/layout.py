@@ -36,6 +36,7 @@ class SmartTableLayout:
             config: Layout configuration
         """
         self.config = config or LayoutConfig()
+        self._width_override: int | None = None
 
     def get_terminal_width(self) -> int:
         """Get terminal width in columns.
@@ -43,6 +44,8 @@ class SmartTableLayout:
         Returns:
             Terminal width, defaults to 80 if unable to detect
         """
+        if self._width_override is not None:
+            return self._width_override
         try:
             width = shutil.get_terminal_size().columns
             return max(width, 40)  # Minimum 40 columns
@@ -196,9 +199,9 @@ class SmartTableLayout:
             String representation of table
         """
         # Temporarily override terminal width for testing
-        original_get_width = self.get_terminal_width
+        previous_override = self._width_override
         if width is not None:
-            self.get_terminal_width = lambda: width
+            self._width_override = width
 
         try:
             renderable = self.render(table_data)
@@ -209,4 +212,4 @@ class SmartTableLayout:
             temp_console.print(renderable)
             return string_io.getvalue()
         finally:
-            self.get_terminal_width = original_get_width
+            self._width_override = previous_override

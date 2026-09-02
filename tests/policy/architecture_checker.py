@@ -452,7 +452,9 @@ def _matches(module: str, prefix: str) -> bool:
 
 def _zone_for(module: str, policy: ArchitecturePolicy) -> Zone | None:
     matches = [zone for zone in policy.zones if _matches(module, zone.prefix)]
-    return max(matches, key=lambda zone: len(zone.prefix), default=None)
+    if not matches:
+        return None
+    return max(matches, key=lambda zone: len(zone.prefix))
 
 
 def _boundary(module: str, zone: Zone) -> str | None:

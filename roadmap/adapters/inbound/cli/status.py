@@ -123,51 +123,74 @@ def _format_snapshot_content(
     return "\n\n".join(part for part in parts if part) + "\n"
 
 
+def _visible(items):
+    return tuple(item for item in items if item.retention is RetentionState.VISIBLE)
+
+
+def _archived_count(items) -> int:
+    return sum(item.retention is RetentionState.ARCHIVED for item in items)
+
+
+def _sum_counts(counts: Counter, statuses: tuple) -> int:
+    return sum(counts[status] for status in statuses)
+
+
+def _entity_table(entity_rows: list) -> TableData:
+    return TableData(
+        columns=[
+            ColumnDef("entity", "Entity", ColumnType.STRING, width=12),
+            ColumnDef("open", "Open", ColumnType.INTEGER, width=6),
+            ColumnDef("closed", "Closed", ColumnType.INTEGER, width=7),
+            ColumnDef("archived", "Archived", ColumnType.INTEGER, width=9),
+            ColumnDef("total", "Total", ColumnType.INTEGER, width=6),
+        ],
+        rows=entity_rows,
+        title="Entities",
+    )
+
+
+def _issue_status_table(
+    issue_counts: Counter, archived_issues: int, total_issues: int
+) -> TableData:
+    status_rows = [[item.value, issue_counts[item]] for item in IssueStatus]
+    status_rows.extend((["archived", archived_issues], ["Total", total_issues]))
+    return TableData(
+        columns=[
+            ColumnDef("status", "Status", ColumnType.STRING, width=14),
+            ColumnDef("count", "Count", ColumnType.INTEGER, width=7),
+        ],
+        rows=status_rows,
+        title="Issue Status",
+    )
+
+
 def _build_snapshot_tables(planning) -> dict[str, TableData]:
     projects = planning.all_projects()
     milestones = planning.all_milestones()
     issues = planning.all_issues()
-    visible_projects = tuple(
-        item for item in projects if item.retention is RetentionState.VISIBLE
+    project_counts = Counter(item.status for item in _visible(projects))
+    milestone_counts = Counter(item.status for item in _visible(milestones))
+    issue_counts = Counter(item.status for item in _visible(issues))
+    archived_projects = _archived_count(projects)
+    archived_milestones = _archived_count(milestones)
+    archived_issues = _archived_count(issues)
+    project_open = _sum_counts(
+        project_counts,
+        (ProjectStatus.PLANNING, ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD),
     )
-    visible_milestones = tuple(
-        item for item in milestones if item.retention is RetentionState.VISIBLE
-    )
-    visible_issues = tuple(
-        item for item in issues if item.retention is RetentionState.VISIBLE
-    )
-    project_counts = Counter(item.status for item in visible_projects)
-    milestone_counts = Counter(item.status for item in visible_milestones)
-    issue_counts = Counter(item.status for item in visible_issues)
-    archived_projects = sum(
-        item.retention is RetentionState.ARCHIVED for item in projects
-    )
-    archived_milestones = sum(
-        item.retention is RetentionState.ARCHIVED for item in milestones
-    )
-    archived_issues = sum(item.retention is RetentionState.ARCHIVED for item in issues)
-    project_open = sum(
-        project_counts[item]
-        for item in (
-            ProjectStatus.PLANNING,
-            ProjectStatus.ACTIVE,
-            ProjectStatus.ON_HOLD,
-        )
-    )
-    project_closed = sum(
-        project_counts[item]
-        for item in (ProjectStatus.COMPLETED, ProjectStatus.CANCELLED)
+    project_closed = _sum_counts(
+        project_counts, (ProjectStatus.COMPLETED, ProjectStatus.CANCELLED)
     )
     milestone_open = milestone_counts[MilestoneStatus.OPEN]
     milestone_closed = milestone_counts[MilestoneStatus.CLOSED]
-    issue_open = sum(
-        issue_counts[item]
-        for item in (
+    issue_open = _sum_counts(
+        issue_counts,
+        (
             IssueStatus.TODO,
             IssueStatus.IN_PROGRESS,
             IssueStatus.BLOCKED,
             IssueStatus.REVIEW,
-        )
+        ),
     )
     issue_closed = issue_counts[IssueStatus.CLOSED]
     entity_rows = [
@@ -188,28 +211,10 @@ def _build_snapshot_tables(planning) -> dict[str, TableData]:
             len(projects) + len(milestones) + len(issues),
         ],
     ]
-    entities = TableData(
-        columns=[
-            ColumnDef("entity", "Entity", ColumnType.STRING, width=12),
-            ColumnDef("open", "Open", ColumnType.INTEGER, width=6),
-            ColumnDef("closed", "Closed", ColumnType.INTEGER, width=7),
-            ColumnDef("archived", "Archived", ColumnType.INTEGER, width=9),
-            ColumnDef("total", "Total", ColumnType.INTEGER, width=6),
-        ],
-        rows=entity_rows,
-        title="Entities",
-    )
-    status_rows = [[item.value, issue_counts[item]] for item in IssueStatus]
-    status_rows.extend((["archived", archived_issues], ["Total", len(issues)]))
-    issue_status = TableData(
-        columns=[
-            ColumnDef("status", "Status", ColumnType.STRING, width=14),
-            ColumnDef("count", "Count", ColumnType.INTEGER, width=7),
-        ],
-        rows=status_rows,
-        title="Issue Status",
-    )
-    return {"entities": entities, "issue_status": issue_status}
+    return {
+        "entities": _entity_table(entity_rows),
+        "issue_status": _issue_status_table(issue_counts, archived_issues, len(issues)),
+    }
 
 
 __all__ = ["check_health", "health", "status"]

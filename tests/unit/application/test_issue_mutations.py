@@ -1,6 +1,7 @@
 """Phase 7 contracts for transactional issue mutation use cases."""
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 
@@ -23,7 +24,7 @@ LATER = Timestamp(NOW.value + timedelta(hours=2))
 
 
 def _issue(identity: str, **updates) -> Issue:
-    values = {
+    values: dict[str, Any] = {
         "id": EntityId(identity),
         "created": NOW,
         "updated": NOW,

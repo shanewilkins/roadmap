@@ -94,29 +94,47 @@ def _bool(section: dict[str, Any], key: str, default: bool) -> bool:
     return value
 
 
-def _validate_value(key: str, value: Any) -> None:
-    boolean_keys = {
-        "behavior.auto_branch_on_start",
-        "behavior.confirm_destructive",
-        "behavior.show_tips",
-        "behavior.include_closed_in_critical_path",
-        "export.include_metadata",
-        "export.auto_gitignore",
-    }
-    if key in boolean_keys and not isinstance(value, bool):
+_BOOLEAN_KEYS = {
+    "behavior.auto_branch_on_start",
+    "behavior.confirm_destructive",
+    "behavior.show_tips",
+    "behavior.include_closed_in_critical_path",
+    "export.include_metadata",
+    "export.auto_gitignore",
+}
+
+
+def _validate_boolean_value(key: str, value: Any) -> None:
+    if not isinstance(value, bool):
         raise ConfigurationError(f"configuration key {key} must be a boolean")
-    if key == "display.table_width" and (
-        not isinstance(value, int) or isinstance(value, bool) or value < 20
-    ):
+
+
+def _validate_table_width_value(value: Any) -> None:
+    if not isinstance(value, int) or isinstance(value, bool) or value < 20:
         raise ConfigurationError("configuration key display.table_width must be >= 20")
-    if key == "output.columns" and (
-        not isinstance(value, list) or any(not isinstance(item, str) for item in value)
-    ):
+
+
+def _validate_columns_value(value: Any) -> None:
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
         raise ConfigurationError("configuration key output.columns must be a list")
-    if key not in boolean_keys | {"display.table_width", "output.columns"} and not (
-        value is None or isinstance(value, str)
-    ):
+
+
+def _validate_text_value(key: str, value: Any) -> None:
+    if not (value is None or isinstance(value, str)):
         raise ConfigurationError(f"configuration key {key} must be text or null")
+
+
+def _validate_value(key: str, value: Any) -> None:
+    if key in _BOOLEAN_KEYS:
+        _validate_boolean_value(key, value)
+        return
+    if key == "display.table_width":
+        _validate_table_width_value(value)
+        return
+    if key == "output.columns":
+        _validate_columns_value(value)
+        return
+    _validate_text_value(key, value)
 
 
 class ConfigurationFiles:

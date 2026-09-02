@@ -17,6 +17,25 @@ def _directory_name(value: str) -> str:
     return value
 
 
+def _report_dry_run(
+    name: str, result, skip_project: bool, project_name: str | None, default_name: str
+) -> None:
+    action = "create" if result.created_workspace else "verify"
+    click.echo(f"Would {action} canonical workspace: {name}/")
+    if not skip_project:
+        click.echo(f"Would ensure project: {project_name or default_name}")
+
+
+def _report_result(name: str, result) -> None:
+    click.echo(
+        f"Initialized canonical workspace: {name}/"
+        if result.created_workspace
+        else f"Canonical workspace already initialized: {name}/"
+    )
+    if result.created_project is not None:
+        click.echo(f"Created project: {result.created_project.name}")
+
+
 @click.command()
 @click.option(
     "--name", "-n", default=".roadmap", callback=lambda _c, _p, v: _directory_name(v)
@@ -60,15 +79,6 @@ def init(
         )
     )
     if result.dry_run:
-        action = "create" if result.created_workspace else "verify"
-        click.echo(f"Would {action} canonical workspace: {name}/")
-        if not skip_project:
-            click.echo(f"Would ensure project: {project_name or default_name}")
+        _report_dry_run(name, result, skip_project, project_name, default_name)
         return
-    click.echo(
-        f"Initialized canonical workspace: {name}/"
-        if result.created_workspace
-        else f"Canonical workspace already initialized: {name}/"
-    )
-    if result.created_project is not None:
-        click.echo(f"Created project: {result.created_project.name}")
+    _report_result(name, result)

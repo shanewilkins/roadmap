@@ -70,6 +70,7 @@ dev = [
     "pytest-benchmark>=5.2.3",
     "pyright>=1.1.411",
     "pytest-mock>=3.15.1",
+    "ty>=0.0.77",
 ]
 
 [project.urls]
@@ -112,10 +113,19 @@ include = [
 # - ruff.toml: Linting and formatting rules
 # - bandit.toml: Security scanning configuration
 # - .coveragerc: Test coverage thresholds and exclusions
-# - pyrightconfig.json: Type checking configuration
+# - pyrightconfig.json: Type checking configuration (current)
 
-# Type checking is now handled by Pyright
-# Configuration is in pyrightconfig.json
+# ty runs alongside Pyright and is enforced in CI and pre-commit (0.3 quality
+# cleanup, see notes/path_to_1_point_0.md).
+[tool.ty.src]
+include = ["roadmap", "tests"]
+# These fixture trees are synthetic "roadmap" packages used only for the
+# architecture checker's AST scan; they are never actually imported, so
+# ty's import resolution has nothing real to check them against.
+exclude = ["tests/policy/fixtures/architecture"]
+
+[tool.ty.environment]
+python-version = "3.13"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -65,6 +65,16 @@ def test_valid_fixture_obeys_every_architecture_rule() -> None:
     assert find_violations(FIXTURES / "valid" / "roadmap", POLICY) == ()
 
 
+def test_requirements_domain_stub_fits_existing_zones_unregistered() -> None:
+    """TR-045: a stub Requirements domain/application/adapter/bootstrap module
+    set passes the real, currently-committed architecture.toml with zero
+    violations and no new zone, rule, or phase bump — the planned 0.4
+    Requirements feature needs no architecture change before it starts."""
+    assert (
+        find_violations(FIXTURES / "requirements_domain_stub" / "roadmap", POLICY) == ()
+    )
+
+
 @pytest.mark.parametrize(
     ("fixture", "phase", "expected"),
     [

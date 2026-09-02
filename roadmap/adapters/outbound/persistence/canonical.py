@@ -299,66 +299,59 @@ class CanonicalUnitOfWork:
         if path.exists():
             self._raw_deletes[path] = _Delete(path, content_identity(path.read_bytes()))
 
+    @staticmethod
+    def _ensure_unchanged(path: Path, expected: str | None, label: str) -> None:
+        actual = content_identity(path.read_bytes()) if path.exists() else None
+        if actual != expected:
+            raise CanonicalConflict(f"canonical {label} changed: {path}")
+
     def _validate(self) -> None:
         for write in self._writes.values():
-            path = write.envelope.path
-            actual = content_identity(path.read_bytes()) if path.exists() else None
-            if actual != write.expected:
-                raise CanonicalConflict(f"canonical document changed: {path}")
+            self._ensure_unchanged(write.envelope.path, write.expected, "document")
         for deletion in self._deletes.values():
-            actual = (
-                content_identity(deletion.path.read_bytes())
-                if deletion.path.exists()
-                else None
-            )
-            if actual != deletion.expected:
-                raise CanonicalConflict(f"canonical document changed: {deletion.path}")
+            self._ensure_unchanged(deletion.path, deletion.expected, "document")
         for write in self._raw_writes.values():
-            actual = (
-                content_identity(write.path.read_bytes())
-                if write.path.exists()
-                else None
-            )
-            if actual != write.expected:
-                raise CanonicalConflict(f"canonical file changed: {write.path}")
+            self._ensure_unchanged(write.path, write.expected, "file")
         for deletion in self._raw_deletes.values():
-            actual = (
-                content_identity(deletion.path.read_bytes())
-                if deletion.path.exists()
-                else None
-            )
-            if actual != deletion.expected:
-                raise CanonicalConflict(f"canonical file changed: {deletion.path}")
+            self._ensure_unchanged(deletion.path, deletion.expected, "file")
+
+    def _write_entry(
+        self, directory: Path, index: int, path: Path, content: bytes
+    ) -> dict[str, Any]:
+        before_name = f"{index}.before"
+        after_name = f"{index}.after"
+        if path.exists():
+            (directory / before_name).write_bytes(path.read_bytes())
+        (directory / after_name).write_bytes(content)
+        return {
+            "target": str(path.relative_to(self.repository.roadmap_dir)),
+            "before": before_name if path.exists() else None,
+            "after": after_name,
+        }
+
+    def _delete_entry(self, directory: Path, index: int, path: Path) -> dict[str, Any]:
+        before_name = f"{index}.before"
+        (directory / before_name).write_bytes(path.read_bytes())
+        return {
+            "target": str(path.relative_to(self.repository.roadmap_dir)),
+            "before": before_name,
+            "after": None,
+        }
 
     def _journal(self, directory: Path) -> list[dict[str, Any]]:
         entries: list[dict[str, Any]] = []
         for index, write in enumerate(self._writes.values()):
-            path = write.envelope.path
-            before_name = f"{index}.before"
-            after_name = f"{index}.after"
-            if path.exists():
-                (directory / before_name).write_bytes(path.read_bytes())
-            (directory / after_name).write_bytes(serialize_document(write.envelope))
             entries.append(
-                {
-                    "target": str(path.relative_to(self.repository.roadmap_dir)),
-                    "before": before_name if path.exists() else None,
-                    "after": after_name,
-                }
+                self._write_entry(
+                    directory,
+                    index,
+                    write.envelope.path,
+                    serialize_document(write.envelope),
+                )
             )
         offset = len(entries)
         for index, deletion in enumerate(self._deletes.values(), start=offset):
-            before_name = f"{index}.before"
-            (directory / before_name).write_bytes(deletion.path.read_bytes())
-            entries.append(
-                {
-                    "target": str(
-                        deletion.path.relative_to(self.repository.roadmap_dir)
-                    ),
-                    "before": before_name,
-                    "after": None,
-                }
-            )
+            entries.append(self._delete_entry(directory, index, deletion.path))
         offset = len(entries)
         ordinary_writes = tuple(
             write for write in self._raw_writes.values() if not write.final
@@ -367,44 +360,16 @@ class CanonicalUnitOfWork:
             write for write in self._raw_writes.values() if write.final
         )
         for index, write in enumerate(ordinary_writes, start=offset):
-            before_name = f"{index}.before"
-            after_name = f"{index}.after"
-            if write.path.exists():
-                (directory / before_name).write_bytes(write.path.read_bytes())
-            (directory / after_name).write_bytes(write.content)
             entries.append(
-                {
-                    "target": str(write.path.relative_to(self.repository.roadmap_dir)),
-                    "before": before_name if write.path.exists() else None,
-                    "after": after_name,
-                }
+                self._write_entry(directory, index, write.path, write.content)
             )
         offset = len(entries)
         for index, deletion in enumerate(self._raw_deletes.values(), start=offset):
-            before_name = f"{index}.before"
-            (directory / before_name).write_bytes(deletion.path.read_bytes())
-            entries.append(
-                {
-                    "target": str(
-                        deletion.path.relative_to(self.repository.roadmap_dir)
-                    ),
-                    "before": before_name,
-                    "after": None,
-                }
-            )
+            entries.append(self._delete_entry(directory, index, deletion.path))
         offset = len(entries)
         for index, write in enumerate(final_writes, start=offset):
-            before_name = f"{index}.before"
-            after_name = f"{index}.after"
-            if write.path.exists():
-                (directory / before_name).write_bytes(write.path.read_bytes())
-            (directory / after_name).write_bytes(write.content)
             entries.append(
-                {
-                    "target": str(write.path.relative_to(self.repository.roadmap_dir)),
-                    "before": before_name if write.path.exists() else None,
-                    "after": after_name,
-                }
+                self._write_entry(directory, index, write.path, write.content)
             )
         journal = directory / "journal.json"
         journal.write_text(json.dumps({"state": "prepared", "entries": entries}))

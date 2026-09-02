@@ -64,11 +64,8 @@ def _section(data: dict[str, Any], key: str) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
-def _validate_legacy_config(data: dict[str, Any]) -> tuple[str, ...]:
+def _validate_legacy_booleans(behavior: dict[str, Any]) -> list[str]:
     conflicts: list[str] = []
-    behavior = _section(data, "behavior")
-    display = _section(data, "display")
-    output = _section(data, "output")
     for key in (
         "auto_branch_on_start",
         "confirm_destructive",
@@ -78,22 +75,45 @@ def _validate_legacy_config(data: dict[str, Any]) -> tuple[str, ...]:
         value = behavior.get(key)
         if value is not None and not isinstance(value, bool):
             conflicts.append(f"configuration key behavior.{key} must be a boolean")
+    return conflicts
+
+
+def _validate_legacy_default_project(behavior: dict[str, Any]) -> list[str]:
     default_project = behavior.get("default_project_id")
     if default_project is not None and not isinstance(default_project, str):
-        conflicts.append(
-            "configuration key behavior.default_project_id must be text or null"
-        )
+        return ["configuration key behavior.default_project_id must be text or null"]
+    return []
+
+
+def _validate_legacy_table_width(display: dict[str, Any]) -> list[str]:
     width = display.get("table_width")
     if width is not None and (
         not isinstance(width, int) or isinstance(width, bool) or width < 20
     ):
-        conflicts.append("configuration key display.table_width must be >= 20")
+        return ["configuration key display.table_width must be >= 20"]
+    return []
+
+
+def _validate_legacy_columns(output: dict[str, Any]) -> list[str]:
     columns = output.get("columns")
     if columns is not None and (
         not isinstance(columns, list)
         or any(not isinstance(item, str) for item in columns)
     ):
-        conflicts.append("configuration key output.columns must be a list of text")
+        return ["configuration key output.columns must be a list of text"]
+    return []
+
+
+def _validate_legacy_config(data: dict[str, Any]) -> tuple[str, ...]:
+    behavior = _section(data, "behavior")
+    display = _section(data, "display")
+    output = _section(data, "output")
+    conflicts = [
+        *_validate_legacy_booleans(behavior),
+        *_validate_legacy_default_project(behavior),
+        *_validate_legacy_table_width(display),
+        *_validate_legacy_columns(output),
+    ]
     return tuple(conflicts)
 
 
@@ -197,73 +217,102 @@ class FilesystemWorkspaceMigration:
             True,
         )
 
+    def _reject_legacy_paths(
+        self,
+        moves: list[_DocumentMove],
+        source_version: int,
+        conflicts: list[str],
+    ) -> list[_DocumentMove]:
+        if source_version != WORKSPACE_SCHEMA_VERSION:
+            return moves
+        unexpected = [
+            str(move.source.relative_to(self.roadmap_dir))
+            for move in moves
+            if move.source != move.target
+            or move.envelope.schema_version != DOCUMENT_SCHEMA_VERSION
+        ]
+        if unexpected:
+            conflicts.append(
+                "current workspace schema contains legacy canonical paths: "
+                + ", ".join(unexpected)
+            )
+        return []
+
+    def _move_changes(self, moves: list[_DocumentMove]) -> list[MigrationChange]:
+        changes: list[MigrationChange] = []
+        for move in moves:
+            source = str(move.source.relative_to(self.roadmap_dir))
+            target = str(move.target.relative_to(self.roadmap_dir))
+            operation = "rewrite" if move.source == move.target else "move"
+            changes.append(
+                MigrationChange(
+                    operation,
+                    source,
+                    target,
+                    move.envelope.kind,
+                    move.envelope.identity,
+                )
+            )
+            changes.extend(
+                MigrationChange(
+                    "delete-duplicate",
+                    str(path.relative_to(self.roadmap_dir)),
+                    target,
+                    move.envelope.kind,
+                    move.envelope.identity,
+                )
+                for path in move.duplicates
+                if path != move.target
+            )
+        return changes
+
+    def _upgrade_plan(
+        self,
+        moves: list[_DocumentMove],
+        legacy_config: dict[str, Any],
+        conflicts: list[str],
+    ) -> tuple[list[MigrationChange], bytes, bytes | None, list[str]]:
+        changes = self._move_changes(moves)
+        project_config = self._project_config(legacy_config)
+        user_config = self._user_config(legacy_config, conflicts)
+        changes.append(MigrationChange("rewrite", "config.yaml", "config.yaml"))
+        if user_config is not None:
+            changes.append(
+                MigrationChange("merge", "config.yaml", "<user-config>/config.yaml")
+            )
+        changes.append(MigrationChange("rebuild", None, "db/projection.db"))
+        warnings: list[str] = []
+        if any(key in legacy_config for key in ("github", "git", "paths")):
+            warnings.append(
+                "provider, Git transport, secret, and machine-path settings are "
+                "not copied into the 0.2 project configuration"
+            )
+        return changes, project_config, user_config, warnings
+
+    def _rebuild_only_needed(self, source_version: int, conflicts: list[str]) -> bool:
+        return (
+            source_version == WORKSPACE_SCHEMA_VERSION
+            and not conflicts
+            and (self.projection.path.exists() or self.projection.stale_path.exists())
+            and self.projection.needs_rebuild()
+        )
+
     def _prepare(self) -> _Prepared:
         conflicts: list[str] = []
         warnings: list[str] = []
         legacy_config, source_version = self._source_config(conflicts)
-
-        moves = self._document_moves(conflicts)
-        if source_version == WORKSPACE_SCHEMA_VERSION:
-            unexpected = [
-                str(move.source.relative_to(self.roadmap_dir))
-                for move in moves
-                if move.source != move.target
-                or move.envelope.schema_version != DOCUMENT_SCHEMA_VERSION
-            ]
-            if unexpected:
-                conflicts.append(
-                    "current workspace schema contains legacy canonical paths: "
-                    + ", ".join(unexpected)
-                )
-            moves = []
+        moves = self._reject_legacy_paths(
+            self._document_moves(conflicts), source_version, conflicts
+        )
 
         project_config = None
         user_config = None
         changes: list[MigrationChange] = []
         if source_version < WORKSPACE_SCHEMA_VERSION and not conflicts:
-            for move in moves:
-                source = str(move.source.relative_to(self.roadmap_dir))
-                target = str(move.target.relative_to(self.roadmap_dir))
-                operation = "rewrite" if move.source == move.target else "move"
-                changes.append(
-                    MigrationChange(
-                        operation,
-                        source,
-                        target,
-                        move.envelope.kind,
-                        move.envelope.identity,
-                    )
-                )
-                changes.extend(
-                    MigrationChange(
-                        "delete-duplicate",
-                        str(path.relative_to(self.roadmap_dir)),
-                        target,
-                        move.envelope.kind,
-                        move.envelope.identity,
-                    )
-                    for path in move.duplicates
-                    if path != move.target
-                )
-            project_config = self._project_config(legacy_config)
-            user_config = self._user_config(legacy_config, conflicts)
-            changes.append(MigrationChange("rewrite", "config.yaml", "config.yaml"))
-            if user_config is not None:
-                changes.append(
-                    MigrationChange("merge", "config.yaml", "<user-config>/config.yaml")
-                )
-            changes.append(MigrationChange("rebuild", None, "db/projection.db"))
-            if any(key in legacy_config for key in ("github", "git", "paths")):
-                warnings.append(
-                    "provider, Git transport, secret, and machine-path settings are "
-                    "not copied into the 0.2 project configuration"
-                )
-        elif (
-            source_version == WORKSPACE_SCHEMA_VERSION
-            and not conflicts
-            and (self.projection.path.exists() or self.projection.stale_path.exists())
-            and self.projection.needs_rebuild()
-        ):
+            changes, project_config, user_config, warnings = self._upgrade_plan(
+                moves, legacy_config, conflicts
+            )
+        elif self._rebuild_only_needed(source_version, conflicts):
             changes.append(MigrationChange("rebuild", None, "db/projection.db"))
 
         fingerprint = self._fingerprint()
@@ -303,7 +352,9 @@ class FilesystemWorkspaceMigration:
         conflicts.extend(_validate_legacy_config(legacy_config))
         return legacy_config, source_version
 
-    def _document_moves(self, conflicts: list[str]) -> list[_DocumentMove]:
+    def _scan_documents(
+        self, conflicts: list[str]
+    ) -> dict[tuple[DocumentKind, str], list[DocumentEnvelope]]:
         grouped: dict[tuple[DocumentKind, str], list[DocumentEnvelope]] = defaultdict(
             list
         )
@@ -324,45 +375,53 @@ class FilesystemWorkspaceMigration:
                         grouped[(kind, envelope.identity)].append(envelope)
                     except DocumentError as error:
                         conflicts.append(str(error))
+        return grouped
 
+    def _build_move(
+        self,
+        key: tuple[DocumentKind, str],
+        envelopes: list[DocumentEnvelope],
+        claimed: dict[str, tuple[DocumentKind, str]],
+        conflicts: list[str],
+    ) -> _DocumentMove | None:
+        kind, identity = key
+        target = self.roadmap_dir / f"{kind}s" / f"{identity}.md"
+        case_key = str(target.relative_to(self.roadmap_dir)).casefold()
+        if case_key in claimed and claimed[case_key] != key:
+            conflicts.append(f"case-insensitive target collision for {target.name}")
+            return None
+        claimed[case_key] = key
+        rendered = [
+            serialize_document(
+                replace(item, path=target, schema_version=DOCUMENT_SCHEMA_VERSION)
+            )
+            for item in envelopes
+        ]
+        if any(content != rendered[0] for content in rendered[1:]):
+            conflicts.append(f"non-identical duplicate {kind} id {identity}")
+            return None
+        preferred_index = next(
+            (index for index, item in enumerate(envelopes) if item.path == target),
+            0,
+        )
+        preferred = envelopes[preferred_index]
+        duplicates = tuple(
+            item.path
+            for index, item in enumerate(envelopes)
+            if index != preferred_index
+        )
+        return _DocumentMove(
+            preferred, preferred.path, target, rendered[preferred_index], duplicates
+        )
+
+    def _document_moves(self, conflicts: list[str]) -> list[_DocumentMove]:
+        grouped = self._scan_documents(conflicts)
         moves: list[_DocumentMove] = []
         claimed: dict[str, tuple[DocumentKind, str]] = {}
         for key, envelopes in sorted(grouped.items(), key=lambda item: item[0]):
-            kind, identity = key
-            target = self.roadmap_dir / f"{kind}s" / f"{identity}.md"
-            case_key = str(target.relative_to(self.roadmap_dir)).casefold()
-            if case_key in claimed and claimed[case_key] != key:
-                conflicts.append(f"case-insensitive target collision for {target.name}")
-                continue
-            claimed[case_key] = key
-            rendered = [
-                serialize_document(
-                    replace(item, path=target, schema_version=DOCUMENT_SCHEMA_VERSION)
-                )
-                for item in envelopes
-            ]
-            if any(content != rendered[0] for content in rendered[1:]):
-                conflicts.append(f"non-identical duplicate {kind} id {identity}")
-                continue
-            preferred_index = next(
-                (index for index, item in enumerate(envelopes) if item.path == target),
-                0,
-            )
-            preferred = envelopes[preferred_index]
-            duplicates = tuple(
-                item.path
-                for index, item in enumerate(envelopes)
-                if index != preferred_index
-            )
-            moves.append(
-                _DocumentMove(
-                    preferred,
-                    preferred.path,
-                    target,
-                    rendered[preferred_index],
-                    duplicates,
-                )
-            )
+            move = self._build_move(key, envelopes, claimed, conflicts)
+            if move is not None:
+                moves.append(move)
         return moves
 
     @staticmethod
@@ -433,6 +492,7 @@ class FilesystemWorkspaceMigration:
             if key == "schema_version":
                 merged[key] = value
                 continue
+            assert isinstance(value, dict)
             current = merged.get(key)
             merged[key] = {**value, **current} if isinstance(current, dict) else value
         return _yaml_bytes(merged)

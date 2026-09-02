@@ -131,30 +131,47 @@ class Planning:
         )
 
     @staticmethod
-    def _daily_groups(
-        issues: tuple[Issue, ...], now: Timestamp
-    ) -> tuple[
-        tuple[Issue, ...], tuple[Issue, ...], tuple[Issue, ...], tuple[Issue, ...]
-    ]:
-        in_progress = tuple(
-            item for item in issues if item.status is IssueStatus.IN_PROGRESS
-        )
-        overdue = tuple(
+    def _in_progress_issues(issues: tuple[Issue, ...]) -> tuple[Issue, ...]:
+        return tuple(item for item in issues if item.status is IssueStatus.IN_PROGRESS)
+
+    @staticmethod
+    def _overdue_issues(issues: tuple[Issue, ...], now: Timestamp) -> tuple[Issue, ...]:
+        return tuple(
             item
             for item in issues
             if item.due_at is not None
             and item.status is not IssueStatus.CLOSED
             and item.due_at < now
         )
-        blocked = tuple(item for item in issues if item.status is IssueStatus.BLOCKED)
-        completed_today = tuple(
+
+    @staticmethod
+    def _blocked_issues(issues: tuple[Issue, ...]) -> tuple[Issue, ...]:
+        return tuple(item for item in issues if item.status is IssueStatus.BLOCKED)
+
+    @staticmethod
+    def _completed_today_issues(
+        issues: tuple[Issue, ...], now: Timestamp
+    ) -> tuple[Issue, ...]:
+        return tuple(
             item
             for item in issues
             if item.status is IssueStatus.CLOSED
             and item.actual_end_at is not None
             and item.actual_end_at.value.date() == now.value.date()
         )
-        return in_progress, overdue, blocked, completed_today
+
+    @classmethod
+    def _daily_groups(
+        cls, issues: tuple[Issue, ...], now: Timestamp
+    ) -> tuple[
+        tuple[Issue, ...], tuple[Issue, ...], tuple[Issue, ...], tuple[Issue, ...]
+    ]:
+        return (
+            cls._in_progress_issues(issues),
+            cls._overdue_issues(issues, now),
+            cls._blocked_issues(issues),
+            cls._completed_today_issues(issues, now),
+        )
 
     @staticmethod
     def _daily_up_next(issues: tuple[Issue, ...]) -> tuple[Issue, ...]:
@@ -193,10 +210,12 @@ class Planning:
             )[:3]
         )
 
-    def critical_path(
-        self, *, milestone: str | None, include_closed: bool
-    ) -> CriticalPathResult:
-        snapshot = self.snapshot()
+    def _critical_path_issues(
+        self,
+        snapshot: PlanningSnapshot,
+        milestone: str | None,
+        include_closed: bool,
+    ) -> tuple[Issue, ...]:
         issues = snapshot.issues
         if milestone is not None:
             selected = self._resolve_milestone(
@@ -209,10 +228,11 @@ class Planning:
             issues = tuple(
                 item for item in issues if item.status is not IssueStatus.CLOSED
             )
-        by_id = {item.id: item for item in issues}
-        if not by_id:
-            return CriticalPathResult((), 0.0, (), ())
+        return issues
 
+    def _longest_path(
+        self, by_id: dict[EntityId, Issue]
+    ) -> tuple[float, tuple[EntityId, ...]]:
         memo: dict[EntityId, tuple[float, tuple[EntityId, ...]]] = {}
 
         def longest_to(
@@ -237,11 +257,16 @@ class Planning:
             memo[identity] = result
             return result
 
-        duration, path = max(
+        return max(
             (longest_to(identity) for identity in sorted(by_id, key=str)),
             key=lambda item: (item[0], tuple(map(str, item[1]))),
         )
-        nodes = tuple(
+
+    @staticmethod
+    def _critical_path_nodes(
+        by_id: dict[EntityId, Issue], path: tuple[EntityId, ...]
+    ) -> tuple[CriticalPathNode, ...]:
+        return tuple(
             CriticalPathNode(
                 identity,
                 str(by_id[identity].title),
@@ -254,11 +279,30 @@ class Planning:
             )
             for identity in path
         )
+
+    @staticmethod
+    def _blocked_map(
+        by_id: dict[EntityId, Issue],
+    ) -> dict[EntityId, tuple[EntityId, ...]]:
         blocked: dict[EntityId, tuple[EntityId, ...]] = {}
         for item in by_id.values():
             for dependency in item.relations.depends_on:
                 if dependency in by_id:
                     blocked[dependency] = (*blocked.get(dependency, ()), item.id)
+        return blocked
+
+    def critical_path(
+        self, *, milestone: str | None, include_closed: bool
+    ) -> CriticalPathResult:
+        snapshot = self.snapshot()
+        issues = self._critical_path_issues(snapshot, milestone, include_closed)
+        by_id = {item.id: item for item in issues}
+        if not by_id:
+            return CriticalPathResult((), 0.0, (), ())
+
+        duration, path = self._longest_path(by_id)
+        nodes = self._critical_path_nodes(by_id, path)
+        blocked = self._blocked_map(by_id)
         return CriticalPathResult(
             nodes,
             duration,
@@ -395,6 +439,22 @@ class Planning:
         except DomainFailure as error:
             raise self._invalid(error) from error
 
+    def _reproject_milestone(
+        self,
+        unit: PlanningUnitOfWork,
+        milestone_id: EntityId,
+        old_project: Project | None,
+        new_project: Project | None,
+        project_id: EntityId | None,
+        at: Timestamp,
+    ) -> None:
+        if old_project is not None and old_project.id != project_id:
+            unit.save_project(self._unlink_project(old_project, milestone_id, at))
+        if new_project is not None and (
+            old_project is None or new_project.id != old_project.id
+        ):
+            unit.save_project(self._link_project(new_project, milestone_id, at))
+
     def update_milestone(
         self, command: MilestoneUpdateCommand
     ) -> PlanningMutationResult:
@@ -427,14 +487,9 @@ class Planning:
                     else milestone.due_at,
                 )
                 unit.save_milestone(changed)
-                if old_project is not None and old_project.id != project_id:
-                    unit.save_project(
-                        self._unlink_project(old_project, milestone.id, at)
-                    )
-                if new_project is not None and (
-                    old_project is None or new_project.id != old_project.id
-                ):
-                    unit.save_project(self._link_project(new_project, milestone.id, at))
+                self._reproject_milestone(
+                    unit, milestone.id, old_project, new_project, project_id, at
+                )
                 return self._commit(unit, changed)
         except DomainFailure as error:
             raise self._invalid(error) from error
@@ -703,18 +758,19 @@ class Planning:
                 unit.save_milestone(item)
 
     @staticmethod
-    def _milestone_summary(
-        milestone: Milestone, issues: tuple[Issue, ...]
-    ) -> MilestoneSummary:
-        assigned = tuple(
-            item for item in issues if item.relations.milestone_id == milestone.id
-        )
+    def _milestone_estimated_remaining(
+        assigned: tuple[Issue, ...],
+    ) -> tuple[float, float]:
         estimated = sum(item.estimated_hours or 0.0 for item in assigned)
         remaining = sum(
             item.estimated_hours or 0.0
             for item in assigned
             if item.status is not IssueStatus.CLOSED
         )
+        return estimated, remaining
+
+    @staticmethod
+    def _milestone_progress(assigned: tuple[Issue, ...]) -> float:
         total_weight = sum(item.estimated_hours or 1.0 for item in assigned)
         earned = sum(
             (item.estimated_hours or 1.0)
@@ -725,7 +781,17 @@ class Planning:
             )
             for item in assigned
         )
-        progress = earned / total_weight * 100.0 if total_weight else 0.0
+        return earned / total_weight * 100.0 if total_weight else 0.0
+
+    @classmethod
+    def _milestone_summary(
+        cls, milestone: Milestone, issues: tuple[Issue, ...]
+    ) -> MilestoneSummary:
+        assigned = tuple(
+            item for item in issues if item.relations.milestone_id == milestone.id
+        )
+        estimated, remaining = cls._milestone_estimated_remaining(assigned)
+        progress = cls._milestone_progress(assigned)
         return MilestoneSummary(
             milestone,
             len(assigned),
@@ -736,15 +802,18 @@ class Planning:
         )
 
     @staticmethod
-    def _project_summary(
+    def _project_linked_milestones(
         project: Project, milestones: dict[EntityId, MilestoneSummary]
-    ) -> ProjectSummary:
-        linked = tuple(
+    ) -> tuple[MilestoneSummary, ...]:
+        return tuple(
             item
             for item in milestones.values()
             if item.milestone.id in project.relations.milestone_ids
             or item.milestone.relation.project_id == project.id
         )
+
+    @staticmethod
+    def _project_progress(linked: tuple[MilestoneSummary, ...]) -> float:
         total_weight = sum(item.estimated_hours or 1.0 for item in linked)
         earned = sum(
             (item.estimated_hours or 1.0)
@@ -755,7 +824,14 @@ class Planning:
             )
             for item in linked
         )
-        progress = earned / total_weight * 100.0 if total_weight else 0.0
+        return earned / total_weight * 100.0 if total_weight else 0.0
+
+    @classmethod
+    def _project_summary(
+        cls, project: Project, milestones: dict[EntityId, MilestoneSummary]
+    ) -> ProjectSummary:
+        linked = cls._project_linked_milestones(project, milestones)
+        progress = cls._project_progress(linked)
         return ProjectSummary(
             project,
             len(linked),

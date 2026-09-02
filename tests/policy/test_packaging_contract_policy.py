@@ -32,6 +32,7 @@ DEVELOPMENT_ONLY_PACKAGES = {
     "sphinx",
     "sphinx-click",
     "sphinx-rtd-theme",
+    "ty",
     "vulture",
     "xenon",
 }

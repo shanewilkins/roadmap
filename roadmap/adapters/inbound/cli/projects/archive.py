@@ -7,6 +7,27 @@ from roadmap.adapters.inbound.cli.planning_resolution import invoke, projection_
 from roadmap.domain.types import RetentionState
 
 
+def _list_archived_projects(core) -> None:
+    values = [
+        item
+        for item in core.planning.all_projects()
+        if item.retention is RetentionState.ARCHIVED
+    ]
+    if not values:
+        click.echo("No archived projects.")
+    for item in values:
+        click.echo(f"{item.id}  {item.name}")
+
+
+def _report_archive_result(result, dry_run: bool) -> None:
+    verb = "Would archive" if dry_run else "Archived"
+    for item in result.aggregates:
+        click.echo(f"{verb} project {item.id}: {item.name}")
+    if not result.aggregates:
+        click.echo("No matching projects.")
+    projection_warning(result)
+
+
 @click.command("archive")
 @click.argument("project_name", required=False)
 @click.option("--all-closed", is_flag=True)
@@ -28,15 +49,7 @@ def archive_project(
     """Archive projects in place without cascading to milestones or issues."""
     core = ctx.obj["core"]
     if list_archived:
-        values = [
-            item
-            for item in core.planning.all_projects()
-            if item.retention is RetentionState.ARCHIVED
-        ]
-        if not values:
-            click.echo("No archived projects.")
-        for item in values:
-            click.echo(f"{item.id}  {item.name}")
+        _list_archived_projects(core)
         return
     if (project_name is None) == (not all_closed):
         raise click.UsageError("Specify exactly one of PROJECT_NAME or --all-closed")
@@ -47,9 +60,4 @@ def archive_project(
             project_name, all_closed=all_closed, dry_run=dry_run, force=force
         )
     )
-    verb = "Would archive" if dry_run else "Archived"
-    for item in result.aggregates:
-        click.echo(f"{verb} project {item.id}: {item.name}")
-    if not result.aggregates:
-        click.echo("No matching projects.")
-    projection_warning(result)
+    _report_archive_result(result, dry_run)

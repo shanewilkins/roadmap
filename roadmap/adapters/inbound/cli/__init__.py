@@ -96,21 +96,21 @@ class RoadmapClickGroup(click.Group):
         with formatter.section("Commands"):
             formatter.write_dl(rows)
 
-    def get_command(self, ctx: click.Context, name: str) -> click.Command | None:
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         """Load one registered command only when Click requests it."""
-        if (attached := super().get_command(ctx, name)) is not None:
+        if (attached := super().get_command(ctx, cmd_name)) is not None:
             return attached
-        if name in self._command_cache:
-            return self._command_cache[name]
-        location = self._command_registry.get(name)
+        if cmd_name in self._command_cache:
+            return self._command_cache[cmd_name]
+        location = self._command_registry.get(cmd_name)
         if location is None:
             return None
         module_path, attribute, _help = location
         try:
-            self._command_cache[name] = command = getattr(importlib.import_module(module_path), attribute)  # fmt: skip
+            self._command_cache[cmd_name] = command = getattr(importlib.import_module(module_path), attribute)  # fmt: skip
         except Exception as error:
             self._console_factory().print(
-                f"⚠️  Failed to load command '{name}': {error}", style="yellow"
+                f"⚠️  Failed to load command '{cmd_name}': {error}", style="yellow"
             )
             return None
         return command

@@ -32,6 +32,32 @@ class _Aggregate:
         return replace(self, retention=retention, updated=at)
 
 
+def _validate_estimated_hours(estimated_hours: float | None) -> None:
+    if estimated_hours is not None and estimated_hours <= 0:
+        raise InvariantViolation("estimated hours must be positive")
+
+
+def _validate_progress(progress: float | None) -> None:
+    if progress is not None and not 0 <= progress <= 100:
+        raise InvariantViolation("progress must be between 0 and 100")
+
+
+def _validate_actual_dates(start: t.Timestamp | None, end: t.Timestamp | None) -> None:
+    if start and end and end < start:
+        raise InvariantViolation("actual end cannot precede actual start")
+
+
+def _validate_comments(comments: tuple[t.IssueComment, ...]) -> None:
+    comment_ids = {comment.id for comment in comments}
+    if len(comment_ids) != len(comments):
+        raise InvariantViolation("comment IDs must be unique within an issue")
+    if any(
+        comment.in_reply_to is not None and comment.in_reply_to not in comment_ids
+        for comment in comments
+    ):
+        raise InvariantViolation("comment reply target must exist on the issue")
+
+
 @dataclass(frozen=True, slots=True)
 class Issue(_Aggregate):
     title: t.Title = field(kw_only=True)
@@ -55,22 +81,10 @@ class Issue(_Aggregate):
     def __post_init__(self) -> None:
         _Aggregate.__post_init__(self)
         self.relations.validate_for(self.id)
-        if self.estimated_hours is not None and self.estimated_hours <= 0:
-            raise InvariantViolation("estimated hours must be positive")
-        progress = self.progress_percentage
-        if progress is not None and not 0 <= progress <= 100:
-            raise InvariantViolation("progress must be between 0 and 100")
-        if self.actual_start_at and self.actual_end_at:
-            if self.actual_end_at < self.actual_start_at:
-                raise InvariantViolation("actual end cannot precede actual start")
-        comment_ids = {comment.id for comment in self.comments}
-        if len(comment_ids) != len(self.comments):
-            raise InvariantViolation("comment IDs must be unique within an issue")
-        if any(
-            comment.in_reply_to is not None and comment.in_reply_to not in comment_ids
-            for comment in self.comments
-        ):
-            raise InvariantViolation("comment reply target must exist on the issue")
+        _validate_estimated_hours(self.estimated_hours)
+        _validate_progress(self.progress_percentage)
+        _validate_actual_dates(self.actual_start_at, self.actual_end_at)
+        _validate_comments(self.comments)
 
     def rename(self, title: t.Title, at: t.Timestamp) -> "Issue":
         return replace(self, title=title, updated=at)

@@ -33,6 +33,36 @@ def _plain_plan(plan, dry_run: bool) -> None:
         click.echo("Workspace is already current; no changes are required.")
 
 
+def _report_preflight(plan, dry_run: bool, output_format: str) -> None:
+    if output_format == "json" and (dry_run or plan.conflicts or not plan.required):
+        click.echo(json.dumps(_payload(plan), indent=2, sort_keys=True))
+    elif output_format == "plain":
+        _plain_plan(plan, dry_run)
+    if plan.conflicts:
+        raise click.ClickException(
+            "Migration preflight found conflicts; no files changed."
+        )
+
+
+def _report_result(plan, result, output_format: str) -> None:
+    if output_format == "json":
+        output = _payload(plan)
+        output.update(
+            {
+                "status": "migrated",
+                "changed": result.changed,
+                "projection_rebuilt": result.projection_rebuilt,
+            }
+        )
+        click.echo(json.dumps(output, indent=2, sort_keys=True))
+    else:
+        click.echo(
+            f"Migrated workspace to schema {result.target_version}; "
+            f"{result.changed} planned changes applied."
+        )
+        click.echo("SQLite projection rebuilt from canonical documents.")
+
+
 @click.command("migrate")
 @click.option(
     "--dry-run", is_flag=True, help="Enumerate and validate changes without writing."
@@ -51,14 +81,7 @@ def migrate(ctx: click.Context, dry_run: bool, yes: bool, output_format: str) ->
     migration = ctx.obj["migration_factory"]()
     try:
         plan = migration.preflight()
-        if output_format == "json" and (dry_run or plan.conflicts or not plan.required):
-            click.echo(json.dumps(_payload(plan), indent=2, sort_keys=True))
-        elif output_format == "plain":
-            _plain_plan(plan, dry_run)
-        if plan.conflicts:
-            raise click.ClickException(
-                "Migration preflight found conflicts; no files changed."
-            )
+        _report_preflight(plan, dry_run, output_format)
         if dry_run or not plan.required:
             return
         if not yes:
@@ -67,19 +90,4 @@ def migrate(ctx: click.Context, dry_run: bool, yes: bool, output_format: str) ->
     except ApplicationFailure as error:
         raise click.ClickException(str(error)) from error
 
-    if output_format == "json":
-        output = _payload(plan)
-        output.update(
-            {
-                "status": "migrated",
-                "changed": result.changed,
-                "projection_rebuilt": result.projection_rebuilt,
-            }
-        )
-        click.echo(json.dumps(output, indent=2, sort_keys=True))
-    else:
-        click.echo(
-            f"Migrated workspace to schema {result.target_version}; "
-            f"{result.changed} planned changes applied."
-        )
-        click.echo("SQLite projection rebuilt from canonical documents.")
+    _report_result(plan, result, output_format)

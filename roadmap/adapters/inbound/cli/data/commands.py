@@ -74,38 +74,60 @@ def export(
     click.echo(f"Exported {len(records)} issues to {output}", err=True)
 
 
-def _query(value: str | None) -> IssueListQuery:
-    if value is None:
-        return IssueListQuery(scope=IssueScope.ALL)
+def _validate_filter_string(value: str) -> tuple[str, str]:
     if "=" not in value:
         raise click.BadParameter("filter must use key=value", param_hint="--filter")
     key, expected = (part.strip() for part in value.split("=", 1))
     if not key or not expected:
         raise click.BadParameter("filter must use key=value", param_hint="--filter")
-    if key == "status":
-        return IssueListQuery(
-            scope=IssueScope.ALL,
-            open_only=expected == "open",
-            status=None if expected == "open" else expected,
-        )
-    if key == "priority":
-        return IssueListQuery(scope=IssueScope.ALL, priority=expected)
-    if key == "issue_type":
-        return IssueListQuery(scope=IssueScope.ALL, issue_type=expected)
-    if key == "assignee":
-        return IssueListQuery(scope=IssueScope.ALL, assignee=expected)
-    if key == "retention":
-        try:
-            return IssueListQuery(scope=IssueScope(expected))
-        except ValueError as error:
-            raise click.BadParameter(
-                "retention must be visible, closed, archived, or all",
-                param_hint="--filter",
-            ) from error
-    raise click.BadParameter(
-        "supported filter keys are status, priority, issue_type, assignee, and retention",
-        param_hint="--filter",
+    return key, expected
+
+
+def _retention_query(expected: str) -> IssueListQuery:
+    try:
+        return IssueListQuery(scope=IssueScope(expected))
+    except ValueError as error:
+        raise click.BadParameter(
+            "retention must be visible, closed, archived, or all",
+            param_hint="--filter",
+        ) from error
+
+
+def _status_query(expected: str) -> IssueListQuery:
+    return IssueListQuery(
+        scope=IssueScope.ALL,
+        open_only=expected == "open",
+        status=None if expected == "open" else expected,
     )
+
+
+_FILTER_BUILDERS = {
+    "status": _status_query,
+    "priority": lambda expected: IssueListQuery(
+        scope=IssueScope.ALL, priority=expected
+    ),
+    "issue_type": lambda expected: IssueListQuery(
+        scope=IssueScope.ALL, issue_type=expected
+    ),
+    "assignee": lambda expected: IssueListQuery(
+        scope=IssueScope.ALL, assignee=expected
+    ),
+    "retention": _retention_query,
+}
+
+
+def _query(value: str | None) -> IssueListQuery:
+    if value is None:
+        return IssueListQuery(scope=IssueScope.ALL)
+    key, expected = _validate_filter_string(value)
+    builder = _FILTER_BUILDERS.get(key)
+    if builder is None:
+        raise click.BadParameter(
+            "supported filter keys are status, priority, issue_type, assignee, "
+            "and retention",
+            param_hint="--filter",
+        )
+    return builder(expected)
 
 
 def _timestamp(value: Any) -> str | None:
@@ -157,38 +179,39 @@ def _issue_record(record: IssueQueryRecord) -> dict[str, Any]:
     }
 
 
-def _render(records: tuple[IssueQueryRecord, ...], format_name: str) -> str:
-    rows = [_issue_record(record) for record in records]
-    if format_name == "json":
-        return (
-            json.dumps(
-                {
-                    "schema_version": EXPORT_SCHEMA_VERSION,
-                    "kind": "roadmap.issue-export",
-                    "issues": rows,
-                },
-                ensure_ascii=False,
-                indent=2,
-                sort_keys=True,
-            )
-            + "\n"
+def _render_json(rows: list[dict[str, Any]]) -> str:
+    return (
+        json.dumps(
+            {
+                "schema_version": EXPORT_SCHEMA_VERSION,
+                "kind": "roadmap.issue-export",
+                "issues": rows,
+            },
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
         )
-    if format_name == "csv":
-        stream = io.StringIO(newline="")
-        writer = csv.DictWriter(stream, fieldnames=CSV_FIELDS, lineterminator="\n")
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(
-                {
-                    field: json.dumps(
-                        row[field], ensure_ascii=False, separators=(",", ":")
-                    )
-                    if field in {"labels", "depends_on", "blocks"}
-                    else row[field]
-                    for field in CSV_FIELDS
-                }
-            )
-        return stream.getvalue()
+        + "\n"
+    )
+
+
+def _render_csv(rows: list[dict[str, Any]]) -> str:
+    stream = io.StringIO(newline="")
+    writer = csv.DictWriter(stream, fieldnames=CSV_FIELDS, lineterminator="\n")
+    writer.writeheader()
+    for row in rows:
+        writer.writerow(
+            {
+                field: json.dumps(row[field], ensure_ascii=False, separators=(",", ":"))
+                if field in {"labels", "depends_on", "blocks"}
+                else row[field]
+                for field in CSV_FIELDS
+            }
+        )
+    return stream.getvalue()
+
+
+def _render_markdown(rows: list[dict[str, Any]]) -> str:
     lines = [
         "---",
         f"schema_version: {EXPORT_SCHEMA_VERSION}",
@@ -209,6 +232,14 @@ def _render(records: tuple[IssueQueryRecord, ...], format_name: str) -> str:
         )
         lines.append("| " + " | ".join(_markdown(cell) for cell in cells) + " |")
     return "\n".join(lines) + "\n"
+
+
+_RENDERERS = {"json": _render_json, "csv": _render_csv, "markdown": _render_markdown}
+
+
+def _render(records: tuple[IssueQueryRecord, ...], format_name: str) -> str:
+    rows = [_issue_record(record) for record in records]
+    return _RENDERERS[format_name](rows)
 
 
 def _markdown(value: object) -> str:

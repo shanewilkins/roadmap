@@ -1,6 +1,7 @@
 """Phase 6 contracts for target issue query use cases."""
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 import pytest
 
@@ -26,7 +27,7 @@ NOW = Timestamp(datetime(2026, 8, 17, 12, tzinfo=UTC))
 
 
 def _record(identity: str, title: str, **updates) -> IssueQueryRecord:
-    values = {
+    values: dict[str, Any] = {
         "id": EntityId(identity),
         "created": NOW,
         "updated": NOW,

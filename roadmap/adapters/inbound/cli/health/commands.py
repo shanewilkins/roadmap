@@ -62,7 +62,7 @@ def _render(
         writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         if not summary_only:
-            writer.writerows(payload["findings"])  # type: ignore[arg-type]
+            writer.writerows(payload["findings"])  # type: ignore[arg-type, ty:invalid-argument-type]
         return stream.getvalue()
     lines = [f"Roadmap health: {payload['status']}"]
     if summary_only:
@@ -79,6 +79,30 @@ def _render(
     return "\n".join(lines) + "\n"
 
 
+def _filter_by_entity(findings: tuple, entities: tuple[str, ...]) -> tuple:
+    if not entities:
+        return findings
+    selected = {value.casefold() for value in entities}
+    return tuple(
+        item for item in findings if item.scope.split("/", 1)[0].rstrip("s") in selected
+    )
+
+
+def _filter_by_severity(findings: tuple, severities: tuple[str, ...]) -> tuple:
+    if not severities:
+        return findings
+    selected = {value.casefold() for value in severities}
+    return tuple(item for item in findings if item.severity.value in selected)
+
+
+def _filter_dependencies(findings: tuple, *, dependencies: bool) -> tuple:
+    if dependencies:
+        return findings
+    return tuple(
+        item for item in findings if item.finding_id != "canonical.broken-reference"
+    )
+
+
 def _filtered(
     report: HealthReport,
     entities: tuple[str, ...] = (),
@@ -87,20 +111,9 @@ def _filtered(
     dependencies: bool = True,
 ) -> HealthReport:
     findings = report.findings
-    if entities:
-        selected = {value.casefold() for value in entities}
-        findings = tuple(
-            item
-            for item in findings
-            if item.scope.split("/", 1)[0].rstrip("s") in selected
-        )
-    if severities:
-        selected = {value.casefold() for value in severities}
-        findings = tuple(item for item in findings if item.severity.value in selected)
-    if not dependencies:
-        findings = tuple(
-            item for item in findings if item.finding_id != "canonical.broken-reference"
-        )
+    findings = _filter_by_entity(findings, entities)
+    findings = _filter_by_severity(findings, severities)
+    findings = _filter_dependencies(findings, dependencies=dependencies)
     return HealthReport(findings)
 
 

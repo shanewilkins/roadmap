@@ -17,7 +17,7 @@ def test_request_and_response_contracts_are_immutable() -> None:
     )
 
     with pytest.raises(FrozenInstanceError):
-        draft.headline = "changed"  # type: ignore[misc]
+        draft.headline = "changed"  # type: ignore[misc, ty:invalid-assignment]
     assert receipt.entity_id == "issue-id"
 
 

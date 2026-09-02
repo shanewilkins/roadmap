@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 
 from roadmap.application.contracts import (
     HealthFinding,
@@ -125,6 +126,102 @@ class FilesystemWorkspaceDiagnostics:
                 f"Workspace repair failed: {error}",
             ) from error
 
+    def _process_document(
+        self,
+        path: Path,
+        kind: str,
+        findings: list[HealthFinding],
+        identities: set[tuple[str, str]],
+    ) -> tuple[DocumentEnvelope | None, bool]:
+        relative = path.relative_to(self._roadmap_dir).as_posix()
+        try:
+            content = path.read_text(encoding="utf-8", errors="replace")
+        except OSError as error:
+            findings.append(
+                HealthFinding(
+                    "canonical.unreadable",
+                    HealthSeverity.CRITICAL,
+                    relative,
+                    f"Canonical document cannot be read: {type(error).__name__}",
+                )
+            )
+            return None, False
+        if all(marker in content for marker in ("<<<<<<<", "=======", ">>>>>>>")):
+            findings.append(
+                HealthFinding(
+                    "canonical.git-conflict",
+                    HealthSeverity.CRITICAL,
+                    relative,
+                    "Canonical document contains unresolved Git conflict markers",
+                )
+            )
+            return None, False
+        try:
+            envelope = parse_document(path, kind)  # type: ignore[arg-type, ty:invalid-argument-type]
+        except Exception as error:
+            findings.append(
+                HealthFinding(
+                    "canonical.invalid",
+                    HealthSeverity.CRITICAL,
+                    relative,
+                    f"Canonical document is invalid: {error}",
+                )
+            )
+            return None, False
+        key = (kind, envelope.identity)
+        if key in identities:
+            findings.append(
+                HealthFinding(
+                    "canonical.duplicate-id",
+                    HealthSeverity.CRITICAL,
+                    relative,
+                    f"Duplicate {kind} identity {envelope.identity}",
+                    envelope.identity,
+                )
+            )
+            return None, False
+        identities.add(key)
+        expected = self._repository.default_path(kind, envelope.aggregate)  # type: ignore[arg-type, ty:invalid-argument-type]
+        if path != expected:
+            findings.append(
+                HealthFinding(
+                    "canonical.noncanonical-path",
+                    HealthSeverity.ERROR,
+                    relative,
+                    f"{kind.title()} {envelope.identity} is not stored at its stable-ID path",
+                    envelope.identity,
+                )
+            )
+        return envelope, True
+
+    def _kind_findings(
+        self,
+        kind: str,
+        findings: list[HealthFinding],
+        identities: set[tuple[str, str]],
+    ) -> tuple[list[DocumentEnvelope], bool]:
+        directory = self._roadmap_dir / f"{kind}s"
+        try:
+            paths = sorted(directory.glob("**/*.md"))
+        except OSError as error:
+            findings.append(
+                HealthFinding(
+                    "canonical.unreadable",
+                    HealthSeverity.CRITICAL,
+                    directory.relative_to(self._roadmap_dir).as_posix(),
+                    f"Canonical directory cannot be read: {type(error).__name__}",
+                )
+            )
+            return [], False
+        envelopes: list[DocumentEnvelope] = []
+        healthy = True
+        for path in paths:
+            envelope, ok = self._process_document(path, kind, findings, identities)
+            healthy = healthy and ok
+            if envelope is not None:
+                envelopes.append(envelope)
+        return envelopes, healthy
+
     def _canonical_findings(
         self, findings: list[HealthFinding]
     ) -> list[DocumentEnvelope] | None:
@@ -132,92 +229,66 @@ class FilesystemWorkspaceDiagnostics:
         identities: set[tuple[str, str]] = set()
         healthy = True
         for kind in self._KINDS:
-            directory = self._roadmap_dir / f"{kind}s"
-            try:
-                paths = sorted(directory.glob("**/*.md"))
-            except OSError as error:
-                findings.append(
-                    HealthFinding(
-                        "canonical.unreadable",
-                        HealthSeverity.CRITICAL,
-                        directory.relative_to(self._roadmap_dir).as_posix(),
-                        f"Canonical directory cannot be read: {type(error).__name__}",
-                    )
-                )
-                healthy = False
-                continue
-            for path in paths:
-                relative = path.relative_to(self._roadmap_dir).as_posix()
-                try:
-                    content = path.read_text(encoding="utf-8", errors="replace")
-                except OSError as error:
-                    findings.append(
-                        HealthFinding(
-                            "canonical.unreadable",
-                            HealthSeverity.CRITICAL,
-                            relative,
-                            f"Canonical document cannot be read: {type(error).__name__}",
-                        )
-                    )
-                    healthy = False
-                    continue
-                if all(
-                    marker in content for marker in ("<<<<<<<", "=======", ">>>>>>>")
-                ):
-                    findings.append(
-                        HealthFinding(
-                            "canonical.git-conflict",
-                            HealthSeverity.CRITICAL,
-                            relative,
-                            "Canonical document contains unresolved Git conflict markers",
-                        )
-                    )
-                    healthy = False
-                    continue
-                try:
-                    envelope = parse_document(path, kind)  # type: ignore[arg-type]
-                except Exception as error:
-                    findings.append(
-                        HealthFinding(
-                            "canonical.invalid",
-                            HealthSeverity.CRITICAL,
-                            relative,
-                            f"Canonical document is invalid: {error}",
-                        )
-                    )
-                    healthy = False
-                    continue
-                key = (kind, envelope.identity)
-                if key in identities:
-                    findings.append(
-                        HealthFinding(
-                            "canonical.duplicate-id",
-                            HealthSeverity.CRITICAL,
-                            relative,
-                            f"Duplicate {kind} identity {envelope.identity}",
-                            envelope.identity,
-                        )
-                    )
-                    healthy = False
-                    continue
-                identities.add(key)
-                expected = self._repository.default_path(kind, envelope.aggregate)  # type: ignore[arg-type]
-                if path != expected:
-                    findings.append(
-                        HealthFinding(
-                            "canonical.noncanonical-path",
-                            HealthSeverity.ERROR,
-                            relative,
-                            f"{kind.title()} {envelope.identity} is not stored at its stable-ID path",
-                            envelope.identity,
-                        )
-                    )
-                envelopes.append(envelope)
+            kind_envelopes, kind_healthy = self._kind_findings(
+                kind, findings, identities
+            )
+            envelopes.extend(kind_envelopes)
+            healthy = healthy and kind_healthy
         return envelopes if healthy else None
 
     @staticmethod
+    def _references_for(
+        aggregate,
+        issue_ids: set[str],
+        milestone_ids: set[str],
+        project_ids: set[str],
+    ) -> list[tuple[str, set[str]]]:
+        if isinstance(aggregate, Issue):
+            references = [
+                (str(identity), issue_ids)
+                for identity in (
+                    *aggregate.relations.depends_on,
+                    *aggregate.relations.blocks,
+                )
+            ]
+            if aggregate.relations.milestone_id is not None:
+                references.append(
+                    (str(aggregate.relations.milestone_id), milestone_ids)
+                )
+            return references
+        if isinstance(aggregate, Milestone):
+            if aggregate.relation.project_id is not None:
+                return [(str(aggregate.relation.project_id), project_ids)]
+            return []
+        if isinstance(aggregate, Project):
+            return [
+                (str(identity), milestone_ids)
+                for identity in aggregate.relations.milestone_ids
+            ]
+        return []
+
+    @staticmethod
+    def _append_broken_reference_findings(
+        envelope: DocumentEnvelope,
+        references: list[tuple[str, set[str]]],
+        findings: list[HealthFinding],
+    ) -> None:
+        for missing in sorted(
+            identity for identity, valid_ids in references if identity not in valid_ids
+        ):
+            findings.append(
+                HealthFinding(
+                    "canonical.broken-reference",
+                    HealthSeverity.ERROR,
+                    envelope.path.name,
+                    f"Entity {envelope.identity} references missing entity {missing}",
+                    envelope.identity,
+                )
+            )
+
+    @classmethod
     def _relationship_findings(
-        envelopes: list[DocumentEnvelope], findings: list[HealthFinding]
+        cls, envelopes: list[DocumentEnvelope], findings: list[HealthFinding]
     ) -> None:
         issue_ids = {
             str(item.aggregate.id)
@@ -235,42 +306,10 @@ class FilesystemWorkspaceDiagnostics:
             if isinstance(item.aggregate, Project)
         }
         for envelope in envelopes:
-            aggregate = envelope.aggregate
-            references: list[tuple[str, set[str]]] = []
-            if isinstance(aggregate, Issue):
-                references.extend(
-                    (str(identity), issue_ids)
-                    for identity in (
-                        *aggregate.relations.depends_on,
-                        *aggregate.relations.blocks,
-                    )
-                )
-                if aggregate.relations.milestone_id is not None:
-                    references.append(
-                        (str(aggregate.relations.milestone_id), milestone_ids)
-                    )
-            elif isinstance(aggregate, Milestone):
-                if aggregate.relation.project_id is not None:
-                    references.append((str(aggregate.relation.project_id), project_ids))
-            elif isinstance(aggregate, Project):
-                references.extend(
-                    (str(identity), milestone_ids)
-                    for identity in aggregate.relations.milestone_ids
-                )
-            for missing in sorted(
-                identity
-                for identity, valid_ids in references
-                if identity not in valid_ids
-            ):
-                findings.append(
-                    HealthFinding(
-                        "canonical.broken-reference",
-                        HealthSeverity.ERROR,
-                        envelope.path.name,
-                        f"Entity {envelope.identity} references missing entity {missing}",
-                        envelope.identity,
-                    )
-                )
+            references = cls._references_for(
+                envelope.aggregate, issue_ids, milestone_ids, project_ids
+            )
+            cls._append_broken_reference_findings(envelope, references, findings)
 
     def _pending_transactions(
         self, findings: list[HealthFinding] | None = None

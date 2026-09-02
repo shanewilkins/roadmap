@@ -272,14 +272,16 @@ def _parse_project(data: dict[str, Any], body: str, path: Path) -> Project:
         raise DocumentError(f"invalid project document {path}: {error}") from error
 
 
-def parse_document(path: Path, kind: DocumentKind) -> DocumentEnvelope:
-    """Parse without rewriting, retaining supported unknown frontmatter and body."""
+def _read_document_text(path: Path) -> str:
     try:
-        raw = path.read_text(encoding="utf-8")
+        return path.read_text(encoding="utf-8")
     except OSError as error:
         raise DocumentError(
             f"cannot read canonical document {path}: {error}"
         ) from error
+
+
+def _load_frontmatter(raw: str, path: Path) -> tuple[dict[str, Any], str]:
     match = _FRONTMATTER.match(raw)
     if match is None:
         raise DocumentError(f"missing YAML frontmatter in {path}")
@@ -289,13 +291,27 @@ def parse_document(path: Path, kind: DocumentKind) -> DocumentEnvelope:
         raise DocumentError(f"invalid YAML frontmatter in {path}: {error}") from error
     if not isinstance(loaded, dict):
         raise DocumentError(f"frontmatter must be a mapping in {path}")
-    data = dict(loaded)
+    return dict(loaded), match.group(2)
+
+
+def _apply_archive_default(data: dict[str, Any], path: Path) -> None:
     if "archive" in path.parts and "retention" not in data and "archived" not in data:
         data["archived"] = True
+
+
+def _pop_schema_version(data: dict[str, Any], path: Path) -> int:
     version = data.pop("schema_version", 0)
     if not isinstance(version, int) or version > 1 or version < 0:
         raise DocumentError(f"unsupported schema_version {version!r} in {path}")
-    body = match.group(2)
+    return version
+
+
+def parse_document(path: Path, kind: DocumentKind) -> DocumentEnvelope:
+    """Parse without rewriting, retaining supported unknown frontmatter and body."""
+    raw = _read_document_text(path)
+    data, body = _load_frontmatter(raw, path)
+    _apply_archive_default(data, path)
+    version = _pop_schema_version(data, path)
     if body.startswith("\n"):
         body = body[1:]
     aggregate = {
@@ -316,98 +332,114 @@ def _base_frontmatter(aggregate: Aggregate) -> dict[str, Any]:
     }
 
 
+def _issue_comment_fields(aggregate: Issue) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": comment.id,
+            "issue_id": str(aggregate.id),
+            "author": comment.author,
+            "body": comment.body,
+            "created_at": comment.created_at.value.isoformat(),
+            "updated_at": comment.updated_at.value.isoformat(),
+            "in_reply_to": comment.in_reply_to,
+            # Preserve the released storage key as a bounded compatibility
+            # alias while the domain uses the provider-neutral field name.
+            "github_url": comment.external_url,
+        }
+        for comment in aggregate.comments
+    ]
+
+
+def _issue_fields(aggregate: Issue) -> dict[str, Any]:
+    return {
+        "title": str(aggregate.title),
+        "headline": aggregate.headline,
+        "priority": aggregate.priority.value,
+        "status": aggregate.status.value,
+        "issue_type": aggregate.issue_type.value,
+        "milestone": str(aggregate.relations.milestone_id)
+        if aggregate.relations.milestone_id
+        else None,
+        "depends_on": [str(item) for item in aggregate.relations.depends_on],
+        "blocks": [str(item) for item in aggregate.relations.blocks],
+        "labels": list(aggregate.labels),
+        "assignee": aggregate.assignee,
+        "estimated_hours": aggregate.estimated_hours,
+        "due_date": aggregate.due_at.value.isoformat() if aggregate.due_at else None,
+        "progress_percentage": aggregate.progress_percentage,
+        "actual_start_date": (
+            aggregate.actual_start_at.value.isoformat()
+            if aggregate.actual_start_at
+            else None
+        ),
+        "actual_end_date": (
+            aggregate.actual_end_at.value.isoformat()
+            if aggregate.actual_end_at
+            else None
+        ),
+        "git_branches": list(aggregate.git_branches),
+        "comments": _issue_comment_fields(aggregate),
+        "history": [
+            {
+                "action": event.action,
+                "at": event.at.value.isoformat(),
+                "reason": event.reason,
+            }
+            for event in aggregate.history
+        ],
+    }
+
+
+def _milestone_fields(aggregate: Milestone) -> dict[str, Any]:
+    return {
+        "name": str(aggregate.name),
+        "headline": aggregate.headline,
+        "status": aggregate.status.value,
+        "project_id": str(aggregate.relation.project_id)
+        if aggregate.relation.project_id
+        else None,
+        "due_date": aggregate.due_at.value.isoformat() if aggregate.due_at else None,
+    }
+
+
+def _project_fields(aggregate: Project) -> dict[str, Any]:
+    return {
+        "name": str(aggregate.name),
+        "headline": aggregate.headline,
+        "status": aggregate.status.value,
+        "priority": aggregate.priority.value,
+        "milestones": [str(item) for item in aggregate.relations.milestone_ids],
+        "owner": aggregate.owner,
+        "estimated_hours": aggregate.estimated_hours,
+        "start_date": (
+            aggregate.start_at.value.isoformat() if aggregate.start_at else None
+        ),
+        "target_end_date": (
+            aggregate.target_end_at.value.isoformat()
+            if aggregate.target_end_at
+            else None
+        ),
+        "actual_end_date": (
+            aggregate.actual_end_at.value.isoformat()
+            if aggregate.actual_end_at
+            else None
+        ),
+        "actual_hours": aggregate.actual_hours,
+        "repo_url": aggregate.repository_url,
+    }
+
+
 def serialize_document(envelope: DocumentEnvelope) -> bytes:
     """Serialize owned fields over a losslessly retained boundary envelope."""
     aggregate = envelope.aggregate
     data = dict(envelope.extra_frontmatter)
     data.update(_base_frontmatter(aggregate))
     if isinstance(aggregate, Issue):
-        data.update(
-            title=str(aggregate.title),
-            headline=aggregate.headline,
-            priority=aggregate.priority.value,
-            status=aggregate.status.value,
-            issue_type=aggregate.issue_type.value,
-            milestone=str(aggregate.relations.milestone_id)
-            if aggregate.relations.milestone_id
-            else None,
-            depends_on=[str(item) for item in aggregate.relations.depends_on],
-            blocks=[str(item) for item in aggregate.relations.blocks],
-            labels=list(aggregate.labels),
-            assignee=aggregate.assignee,
-            estimated_hours=aggregate.estimated_hours,
-            due_date=aggregate.due_at.value.isoformat() if aggregate.due_at else None,
-            progress_percentage=aggregate.progress_percentage,
-            actual_start_date=(
-                aggregate.actual_start_at.value.isoformat()
-                if aggregate.actual_start_at
-                else None
-            ),
-            actual_end_date=(
-                aggregate.actual_end_at.value.isoformat()
-                if aggregate.actual_end_at
-                else None
-            ),
-            git_branches=list(aggregate.git_branches),
-            comments=[
-                {
-                    "id": comment.id,
-                    "issue_id": str(aggregate.id),
-                    "author": comment.author,
-                    "body": comment.body,
-                    "created_at": comment.created_at.value.isoformat(),
-                    "updated_at": comment.updated_at.value.isoformat(),
-                    "in_reply_to": comment.in_reply_to,
-                    # Preserve the released storage key as a bounded compatibility
-                    # alias while the domain uses the provider-neutral field name.
-                    "github_url": comment.external_url,
-                }
-                for comment in aggregate.comments
-            ],
-            history=[
-                {
-                    "action": event.action,
-                    "at": event.at.value.isoformat(),
-                    "reason": event.reason,
-                }
-                for event in aggregate.history
-            ],
-        )
+        data.update(_issue_fields(aggregate))
     elif isinstance(aggregate, Milestone):
-        data.update(
-            name=str(aggregate.name),
-            headline=aggregate.headline,
-            status=aggregate.status.value,
-            project_id=str(aggregate.relation.project_id)
-            if aggregate.relation.project_id
-            else None,
-            due_date=aggregate.due_at.value.isoformat() if aggregate.due_at else None,
-        )
+        data.update(_milestone_fields(aggregate))
     else:
-        data.update(
-            name=str(aggregate.name),
-            headline=aggregate.headline,
-            status=aggregate.status.value,
-            priority=aggregate.priority.value,
-            milestones=[str(item) for item in aggregate.relations.milestone_ids],
-            owner=aggregate.owner,
-            estimated_hours=aggregate.estimated_hours,
-            start_date=(
-                aggregate.start_at.value.isoformat() if aggregate.start_at else None
-            ),
-            target_end_date=(
-                aggregate.target_end_at.value.isoformat()
-                if aggregate.target_end_at
-                else None
-            ),
-            actual_end_date=(
-                aggregate.actual_end_at.value.isoformat()
-                if aggregate.actual_end_at
-                else None
-            ),
-            actual_hours=aggregate.actual_hours,
-            repo_url=aggregate.repository_url,
-        )
+        data.update(_project_fields(aggregate))
     yaml_text = yaml.safe_dump(data, sort_keys=False, allow_unicode=True).rstrip()
     separator = "\n\n" if aggregate.content else "\n"
     return f"---\n{yaml_text}\n---{separator}{aggregate.content}".encode()

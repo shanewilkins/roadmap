@@ -246,6 +246,44 @@ class TableData:
             return [row for row in self.rows if row[column_index] in value]
         return [row for row in self.rows if row[column_index] == value]
 
+    @staticmethod
+    def _normalize_sort_spec(
+        sort_spec: str | list[tuple[str, str]],
+    ) -> list[tuple[str, str]]:
+        if isinstance(sort_spec, str):
+            return [(sort_spec, "asc")]
+        return sort_spec
+
+    def _resolve_sort_columns(
+        self, sort_spec_list: list[tuple[str, str]]
+    ) -> tuple[dict[str, int], dict[str, bool]]:
+        col_indices: dict[str, int] = {}
+        sort_directions: dict[str, bool] = {}
+        for col_name, direction in sort_spec_list:
+            col = next((c for c in self.columns if c.name == col_name), None)
+            if not col:
+                raise ValueError(f"Column '{col_name}' not found")
+            if not col.sortable:
+                raise ValueError(f"Column '{col_name}' is not sortable")
+            col_indices[col_name] = next(
+                i for i, c in enumerate(self.columns) if c.name == col_name
+            )
+            sort_directions[col_name] = direction.lower() == "desc"
+        return col_indices, sort_directions
+
+    @staticmethod
+    def _sort_key_for(
+        sort_spec_list: list[tuple[str, str]], col_indices: dict[str, int]
+    ):
+        def sort_key(row):
+            keys = []
+            for col_name, _ in sort_spec_list:
+                value = row[col_indices[col_name]]
+                keys.append((1, value) if value is None else (0, value))
+            return tuple(keys)
+
+        return sort_key
+
     def sort(self, sort_spec: str | list[tuple[str, str]]) -> "TableData":
         """Apply sorting and return new TableData.
 
@@ -260,51 +298,17 @@ class TableData:
         Raises:
             ValueError: If column doesn't exist or is not sortable.
         """
-        # Normalize sort_spec to list of tuples
-        if isinstance(sort_spec, str):
-            sort_spec_list = [(sort_spec, "asc")]
-        else:
-            sort_spec_list = sort_spec
+        sort_spec_list = self._normalize_sort_spec(sort_spec)
+        col_indices, sort_directions = self._resolve_sort_columns(sort_spec_list)
+        sorted_rows = sorted(
+            self.rows, key=self._sort_key_for(sort_spec_list, col_indices)
+        )
 
-        # Validate columns and build sort key function
-        col_indices = {}
-        sort_directions = {}
-
-        for col_name, direction in sort_spec_list:
-            col = next((c for c in self.columns if c.name == col_name), None)
-            if not col:
-                raise ValueError(f"Column '{col_name}' not found")
-            if not col.sortable:
-                raise ValueError(f"Column '{col_name}' is not sortable")
-
-            col_index = next(
-                i for i, c in enumerate(self.columns) if c.name == col_name
-            )
-            col_indices[col_name] = col_index
-            sort_directions[col_name] = direction.lower() == "desc"
-
-        # Sort rows using multiple keys
-        def sort_key(row):
-            keys = []
-            for col_name, _ in sort_spec_list:
-                index = col_indices[col_name]
-                value = row[index]
-                # Handle None values
-                if value is None:
-                    keys.append((1, value))  # None sorts to end
-                else:
-                    keys.append((0, value))
-            return tuple(keys)
-
-        sorted_rows = sorted(self.rows, key=sort_key)
-
-        # Apply descending direction
         for col_name, _direction in reversed(sort_spec_list):
             if sort_directions[col_name]:
                 sorted_rows.reverse()
 
-        # Create new TableData with updated state
-        new_table = TableData(
+        return TableData(
             columns=self.columns,
             rows=sorted_rows,
             title=self.title,
@@ -315,7 +319,6 @@ class TableData:
             total_count=self.total_count,
             returned_count=self.returned_count,
         )
-        return new_table
 
     def select_columns(self, columns: list[str]) -> "TableData":
         """Select specific columns to display.

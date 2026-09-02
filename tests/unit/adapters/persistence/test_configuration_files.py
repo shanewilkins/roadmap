@@ -26,7 +26,7 @@ def test_resolve_returns_one_immutable_typed_snapshot(tmp_path) -> None:
     assert snapshot.project.workspace_schema_version == 1
     assert snapshot.user.name == "alice"
     with pytest.raises(FrozenInstanceError):
-        snapshot.user.table_width = 80  # type: ignore[misc]
+        snapshot.user.table_width = 80  # type: ignore[misc, ty:invalid-assignment]
 
 
 def test_invalid_existing_configuration_fails_before_mutation(tmp_path) -> None:

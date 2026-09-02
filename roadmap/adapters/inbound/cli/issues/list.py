@@ -68,6 +68,50 @@ def _workload(records: tuple[IssueQueryRecord, ...], assignee: str) -> None:
         console.print(f"  {status}: {breakdown[status]} issues")
 
 
+def _build_query(
+    core,
+    *,
+    milestone: str | None,
+    backlog: bool,
+    unassigned: bool,
+    filter_type: str | None,
+    next_milestone: bool,
+    assignee: str | None,
+    my_issues: bool,
+    open_only: bool,
+    blocked: bool,
+    status: str | None,
+    priority: str | None,
+    issue_type: str | None,
+    overdue: bool,
+    search: str | None,
+    scope: str,
+) -> IssueListQuery:
+    return IssueListQuery(
+        scope=IssueScope(scope),
+        milestone=resolve_milestone_id(core, milestone) if milestone else None,
+        backlog=backlog or unassigned or filter_type == "backlog",
+        next_milestone=next_milestone,
+        assignee=assignee,
+        current_assignee=my_issues,
+        open_only=open_only,
+        blocked_only=blocked,
+        status=status,
+        priority=priority,
+        issue_type=issue_type,
+        overdue=overdue,
+        search=search,
+    )
+
+
+def _report_empty_results(console, result) -> None:
+    if result.next_milestone_missing:
+        console.print("📋 No upcoming milestones with due dates found.", style="yellow")
+        return
+    console.print(f"📋 No {result.description} issues found.", style="yellow")
+    console.print("Create one with: roadmap issue create 'Issue title'", style="dim")
+
+
 @click.command("list")
 @click.argument(
     "filter_type",
@@ -155,34 +199,31 @@ def list_issues(  # noqa: F841
 ):
     """List, filter, search, and sort canonical issues."""
     core = ctx.obj["core"]
-    query = IssueListQuery(
-        scope=IssueScope(scope),
-        milestone=resolve_milestone_id(core, milestone) if milestone else None,
-        backlog=backlog or unassigned or filter_type == "backlog",
+    query = _build_query(
+        core,
+        milestone=milestone,
+        backlog=backlog,
+        unassigned=unassigned,
+        filter_type=filter_type,
         next_milestone=next_milestone,
         assignee=assignee,
-        current_assignee=my_issues,
+        my_issues=my_issues,
         open_only=open_only,
-        blocked_only=blocked,
+        blocked=blocked,
         status=status,
         priority=priority,
         issue_type=issue_type,
         overdue=overdue,
         search=search,
+        scope=scope,
     )
     try:
         result = core.issue_queries.list(query)
     except (ApplicationFailure, ValueError) as error:
         raise click.ClickException(str(error)) from error
     console = get_console()
-    if result.next_milestone_missing:
-        console.print("📋 No upcoming milestones with due dates found.", style="yellow")
-        return None
-    if not result.records:
-        console.print(f"📋 No {result.description} issues found.", style="yellow")
-        console.print(
-            "Create one with: roadmap issue create 'Issue title'", style="dim"
-        )
+    if result.next_milestone_missing or not result.records:
+        _report_empty_results(console, result)
         return None
     console.print(
         f"📋 {len(result.records)} {result.description} "

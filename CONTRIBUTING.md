@@ -34,8 +34,9 @@ uv run --locked ruff format --config config/ruff.toml roadmap tests
 uv run --locked ruff check --config config/ruff.toml roadmap tests
 uv run --locked python tests/policy/architecture_checker.py
 uv run --locked pyright
+uv run --locked ty check
 uv run --locked radon cc roadmap --exclude '*/migrations/*' --total-average --show-complexity --min D
-uv run --locked xenon --exclude '*/migrations/*' --max-absolute C --max-modules C --max-average A roadmap
+uv run --locked xenon --exclude '*/migrations/*' --max-absolute B --max-modules B --max-average A roadmap
 uv run --locked pytest -q
 ```
 

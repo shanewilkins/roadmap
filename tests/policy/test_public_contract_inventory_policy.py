@@ -130,6 +130,9 @@ def _assert_complete(actual: set[str], inventoried: set[str], label: str) -> Non
     )
 
 
+ACCEPTED_ROADMAP_TARGET = re.compile(r"0\.[3-9]|1\.0")
+
+
 def test_requirement_registers_are_fully_triaged_and_referentially_valid() -> None:
     """Phase 1 leaves no implicit Draft/TBD scope or broken requirement links."""
     user_header, users = _read_csv(USER_REQUIREMENTS)
@@ -153,7 +156,10 @@ def test_requirement_registers_are_fully_triaged_and_referentially_valid() -> No
         if row["priority"] == "Must":
             assert row["status"] == "Accepted", row["id"]
         if row["status"] == "Accepted":
-            assert row["roadmap_target"].startswith("0.2.0 / Phase")
+            legacy_0_2_target = row["roadmap_target"].startswith("0.2.0 / Phase")
+            assert legacy_0_2_target or ACCEPTED_ROADMAP_TARGET.fullmatch(
+                row["roadmap_target"]
+            ), row["id"]
         elif row["status"] == "Deferred":
             assert row["roadmap_target"] == "Post-0.2"
 

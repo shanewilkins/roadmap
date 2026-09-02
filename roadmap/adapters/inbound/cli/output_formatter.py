@@ -92,6 +92,23 @@ class OutputFormatter:
 
         return table
 
+    def _plain_column_widths(self, columns, rows) -> list[int]:
+        widths = []
+        for i, col in enumerate(columns):
+            header_width = len(col.display_name)
+            max_data_width = max(
+                (len(str(row[i]) if row[i] is not None else "-") for row in rows),
+                default=0,
+            )
+            widths.append(max(header_width, max_data_width, col.width or 0))
+        return widths
+
+    def _plain_cell(self, value: Any, width: int) -> str:
+        str_val = str(value) if value is not None else "-"
+        for emoji, replacement in self.EMOJI_MAP.items():
+            str_val = str_val.replace(emoji, replacement)
+        return str_val.ljust(width)
+
     def to_plain_text(self) -> str:
         """Format as plain ASCII text (POSIX-compliant).
 
@@ -108,51 +125,28 @@ class OutputFormatter:
         if not self.table.active_columns or not self.table.active_rows:
             return ""
 
-        # Build header
         columns = self.table.active_columns
+        rows = self.table.active_rows
         lines = []
 
-        # Add title if present
         if self.table.title:
             lines.append(self.table.title)
             lines.append("")
 
-        # Calculate column widths
-        col_widths = []
-        for i, col in enumerate(columns):
-            # Width is max of header and data
-            header_width = len(col.display_name)
-            max_data_width = max(
-                (
-                    len(str(row[i]) if row[i] is not None else "-")
-                    for row in self.table.active_rows
-                ),
-                default=0,
-            )
-            width = max(header_width, max_data_width, col.width or 0)
-            col_widths.append(width)
+        col_widths = self._plain_column_widths(columns, rows)
 
-        # Build header row
         header_cells = [
             col.display_name.ljust(width)
             for col, width in zip(columns, col_widths, strict=False)
         ]
-        header = " | ".join(header_cells)
-        lines.append(header)
+        lines.append(" | ".join(header_cells))
+        lines.append("-+-".join("-" * width for width in col_widths))
 
-        # Build separator
-        separator = "-+-".join("-" * width for width in col_widths)
-        lines.append(separator)
-
-        # Build data rows
-        for row in self.table.active_rows:
-            cells = []
-            for _i, (value, width) in enumerate(zip(row, col_widths, strict=False)):
-                str_val = str(value) if value is not None else "-"
-                # Replace emoji with ASCII equivalents
-                for emoji, replacement in self.EMOJI_MAP.items():
-                    str_val = str_val.replace(emoji, replacement)
-                cells.append(str_val.ljust(width))
+        for row in rows:
+            cells = [
+                self._plain_cell(value, width)
+                for value, width in zip(row, col_widths, strict=False)
+            ]
             lines.append(" | ".join(cells))
 
         return "\n".join(lines)

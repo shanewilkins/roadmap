@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Callable
 from datetime import UTC
 
@@ -67,10 +68,10 @@ class IssueQueries:
 
     def _select_milestone(
         self,
-        records: list[IssueQueryRecord],
+        records: builtins.list[IssueQueryRecord],
         query: IssueListQuery,
         description: str,
-    ) -> tuple[list[IssueQueryRecord], str, bool]:
+    ) -> tuple[builtins.list[IssueQueryRecord], str, bool]:
         milestone = query.milestone
         if query.next_milestone:
             milestone = self._records.next_milestone_id()
@@ -93,10 +94,10 @@ class IssueQueries:
 
     def _select_assignee(
         self,
-        records: list[IssueQueryRecord],
+        records: builtins.list[IssueQueryRecord],
         query: IssueListQuery,
         description: str,
-    ) -> tuple[list[IssueQueryRecord], str]:
+    ) -> tuple[builtins.list[IssueQueryRecord], str]:
         assignee = query.assignee
         if query.current_assignee:
             assignee = self._identity.current_identity()
@@ -111,10 +112,10 @@ class IssueQueries:
 
     def _apply_filters(
         self,
-        records: list[IssueQueryRecord],
+        records: builtins.list[IssueQueryRecord],
         query: IssueListQuery,
         description: str,
-    ) -> tuple[list[IssueQueryRecord], str]:
+    ) -> tuple[builtins.list[IssueQueryRecord], str]:
         filters: tuple[tuple[bool, Callable[[IssueQueryRecord], bool], str], ...] = (
             (
                 query.open_only,

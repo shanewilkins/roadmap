@@ -6,6 +6,32 @@ from roadmap.adapters.inbound.cli.decorators import with_output_support
 from roadmap.adapters.inbound.cli.models import ColumnDef, ColumnType, TableData
 
 
+def _matches_filters(
+    item,
+    status: str | None,
+    owner: str | None,
+    priority: str | None,
+    overdue: bool,
+    planning,
+) -> bool:
+    return (
+        (status is None or item.status.value == status)
+        and (owner is None or item.owner == owner)
+        and (priority is None or item.priority.value == priority)
+        and (not overdue or planning.project_is_overdue(item))
+    )
+
+
+def _project_row(item) -> list[str]:
+    return [
+        str(item.id),
+        str(item.name),
+        item.status.value,
+        item.priority.value,
+        item.owner or "",
+    ]
+
+
 @click.command("list")
 @click.option(
     "--status",
@@ -40,10 +66,7 @@ def list_projects(
     projects = [
         item
         for item in projects
-        if (status is None or item.status.value == status)
-        and (owner is None or item.owner == owner)
-        and (priority is None or item.priority.value == priority)
-        and (not overdue or planning.project_is_overdue(item))
+        if _matches_filters(item, status, owner, priority, overdue, planning)
     ]
     columns = [
         ColumnDef("id", "ID"),
@@ -54,16 +77,7 @@ def list_projects(
     ]
     return TableData(
         columns,
-        [
-            [
-                str(item.id),
-                str(item.name),
-                item.status.value,
-                item.priority.value,
-                item.owner or "",
-            ]
-            for item in projects
-        ],
+        [_project_row(item) for item in projects],
         title="Projects",
         headline="filtered" if any((status, owner, priority, overdue)) else "all",
     )

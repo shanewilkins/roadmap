@@ -18,8 +18,7 @@ def _metadata() -> Table:
 
 
 class IssueQueryPresenter:
-    def render(self, record: IssueQueryRecord) -> None:
-        issue = record.issue
+    def _render_header(self, console, issue) -> None:
         status = issue.status.value
         priority = issue.priority.value
         header = Text()
@@ -33,9 +32,10 @@ class IssueQueryPresenter:
             f" • {priority.upper()}", style=PRIORITY_COLORS.get(priority, "white")
         )
         header.append(f" • {issue.issue_type.value.title()}", style="cyan")
-        console = get_console()
         console.print(Panel(header, border_style="cyan"))
 
+    def _render_metadata(self, console, record: IssueQueryRecord) -> None:
+        issue = record.issue
         metadata = _metadata()
         metadata.add_row("Assignee", issue.assignee or "Unassigned")
         metadata.add_row(
@@ -49,6 +49,8 @@ class IssueQueryPresenter:
             metadata.add_row("Labels", ", ".join(issue.labels))
         console.print(Panel(metadata, title="📋 Metadata", border_style="blue"))
 
+    def _render_timeline(self, console, record: IssueQueryRecord) -> None:
+        issue = record.issue
         timeline = _metadata()
         timeline.add_row(
             "Estimated",
@@ -65,18 +67,19 @@ class IssueQueryPresenter:
             timeline.add_row("Due Date", issue.due_at.value.strftime("%Y-%m-%d"))
         console.print(Panel(timeline, title="⏱️  Timeline", border_style="yellow"))
 
-        if issue.relations.depends_on or issue.relations.blocks:
-            dependencies = _metadata()
-            if issue.relations.depends_on:
-                dependencies.add_row(
-                    "Depends on", ", ".join(issue.relations.depends_on)
-                )
-            if issue.relations.blocks:
-                dependencies.add_row("Blocks", ", ".join(issue.relations.blocks))
-            console.print(
-                Panel(dependencies, title="🔗 Dependencies", border_style="magenta")
-            )
+    def _render_dependencies(self, console, issue) -> None:
+        if not (issue.relations.depends_on or issue.relations.blocks):
+            return
+        dependencies = _metadata()
+        if issue.relations.depends_on:
+            dependencies.add_row("Depends on", ", ".join(issue.relations.depends_on))
+        if issue.relations.blocks:
+            dependencies.add_row("Blocks", ", ".join(issue.relations.blocks))
+        console.print(
+            Panel(dependencies, title="🔗 Dependencies", border_style="magenta")
+        )
 
+    def _render_description(self, console, issue) -> None:
         console.print(
             Panel(
                 Markdown(issue.content)
@@ -86,19 +89,31 @@ class IssueQueryPresenter:
                 border_style="white",
             )
         )
-        if record.comments:
-            comments = Table(show_header=False, box=None, padding=(1, 0))
-            comments.add_column("Comments")
-            for comment in record.comments:
-                comments.add_row(
-                    f"[bold magenta]@{comment.author}[/bold magenta]"
-                    f" [dim]· {comment.created_at.value:%Y-%m-%d %H:%M}[/dim]\n"
-                    f"{comment.body}"
-                )
-            console.print(
-                Panel(
-                    comments,
-                    title=f"💬 Comments ({len(record.comments)})",
-                    border_style="cyan",
-                )
+
+    def _render_comments(self, console, record: IssueQueryRecord) -> None:
+        if not record.comments:
+            return
+        comments = Table(show_header=False, box=None, padding=(1, 0))
+        comments.add_column("Comments")
+        for comment in record.comments:
+            comments.add_row(
+                f"[bold magenta]@{comment.author}[/bold magenta]"
+                f" [dim]· {comment.created_at.value:%Y-%m-%d %H:%M}[/dim]\n"
+                f"{comment.body}"
             )
+        console.print(
+            Panel(
+                comments,
+                title=f"💬 Comments ({len(record.comments)})",
+                border_style="cyan",
+            )
+        )
+
+    def render(self, record: IssueQueryRecord) -> None:
+        console = get_console()
+        self._render_header(console, record.issue)
+        self._render_metadata(console, record)
+        self._render_timeline(console, record)
+        self._render_dependencies(console, record.issue)
+        self._render_description(console, record.issue)
+        self._render_comments(console, record)
