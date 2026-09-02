@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 
@@ -15,6 +16,34 @@ def _run(command: list[str], *, cwd: Path | None = None, env: dict[str, str]) ->
     """Run one smoke-test command and fail immediately on an error."""
     print(f"+ {' '.join(command)}", flush=True)
     subprocess.run(command, cwd=cwd, env=env, check=True)
+
+
+def _installable(source: str) -> str:
+    """Return a local artifact's resolved path, or a pip requirement unchanged."""
+    candidate = Path(source)
+    if candidate.is_file():
+        return str(candidate.resolve(strict=True))
+    return source
+
+
+def _install_with_retries(
+    environment_python: Path,
+    installable: str,
+    *,
+    retries: int,
+    retry_delay: float,
+    env: dict[str, str],
+) -> None:
+    """Install the target, retrying only to absorb index propagation lag."""
+    command = [str(environment_python), "-m", "pip", "install", installable]
+    for attempt in range(1, retries + 2):
+        print(f"+ {' '.join(command)} (attempt {attempt})", flush=True)
+        result = subprocess.run(command, env=env, check=False)
+        if result.returncode == 0:
+            return
+        if attempt == retries + 1:
+            raise SystemExit(result.returncode)
+        time.sleep(retry_delay)
 
 
 def _environment_python(environment: Path) -> Path:
@@ -31,9 +60,15 @@ def _environment_command(environment: Path) -> Path:
     return environment / scripts_directory / executable
 
 
-def smoke_test(artifact: Path, python: Path) -> None:
-    """Install and exercise a wheel or source distribution in isolation."""
-    artifact = artifact.resolve(strict=True)
+def smoke_test(
+    artifact: str,
+    python: Path,
+    *,
+    install_retries: int = 0,
+    install_retry_delay: float = 15.0,
+) -> None:
+    """Install and exercise a wheel, source distribution, or PyPI spec."""
+    installable = _installable(artifact)
     python = python.resolve(strict=True)
 
     clean_environment = os.environ.copy()
@@ -51,14 +86,11 @@ def smoke_test(artifact: Path, python: Path) -> None:
         environment_python = _environment_python(environment)
         roadmap = _environment_command(environment)
 
-        _run(
-            [
-                str(environment_python),
-                "-m",
-                "pip",
-                "install",
-                str(artifact),
-            ],
+        _install_with_retries(
+            environment_python,
+            installable,
+            retries=install_retries,
+            retry_delay=install_retry_delay,
             env=clean_environment,
         )
         _run(
@@ -101,15 +133,36 @@ def smoke_test(artifact: Path, python: Path) -> None:
 def main() -> None:
     """Parse arguments and run the artifact smoke test."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("artifact", type=Path, help="Wheel or sdist to install")
+    parser.add_argument(
+        "artifact",
+        help="Wheel/sdist path to install, or a pip requirement such as "
+        "'roadmap-cli==0.3.0'",
+    )
     parser.add_argument(
         "--python",
         type=Path,
         default=Path(sys.executable),
         help="Python interpreter used to create the clean environment",
     )
+    parser.add_argument(
+        "--install-retries",
+        type=int,
+        default=0,
+        help="Retry the install this many extra times (for index propagation lag)",
+    )
+    parser.add_argument(
+        "--install-retry-delay",
+        type=float,
+        default=15.0,
+        help="Seconds to wait between install retries",
+    )
     arguments = parser.parse_args()
-    smoke_test(arguments.artifact, arguments.python)
+    smoke_test(
+        arguments.artifact,
+        arguments.python,
+        install_retries=arguments.install_retries,
+        install_retry_delay=arguments.install_retry_delay,
+    )
 
 
 if __name__ == "__main__":
