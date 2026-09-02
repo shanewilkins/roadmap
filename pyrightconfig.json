@@ -13,7 +13,7 @@
     "htmlcov",
     "tests/policy/fixtures/architecture/invalid"
   ],
-  "pythonVersion": "3.13",
+  "pythonVersion": "3.12",
   "pythonPlatform": "All",
   "typeCheckingMode": "basic",
   "reportMissingModuleSource": false,

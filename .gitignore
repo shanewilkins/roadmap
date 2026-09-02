@@ -254,6 +254,7 @@ test_sync_init/*.lock
 /tmp/test_check_sync/*.tmp
 /tmp/test_check_sync/*.lock
 sync_git_state.txt
+/output.txt
 
 # design notes, AI prompts, etc.
 

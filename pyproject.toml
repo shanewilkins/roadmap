@@ -125,7 +125,7 @@ include = ["roadmap", "tests"]
 exclude = ["tests/policy/fixtures/architecture"]
 
 [tool.ty.environment]
-python-version = "3.13"
+python-version = "3.12"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

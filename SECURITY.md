@@ -33,4 +33,5 @@ This repository uses static analysis and security checks in CI.
 Current checks include Bandit and Semgrep.
 Type and lint checks also run as part of the quality gate.
 
-For detailed implementation notes and operational guidance, see docs/developer_notes/SECURITY.md.
+For detailed implementation notes and operational guidance, see
+docs/architecture/adr/0002-git-owned-synchronization.md.
