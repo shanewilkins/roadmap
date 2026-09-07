@@ -34,7 +34,7 @@ repos:
 
       - id: radon-complexity-report
         name: radon complexity report
-        entry: uv run --locked radon cc roadmap --exclude */migrations/* --total-average --show-complexity --min D
+        entry: uv run --locked --extra dev radon cc roadmap --exclude */migrations/* --total-average --show-complexity --min D
         language: system
         pass_filenames: false
         always_run: true
@@ -42,7 +42,7 @@ repos:
 
       - id: xenon-complexity
         name: xenon complexity gate
-        entry: uv run --locked xenon --exclude */migrations/* --max-absolute B --max-modules B --max-average A roadmap
+        entry: uv run --locked --extra dev xenon --exclude */migrations/* --max-absolute B --max-modules B --max-average A roadmap
         language: system
         pass_filenames: false
         always_run: true
