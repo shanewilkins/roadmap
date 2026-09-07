@@ -92,7 +92,7 @@ class RoadmapClickGroup(click.Group):
         """Render root help from static metadata without importing features."""
         names = sorted(self._command_registry)
         limit = formatter.width - 6 - max(map(len, names), default=0)
-        rows = [(name, click.utils.make_default_short_help(self._command_registry[name][2], limit)) for name in names]  # fmt: skip
+        rows = [(name, click.Command(name, help=self._command_registry[name][2]).get_short_help_str(limit)) for name in names]  # fmt: skip
         with formatter.section("Commands"):
             formatter.write_dl(rows)
 
