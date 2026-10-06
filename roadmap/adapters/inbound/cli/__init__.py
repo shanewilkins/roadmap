@@ -1,6 +1,7 @@
 """Lazy Click adapter assembled by :mod:`roadmap.bootstrap`."""
 
 import importlib
+import stat
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,7 +13,9 @@ import click
 def _handle_cli_exception(ctx: click.Context, error: Exception) -> Any:
     from roadmap.adapters.inbound.cli.exception_handler import handle_cli_exception
 
-    return handle_cli_exception(ctx, error, show_traceback=False)
+    return handle_cli_exception(
+        ctx, error, show_traceback=bool(ctx.find_root().params.get("debug", False))
+    )
 
 
 CommandLocation = tuple[str, str, str]
@@ -67,6 +70,7 @@ class CliRuntime:
     migration_factory: Callable[[], Any]
     initialization_factory: Callable[[str], Any]
     version: str
+    workspace_factories: Callable[[Path], dict[str, Any]] | None = None
 
 
 class RoadmapClickGroup(click.Group):
@@ -106,13 +110,7 @@ class RoadmapClickGroup(click.Group):
         if location is None:
             return None
         module_path, attribute, _help = location
-        try:
-            self._command_cache[cmd_name] = command = getattr(importlib.import_module(module_path), attribute)  # fmt: skip
-        except Exception as error:
-            self._console_factory().print(
-                f"⚠️  Failed to load command '{cmd_name}': {error}", style="yellow"
-            )
-            return None
+        self._command_cache[cmd_name] = command = getattr(importlib.import_module(module_path), attribute)  # fmt: skip
         return command
 
     def invoke(self, ctx: click.Context) -> Any:
@@ -138,8 +136,16 @@ def create_cli(
         console_factory=runtime.console_factory,
     )
     @click.version_option(version=runtime.version)
+    @click.option(
+        "--debug", is_flag=True, help="Show tracebacks for unexpected errors."
+    )
+    @click.option(
+        "--workspace",
+        type=click.Path(path_type=Path),
+        help="Canonical workspace directory; overrides the current-directory default.",
+    )
     @click.pass_context
-    def cli(ctx: click.Context) -> None:
+    def cli(ctx: click.Context, debug: bool, workspace: Path | None) -> None:  # noqa: ARG001
         """Roadmap CLI - A command line tool for creating and managing roadmaps."""
         ctx.ensure_object(dict)
         ctx.obj.setdefault("core_factory", runtime.core_factory)
@@ -147,12 +153,34 @@ def create_cli(
         ctx.obj.setdefault("console_factory", runtime.console_factory)
         ctx.obj.setdefault("migration_factory", runtime.migration_factory)
         ctx.obj.setdefault("initialization_factory", runtime.initialization_factory)
+        if workspace is not None:
+            if runtime.workspace_factories is None:
+                raise click.ClickException(
+                    "Explicit workspace selection requires Bootstrap"
+                )
+            selected = workspace.expanduser().absolute()
+            ctx.obj.update(runtime.workspace_factories(selected))
+            ctx.obj["workspace"] = selected
+            ctx.obj.pop("core", None)
+            if ctx.invoked_subcommand not in {None, "init", "migrate"}:
+                try:
+                    valid = stat.S_ISDIR(selected.stat().st_mode) and stat.S_ISREG(
+                        (selected / "config.yaml").stat().st_mode
+                    )
+                except OSError as error:
+                    raise click.ClickException(
+                        f"Cannot open explicit workspace {selected}: {error}"
+                    ) from error
+                if not valid:
+                    raise click.ClickException(
+                        f"Explicit workspace is not initialized: {selected}"
+                    )
         if (
             ctx.invoked_subcommand not in {None, "init", "migrate"}
             and "core" not in ctx.obj
         ):
             try:
-                ctx.obj["core"] = runtime.core_factory(".roadmap")
+                ctx.obj["core"] = ctx.obj["core_factory"](".roadmap")
             except Exception as error:
                 _handle_cli_exception(ctx, error)
 

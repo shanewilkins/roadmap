@@ -5,10 +5,15 @@ from __future__ import annotations
 import csv
 import io
 import json
+from pathlib import Path
 
 import click
 
-from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    compatibility_warnings,
+    require_initialized,
+    verbose_message,
+)
 from roadmap.adapters.inbound.cli.planning_resolution import invoke
 from roadmap.application.contracts import HealthReport, RepairResult
 
@@ -47,6 +52,8 @@ def _render(
     report: HealthReport, format_name: str, *, summary_only: bool = False
 ) -> str:
     payload = _payload(report)
+    if summary_only:
+        payload["findings"] = []
     if format_name == "json":
         return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if format_name == "csv":
@@ -61,8 +68,7 @@ def _render(
         )
         writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
-        if not summary_only:
-            writer.writerows(payload["findings"])  # type: ignore[arg-type, ty:invalid-argument-type]
+        writer.writerows(payload["findings"])  # type: ignore[arg-type, ty:invalid-argument-type]
         return stream.getvalue()
     lines = [f"Roadmap health: {payload['status']}"]
     if summary_only:
@@ -136,6 +142,12 @@ def check_health(
     ctx: click.Context, verbose: bool, details: bool, format_name: str
 ) -> None:
     """Run the default read-only health scan."""
+    compatibility_warnings(ctx)
+    if ctx.info_name == "check":
+        click.echo(
+            "Deprecated through 0.3; removed in 0.4: health check; use health scan.",
+            err=True,
+        )
     del verbose, details
     report = invoke(lambda: ctx.obj["core"].health.scan())
     click.echo(_render(report, format_name), nl=False)
@@ -147,6 +159,11 @@ def check_health(
 @click.option(
     "--output",
     "-o",
+    help="Destination file; legacy plain/json/csv tokens still mean format until 0.4",
+)
+@click.option(
+    "--format",
+    "-f",
     "format_name",
     type=click.Choice(["plain", "json", "csv"]),
     default="plain",
@@ -172,8 +189,7 @@ def check_health(
     type=click.Choice(["entity", "severity", "type"]),
     default="entity",
 )
-@click.option("--with-dependencies", is_flag=True, default=True)
-@click.option("--no-dependencies", is_flag=True)
+@click.option("--with-dependencies/--no-dependencies", default=True)
 @click.option("--summary-only", is_flag=True)
 @click.option("--verbose", "verbose", "-v", is_flag=True)
 @click.pass_context
@@ -185,20 +201,48 @@ def scan(
     severities: tuple[str, ...],
     group_by: str,
     with_dependencies: bool,
-    no_dependencies: bool,
+    output: str | None,
     summary_only: bool,
     verbose: bool,
 ) -> None:
     """Scan canonical files, relationships, recovery state, and projection state."""
+    compatibility_warnings(ctx)
     del details, group_by, verbose
+    if output in {"plain", "json", "csv"}:
+        if (
+            ctx.get_parameter_source("format_name")
+            is click.core.ParameterSource.COMMANDLINE
+            and output != format_name
+        ):
+            raise click.UsageError("Legacy --output FORMAT conflicts with --format")
+        click.echo(
+            "Deprecated through 0.3; removed in 0.4: --output FORMAT; use --format. Use ./json (or ./csv, ./plain) for a destination with that name.",
+            err=True,
+        )
+        format_name, output = output, None
     report = invoke(lambda: ctx.obj["core"].health.scan())
     report = _filtered(
         report,
         entities,
         severities,
-        dependencies=with_dependencies and not no_dependencies,
+        dependencies=with_dependencies,
     )
-    click.echo(_render(report, format_name, summary_only=summary_only), nl=False)
+    content = _render(report, format_name, summary_only=summary_only)
+    if output is None:
+        click.echo(content, nl=False)
+    else:
+        try:
+            with Path(output).open("x", encoding="utf-8", newline="") as stream:
+                stream.write(content)
+        except FileExistsError as error:
+            raise click.ClickException(
+                f"Refusing to overwrite existing report: {output}"
+            ) from error
+        except OSError as error:
+            raise click.ClickException(
+                f"Cannot write report {output}: {error}"
+            ) from error
+        click.echo(f"Exported health report to {output}", err=True)
     if report.exit_code:
         raise click.exceptions.Exit(report.exit_code)
 
@@ -227,6 +271,11 @@ def db_integrity(
     limit: int,
 ) -> None:
     """Inspect canonical documents against the rebuildable projection."""
+    compatibility_warnings(ctx)
+    click.echo(
+        "Deprecated through 0.3; removed in 0.4: health db-integrity; use health scan.",
+        err=True,
+    )
     del verbose, details, show_ids, limit
     report = invoke(lambda: ctx.obj["core"].health.scan())
     selected = HealthReport(
@@ -239,23 +288,6 @@ def db_integrity(
     click.echo(_render(selected, "json" if json_output else format_name), nl=False)
     if selected.exit_code:
         raise click.exceptions.Exit(selected.exit_code)
-
-
-_LEGACY_FIX_TYPES = [
-    "all",
-    "old_backups",
-    "duplicate_issues",
-    "orphaned_issues",
-    "folder_structure",
-    "corrupted_comments",
-    "data_integrity",
-    "label_normalization",
-    "milestone_name_normalization",
-    "milestone_naming_compliance",
-    "milestone_validation",
-    "projection",
-    "recovery",
-]
 
 
 @click.command("fix")
@@ -272,8 +304,8 @@ _LEGACY_FIX_TYPES = [
     "--fix-type",
     "repair_type",
     "-t",
-    type=click.Choice(_LEGACY_FIX_TYPES),
-    default="all",
+    type=click.Choice(["projection", "recovery"]),
+    required=True,
 )
 @click.option("--dry-run", is_flag=True)
 @click.option("--yes", "confirmed", "-y", is_flag=True)
@@ -288,9 +320,18 @@ def fix_health(
     confirmed: bool,
 ) -> None:
     """Preview or apply recovery and projection rebuild actions."""
-    del verbose, details
-    normalized = "data_integrity" if repair_type == "all" else repair_type
+    compatibility_warnings(ctx)
+    del details
+    if repair_type not in {"projection", "recovery"}:
+        raise click.UsageError(
+            "Choose an explicit --fix-type projection or recovery; canonical edits and legacy shorthand are unsupported"
+        )
+    normalized = repair_type
     preview = invoke(lambda: ctx.obj["core"].health.repair(normalized, dry_run=True))
+    verbose_message(
+        verbose,
+        f"Validated {len(preview.actions)} {repair_type} repair action(s); preview did not apply changes.",
+    )
     if not dry_run and preview.actions and not confirmed:
         click.confirm("Apply the listed repair actions?", abort=True, default=False)
     result = (
@@ -298,6 +339,11 @@ def fix_health(
         if dry_run
         else invoke(lambda: ctx.obj["core"].health.repair(normalized, dry_run=False))
     )
+    if not dry_run:
+        verbose_message(
+            verbose,
+            f"Completed {len(result.actions)} {repair_type} repair action(s); post-check exit code {result.report.exit_code}.",
+        )
     click.echo(_render_repair(result, format_name), nl=False)
     if result.report.exit_code:
         raise click.exceptions.Exit(result.report.exit_code)
@@ -352,12 +398,28 @@ def _render_repair(result: RepairResult, format_name: str) -> str:
 @require_initialized
 def health(ctx: click.Context, details: bool, format_name: str, verbose: bool) -> None:
     """Read-only diagnostics with explicit, previewable repair."""
+    if ctx.invoked_subcommand is not None:
+        for name in ("details", "format_name", "verbose"):
+            if ctx.get_parameter_source(name) is click.core.ParameterSource.COMMANDLINE:
+                raise click.UsageError(
+                    "Health group options apply only to bare health; put options after the subcommand"
+                )
     if ctx.invoked_subcommand is None:
         ctx.invoke(
-            check_health, details=details, format_name=format_name, verbose=verbose
+            scan,
+            details=details,
+            format_name=format_name,
+            verbose=verbose,
+            entities=(),
+            severities=(),
+            group_by="entity",
+            with_dependencies=True,
+            summary_only=False,
+            output=None,
         )
 
 
+health.add_command(check_health)
 health.add_command(scan)
 health.add_command(fix_health)
 health.add_command(db_integrity)

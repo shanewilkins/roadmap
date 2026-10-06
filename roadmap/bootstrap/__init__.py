@@ -39,7 +39,7 @@ def _create_initialization(root_path: Path, roadmap_dir_name: str) -> Any:
     return create_initialization(root_path, roadmap_dir_name)
 
 
-def _create_workspace_migration(root_path: Path) -> Any:
+def _create_workspace_migration(root_path: Path, name: str = ".roadmap") -> Any:
     from roadmap.adapters.outbound.persistence.documents import DocumentRepository
     from roadmap.adapters.outbound.persistence.migration import (
         FilesystemWorkspaceMigration,
@@ -47,7 +47,7 @@ def _create_workspace_migration(root_path: Path) -> Any:
     from roadmap.adapters.outbound.persistence.projection import SQLiteProjection
     from roadmap.application.use_cases import WorkspaceMigration
 
-    roadmap_dir = root_path / ".roadmap"
+    roadmap_dir = root_path / name
     documents = DocumentRepository(roadmap_dir)
     projection = SQLiteProjection(roadmap_dir / "db" / "projection.db", documents)
     return WorkspaceMigration(
@@ -93,6 +93,18 @@ def build_cli(
             selected.working_directory(), name
         ),
         version=__version__,
+        workspace_factories=lambda path: {
+            "core_factory": lambda _name: selected.core_builder(path.parent, path.name),
+            "existing_core_factory": lambda: selected.core_builder(
+                path.parent, path.name
+            ),
+            "initialization_factory": lambda _name: selected.initialization_builder(
+                path.parent, path.name
+            ),
+            "migration_factory": lambda: _create_workspace_migration(
+                path.parent, path.name
+            ),
+        },
     )
     return create_cli(runtime, command_registry=command_registry)
 

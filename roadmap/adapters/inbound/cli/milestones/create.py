@@ -34,10 +34,16 @@ def _validate_milestone_name(name: str) -> tuple[bool, str | None]:
 @click.option("--description", "-d", default="", help="Milestone description")
 @click.option("--due-date", help="Due date for milestone (YYYY-MM-DD format)")
 @click.option("--project", "-p", default=None, help="Project ID")
+@click.option("--print-id", is_flag=True)
 @click.pass_context
 @require_initialized
 def create_milestone(
-    ctx, title: str, description: str, due_date: str | None, project: str | None
+    ctx,
+    title: str,
+    description: str,
+    due_date: str | None,
+    project: str | None,
+    print_id: bool,
 ) -> None:
     """Create a milestone and link it to a project atomically."""
     valid, error = _validate_milestone_name(title)
@@ -54,7 +60,8 @@ def create_milestone(
         if len(visible) == 1:
             project_id = visible[0].id
             click.echo(
-                f"Assigning milestone to project: {visible[0].name} ({project_id})"
+                f"Assigning milestone to project: {visible[0].name} ({project_id})",
+                err=print_id,
             )
         elif len(visible) > 1:
             raise click.ClickException(
@@ -68,5 +75,9 @@ def create_milestone(
         )
     )
     milestone = result.aggregate
-    click.echo(f"Created milestone: [{milestone.id}] {milestone.name}")
+    click.echo(
+        str(milestone.id)
+        if print_id
+        else f"Created milestone: [{milestone.id}] {milestone.name}"
+    )
     projection_warning(result)

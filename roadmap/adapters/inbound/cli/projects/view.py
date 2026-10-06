@@ -3,16 +3,23 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.inspection import inspect_json
 from roadmap.adapters.inbound.cli.planning_resolution import invoke
 
 
 @click.command("view")
 @click.argument("project_id")
+@click.option(
+    "--format", "format_name", type=click.Choice(["plain", "json"]), default="plain"
+)
 @click.pass_context
 @require_initialized
-def view_project(ctx, project_id: str) -> None:
+def view_project(ctx, project_id: str, format_name: str) -> None:
     """Display a project and Application-derived planning totals."""
     summary = invoke(lambda: ctx.obj["core"].planning.project(project_id))
+    if format_name == "json":
+        inspect_json("project", summary)
+        return
     project = summary.project
     click.echo(f"Project: {project.name}")
     click.echo(f"ID: {project.id}")

@@ -3,8 +3,11 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    confirm_override_action,
     echo_batch_result,
     require_initialized,
+    validate_list_mode,
+    verbose_message,
 )
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
@@ -42,6 +45,12 @@ def _report_archive_result(result, dry_run: bool) -> None:
 @click.option("--list", "list_archived", is_flag=True, help="List archived issues")
 @click.option("--dry-run", is_flag=True, help="Preview without saving")
 @click.option("--force", is_flag=True, help="Allow non-closed issues and skip prompt")
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation without bypassing lifecycle guards",
+)
 @click.option("--verbose", "-v", is_flag=True)
 @click.pass_context
 @require_initialized
@@ -53,11 +62,16 @@ def archive_issue(
     list_archived: bool,
     dry_run: bool,
     force: bool,
+    yes: bool,
     verbose: bool,  # noqa: ARG001
 ) -> None:
     """Archive issues in place; canonical Markdown files are not moved."""
     core = ctx.obj["core"]
+    validate_list_mode(
+        list_archived, (issue_id is not None, all_closed, dry_run, force, yes, orphaned)
+    )
     if list_archived:
+        verbose_message(verbose, "Listing archived records; lifecycle is unchanged.")
         _list_archived_issues(core)
         return
     if sum((issue_id is not None, all_closed, orphaned)) != 1:
@@ -65,8 +79,7 @@ def archive_issue(
             "Specify exactly one of ISSUE_ID, --all-closed, or --orphaned"
         )
     identity = resolve_issue_id(core, issue_id) if issue_id else None
-    if not dry_run and not force:
-        click.confirm("Archive the selected issue(s)?", abort=True)
+    confirm_override_action(dry_run, force, yes, "Archive the selected issue(s)?")
     result = invoke(
         lambda: core.issue_mutations.archive(
             identity,
@@ -75,5 +88,9 @@ def archive_issue(
             force=force,
             dry_run=dry_run,
         )
+    )
+    verbose_message(
+        verbose,
+        f"Validated {len(result.issues)} issue(s); {'preview only, no writes' if dry_run else 'canonical archive committed'}.",
     )
     _report_archive_result(result, dry_run)

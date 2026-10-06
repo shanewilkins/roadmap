@@ -15,14 +15,25 @@ from roadmap.adapters.inbound.cli.planning_resolution import (
 @click.option(
     "--force", is_flag=True, help="Skip confirmation and open-milestone guard"
 )
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation without bypassing open-milestone guard",
+)
 @click.pass_context
 @require_initialized
-def close_project(ctx, project_id: str, force: bool) -> None:
+def close_project(ctx, project_id: str, force: bool, yes: bool) -> None:
     """Mark a project completed without archiving it or its milestones."""
     core = ctx.obj["core"]
     identity = resolve_project_id(core, project_id)
     project = invoke(lambda: core.planning.project(str(identity))).project
-    if not force:
+    if force and not yes:
+        click.echo(
+            "Deprecated through 0.3: project close --force also skips confirmation; in 0.4 use --force --yes for override and consent.",
+            err=True,
+        )
+    if not (yes or force):
         click.confirm(f"Close project '{project.name}'?", abort=True)
     result = invoke(lambda: core.planning.close_project(identity, force=force))
     click.echo(f"Closed project: [{identity}] {project.name}")

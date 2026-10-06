@@ -1,0 +1,4419 @@
+{
+  "schema_version": 1,
+  "reviewed": "2026-10-06",
+  "compatibility_boundary": "0.4",
+  "commands": {
+    "roadmap": {
+      "signature": "opt:--version;opt:--debug;opt:--workspace",
+      "kind": "group",
+      "contract": "Roadmap CLI - A command line tool for creating and managing roadmaps.",
+      "parameters": [
+        {
+          "parameter": "version",
+          "spellings": [
+            "--version"
+          ],
+          "disposition": "supported",
+          "contract": "Show the version and exit.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "debug",
+          "spellings": [
+            "--debug"
+          ],
+          "disposition": "supported",
+          "contract": "Show tracebacks for unexpected errors.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "workspace",
+          "spellings": [
+            "--workspace"
+          ],
+          "disposition": "supported",
+          "contract": "Canonical workspace directory; overrides the current-directory default.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/unit/adapters/cli/test_failure_diagnostics.py::test_unexpected_failures_have_nonzero_stderr_and_opt_in_traceback",
+        "tests/unit/adapters/cli/test_failure_diagnostics.py::test_debug_keeps_expected_failures_concise",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_explicit_workspace_wins_and_invalid_selection_never_falls_back",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_explicit_workspace_invalid_or_unreadable_paths_fail_loudly",
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIRootHelp::test_version_flag"
+      ],
+      "unresolved": []
+    },
+    "roadmap analysis": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Analysis and insights commands.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIHelpCommands::test_command_help_output"
+      ],
+      "unresolved": []
+    },
+    "roadmap analysis critical-path": {
+      "signature": "opt:--milestone|-m;opt:--include-closed;opt:--format[plain|json|csv];opt:--export[json|csv];opt:--output|-o",
+      "kind": "command",
+      "contract": "Show the longest canonical issue dependency chain.",
+      "parameters": [
+        {
+          "parameter": "milestone",
+          "spellings": [
+            "--milestone",
+            "-m"
+          ],
+          "disposition": "supported",
+          "contract": "Analyze one milestone",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "include_closed",
+          "spellings": [
+            "--include-closed"
+          ],
+          "disposition": "supported",
+          "contract": "Include closed issues",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json",
+            "csv"
+          ]
+        },
+        {
+          "parameter": "export",
+          "spellings": [
+            "--export"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Deprecated until 0.4; use --format",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "json",
+            "csv"
+          ]
+        },
+        {
+          "parameter": "output",
+          "spellings": [
+            "--output",
+            "-o"
+          ],
+          "disposition": "supported",
+          "contract": "Select output; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_critical_path_scope_and_closed_inclusion_are_exact",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_critical_path_destination_refusal_preserves_existing_file",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_empty_critical_path_honors_destination_and_overwrite_guard",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_analysis_alias_conflicts_are_rejected"
+      ],
+      "unresolved": []
+    },
+    "roadmap cleanup": {
+      "signature": "opt:--keep;opt:--days;opt:--dry-run;opt:--yes|-y;opt:--force;opt:--backups-only;opt:--check-folders;opt:--check-duplicates;opt:--check-malformed;opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Preview or remove only retention-qualified legacy backup files.",
+      "parameters": [
+        {
+          "parameter": "keep",
+          "spellings": [
+            "--keep"
+          ],
+          "disposition": "supported",
+          "contract": "Select keep; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": 10,
+          "choices": []
+        },
+        {
+          "parameter": "days",
+          "spellings": [
+            "--days"
+          ],
+          "disposition": "supported",
+          "contract": "Select days; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Select yes; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select force; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "backups_only",
+          "spellings": [
+            "--backups-only"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select backups only; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "check_folders",
+          "spellings": [
+            "--check-folders"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select check folders; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "check_duplicates",
+          "spellings": [
+            "--check-duplicates"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select check duplicates; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "check_malformed",
+          "spellings": [
+            "--check-malformed"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select check malformed; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "supported",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_other_verbose_operations_preserve_stdout_and_preview_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_compatibility_options_warn_on_stderr_without_writes",
+        "tests/integration/archive/test_archive_restore_commands.py::TestCleanupCommand::test_cleanup_with_combined_options"
+      ],
+      "unresolved": []
+    },
+    "roadmap config": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Manage versioned project policy and external user preferences.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIHelpCommands::test_command_help_output"
+      ],
+      "unresolved": []
+    },
+    "roadmap config explain": {
+      "signature": "arg:key:required;opt:--format[plain|json]",
+      "kind": "command",
+      "contract": "Show a key's effective value, owning scope, and configuration source.",
+      "parameters": [
+        {
+          "parameter": "key",
+          "spellings": [
+            "key"
+          ],
+          "disposition": "supported",
+          "contract": "Select key; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_usability.py::test_configuration_explanation_reports_effective_default",
+        "tests/integration/cli/test_cli_usability.py::test_configuration_explanation_tracks_owner_and_configured_value"
+      ],
+      "unresolved": []
+    },
+    "roadmap config get": {
+      "signature": "arg:key:required",
+      "kind": "command",
+      "contract": "Get one declared configuration key.",
+      "parameters": [
+        {
+          "parameter": "key",
+          "spellings": [
+            "key"
+          ],
+          "disposition": "supported",
+          "contract": "Select key; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_usability.py::test_scoped_configuration_get_view_and_reset",
+        "tests/integration/cli/test_cli_usability.py::test_unknown_and_wrong_scope_configuration_commands_do_not_write"
+      ],
+      "unresolved": []
+    },
+    "roadmap config reset": {
+      "signature": "opt:--project;opt:--yes",
+      "kind": "command",
+      "contract": "Reset only the selected configuration scope.",
+      "parameters": [
+        {
+          "parameter": "project",
+          "spellings": [
+            "--project"
+          ],
+          "disposition": "supported",
+          "contract": "Reset project-scoped policy.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes"
+          ],
+          "disposition": "supported",
+          "contract": "Confirm the action without prompting.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_config_reset_yes_only_changes_selected_scope"
+      ],
+      "unresolved": []
+    },
+    "roadmap config set": {
+      "signature": "arg:key:required;arg:value:required;opt:--project",
+      "kind": "command",
+      "contract": "Set one key in its declared scope.",
+      "parameters": [
+        {
+          "parameter": "key",
+          "spellings": [
+            "key"
+          ],
+          "disposition": "supported",
+          "contract": "Select key; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "value",
+          "spellings": [
+            "value"
+          ],
+          "disposition": "supported",
+          "contract": "Select value; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "project",
+          "spellings": [
+            "--project"
+          ],
+          "disposition": "supported",
+          "contract": "Write project-scoped policy.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_usability.py::test_configuration_explanation_tracks_owner_and_configured_value",
+        "tests/integration/cli/test_cli_usability.py::test_unknown_and_wrong_scope_configuration_commands_do_not_write"
+      ],
+      "unresolved": []
+    },
+    "roadmap config view": {
+      "signature": "opt:--project;opt:--level[user|project|merged]",
+      "kind": "command",
+      "contract": "View configuration without exposing secrets or machine paths.",
+      "parameters": [
+        {
+          "parameter": "project",
+          "spellings": [
+            "--project"
+          ],
+          "disposition": "supported",
+          "contract": "Show project configuration.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "level",
+          "spellings": [
+            "--level"
+          ],
+          "disposition": "supported",
+          "contract": "Select level; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "merged",
+          "choices": [
+            "user",
+            "project",
+            "merged"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_config_view_levels_select_exact_scope_without_writes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_config_scope_conflict_is_not_silently_overridden"
+      ],
+      "unresolved": []
+    },
+    "roadmap data": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Export and inspect canonical Roadmap data.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIHelpCommands::test_command_help_output"
+      ],
+      "unresolved": []
+    },
+    "roadmap data export": {
+      "signature": "opt:--format[json|csv|markdown];opt:--output|-o;opt:--filter",
+      "kind": "command",
+      "contract": "Export canonical issues without provider or projection metadata.",
+      "parameters": [
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "json",
+          "choices": [
+            "json",
+            "csv",
+            "markdown"
+          ]
+        },
+        {
+          "parameter": "output",
+          "spellings": [
+            "--output",
+            "-o"
+          ],
+          "disposition": "supported",
+          "contract": "Select output; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "filter_value",
+          "spellings": [
+            "--filter"
+          ],
+          "disposition": "supported",
+          "contract": "One documented key=value filter",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_export_filters_and_formats_have_exact_record_sets",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_export_preserves_quotes_unicode_and_newlines",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_empty_export_keeps_versioned_json_schema",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_export_rejects_invalid_enum_filters"
+      ],
+      "unresolved": []
+    },
+    "roadmap git": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Inspect local Git state and manage explicit issue branch references.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIHelpCommands::test_command_help_output"
+      ],
+      "unresolved": []
+    },
+    "roadmap git branch": {
+      "signature": "arg:issue_id:required;opt:--checkout|--no-checkout;opt:--force",
+      "kind": "command",
+      "contract": "Create and link a safe local branch for one canonical issue.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "checkout",
+          "spellings": [
+            "--checkout",
+            "--no-checkout"
+          ],
+          "disposition": "supported",
+          "contract": "Select checkout; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": true,
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "supported",
+          "contract": "Create the branch even when the working tree has uncommitted changes.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_data_and_git_commands.py::TestCLIGitIntegration::test_git_branch_create"
+      ],
+      "unresolved": []
+    },
+    "roadmap git link": {
+      "signature": "arg:issue_id:required",
+      "kind": "command",
+      "contract": "Link one issue to the current local branch.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_data_and_git_commands.py::TestCLIGitIntegration::test_git_link_current_branch"
+      ],
+      "unresolved": []
+    },
+    "roadmap git status": {
+      "signature": "none",
+      "kind": "command",
+      "contract": "Show local repository state without reading remotes or credentials.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_data_and_git_commands.py::TestCLIGitIntegration::test_git_status"
+      ],
+      "unresolved": []
+    },
+    "roadmap health": {
+      "signature": "opt:--details;opt:--format|-f[plain|json];opt:--verbose|-v",
+      "kind": "group",
+      "contract": "Read-only diagnostics with explicit, previewable repair.",
+      "parameters": [
+        {
+          "parameter": "details",
+          "spellings": [
+            "--details"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select details; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json"
+          ]
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_health_filters_repeated_values_and_exit_status_are_exact",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_remaining_deprecated_flags_warn_without_mutation",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_health_group_options_do_not_silently_disappear_before_subcommands"
+      ],
+      "unresolved": []
+    },
+    "roadmap health check": {
+      "signature": "opt:--verbose|-v;opt:--details;opt:--format|-f[plain|json]",
+      "kind": "command",
+      "contract": "Run the default read-only health scan.",
+      "parameters": [
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "details",
+          "spellings": [
+            "--details"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select details; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_safety_journeys.py::test_health_filters_preserve_exit_status_and_machine_schema"
+      ],
+      "unresolved": []
+    },
+    "roadmap health db-integrity": {
+      "signature": "opt:--verbose|-v;opt:--details;opt:--format|-f[plain|json];opt:--show-ids;opt:--json;opt:--limit",
+      "kind": "command",
+      "contract": "Inspect canonical documents against the rebuildable projection.",
+      "parameters": [
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "details",
+          "spellings": [
+            "--details"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select details; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json"
+          ]
+        },
+        {
+          "parameter": "show_ids",
+          "spellings": [
+            "--show-ids"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select show ids; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "json_output",
+          "spellings": [
+            "--json"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select json output; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "limit",
+          "spellings": [
+            "--limit"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select limit; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": 20,
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_safety_journeys.py::test_health_filters_preserve_exit_status_and_machine_schema"
+      ],
+      "unresolved": []
+    },
+    "roadmap health fix": {
+      "signature": "opt:--verbose|-v;opt:--details;opt:--format|-f[plain|json];opt:--fix-type|-t[projection|recovery];opt:--dry-run;opt:--yes|-y",
+      "kind": "command",
+      "contract": "Preview or apply recovery and projection rebuild actions.",
+      "parameters": [
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "supported",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "details",
+          "spellings": [
+            "--details"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select details; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json"
+          ]
+        },
+        {
+          "parameter": "repair_type",
+          "spellings": [
+            "--fix-type",
+            "-t"
+          ],
+          "disposition": "supported",
+          "contract": "Select repair type; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "projection",
+            "recovery"
+          ]
+        },
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "confirmed",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Select confirmed; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_safety_journeys.py::test_health_offers_preview_and_only_confirmed_repair_writes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_health_repair_requires_explicit_bounded_target",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_other_verbose_operations_preserve_stdout_and_preview_bytes"
+      ],
+      "unresolved": []
+    },
+    "roadmap health scan": {
+      "signature": "opt:--output|-o;opt:--format|-f[plain|json|csv];opt:--details;opt:--filter-entity|-e[issue|milestone|project];opt:--filter-severity|-s[info|warning|error|critical];opt:--group-by|-g[entity|severity|type];opt:--with-dependencies|--no-dependencies;opt:--summary-only;opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Scan canonical files, relationships, recovery state, and projection state.",
+      "parameters": [
+        {
+          "parameter": "output",
+          "spellings": [
+            "--output",
+            "-o"
+          ],
+          "disposition": "supported",
+          "contract": "Destination file; legacy plain/json/csv tokens still mean format until 0.4",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json",
+            "csv"
+          ]
+        },
+        {
+          "parameter": "details",
+          "spellings": [
+            "--details"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select details; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "entities",
+          "spellings": [
+            "--filter-entity",
+            "-e"
+          ],
+          "disposition": "supported",
+          "contract": "Select entities; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "issue",
+            "milestone",
+            "project"
+          ]
+        },
+        {
+          "parameter": "severities",
+          "spellings": [
+            "--filter-severity",
+            "-s"
+          ],
+          "disposition": "supported",
+          "contract": "Select severities; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "info",
+            "warning",
+            "error",
+            "critical"
+          ]
+        },
+        {
+          "parameter": "group_by",
+          "spellings": [
+            "--group-by",
+            "-g"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select group by; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "entity",
+          "choices": [
+            "entity",
+            "severity",
+            "type"
+          ]
+        },
+        {
+          "parameter": "with_dependencies",
+          "spellings": [
+            "--with-dependencies",
+            "--no-dependencies"
+          ],
+          "disposition": "supported",
+          "contract": "Select with dependencies; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": true,
+          "choices": []
+        },
+        {
+          "parameter": "summary_only",
+          "spellings": [
+            "--summary-only"
+          ],
+          "disposition": "supported",
+          "contract": "Select summary only; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_health_filters_repeated_values_and_exit_status_are_exact",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_health_format_destination_and_legacy_boundary",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_summary_only_keeps_counts_exit_status_and_omits_details"
+      ],
+      "unresolved": []
+    },
+    "roadmap init": {
+      "signature": "opt:--name|-n;opt:--project-name|-p;opt:--description|-d;opt:--skip-project;opt:--interactive|--non-interactive;opt:--yes|-y;opt:--dry-run;opt:--force|-f;opt:--template|-t;opt:--template-path",
+      "kind": "command",
+      "contract": "Create the local layout and, unless skipped, its first project.",
+      "parameters": [
+        {
+          "parameter": "name",
+          "spellings": [
+            "--name",
+            "-n"
+          ],
+          "disposition": "supported",
+          "contract": "Select name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": ".roadmap",
+          "choices": []
+        },
+        {
+          "parameter": "project_name",
+          "spellings": [
+            "--project-name",
+            "-p"
+          ],
+          "disposition": "supported",
+          "contract": "Select project name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "description",
+          "spellings": [
+            "--description",
+            "-d"
+          ],
+          "disposition": "supported",
+          "contract": "Select description; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "skip_project",
+          "spellings": [
+            "--skip-project"
+          ],
+          "disposition": "supported",
+          "contract": "Select skip project; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "interactive",
+          "spellings": [
+            "--interactive",
+            "--non-interactive"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select interactive; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": true,
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select yes; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force",
+            "-f"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select force; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "template",
+          "spellings": [
+            "--template",
+            "-t"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select template; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "template_path",
+          "spellings": [
+            "--template-path"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select template path; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_explicit_workspace_wins_and_invalid_selection_never_falls_back",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_explicit_workspace_preview_creates_nothing",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_compatibility_options_warn_on_stderr_without_writes",
+        "tests/integration/cli/test_cli_initialization.py::test_repeated_initialization_preserves_existing_canonical_data"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Manage issues.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIHelpCommands::test_command_help_output"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue archive": {
+      "signature": "arg:issue_id:optional;opt:--all-closed;opt:--orphaned;opt:--list;opt:--dry-run;opt:--force;opt:--yes|-y;opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Archive issues in place; canonical Markdown files are not moved.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "all_closed",
+          "spellings": [
+            "--all-closed"
+          ],
+          "disposition": "supported",
+          "contract": "Archive every closed issue",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "orphaned",
+          "spellings": [
+            "--orphaned"
+          ],
+          "disposition": "supported",
+          "contract": "Archive issues without milestones",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "list_archived",
+          "spellings": [
+            "--list"
+          ],
+          "disposition": "supported",
+          "contract": "List archived issues",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Preview without saving",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "supported",
+          "contract": "Allow non-closed issues and skip prompt",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation without bypassing lifecycle guards",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "supported",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_retention_selection_confirmation_and_preview",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_bad_retention_selectors_never_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_preview_refuses_pending_recovery_without_any_persistent_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_verbose_preview_is_stderr_only_and_preserves_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_legacy_archive_force_overrides_lifecycle_guard_but_does_not_cascade",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_orphaned_archive_selection_and_list_mode_are_bounded",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_archive_list_refuses_ignored_selector_or_mutation_flags"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue block": {
+      "signature": "arg:issue_id:required;opt:--reason|-r",
+      "kind": "command",
+      "contract": "Mark an issue as blocked.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "reason",
+          "spellings": [
+            "--reason",
+            "-r"
+          ],
+          "disposition": "supported",
+          "contract": "Reason for blocking",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_block_unblock_reason_is_recorded_and_peer_unchanged"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue close": {
+      "signature": "arg:issue_id:required;opt:--reason|-r;opt:--record-time|-t;opt:--date",
+      "kind": "command",
+      "contract": "Close an issue in place; archiving is a separate lifecycle action.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "reason",
+          "spellings": [
+            "--reason",
+            "-r"
+          ],
+          "disposition": "supported",
+          "contract": "Reason for closing the issue",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "record_time",
+          "spellings": [
+            "--record-time",
+            "-t"
+          ],
+          "disposition": "supported",
+          "contract": "Record completion time",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "date",
+          "spellings": [
+            "--date"
+          ],
+          "disposition": "supported",
+          "contract": "Completion date (requires --record-time)",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_close_override_is_bounded_to_selected_parent",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_dates_persist_exact_utc_or_refuse_without_writes",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_close_date_requires_time_recording_before_mutation",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_project_close_yes_does_not_override_open_children"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue comment": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Manage comments on issues.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIHelpCommands::test_command_help_output"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue comment add": {
+      "signature": "arg:issue_id:required;arg:body:required;opt:--author|-a;opt:--reply-to|-r",
+      "kind": "command",
+      "contract": "Add a Markdown comment to an issue.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "body",
+          "spellings": [
+            "body"
+          ],
+          "disposition": "supported",
+          "contract": "Select body; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "author",
+          "spellings": [
+            "--author",
+            "-a"
+          ],
+          "disposition": "supported",
+          "contract": "Comment author",
+          "evidence": "command",
+          "required": false,
+          "default": null,
+          "choices": []
+        },
+        {
+          "parameter": "reply_to",
+          "spellings": [
+            "--reply-to",
+            "-r"
+          ],
+          "disposition": "supported",
+          "contract": "Parent comment ID",
+          "evidence": "command",
+          "required": false,
+          "default": null,
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_safety_journeys.py::test_comment_and_dependency_journey_retains_reciprocal_links_and_reply_parent"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue comment list": {
+      "signature": "arg:issue_id:required;opt:--format|-f[text|json]",
+      "kind": "command",
+      "contract": "List comments on an issue.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "output_format",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "disposition": "supported",
+          "contract": "Select output format; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "text",
+          "choices": [
+            "text",
+            "json"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_safety_journeys.py::test_comment_and_dependency_journey_retains_reciprocal_links_and_reply_parent"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue create": {
+      "signature": "opt:--print-id;opt:--title;opt:--priority|-p[critical|high|medium|low];opt:--type|-t[feature|bug|other];opt:--milestone|-m;opt:--assignee|-a;opt:--labels|-l;opt:--estimate|-e;opt:--depends-on;opt:--blocks;opt:--content|-d;opt:--due-date;opt:--git-branch;opt:--checkout|--no-checkout;opt:--branch-name;opt:--force",
+      "kind": "command",
+      "contract": "Create a new canonical issue.",
+      "parameters": [
+        {
+          "parameter": "print_id",
+          "spellings": [
+            "--print-id"
+          ],
+          "disposition": "supported",
+          "contract": "Print only the created issue ID to stdout.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "title",
+          "spellings": [
+            "--title"
+          ],
+          "disposition": "supported",
+          "contract": "Issue title",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority",
+            "-p"
+          ],
+          "disposition": "supported",
+          "contract": "Select priority; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "medium",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "issue_type",
+          "spellings": [
+            "--type",
+            "-t"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue type; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "other",
+          "choices": [
+            "feature",
+            "bug",
+            "other"
+          ]
+        },
+        {
+          "parameter": "milestone",
+          "spellings": [
+            "--milestone",
+            "-m"
+          ],
+          "disposition": "supported",
+          "contract": "Assign to milestone",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "assignee",
+          "spellings": [
+            "--assignee",
+            "-a"
+          ],
+          "disposition": "supported",
+          "contract": "Assign to team member",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "labels",
+          "spellings": [
+            "--labels",
+            "-l"
+          ],
+          "disposition": "supported",
+          "contract": "Add labels",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "estimate",
+          "spellings": [
+            "--estimate",
+            "-e"
+          ],
+          "disposition": "supported",
+          "contract": "Estimated hours",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "depends_on",
+          "spellings": [
+            "--depends-on"
+          ],
+          "disposition": "supported",
+          "contract": "Issue IDs this depends on",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "blocks",
+          "spellings": [
+            "--blocks"
+          ],
+          "disposition": "supported",
+          "contract": "Issue IDs this blocks",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "content",
+          "spellings": [
+            "--content",
+            "-d"
+          ],
+          "disposition": "supported",
+          "contract": "Markdown description",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "due_date",
+          "spellings": [
+            "--due-date"
+          ],
+          "disposition": "supported",
+          "contract": "Due date in UTC",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "git_branch",
+          "spellings": [
+            "--git-branch"
+          ],
+          "disposition": "supported",
+          "contract": "Create a Git branch",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "checkout",
+          "spellings": [
+            "--checkout",
+            "--no-checkout"
+          ],
+          "disposition": "supported",
+          "contract": "Select checkout; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": true,
+          "choices": []
+        },
+        {
+          "parameter": "branch_name",
+          "spellings": [
+            "--branch-name"
+          ],
+          "disposition": "supported",
+          "contract": "Override suggested branch name",
+          "evidence": "command",
+          "required": false,
+          "default": null,
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "supported",
+          "contract": "Allow branch creation with changes",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_project_and_milestone_new_fields_print_ids_and_inspection",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_creation_flags_and_reciprocal_dependencies",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_invalid_creation_never_leaves_entity_or_partial_reciprocal_link",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_project_and_milestone_creation_fields_and_exact_parent"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue delete": {
+      "signature": "arg:issue_id:required;opt:--yes|-y",
+      "kind": "command",
+      "contract": "Permanently purge an archived issue after an explicit confirmation.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation prompt",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_delete_consent_does_not_bypass_archive_guard",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_delete_yes_preserves_referenced_archived_entity"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue deps": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Manage issue dependencies.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIHelpCommands::test_command_help_output"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue deps add": {
+      "signature": "arg:issue_id:required;arg:dependency_id:required",
+      "kind": "command",
+      "contract": "Make ISSUE_ID depend on DEPENDENCY_ID.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "dependency_id",
+          "spellings": [
+            "dependency_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select dependency id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_safety_journeys.py::test_comment_and_dependency_journey_retains_reciprocal_links_and_reply_parent"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue deps remove": {
+      "signature": "arg:issue_id:required;arg:dependency_id:required",
+      "kind": "command",
+      "contract": "Remove DEPENDENCY_ID from ISSUE_ID.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "dependency_id",
+          "spellings": [
+            "dependency_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select dependency id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_safety_journeys.py::test_comment_and_dependency_journey_retains_reciprocal_links_and_reply_parent"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue deps update": {
+      "signature": "arg:issue_id:required;arg:old_dependency_id:required;arg:new_dependency_id:required",
+      "kind": "command",
+      "contract": "Replace OLD_DEPENDENCY_ID with NEW_DEPENDENCY_ID on ISSUE_ID.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "old_dependency_id",
+          "spellings": [
+            "old_dependency_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select old dependency id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "new_dependency_id",
+          "spellings": [
+            "new_dependency_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select new dependency id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_safety_journeys.py::test_comment_and_dependency_journey_retains_reciprocal_links_and_reply_parent"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue list": {
+      "signature": "arg:filter_type:optional;opt:--milestone|-m;opt:--backlog;opt:--unassigned;opt:--open;opt:--blocked;opt:--next-milestone;opt:--assignee|-a;opt:--my-issues;opt:--status|-s[todo|in-progress|blocked|review|closed];opt:--priority|-p[critical|high|medium|low];opt:--issue-type|-t[feature|bug|other];opt:--overdue;opt:--search;opt:--scope[visible|closed|archived|all];opt:--verbose|-v;opt:--format[rich|plain|json|csv|markdown];opt:--columns;opt:--sort-by;opt:--filter",
+      "kind": "command",
+      "contract": "List, filter, search, and sort canonical issues.",
+      "parameters": [
+        {
+          "parameter": "filter_type",
+          "spellings": [
+            "filter_type"
+          ],
+          "disposition": "supported",
+          "contract": "Select filter type; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": null,
+          "choices": [
+            "backlog"
+          ]
+        },
+        {
+          "parameter": "milestone",
+          "spellings": [
+            "--milestone",
+            "-m"
+          ],
+          "disposition": "supported",
+          "contract": "Filter by milestone ID",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "backlog",
+          "spellings": [
+            "--backlog"
+          ],
+          "disposition": "supported",
+          "contract": "Show only issues with no milestone",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "unassigned",
+          "spellings": [
+            "--unassigned"
+          ],
+          "disposition": "supported",
+          "contract": "Alias for --backlog",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "open_only",
+          "spellings": [
+            "--open"
+          ],
+          "disposition": "supported",
+          "contract": "Show non-closed issues",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "blocked",
+          "spellings": [
+            "--blocked"
+          ],
+          "disposition": "supported",
+          "contract": "Show only blocked issues",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "next_milestone",
+          "spellings": [
+            "--next-milestone"
+          ],
+          "disposition": "supported",
+          "contract": "Show the next milestone",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "assignee",
+          "spellings": [
+            "--assignee",
+            "-a"
+          ],
+          "disposition": "supported",
+          "contract": "Filter by assignee",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "my_issues",
+          "spellings": [
+            "--my-issues"
+          ],
+          "disposition": "supported",
+          "contract": "Show issues assigned to me",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "status",
+          "spellings": [
+            "--status",
+            "-s"
+          ],
+          "disposition": "supported",
+          "contract": "Select status; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "todo",
+            "in-progress",
+            "blocked",
+            "review",
+            "closed"
+          ]
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority",
+            "-p"
+          ],
+          "disposition": "supported",
+          "contract": "Select priority; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "issue_type",
+          "spellings": [
+            "--issue-type",
+            "-t"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue type; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "feature",
+            "bug",
+            "other"
+          ]
+        },
+        {
+          "parameter": "overdue",
+          "spellings": [
+            "--overdue"
+          ],
+          "disposition": "supported",
+          "contract": "Show overdue issues",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "search",
+          "spellings": [
+            "--search"
+          ],
+          "disposition": "supported",
+          "contract": "Search issue title, headline, and content",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "scope",
+          "spellings": [
+            "--scope"
+          ],
+          "disposition": "supported",
+          "contract": "Select visible, closed, archived, or all lifecycle records",
+          "evidence": "command",
+          "required": false,
+          "default": "visible",
+          "choices": [
+            "visible",
+            "closed",
+            "archived",
+            "all"
+          ]
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Show verbose output",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Output format (rich=default, plain=POSIX, json=machine-readable, csv=analysis)",
+          "evidence": "command",
+          "required": false,
+          "default": "rich",
+          "choices": [
+            "rich",
+            "plain",
+            "json",
+            "csv",
+            "markdown"
+          ]
+        },
+        {
+          "parameter": "columns",
+          "spellings": [
+            "--columns"
+          ],
+          "disposition": "supported",
+          "contract": "Columns to display (comma-separated). Available: id, title, priority, status, progress, assignee, estimate, milestone, comment_count",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "sort_by",
+          "spellings": [
+            "--sort-by"
+          ],
+          "disposition": "supported",
+          "contract": "Sort by columns (format: col1:asc,col2:desc). Direction defaults to 'asc' if omitted.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "filter_spec",
+          "spellings": [
+            "--filter"
+          ],
+          "disposition": "supported",
+          "contract": "Filter rows using column=value (comma-separated, combined with AND)",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_selected_columns_have_exact_order_and_values",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_bad_output_options_refuse_without_state_changes",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_list_formats_retain_records_for_simple_values",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_machine_output_preserves_arbitrary_cell_text",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_empty_csv_retains_headers",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_mixed_direction_sort_preserves_primary_groups",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_invalid_output_options_fail_independent_of_result_count",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_issue_query_flags_select_exact_records_without_writes"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue progress": {
+      "signature": "arg:issue_id:required;arg:percentage:required",
+      "kind": "command",
+      "contract": "Set an issue's progress percentage from 0 through 100.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "percentage",
+          "spellings": [
+            "percentage"
+          ],
+          "disposition": "supported",
+          "contract": "Select percentage; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_progress_range_and_workflow_effects_are_persisted"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue restore": {
+      "signature": "arg:issue_id:optional;opt:--all;opt:--status[todo|in-progress|blocked|review|closed];opt:--dry-run;opt:--force;opt:--yes|-y;opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Restore archived issues without moving their Markdown files.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "restore_all",
+          "spellings": [
+            "--all"
+          ],
+          "disposition": "supported",
+          "contract": "Restore every archive",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "status",
+          "spellings": [
+            "--status"
+          ],
+          "disposition": "supported",
+          "contract": "Select status; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "todo",
+            "in-progress",
+            "blocked",
+            "review",
+            "closed"
+          ]
+        },
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Preview without saving",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Skip confirmation prompt",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation without bypassing lifecycle guards",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "supported",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_retention_selection_confirmation_and_preview",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_bad_retention_selectors_never_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_preview_refuses_pending_recovery_without_any_persistent_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_verbose_preview_is_stderr_only_and_preserves_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_restore_status_flag_selects_real_transition_without_touching_peer"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue start": {
+      "signature": "arg:issue_id:required;opt:--date;opt:--git-branch|--no-git-branch;opt:--checkout|--no-checkout;opt:--branch-name;opt:--force",
+      "kind": "command",
+      "contract": "Start work and record the issue's actual start time.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "date",
+          "spellings": [
+            "--date"
+          ],
+          "disposition": "supported",
+          "contract": "Start date (YYYY-MM-DD HH:MM, defaults to now)",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "git_branch",
+          "spellings": [
+            "--git-branch",
+            "--no-git-branch"
+          ],
+          "disposition": "supported",
+          "contract": "Select git branch; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": false,
+          "choices": []
+        },
+        {
+          "parameter": "checkout",
+          "spellings": [
+            "--checkout",
+            "--no-checkout"
+          ],
+          "disposition": "supported",
+          "contract": "Select checkout; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": true,
+          "choices": []
+        },
+        {
+          "parameter": "branch_name",
+          "spellings": [
+            "--branch-name"
+          ],
+          "disposition": "supported",
+          "contract": "Override suggested branch name",
+          "evidence": "command",
+          "required": false,
+          "default": null,
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "supported",
+          "contract": "Allow branch creation with changes",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_dates_persist_exact_utc_or_refuse_without_writes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_branch_only_options_refuse_before_canonical_write",
+        "tests/integration/cli/test_cli_git_mutation_contracts.py::test_git_branch_checkout_and_dirty_override_are_bounded"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue unblock": {
+      "signature": "arg:issue_id:required;opt:--reason|-r",
+      "kind": "command",
+      "contract": "Move a blocked issue back to in-progress.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "reason",
+          "spellings": [
+            "--reason",
+            "-r"
+          ],
+          "disposition": "supported",
+          "contract": "Reason for unblocking",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_block_unblock_reason_is_recorded_and_peer_unchanged"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue update": {
+      "signature": "arg:issue_id:required;opt:--title;opt:--priority|-p[critical|high|medium|low];opt:--status|-s[todo|in-progress|blocked|review|closed];opt:--assignee|-a;opt:--milestone|-m;opt:--description|-d;opt:--estimate|-e;opt:--reason|-r;opt:--clear-assignee;opt:--clear-milestone;opt:--clear-estimate;opt:--due-date;opt:--clear-due-date;opt:--add-label;opt:--remove-label",
+      "kind": "command",
+      "contract": "Update an existing canonical issue.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "title",
+          "spellings": [
+            "--title"
+          ],
+          "disposition": "supported",
+          "contract": "Update issue title",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority",
+            "-p"
+          ],
+          "disposition": "supported",
+          "contract": "Select priority; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "status",
+          "spellings": [
+            "--status",
+            "-s"
+          ],
+          "disposition": "supported",
+          "contract": "Select status; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "todo",
+            "in-progress",
+            "blocked",
+            "review",
+            "closed"
+          ]
+        },
+        {
+          "parameter": "assignee",
+          "spellings": [
+            "--assignee",
+            "-a"
+          ],
+          "disposition": "supported",
+          "contract": "Update assignee",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "milestone",
+          "spellings": [
+            "--milestone",
+            "-m"
+          ],
+          "disposition": "supported",
+          "contract": "Update milestone",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "description",
+          "spellings": [
+            "--description",
+            "-d"
+          ],
+          "disposition": "supported",
+          "contract": "Update description",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "estimate",
+          "spellings": [
+            "--estimate",
+            "-e"
+          ],
+          "disposition": "supported",
+          "contract": "Update estimated hours",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "reason",
+          "spellings": [
+            "--reason",
+            "-r"
+          ],
+          "disposition": "supported",
+          "contract": "Reason for the update",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "clear_assignee",
+          "spellings": [
+            "--clear-assignee"
+          ],
+          "disposition": "supported",
+          "contract": "Select clear assignee; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "clear_milestone",
+          "spellings": [
+            "--clear-milestone"
+          ],
+          "disposition": "supported",
+          "contract": "Select clear milestone; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "clear_estimate",
+          "spellings": [
+            "--clear-estimate"
+          ],
+          "disposition": "supported",
+          "contract": "Select clear estimate; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "due_date",
+          "spellings": [
+            "--due-date"
+          ],
+          "disposition": "supported",
+          "contract": "Select due date; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "clear_due_date",
+          "spellings": [
+            "--clear-due-date"
+          ],
+          "disposition": "supported",
+          "contract": "Select clear due date; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "add_labels",
+          "spellings": [
+            "--add-label"
+          ],
+          "disposition": "supported",
+          "contract": "Select add labels; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "remove_labels",
+          "spellings": [
+            "--remove-label"
+          ],
+          "disposition": "supported",
+          "contract": "Select remove labels; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_update_conflicts_and_invalid_values_preserve_all_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_planning_clear_conflicts_refuse_without_writes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_status_update_cannot_bypass_close_guard",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_project_update_fields_persist_only_on_target",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_milestone_update_fields_and_reassignment_persist_atomically",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_field_options_persist_without_touching_other_entities"
+      ],
+      "unresolved": []
+    },
+    "roadmap issue view": {
+      "signature": "arg:issue_id:required;opt:--format[plain|json]",
+      "kind": "command",
+      "contract": "Display one issue selected by a complete or unambiguous ID prefix.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_usability.py::test_ambiguous_prefix_lists_candidates_without_mutation",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_project_and_milestone_new_fields_print_ids_and_inspection",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_plain_issue_inspection_preserves_literal_content_and_history",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_milestone_view_repeated_filters_match_issue_selection"
+      ],
+      "unresolved": []
+    },
+    "roadmap migrate": {
+      "signature": "opt:--dry-run;opt:--yes|-y;opt:--format[plain|json];opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Upgrade an existing 0.1.1 workspace to the 0.2 canonical layout.",
+      "parameters": [
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Enumerate and validate changes without writing.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Apply without confirmation.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "output_format",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Select output format; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json"
+          ]
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "supported",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_other_verbose_operations_preserve_stdout_and_preview_bytes",
+        "tests/integration/cli/test_cli_migrate_command.py::test_cli_dry_run_is_machine_readable_and_does_not_construct_legacy_core",
+        "tests/integration/cli/test_cli_migrate_command.py::test_cli_executes_only_after_explicit_confirmation_and_is_idempotent",
+        "tests/integration/cli/test_cli_migrate_command.py::test_cli_rejects_future_workspace_without_mutation",
+        "tests/integration/cli/test_cli_migrate_command.py::test_declined_migration_preserves_complete_legacy_workspace"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Manage milestones.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIHelpCommands::test_command_help_output"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone archive": {
+      "signature": "arg:milestone_name:optional;opt:--all-closed;opt:--list;opt:--dry-run;opt:--force;opt:--yes|-y;opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Archive milestones in place without cascading to issues.",
+      "parameters": [
+        {
+          "parameter": "milestone_name",
+          "spellings": [
+            "milestone_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "all_closed",
+          "spellings": [
+            "--all-closed"
+          ],
+          "disposition": "supported",
+          "contract": "Select all closed; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "list_archived",
+          "spellings": [
+            "--list"
+          ],
+          "disposition": "supported",
+          "contract": "Select list archived; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "supported",
+          "contract": "Allow non-completed records; legacy confirmation shortcut deprecated for 0.4",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation without bypassing lifecycle guards",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "supported",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_retention_selection_confirmation_and_preview",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_bad_retention_selectors_never_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_preview_refuses_pending_recovery_without_any_persistent_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_verbose_preview_is_stderr_only_and_preserves_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_legacy_archive_force_overrides_lifecycle_guard_but_does_not_cascade",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_orphaned_archive_selection_and_list_mode_are_bounded",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_archive_list_refuses_ignored_selector_or_mutation_flags"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone assign": {
+      "signature": "arg:issue_id:required;arg:milestone_name:required",
+      "kind": "command",
+      "contract": "Assign an issue and refresh derived planning progress.",
+      "parameters": [
+        {
+          "parameter": "issue_id",
+          "spellings": [
+            "issue_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select issue id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "milestone_name",
+          "spellings": [
+            "milestone_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_milestone_reassignment_changes_only_selected_relationship",
+        "tests/integration/cli/test_cli_milestone_commands.py::TestCLIMilestoneAssign::test_assign_nonexistent_issue"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone close": {
+      "signature": "arg:milestone_name:required;opt:--force",
+      "kind": "command",
+      "contract": "Close a milestone without changing linked issues.",
+      "parameters": [
+        {
+          "parameter": "milestone_name",
+          "spellings": [
+            "milestone_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "supported",
+          "contract": "Skip open-issue guard",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_close_override_is_bounded_to_selected_parent",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_dates_persist_exact_utc_or_refuse_without_writes",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_close_date_requires_time_recording_before_mutation",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_project_close_yes_does_not_override_open_children"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone create": {
+      "signature": "opt:--title|-t;opt:--description|-d;opt:--due-date;opt:--project|-p;opt:--print-id",
+      "kind": "command",
+      "contract": "Create a milestone and link it to a project atomically.",
+      "parameters": [
+        {
+          "parameter": "title",
+          "spellings": [
+            "--title",
+            "-t"
+          ],
+          "disposition": "supported",
+          "contract": "Milestone title",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "description",
+          "spellings": [
+            "--description",
+            "-d"
+          ],
+          "disposition": "supported",
+          "contract": "Milestone description",
+          "evidence": "command",
+          "required": false,
+          "default": "",
+          "choices": []
+        },
+        {
+          "parameter": "due_date",
+          "spellings": [
+            "--due-date"
+          ],
+          "disposition": "supported",
+          "contract": "Due date for milestone (YYYY-MM-DD format)",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "project",
+          "spellings": [
+            "--project",
+            "-p"
+          ],
+          "disposition": "supported",
+          "contract": "Project ID",
+          "evidence": "command",
+          "required": false,
+          "default": null,
+          "choices": []
+        },
+        {
+          "parameter": "print_id",
+          "spellings": [
+            "--print-id"
+          ],
+          "disposition": "supported",
+          "contract": "Select print id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_project_and_milestone_new_fields_print_ids_and_inspection",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_creation_flags_and_reciprocal_dependencies",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_invalid_creation_never_leaves_entity_or_partial_reciprocal_link",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_project_and_milestone_creation_fields_and_exact_parent"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone delete": {
+      "signature": "arg:milestone_id:required;opt:--yes|-y",
+      "kind": "command",
+      "contract": "Purge an archived, unreferenced milestone.",
+      "parameters": [
+        {
+          "parameter": "milestone_id",
+          "spellings": [
+            "milestone_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Select yes; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_delete_consent_does_not_bypass_archive_guard",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_delete_yes_preserves_referenced_archived_entity"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone kanban": {
+      "signature": "arg:milestone_name:required;opt:--compact;opt:--no-color",
+      "kind": "command",
+      "contract": "Display canonical milestone issues grouped by workflow state.",
+      "parameters": [
+        {
+          "parameter": "milestone_name",
+          "spellings": [
+            "milestone_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "compact",
+          "spellings": [
+            "--compact"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select compact; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "no_color",
+          "spellings": [
+            "--no-color"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select no color; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_safety_journeys.py::test_planning_views_filters_and_daily_summary_match_canonical_scope"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone list": {
+      "signature": "opt:--overdue;opt:--format[rich|plain|json|csv|markdown];opt:--columns;opt:--sort-by;opt:--filter",
+      "kind": "command",
+      "contract": "List milestones from canonical documents.",
+      "parameters": [
+        {
+          "parameter": "overdue",
+          "spellings": [
+            "--overdue"
+          ],
+          "disposition": "supported",
+          "contract": "Select overdue; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Output format (rich=default, plain=POSIX, json=machine-readable, csv=analysis)",
+          "evidence": "command",
+          "required": false,
+          "default": "rich",
+          "choices": [
+            "rich",
+            "plain",
+            "json",
+            "csv",
+            "markdown"
+          ]
+        },
+        {
+          "parameter": "columns",
+          "spellings": [
+            "--columns"
+          ],
+          "disposition": "supported",
+          "contract": "Columns to display (comma-separated). Available: name, description, status, due_date, progress, estimate",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "sort_by",
+          "spellings": [
+            "--sort-by"
+          ],
+          "disposition": "supported",
+          "contract": "Sort by columns (format: col1:asc,col2:desc). Direction defaults to 'asc' if omitted.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "filter_spec",
+          "spellings": [
+            "--filter"
+          ],
+          "disposition": "supported",
+          "contract": "Filter rows using column=value (comma-separated, combined with AND)",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_selected_columns_have_exact_order_and_values",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_bad_output_options_refuse_without_state_changes",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_list_formats_retain_records_for_simple_values",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_machine_output_preserves_arbitrary_cell_text",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_empty_csv_retains_headers",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_mixed_direction_sort_preserves_primary_groups",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_invalid_output_options_fail_independent_of_result_count",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_milestone_filters_are_exact"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone progress": {
+      "signature": "arg:milestone_name:optional;opt:--method[effort_weighted|count_based]",
+      "kind": "command",
+      "contract": "Recalculate on read; derived progress is never persisted as authority.",
+      "parameters": [
+        {
+          "parameter": "milestone_name",
+          "spellings": [
+            "milestone_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "method",
+          "spellings": [
+            "--method"
+          ],
+          "disposition": "supported",
+          "contract": "Select method; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "effort_weighted",
+          "choices": [
+            "effort_weighted",
+            "count_based"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_preferred_progress_command_matches_legacy_without_mutation"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone recalculate": {
+      "signature": "arg:milestone_name:optional;opt:--method[effort_weighted|count_based]",
+      "kind": "command",
+      "contract": "Recalculate on read; derived progress is never persisted as authority.",
+      "parameters": [
+        {
+          "parameter": "milestone_name",
+          "spellings": [
+            "milestone_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "method",
+          "spellings": [
+            "--method"
+          ],
+          "disposition": "supported",
+          "contract": "Select method; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "effort_weighted",
+          "choices": [
+            "effort_weighted",
+            "count_based"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_preferred_progress_command_matches_legacy_without_mutation"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone restore": {
+      "signature": "arg:milestone_name:optional;opt:--all;opt:--dry-run;opt:--force;opt:--yes|-y;opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Restore milestones without moving canonical files.",
+      "parameters": [
+        {
+          "parameter": "milestone_name",
+          "spellings": [
+            "milestone_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "restore_all",
+          "spellings": [
+            "--all"
+          ],
+          "disposition": "supported",
+          "contract": "Select restore all; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select force; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation without bypassing lifecycle guards",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "supported",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_retention_selection_confirmation_and_preview",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_bad_retention_selectors_never_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_preview_refuses_pending_recovery_without_any_persistent_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_verbose_preview_is_stderr_only_and_preserves_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_restore_status_flag_selects_real_transition_without_touching_peer"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone update": {
+      "signature": "arg:milestone_id:required;opt:--name;opt:--description|-d;opt:--due-date;opt:--status[open|closed];opt:--project|-p;opt:--clear-project;opt:--clear-due-date",
+      "kind": "command",
+      "contract": "Update a milestone and its reciprocal project relation.",
+      "parameters": [
+        {
+          "parameter": "milestone_id",
+          "spellings": [
+            "milestone_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "name",
+          "spellings": [
+            "--name"
+          ],
+          "disposition": "supported",
+          "contract": "Select name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "description",
+          "spellings": [
+            "--description",
+            "-d"
+          ],
+          "disposition": "supported",
+          "contract": "Select description; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "due_date",
+          "spellings": [
+            "--due-date"
+          ],
+          "disposition": "supported",
+          "contract": "Select due date; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "status",
+          "spellings": [
+            "--status"
+          ],
+          "disposition": "supported",
+          "contract": "Select status; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "open",
+            "closed"
+          ]
+        },
+        {
+          "parameter": "project",
+          "spellings": [
+            "--project",
+            "-p"
+          ],
+          "disposition": "supported",
+          "contract": "Select project; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": null,
+          "choices": []
+        },
+        {
+          "parameter": "clear_project",
+          "spellings": [
+            "--clear-project"
+          ],
+          "disposition": "supported",
+          "contract": "Select clear project; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "clear_due_date",
+          "spellings": [
+            "--clear-due-date"
+          ],
+          "disposition": "supported",
+          "contract": "Select clear due date; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_update_conflicts_and_invalid_values_preserve_all_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_planning_clear_conflicts_refuse_without_writes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_status_update_cannot_bypass_close_guard",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_project_update_fields_persist_only_on_target",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_milestone_update_fields_and_reassignment_persist_atomically",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_field_options_persist_without_touching_other_entities"
+      ],
+      "unresolved": []
+    },
+    "roadmap milestone view": {
+      "signature": "arg:milestone_name:required;opt:--status[todo|in-progress|blocked|review|closed];opt:--priority[critical|high|medium|low];opt:--only-open;opt:--format[plain|json]",
+      "kind": "command",
+      "contract": "Display a milestone with filtered canonical issues.",
+      "parameters": [
+        {
+          "parameter": "milestone_name",
+          "spellings": [
+            "milestone_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select milestone name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "status",
+          "spellings": [
+            "--status"
+          ],
+          "disposition": "supported",
+          "contract": "Select status; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "todo",
+            "in-progress",
+            "blocked",
+            "review",
+            "closed"
+          ]
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority"
+          ],
+          "disposition": "supported",
+          "contract": "Select priority; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "only_open",
+          "spellings": [
+            "--only-open"
+          ],
+          "disposition": "supported",
+          "contract": "Select only open; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_usability.py::test_ambiguous_prefix_lists_candidates_without_mutation",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_project_and_milestone_new_fields_print_ids_and_inspection",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_plain_issue_inspection_preserves_literal_content_and_history",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_milestone_view_repeated_filters_match_issue_selection"
+      ],
+      "unresolved": []
+    },
+    "roadmap project": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Manage projects (top-level planning documents).",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_root_commands.py::TestCLIHelpCommands::test_command_help_output"
+      ],
+      "unresolved": []
+    },
+    "roadmap project archive": {
+      "signature": "arg:project_name:optional;opt:--all-closed;opt:--list;opt:--dry-run;opt:--force;opt:--yes|-y;opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Archive projects in place without cascading to milestones or issues.",
+      "parameters": [
+        {
+          "parameter": "project_name",
+          "spellings": [
+            "project_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select project name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "all_closed",
+          "spellings": [
+            "--all-closed"
+          ],
+          "disposition": "supported",
+          "contract": "Select all closed; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "list_archived",
+          "spellings": [
+            "--list"
+          ],
+          "disposition": "supported",
+          "contract": "Select list archived; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "supported",
+          "contract": "Allow non-completed records; legacy confirmation shortcut deprecated for 0.4",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation without bypassing lifecycle guards",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "supported",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_retention_selection_confirmation_and_preview",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_bad_retention_selectors_never_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_preview_refuses_pending_recovery_without_any_persistent_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_verbose_preview_is_stderr_only_and_preserves_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_legacy_archive_force_overrides_lifecycle_guard_but_does_not_cascade",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_orphaned_archive_selection_and_list_mode_are_bounded",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_archive_list_refuses_ignored_selector_or_mutation_flags"
+      ],
+      "unresolved": []
+    },
+    "roadmap project close": {
+      "signature": "arg:project_id:required;opt:--force;opt:--yes|-y",
+      "kind": "command",
+      "contract": "Mark a project completed without archiving it or its milestones.",
+      "parameters": [
+        {
+          "parameter": "project_id",
+          "spellings": [
+            "project_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select project id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation and open-milestone guard",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation without bypassing open-milestone guard",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_close_override_is_bounded_to_selected_parent",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_dates_persist_exact_utc_or_refuse_without_writes",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_close_date_requires_time_recording_before_mutation",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_project_close_yes_does_not_override_open_children"
+      ],
+      "unresolved": []
+    },
+    "roadmap project create": {
+      "signature": "opt:--title|-t;opt:--description|-d;opt:--repository|-r;opt:--owner;opt:--priority[critical|high|medium|low];opt:--print-id",
+      "kind": "command",
+      "contract": "Create a project through the Application boundary.",
+      "parameters": [
+        {
+          "parameter": "title",
+          "spellings": [
+            "--title",
+            "-t"
+          ],
+          "disposition": "supported",
+          "contract": "Project title",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "description",
+          "spellings": [
+            "--description",
+            "-d"
+          ],
+          "disposition": "supported",
+          "contract": "Project description",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "repository",
+          "spellings": [
+            "--repository",
+            "-r"
+          ],
+          "disposition": "supported",
+          "contract": "Repository URL",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "owner",
+          "spellings": [
+            "--owner"
+          ],
+          "disposition": "supported",
+          "contract": "Select owner; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority"
+          ],
+          "disposition": "supported",
+          "contract": "Select priority; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "medium",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "print_id",
+          "spellings": [
+            "--print-id"
+          ],
+          "disposition": "supported",
+          "contract": "Select print id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_project_and_milestone_new_fields_print_ids_and_inspection",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_creation_flags_and_reciprocal_dependencies",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_invalid_creation_never_leaves_entity_or_partial_reciprocal_link",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_project_and_milestone_creation_fields_and_exact_parent"
+      ],
+      "unresolved": []
+    },
+    "roadmap project delete": {
+      "signature": "arg:project_id:required;opt:--yes|-y",
+      "kind": "command",
+      "contract": "Purge an archived, unreferenced project.",
+      "parameters": [
+        {
+          "parameter": "project_id",
+          "spellings": [
+            "project_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select project id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation prompt",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_delete_consent_does_not_bypass_archive_guard",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_delete_yes_preserves_referenced_archived_entity"
+      ],
+      "unresolved": []
+    },
+    "roadmap project list": {
+      "signature": "opt:--status[planning|active|on-hold|completed|cancelled];opt:--owner;opt:--priority[critical|high|medium|low];opt:--overdue;opt:--verbose|-v;opt:--format[rich|plain|json|csv|markdown];opt:--columns;opt:--sort-by;opt:--filter",
+      "kind": "command",
+      "contract": "List projects from canonical documents.",
+      "parameters": [
+        {
+          "parameter": "status",
+          "spellings": [
+            "--status"
+          ],
+          "disposition": "supported",
+          "contract": "Select status; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "planning",
+            "active",
+            "on-hold",
+            "completed",
+            "cancelled"
+          ]
+        },
+        {
+          "parameter": "owner",
+          "spellings": [
+            "--owner"
+          ],
+          "disposition": "supported",
+          "contract": "Select owner; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority"
+          ],
+          "disposition": "supported",
+          "contract": "Select priority; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "overdue",
+          "spellings": [
+            "--overdue"
+          ],
+          "disposition": "supported",
+          "contract": "Select overdue; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Output format (rich=default, plain=POSIX, json=machine-readable, csv=analysis)",
+          "evidence": "command",
+          "required": false,
+          "default": "rich",
+          "choices": [
+            "rich",
+            "plain",
+            "json",
+            "csv",
+            "markdown"
+          ]
+        },
+        {
+          "parameter": "columns",
+          "spellings": [
+            "--columns"
+          ],
+          "disposition": "supported",
+          "contract": "Columns to display (comma-separated). Available: id, name, status, priority, owner",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "sort_by",
+          "spellings": [
+            "--sort-by"
+          ],
+          "disposition": "supported",
+          "contract": "Sort by columns (format: col1:asc,col2:desc). Direction defaults to 'asc' if omitted.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "filter_spec",
+          "spellings": [
+            "--filter"
+          ],
+          "disposition": "supported",
+          "contract": "Filter rows using column=value (comma-separated, combined with AND)",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_selected_columns_have_exact_order_and_values",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_bad_output_options_refuse_without_state_changes",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_list_formats_retain_records_for_simple_values",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_machine_output_preserves_arbitrary_cell_text",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_empty_csv_retains_headers",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_mixed_direction_sort_preserves_primary_groups",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_invalid_output_options_fail_independent_of_result_count",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_project_query_filters_and_intersections_are_exact"
+      ],
+      "unresolved": []
+    },
+    "roadmap project restore": {
+      "signature": "arg:project_name:optional;opt:--all;opt:--dry-run;opt:--force;opt:--yes|-y;opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Restore projects without moving canonical files.",
+      "parameters": [
+        {
+          "parameter": "project_name",
+          "spellings": [
+            "project_name"
+          ],
+          "disposition": "supported",
+          "contract": "Select project name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "restore_all",
+          "spellings": [
+            "--all"
+          ],
+          "disposition": "supported",
+          "contract": "Select restore all; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "dry_run",
+          "spellings": [
+            "--dry-run"
+          ],
+          "disposition": "supported",
+          "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "force",
+          "spellings": [
+            "--force"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select force; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "yes",
+          "spellings": [
+            "--yes",
+            "-y"
+          ],
+          "disposition": "supported",
+          "contract": "Skip confirmation without bypassing lifecycle guards",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "supported",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_retention_selection_confirmation_and_preview",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_bad_retention_selectors_never_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_preview_refuses_pending_recovery_without_any_persistent_write",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_verbose_preview_is_stderr_only_and_preserves_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_restore_status_flag_selects_real_transition_without_touching_peer"
+      ],
+      "unresolved": []
+    },
+    "roadmap project update": {
+      "signature": "arg:project_id:required;opt:--name;opt:--description|-d;opt:--repository|-r;opt:--status[active|inactive|completed];opt:--owner;opt:--priority[critical|high|medium|low];opt:--clear-owner",
+      "kind": "command",
+      "contract": "Update a project through the Application boundary.",
+      "parameters": [
+        {
+          "parameter": "project_id",
+          "spellings": [
+            "project_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select project id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "name",
+          "spellings": [
+            "--name"
+          ],
+          "disposition": "supported",
+          "contract": "Select name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "description",
+          "spellings": [
+            "--description",
+            "-d"
+          ],
+          "disposition": "supported",
+          "contract": "Select description; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "repository",
+          "spellings": [
+            "--repository",
+            "-r"
+          ],
+          "disposition": "supported",
+          "contract": "Select repository; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "status",
+          "spellings": [
+            "--status"
+          ],
+          "disposition": "supported",
+          "contract": "Select status; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "active",
+            "inactive",
+            "completed"
+          ]
+        },
+        {
+          "parameter": "owner",
+          "spellings": [
+            "--owner"
+          ],
+          "disposition": "supported",
+          "contract": "Select owner; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority"
+          ],
+          "disposition": "supported",
+          "contract": "Select priority; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "clear_owner",
+          "spellings": [
+            "--clear-owner"
+          ],
+          "disposition": "supported",
+          "contract": "Select clear owner; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_update_conflicts_and_invalid_values_preserve_all_bytes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_planning_clear_conflicts_refuse_without_writes",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_status_update_cannot_bypass_close_guard",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_project_update_fields_persist_only_on_target",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_milestone_update_fields_and_reassignment_persist_atomically",
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_field_options_persist_without_touching_other_entities"
+      ],
+      "unresolved": []
+    },
+    "roadmap project view": {
+      "signature": "arg:project_id:required;opt:--format[plain|json]",
+      "kind": "command",
+      "contract": "Display a project and Application-derived planning totals.",
+      "parameters": [
+        {
+          "parameter": "project_id",
+          "spellings": [
+            "project_id"
+          ],
+          "disposition": "supported",
+          "contract": "Select project id; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "plain",
+          "choices": [
+            "plain",
+            "json"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_usability.py::test_ambiguous_prefix_lists_candidates_without_mutation",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_project_and_milestone_new_fields_print_ids_and_inspection",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_plain_issue_inspection_preserves_literal_content_and_history",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_milestone_view_repeated_filters_match_issue_selection"
+      ],
+      "unresolved": []
+    },
+    "roadmap status": {
+      "signature": "opt:--verbose|-v;opt:--format|-f[rich|plain|json|csv|markdown];opt:--output|-o",
+      "kind": "command",
+      "contract": "Show a deterministic snapshot of canonical Roadmap entities.",
+      "parameters": [
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Select verbose; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "format_name",
+          "spellings": [
+            "--format",
+            "-f"
+          ],
+          "disposition": "supported",
+          "contract": "Select format name; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "rich",
+          "choices": [
+            "rich",
+            "plain",
+            "json",
+            "csv",
+            "markdown"
+          ]
+        },
+        {
+          "parameter": "output",
+          "spellings": [
+            "--output",
+            "-o"
+          ],
+          "disposition": "supported",
+          "contract": "Select output; see cli-interface-contract.md for selection, validation and side effects.",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_file_destination_matches_stdout_and_refuses_overwrite",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_invalid_report_destination_preserves_workspace",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_status_counts_match_canonical_lifecycle"
+      ],
+      "unresolved": []
+    },
+    "roadmap today": {
+      "signature": "opt:--verbose|-v",
+      "kind": "command",
+      "contract": "Show assigned work for the next open milestone.",
+      "parameters": [
+        {
+          "parameter": "verbose",
+          "spellings": [
+            "--verbose",
+            "-v"
+          ],
+          "disposition": "deprecated_until_0.4",
+          "contract": "Show verbose output",
+          "evidence": "command",
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_today_selects_current_identity_and_next_milestone_only",
+        "tests/integration/cli/test_cli_safety_journeys.py::test_empty_analysis_and_daily_identity_failure_are_read_only"
+      ],
+      "unresolved": []
+    }
+  }
+}

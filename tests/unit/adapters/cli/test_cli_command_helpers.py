@@ -97,7 +97,9 @@ class TestProjectionWarning:
             projection_stale = True
 
         projection_warning(Result())
-        assert "stale" in capsys.readouterr().out.lower()
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "stale" in captured.err.lower()
 
     @pytest.mark.parametrize(
         "result",
@@ -106,7 +108,8 @@ class TestProjectionWarning:
     )
     def test_silent_when_not_stale(self, capsys, result) -> None:
         projection_warning(result)
-        assert capsys.readouterr().out == ""
+        captured = capsys.readouterr()
+        assert captured.out == captured.err == ""
 
 
 class TestEchoBatchResult:

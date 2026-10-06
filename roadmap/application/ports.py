@@ -90,7 +90,7 @@ class IssueUnitOfWork(Protocol):
 
 
 class IssueUnitOfWorkFactory(Protocol):
-    def create(self) -> IssueUnitOfWork: ...
+    def create(self, *, read_only: bool = False) -> IssueUnitOfWork: ...
 
 
 class PlanningUnitOfWork(IssueUnitOfWork, Protocol):
@@ -105,7 +105,7 @@ class PlanningUnitOfWork(IssueUnitOfWork, Protocol):
 
 
 class PlanningUnitOfWorkFactory(Protocol):
-    def create(self) -> PlanningUnitOfWork: ...
+    def create(self, *, read_only: bool = False) -> PlanningUnitOfWork: ...
 
 
 class WorkspaceMigrationPort(Protocol):

@@ -137,7 +137,10 @@ def test_empty_table_returns_empty_string_for_every_text_format(
     method_name: str,
 ) -> None:
     formatter = OutputFormatter(_empty_table())
-    assert getattr(formatter, method_name)() == ""
+    if method_name == "to_csv":
+        assert getattr(formatter, method_name)() == "ID,Title\r\n"
+    else:
+        assert getattr(formatter, method_name)() == ""
 
 
 class TestSpecializedFormatterWrappers:

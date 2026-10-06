@@ -64,10 +64,10 @@ class ConfigurationError(ValueError):
 
 
 def _read(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        return {}
     try:
         loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
     except (OSError, yaml.YAMLError) as error:
         raise ConfigurationError(
             f"cannot read configuration {path}: {error}"

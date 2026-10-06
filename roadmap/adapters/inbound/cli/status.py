@@ -43,15 +43,8 @@ def status(
 ) -> None:
     """Show a deterministic snapshot of canonical Roadmap entities."""
     del verbose
-    try:
-        tables = _build_snapshot_tables(ctx.obj["core"].planning)
-        _render_snapshot_tables(
-            tables, ["entities", "issue_status"], format_name, output
-        )
-    except click.ClickException:
-        raise
-    except Exception as error:
-        raise click.ClickException(f"Cannot build roadmap status: {error}") from error
+    tables = _build_snapshot_tables(ctx.obj["core"].planning)
+    _render_snapshot_tables(tables, ["entities", "issue_status"], format_name, output)
 
 
 def _render_snapshot_tables(

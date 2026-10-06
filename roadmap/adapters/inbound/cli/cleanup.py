@@ -9,7 +9,10 @@ from pathlib import Path
 
 import click
 
-from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    require_initialized,
+    verbose_message,
+)
 
 
 def _validate_retention_options(keep: int, days: int | None) -> None:
@@ -131,6 +134,7 @@ def _remove_backups(
 @click.option("--keep", type=int, default=10, show_default=True)
 @click.option("--days", type=int)
 @click.option("--dry-run", is_flag=True)
+@click.option("--yes", "-y", is_flag=True)
 @click.option("--force", is_flag=True)
 @click.option("--backups-only", is_flag=True)
 @click.option("--check-folders", is_flag=True)
@@ -145,6 +149,7 @@ def cleanup(
     days: int | None,
     dry_run: bool,
     force: bool,
+    yes: bool,
     backups_only: bool,
     check_folders: bool,
     check_duplicates: bool,
@@ -152,7 +157,7 @@ def cleanup(
     verbose: bool,
 ) -> None:
     """Preview or remove only retention-qualified legacy backup files."""
-    del backups_only, verbose
+    del backups_only
     diagnostic_check = _selected_diagnostic_check(
         check_folders, check_duplicates, check_malformed
     )
@@ -162,6 +167,10 @@ def cleanup(
     roadmap_dir = ctx.obj["core"].roadmap_dir
     candidates = _candidates(roadmap_dir / "backups", keep, days, datetime.now(UTC))
     relative = tuple(path.relative_to(roadmap_dir).as_posix() for path in candidates)
+    verbose_message(
+        verbose,
+        f"Selected {len(candidates)} backups using keep={keep}, days={days}; canonical records are outside cleanup scope.",
+    )
     if not candidates:
         click.echo("No backup files qualify for cleanup.")
         return
@@ -171,6 +180,6 @@ def cleanup(
         click.echo(f"- {path}")
     if dry_run:
         return
-    if not force:
+    if not (yes or force):
         click.confirm("Remove exactly these backup files?", abort=True, default=False)
     _remove_backups(candidates, relative, roadmap_dir / "backups")

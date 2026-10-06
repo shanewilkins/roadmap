@@ -8,6 +8,15 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ### Added
 
+- Add explicit workspace selection, JSON entity inspection with issue history,
+  project/milestone ID-only creation, nullable-field clearing, issue due dates and
+  label edits, project owner/priority controls, and stderr-only operational verbosity.
+- Add a reviewed command/option evidence matrix and a guard against CLI drift.
+
+- Add global `--debug` tracebacks for unexpected CLI failures. Configuration
+  access errors no longer silently use defaults; command import failures remain
+  errors. Log projection refresh exceptions with Python logging and send repair
+  warnings to stderr.
 - Show candidate IDs and labels for ambiguous issue/project/milestone lookups.
 - Explain effective configuration values, owning scope, and default/configured
   source with `config explain KEY [--format json]`.
@@ -29,6 +38,17 @@ All notable changes to Roadmap CLI are recorded here. The format follows
   require the full CI workflow before a release can publish.
 
 ### Fixed
+
+- Refuse dry-run recovery writes and parent-close guard bypasses; reject explicit
+  branch options without branch action before canonical writes.
+- Preserve literal machine output, independent sort directions and empty CSV
+  headers; validate output options and export enums even when results are empty.
+- Honor empty-analysis destinations and health summary-only across formats.
+- Require explicit bounded health repair targets. Prefer `--format`, `--yes` and
+  `milestone progress`; warn on deprecated spellings through 0.3, retire in 0.4.
+  Archive keeps a lifecycle override; its legacy force-as-consent shortcut is
+  explicitly deprecated, as is project close's shortcut. Init force is deprecated
+  because initialization is idempotent and never overwrites canonical data.
 
 - Keep broken-reference health findings visible when filtering by entity, with
   workspace-relative scopes and an accurate unhealthy exit code.

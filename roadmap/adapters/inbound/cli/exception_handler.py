@@ -17,9 +17,8 @@ def handle_cli_exception(
 ) -> None:
     """Centralized exception handler for CLI commands.
 
-    Catches RoadmapException instances and formats them for user output,
-    directing errors to stderr with proper exit codes. Other exceptions
-    are re-raised or logged as needed.
+    Expected failures receive concise messages. Unexpected failures include
+    a traceback only when explicitly requested. All failures exit nonzero.
 
     Args:
         ctx: Click context
@@ -29,9 +28,11 @@ def handle_cli_exception(
     stderr_console = get_console_stderr()
 
     if isinstance(error, ApplicationFailure | DomainFailure | ValueError):
-        stderr_console.print(f"Error: {error}")
+        click.echo(f"Error: {error}", err=True)
     else:
-        stderr_console.print(f"Error: {error}")
+        click.echo(f"Error: {error}", err=True)
         if show_traceback:
-            stderr_console.print_exception()
+            stderr_console.print_exception(show_locals=False)
+        else:
+            click.echo("Run with 'roadmap --debug' for a traceback.", err=True)
     ctx.exit(1)

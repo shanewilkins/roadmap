@@ -8,7 +8,10 @@ from pathlib import Path
 import click
 
 from roadmap.adapters.inbound.cli.analysis.presenter import CriticalPathPresenter
-from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    require_initialized,
+    write_report,
+)
 from roadmap.adapters.inbound.cli.planning_resolution import invoke
 from roadmap.application.contracts import CriticalPathResult
 
@@ -21,7 +24,17 @@ def analysis() -> None:
 @analysis.command("critical-path")
 @click.option("--milestone", "-m", help="Analyze one milestone")
 @click.option("--include-closed", is_flag=True, help="Include closed issues")
-@click.option("--export", type=click.Choice(["json", "csv"]))
+@click.option(
+    "--format",
+    "format_name",
+    type=click.Choice(["plain", "json", "csv"]),
+    default="plain",
+)
+@click.option(
+    "--export",
+    type=click.Choice(["json", "csv"]),
+    help="Deprecated until 0.4; use --format",
+)
 @click.option("--output", "-o", type=click.Path(dir_okay=False, path_type=Path))
 @click.pass_context
 @require_initialized
@@ -30,38 +43,40 @@ def critical_path(
     milestone: str | None,
     include_closed: bool,
     export: str | None,
+    format_name: str,
     output: Path | None,
 ) -> None:
     """Show the longest canonical issue dependency chain."""
+    if export is not None:
+        if (
+            ctx.get_parameter_source("format_name")
+            is click.core.ParameterSource.COMMANDLINE
+            and export != format_name
+        ):
+            raise click.UsageError("--export conflicts with --format")
+        click.echo(
+            "Deprecated through 0.3; removed in 0.4: --export; use --format.", err=True
+        )
+        format_name = export
+    export = None if format_name == "plain" else format_name
     result = invoke(
         lambda: ctx.obj["core"].planning.critical_path(
             milestone=milestone, include_closed=include_closed
         )
     )
-    if not result.critical_path:
+    if not result.critical_path and export is None:
         suffix = f" In milestone: {milestone}" if milestone else ""
-        click.echo(f"No active issues to analyze.{suffix}")
-        return
-    content = (
-        _export(result, export)
-        if export is not None
-        else CriticalPathPresenter().format_critical_path(result, milestone)
-    )
+        content = f"No active issues to analyze.{suffix}"
+    else:
+        content = (
+            _export(result, export)
+            if export is not None
+            else CriticalPathPresenter().format_critical_path(result, milestone)
+        )
     if output is None:
         click.echo(content)
         return
-    try:
-        with output.open("x", encoding="utf-8", newline="") as stream:
-            stream.write(content)
-            if not content.endswith("\n"):
-                stream.write("\n")
-    except FileExistsError as error:
-        raise click.ClickException(
-            f"Refusing to overwrite existing export: {output}"
-        ) from error
-    except OSError as error:
-        raise click.ClickException(f"Cannot write export {output}: {error}") from error
-    click.echo(f"Exported critical path to {output}", err=True)
+    write_report(content, output, "critical path")
 
 
 def _export(result: CriticalPathResult, format_name: str) -> str:

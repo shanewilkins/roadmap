@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 
+from roadmap.adapters.inbound.cli.cli_command_helpers import compatibility_warnings
 from roadmap.application.contracts import WorkspaceInitializationRequest
 from roadmap.domain.types import Name
 
@@ -64,6 +65,15 @@ def init(
     template_path: str | None,
 ) -> None:
     """Create the local layout and, unless skipped, its first project."""
+    workspace = ctx.find_root().obj.get("workspace")
+    if workspace is not None:
+        if (
+            ctx.get_parameter_source("name") is click.core.ParameterSource.COMMANDLINE
+            and name != workspace.name
+        ):
+            raise click.UsageError("init --name conflicts with --workspace")
+        name = str(workspace)
+    compatibility_warnings(ctx)
     del interactive, yes, template, template_path
     factory = ctx.find_root().obj.get("initialization_factory")
     if factory is None:

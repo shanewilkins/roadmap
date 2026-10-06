@@ -5,6 +5,7 @@ from dataclasses import asdict
 
 import click
 
+from roadmap.adapters.inbound.cli.cli_command_helpers import verbose_message
 from roadmap.application.failures import ApplicationFailure
 
 
@@ -75,12 +76,19 @@ def _report_result(plan, result, output_format: str) -> None:
     default="plain",
     show_default=True,
 )
+@click.option("--verbose", "-v", is_flag=True)
 @click.pass_context
-def migrate(ctx: click.Context, dry_run: bool, yes: bool, output_format: str) -> None:
+def migrate(
+    ctx: click.Context, dry_run: bool, yes: bool, output_format: str, verbose: bool
+) -> None:
     """Upgrade an existing 0.1.1 workspace to the 0.2 canonical layout."""
     migration = ctx.obj["migration_factory"]()
     try:
         plan = migration.preflight()
+        verbose_message(
+            verbose,
+            f"Validated migration preflight: {len(plan.changes)} changes, {len(plan.conflicts)} conflicts; no files changed by preflight.",
+        )
         _report_preflight(plan, dry_run, output_format)
         if dry_run or not plan.required:
             return
@@ -90,4 +98,8 @@ def migrate(ctx: click.Context, dry_run: bool, yes: bool, output_format: str) ->
     except ApplicationFailure as error:
         raise click.ClickException(str(error)) from error
 
+    verbose_message(
+        verbose,
+        "Migration committed; canonical changes applied and projection rebuilt.",
+    )
     _report_result(plan, result, output_format)

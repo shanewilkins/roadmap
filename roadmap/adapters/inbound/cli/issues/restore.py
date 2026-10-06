@@ -5,6 +5,7 @@ import click
 from roadmap.adapters.inbound.cli.cli_command_helpers import (
     echo_batch_result,
     require_initialized,
+    verbose_message,
 )
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
@@ -23,6 +24,12 @@ from roadmap.domain.types import IssueStatus
 )
 @click.option("--dry-run", is_flag=True, help="Preview without saving")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
+@click.option(
+    "--yes",
+    "-y",
+    is_flag=True,
+    help="Skip confirmation without bypassing lifecycle guards",
+)
 @click.option("--verbose", "-v", is_flag=True)
 @click.pass_context
 @require_initialized
@@ -33,6 +40,7 @@ def restore_issue(
     status: str | None,
     dry_run: bool,
     force: bool,
+    yes: bool,
     verbose: bool,  # noqa: ARG001
 ) -> None:
     """Restore archived issues without moving their Markdown files."""
@@ -40,7 +48,7 @@ def restore_issue(
         raise click.UsageError("Specify exactly one of ISSUE_ID or --all")
     core = ctx.obj["core"]
     identity = resolve_issue_id(core, issue_id) if issue_id else None
-    if not dry_run and not force:
+    if not dry_run and not (yes or force):
         click.confirm("Restore the selected issue(s)?", abort=True)
     result = invoke(
         lambda: core.issue_mutations.restore(
@@ -56,5 +64,9 @@ def restore_issue(
         dry_run,
         action="restore",
         label=lambda issue: issue.title,
+    )
+    verbose_message(
+        verbose,
+        f"Validated {len(result.issues)} issue(s); {'preview only, no writes' if dry_run else 'canonical restore committed'}.",
     )
     projection_warning(result)

@@ -22,6 +22,7 @@ from functools import wraps
 
 import click
 
+from roadmap.adapters.inbound.cli.cli_command_helpers import compatibility_warnings
 from roadmap.adapters.inbound.cli.console import get_console
 from roadmap.adapters.inbound.cli.layout import SmartTableLayout
 from roadmap.adapters.inbound.cli.models import ColumnType, TableData
@@ -75,37 +76,39 @@ def with_output_support(
         def wrapper(
             *args, format=None, columns=None, sort_by=None, filter_spec=None, **kwargs
         ):
-            # Call original command with all non-format-related params
+            context = click.get_current_context(silent=True)
+            if context is not None:
+                compatibility_warnings(context)
+            # Validate before querying: invalid options must also fail on empty results.
+            selected_cols = ColumnSelector.parse(columns, available_columns)
+            sort_spec = SortSpecParser.parse(sort_by, available_columns)
+            filters = FilterSpecParser.parse(filter_spec, column_types)
+            for filt in filters or []:
+                if filt.operator != "=":
+                    raise click.BadParameter(
+                        f"Unsupported filter operator '{filt.operator}'; use column=value"
+                    )
             result = func(*args, **kwargs)
 
             # If result is TableData, apply formatting/filtering/sorting
             if isinstance(result, TableData):
                 # Parse and apply column selection
-                if columns:
-                    selected_cols = ColumnSelector.parse(columns, available_columns)
-                    if selected_cols:
-                        result = result.select_columns(selected_cols)
+                if selected_cols:
+                    result = result.select_columns(selected_cols)
 
                 # Parse and apply sorting
-                if sort_by:
-                    sort_spec = SortSpecParser.parse(sort_by, available_columns)
-                    if sort_spec:
-                        result = result.sort(sort_spec)
+                if sort_spec:
+                    result = result.sort(sort_spec)
 
                 # Parse and apply filtering
-                if filter_spec and column_types:
-                    filters = FilterSpecParser.parse(filter_spec, column_types)
-                    if filters:
-                        for filt in filters:
-                            # Simple equality filtering for now
-                            if filt.operator == "=":
-                                result = result.filter(filt.column, filt.value)
+                for filt in filters or []:
+                    result = result.filter(filt.column, filt.value)
 
                 # Render in requested format
                 if format and format.lower() != "rich":
                     output = OutputFormatHandler.render(result, format.lower())
-                    console = get_console()
-                    console.print(output)
+                    assert isinstance(output, str)
+                    click.echo(output, nl=not output.endswith("\n"))
                     return  # Don't return TableData, output already printed
                 elif format and format.lower() == "rich":
                     # Use smart responsive layout for 'rich' format
@@ -124,7 +127,7 @@ def with_output_support(
         wrapper = click.option(
             "--filter",
             "filter_spec",
-            help=FilterSpecParser.get_help_text() if column_types else None,
+            help="Filter rows using column=value (comma-separated, combined with AND)",
         )(wrapper)
 
         wrapper = click.option(

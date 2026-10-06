@@ -101,7 +101,7 @@ def test_health_filters_preserve_exit_status_and_machine_schema(workspace, cli_r
         "--fix-type",
         "orphaned_issues",
         "--dry-run",
-        code=1,
+        code=2,
     )
     assert canonical_bytes(workspace) == before
 

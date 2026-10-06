@@ -163,12 +163,39 @@ def test_cli_previews_then_recovers_interrupted_transaction(workspace):
     assert "transaction.interrupted" in {
         f["finding_id"] for f in json.loads(health.stdout)["findings"]
     }
-    preview = _run(workspace, "health", "fix", "--dry-run", "--format", "json")
+    preview = _run(
+        workspace,
+        "health",
+        "fix",
+        "--fix-type",
+        "recovery",
+        "--dry-run",
+        "--format",
+        "json",
+    )
     assert preview.returncode == 2, preview.stderr
     assert _canonical(workspace) == before
     assert list((workspace / ".roadmap/db/transactions").iterdir())
-    repaired = _run(workspace, "health", "fix", "--yes", "--format", "json")
-    assert repaired.returncode == 0, repaired.stderr
+    repaired = _run(
+        workspace,
+        "health",
+        "fix",
+        "--fix-type",
+        "recovery",
+        "--yes",
+        "--format",
+        "json",
+    )
+    assert repaired.returncode in {0, 1}, repaired.stderr
+    if repaired.returncode == 1:
+        assert {
+            finding["scope"]
+            for finding in json.loads(repaired.stdout)["post_check"]["findings"]
+        } == {"projection"}
+        projection = _run(
+            workspace, "health", "fix", "--fix-type", "projection", "--yes"
+        )
+        assert projection.returncode == 0, projection.stderr
     final = _run(workspace, "health", "--format", "json")
     assert final.returncode == 0, final.stderr
     assert json.loads(final.stdout)["status"] == "healthy"
@@ -183,7 +210,7 @@ def test_cli_recovery_refuses_to_overwrite_post_crash_manual_edit(workspace):
     issue = workspace / ".roadmap/issues/issue-1.md"
     issue.write_text(issue.read_text().replace("Old issue", "Manually corrected issue"))
     before = _canonical(workspace)
-    repaired = _run(workspace, "health", "fix", "--yes")
+    repaired = _run(workspace, "health", "fix", "--fix-type", "recovery", "--yes")
     assert repaired.returncode != 0
     assert "cannot recover transaction" in repaired.stderr
     assert _canonical(workspace) == before
@@ -233,9 +260,14 @@ def test_cli_projection_repair_preserves_canonical_bytes(workspace, damage):
     health = _run(workspace, "health", "--format", "json")
     assert health.returncode == 1, health.stderr
     assert _canonical(workspace) == before
-    assert _run(workspace, "health", "fix", "--dry-run").returncode == 1
+    assert (
+        _run(
+            workspace, "health", "fix", "--fix-type", "projection", "--dry-run"
+        ).returncode
+        == 1
+    )
     assert _canonical(workspace) == before
-    repaired = _run(workspace, "health", "fix", "--yes")
+    repaired = _run(workspace, "health", "fix", "--fix-type", "projection", "--yes")
     assert repaired.returncode == 0, repaired.stderr
     assert _run(workspace, "health", "--format", "json").returncode == 0
     assert _canonical(workspace) == before

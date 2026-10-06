@@ -2,7 +2,10 @@
 
 import click
 
-from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    require_initialized,
+    validate_branch_options,
+)
 from roadmap.adapters.inbound.cli.datetime_parser import parse_user_datetime
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
@@ -42,6 +45,7 @@ def start_issue(
     force: bool,
 ) -> None:
     """Start work and record the issue's actual start time."""
+    validate_branch_options(ctx, git_branch)
     core = ctx.obj["core"]
     identity = resolve_issue_id(core, issue_id)
     result = invoke(lambda: core.issue_mutations.start(identity, _start_time(date)))
