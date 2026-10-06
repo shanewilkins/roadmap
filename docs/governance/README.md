@@ -27,6 +27,19 @@ When tradeoffs are necessary, prefer:
 Repository ownership is defined in [CODEOWNERS](../../.github/CODEOWNERS).
 This governance model does not require a committee or quorum.
 
+### Current review capacity
+
+The project currently has one maintainer and no designated backup maintainer.
+Independent human review is encouraged when available but is not claimed as
+an established practice. Automated checks provide evidence; they do not count
+as independent approval. The maintainer may approve a change using the quality
+gate below and must record material risks and accepted exceptions in its pull
+request or decision record.
+
+The [October review closeout](review-closeout-2026-10-06.md) records the observed
+review evidence and its limits. Revisit this status when a reviewer is delegated
+or repository ownership changes.
+
 ## Governance artifacts
 
 Existing project policies remain authoritative in their specific areas:
@@ -104,3 +117,31 @@ commands and pull-request expectations live in
   per release.
 - Revisit this governance document when ownership, release practice, or the
   contribution model changes.
+
+## Continuity and inactivity
+
+For a planned absence, the maintainer should either announce a maintenance
+pause or name a willing temporary maintainer in a public issue. Record the
+scope and duration of delegated review, merge, release, and security duties.
+Update CODEOWNERS and repository permissions only after the delegate accepts;
+review access when the delegation ends. Never place credentials or private
+security reports in a public handover record.
+
+After 90 days without a maintainer response to a substantive issue or pull
+request, contributors may open a maintenance-status issue asking whether the
+project remains active. This is a review trigger, not automatic transfer of
+ownership or a promise that a replacement maintainer exists. Without an
+authorized delegate, contributors should treat fixes and releases as delayed.
+
+A handover should reference the requirements registers, accepted ADRs, open
+issues, recovery guide, latest green CI run, and release workflow. Confirm
+repository administration and package publishing access through the service's
+own access controls, and exercise an installed-package check before a release.
+Private vulnerability reports continue through SECURITY.md's channels;
+security access must be delegated privately before claiming another responder.
+
+If the maintainer returns, they should record resumed maintenance and review
+outstanding reports and delegated access. If continuity cannot be arranged,
+contributors may maintain a clearly named fork under the project license,
+while preserving canonical-data compatibility and documenting any divergence.
+The fork must identify its own maintainers and security reporting channels.

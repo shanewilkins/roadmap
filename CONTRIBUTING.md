@@ -30,14 +30,14 @@ uv run roadmap --help
 Run these before opening a pull request.
 
 ```bash
-uv run --locked ruff format --config config/ruff.toml roadmap tests
-uv run --locked ruff check --config config/ruff.toml roadmap tests
-uv run --locked python tests/policy/architecture_checker.py
-uv run --locked pyright
-uv run --locked ty check
-uv run --locked radon cc roadmap --exclude '*/migrations/*' --total-average --show-complexity --min D
-uv run --locked xenon --exclude '*/migrations/*' --max-absolute B --max-modules B --max-average A roadmap
-uv run --locked pytest -q
+uv run --locked --extra dev ruff format --config config/ruff.toml roadmap tests
+uv run --locked --extra dev ruff check --config config/ruff.toml roadmap tests
+uv run --locked --extra dev python tests/policy/architecture_checker.py
+uv run --locked --extra dev pyright
+uv run --locked --extra dev ty check
+uv run --locked --extra dev radon cc roadmap --exclude '*/migrations/*' --total-average --show-complexity --min D
+uv run --locked --extra dev xenon --exclude '*/migrations/*' --max-absolute B --max-modules B --max-average A roadmap
+uv run --locked --extra dev pytest -q
 ```
 
 CI also validates workflow semantics with actionlint 1.7.12 and exercises the
@@ -48,8 +48,21 @@ ARM64.
 Optional security check.
 
 ```bash
-uv run --locked bandit -c config/bandit.toml -r roadmap --severity-level=high
+uv run --locked --extra dev bandit -c config/bandit.toml -r roadmap --severity-level=high
 ```
+
+CI also audits the complete locked runtime/development dependency set with a
+pinned, isolated pip-audit tool. To reproduce it locally:
+
+```bash
+uv export --locked --all-extras --all-groups --no-emit-project --no-header --output-file /tmp/roadmap-audit-requirements.txt
+uv tool run --from pip-audit==2.10.1 pip-audit --require-hashes --no-deps --disable-pip --strict --requirement /tmp/roadmap-audit-requirements.txt
+```
+
+Known vulnerabilities or dependency-collection failures fail the quality job.
+The audit uses the lockfile's versions and hashes and does not automatically
+upgrade packages. Dependabot alerts continue to provide monitoring between CI
+runs.
 
 ## Pull Request Guidelines
 
