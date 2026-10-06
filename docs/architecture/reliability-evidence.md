@@ -1,8 +1,10 @@
 # Reliability guarantees and evidence
 
 Date: 2026-10-06. Baseline: master `65a3f324`, with local dependency, review
-closeout, and reliability changes. These changes are not yet committed or
-verified by remote CI. This is evidence for specific guarantees, not a new
+closeout, and reliability changes, committed as `d1ef7db0` in
+[PR 3773](https://github.com/shanewilkins/roadmap/pull/3773).
+[Remote CI](https://github.com/shanewilkins/roadmap/actions/runs/37474526972)
+passed all 12 jobs. This is evidence for specific guarantees, not a new
 overall quality-review grade.
 
 Canonical persistence follows the [persistence contract](canonical-persistence-contract-0.2.md).
@@ -52,6 +54,8 @@ document, projection, diagnostics, and migration tests remain in
 
 - 32 added cases: 15 recovery unit cases and 17 process/CLI cases.
 - Full suite: **541 passed**, **85.90%** coverage against the 85% gate.
+- Remote Linux Python 3.14: **541 passed**, **85.86%** coverage; Python 3.12
+  and 3.13 test jobs also passed, as did all six installed-package checks.
 - Installed-wheel drill: **32 passed** using the wheel's site-packages and
   console entry point, with source-checkout imports excluded.
 - Ruff formatting/lint, Pyright, ty, architecture enforcement, Xenon gates,
@@ -84,8 +88,9 @@ commands use that environment's Python and installed `roadmap` executable.
 
 ## Evidence limits
 
-Local verification is on macOS ARM64 with Python 3.14.2. Remote matrix results
-for these changes remain pending. SIGKILL proves behavior after abrupt process
+Local verification is on macOS ARM64 with Python 3.14.2. Remote full-suite
+verification covers Linux Python 3.12–3.14, and installed-package journeys cover
+Ubuntu x64 and macOS ARM64 on those versions. SIGKILL proves behavior after abrupt process
 death; it does not simulate hardware power loss, filesystem damage, or every
 filesystem's durability semantics. EACCES/ENOSPC tests inject syscall errors;
 they do not exhaust an actual disk or alter machine permissions. Locks govern
