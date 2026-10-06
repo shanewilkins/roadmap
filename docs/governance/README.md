@@ -40,6 +40,10 @@ The [October review closeout](review-closeout-2026-10-06.md) records the observe
 review evidence and its limits. Revisit this status when a reviewer is delegated
 or repository ownership changes.
 
+Use the [handover runbook](HANDOVER.md) to prepare an absence, record delegation
+and exercise a candidate checkout. The [October quality actions](quality-review-actions-2026-10-06.md)
+record the current verification scope and remaining capacity limits.
+
 ## Governance artifacts
 
 Existing project policies remain authoritative in their specific areas:
@@ -74,6 +78,10 @@ ADRs in the architecture decision directory.
    include proportionate tests, documentation, and changelog updates.
 6. **Verify.** The requirement owner confirms the recorded acceptance criteria
    or verification method and changes the status to `Verified`.
+   Link the scoped evidence record described in the
+   [requirements register](../requirements/README.md#verification-records).
+   Passing related tests is insufficient when part of the requirement remains
+   unproved; retain `Accepted` and record the gap instead.
 
 Status meanings:
 

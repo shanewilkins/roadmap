@@ -1,5 +1,11 @@
 # September quality review closeout: 2026-10-06
 
+**Historical snapshot at `d1ef7db0`, superseded for current state.** The counts,
+tools and pending-merge status below describe that checkpoint. Master now uses
+ty alone and a 90% statement-coverage floor. Current follow-up evidence is in
+[quality review actions](quality-review-actions-2026-10-06.md); do not use this
+snapshot as current contributor instructions.
+
 This records the disposition of the September 2 review's P1–P17 recommendations.
 It does not assign a new overall readiness grade. The historical review remains
 in the local `notes/` directory; this closeout is maintained in the repository.

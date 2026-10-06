@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "47c25eaa6739704415df23a1c3bea7c1daf06f4b",
+  "candidate_scope": "Local macOS Python 3.14 candidate: baseline plus uncommitted October quality follow-up. Verification does not imply publication or independent approval.",
+  "requirements": {
+    "TR-003": {
+      "result": "verified",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/policy/test_architecture_contract_policy.py::test_every_original_negative_fixture_still_fails",
+        "tests/policy/test_architecture_contract_policy.py::test_alias_relative_and_type_checking_imports_cannot_evade_wiring",
+        "tests/policy/test_architecture_contract_policy.py::test_retired_migration_baseline_cannot_be_broadened"
+      ],
+      "commands": [
+        "uv run --locked lint-imports",
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": []
+    },
+    "TR-013": {
+      "result": "verified",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_export_preserves_quotes_unicode_and_newlines",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_empty_export_keeps_versioned_json_schema",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_machine_output_is_stable_across_terminal_environment_flags",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_file_destination_matches_stdout_and_refuses_overwrite"
+      ],
+      "commands": [
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": []
+    },
+    "TR-016": {
+      "result": "verified",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/policy/test_packaging_contract_policy.py::test_distribution_and_console_script_names_are_distinct",
+        "tests/policy/test_packaging_contract_policy.py::test_runtime_dependencies_exclude_namespace_collision_and_dev_tools",
+        "tests/policy/test_distribution_contents_policy.py::test_wheel_contains_only_the_package_and_its_dist_info",
+        "tests/policy/test_distribution_contents_policy.py::test_sdist_top_level_is_the_reviewed_allow_list"
+      ],
+      "commands": [
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term",
+        "uv build --out-dir /tmp/roadmap-quality-followup-dist",
+        "uv run --locked python scripts/smoke_package.py /tmp/roadmap-quality-followup-dist/roadmap_cli-0.3.0-py3-none-any.whl",
+        "uv run --locked python scripts/smoke_package.py /tmp/roadmap-quality-followup-dist/roadmap_cli-0.3.0.tar.gz"
+      ],
+      "remaining": []
+    },
+    "TR-029": {
+      "result": "verified",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/unit/adapters/persistence/test_canonical_persistence.py::test_projection_is_disposable_and_rebuilds_without_canonical_writes",
+        "tests/unit/adapters/persistence/test_canonical_persistence.py::test_manual_canonical_edit_incrementally_refreshes_projection",
+        "tests/unit/adapters/persistence/test_projection_failure_safety.py::test_partial_projection_refresh_rolls_back_and_retry_reads_latest_documents"
+      ],
+      "commands": [
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": []
+    },
+    "UR-008": {
+      "result": "verified",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_list_formats_retain_records_for_simple_values",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_export_filters_and_formats_have_exact_record_sets",
+        "tests/integration/cli/test_cli_query_output_contracts.py::test_export_preserves_quotes_unicode_and_newlines",
+        "tests/integration/cli/test_cli_correctness_closeout.py::test_machine_output_preserves_arbitrary_cell_text"
+      ],
+      "commands": [
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": []
+    },
+    "UR-013": {
+      "result": "verified",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/policy/test_packaging_contract_policy.py::test_distribution_and_console_script_names_are_distinct",
+        "tests/policy/test_distribution_contents_policy.py::test_wheel_contains_only_the_package_and_its_dist_info"
+      ],
+      "commands": [
+        "uv build --out-dir /tmp/roadmap-quality-followup-dist",
+        "uv run --locked python scripts/smoke_package.py /tmp/roadmap-quality-followup-dist/roadmap_cli-0.3.0-py3-none-any.whl",
+        "uv run --locked python scripts/smoke_package.py /tmp/roadmap-quality-followup-dist/roadmap_cli-0.3.0.tar.gz",
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": []
+    },
+    "UR-037": {
+      "result": "verified",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/unit/adapters/persistence/test_canonical_persistence.py::test_projection_is_disposable_and_rebuilds_without_canonical_writes",
+        "tests/unit/adapters/persistence/test_workspace_diagnostics.py::test_projection_repair_is_previewable_and_post_check_is_clean",
+        "tests/integration/cli/test_cli_quality_followup.py::test_projection_preview_with_consent_never_repairs_corrupt_index"
+      ],
+      "commands": [
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": []
+    },
+    "TR-008": {
+      "result": "partial",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/unit/adapters/persistence/test_transaction_recovery.py::test_replacement_failure_restores_all_files_and_allows_retry",
+        "tests/integration/persistence/test_process_recovery.py::test_sigkill_recovers_complete_transaction_on_fresh_process"
+      ],
+      "commands": [
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": [
+        "The complete interruption-stage/platform cross-product is not proved; candidate changes have not run in Ubuntu CI."
+      ]
+    },
+    "TR-011": {
+      "result": "partial",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/policy/test_architecture_contract_policy.py::test_ty_rejects_known_correctness_errors",
+        "tests/policy/test_requirement_verification_policy.py::test_verification_gate_rejects_unsubstantiated_verified_status"
+      ],
+      "commands": [
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": [
+        "The accepted statement includes dedicated dead-code and documentation gates not currently configured. Negative tests do not prove every CI tool failure mode."
+      ]
+    },
+    "TR-014": {
+      "result": "partial",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/unit/adapters/cli/test_failure_diagnostics.py::test_unexpected_failures_have_nonzero_stderr_and_opt_in_traceback",
+        "tests/unit/adapters/persistence/test_canonical_persistence.py::test_projection_failure_does_not_rollback_canonical_commit"
+      ],
+      "commands": [
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": [
+        "Built-in Python exception logging and stderr isolation are implemented; the broader correlation/redaction/audit-context criteria are not fully demonstrated. No optional telemetry feature is claimed."
+      ]
+    },
+    "TR-035": {
+      "result": "partial",
+      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "checked_at": "2026-10-06",
+      "tests": [
+        "tests/unit/adapters/persistence/test_workspace_migration.py::test_changed_migration_preview_preserves_latest_files",
+        "tests/unit/adapters/persistence/test_workspace_migration.py::test_unreadable_nested_canonical_directory_refuses_migration",
+        "tests/unit/adapters/persistence/test_workspace_migration.py::test_invalid_personal_schema_refuses_migration_without_writes"
+      ],
+      "commands": [
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+      ],
+      "remaining": [
+        "Named regression journeys cover the supported legacy source and refusal/retry paths; candidate OS-matrix verification remains pending."
+      ]
+    }
+  }
+}

@@ -73,7 +73,7 @@ dev = [
 Homepage = "https://github.com/shanewilkins/roadmap"
 Repository = "https://github.com/shanewilkins/roadmap"
 Issues = "https://github.com/shanewilkins/roadmap/issues"
-Documentation = "https://github.com/shanewilkins/roadmap/tree/main/docs"
+Documentation = "https://github.com/shanewilkins/roadmap/tree/master/docs"
 
 [project.scripts]
 roadmap = "roadmap.bootstrap:main"

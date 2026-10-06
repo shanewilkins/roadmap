@@ -74,3 +74,7 @@ def test_repository_metadata_uses_the_canonical_remote() -> None:
 
     assert urls["Repository"] == "https://github.com/shanewilkins/roadmap"
     assert urls["Issues"] == "https://github.com/shanewilkins/roadmap/issues"
+    assert (
+        urls["Documentation"]
+        == "https://github.com/shanewilkins/roadmap/tree/master/docs"
+    )

@@ -9,6 +9,14 @@ implementation use POSIX APIs.
 The distribution name is `roadmap-cli`; the command it installs is `roadmap`.
 Do not install the unrelated `roadmap` distribution from PyPI.
 
+PyPI currently provides 0.3.0. Installing it does not include subsequent master
+changes, even though the source checkout still reports version 0.3.0. Use the
+[tagged release docs](https://github.com/shanewilkins/roadmap/tree/v0.3.0/docs)
+for that installation; [Unreleased](../../CHANGELOG.md#unreleased) and the
+[CLI interface contract](../architecture/cli-interface-contract.md) describe
+the newer source behavior. Check the [next-release checklist](../releases/NEXT_RELEASE.md)
+before publishing it as a new version.
+
 ## Install for regular use
 
 An isolated tool environment avoids dependency conflicts with application

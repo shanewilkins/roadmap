@@ -11,6 +11,13 @@ from tests.policy.test_public_contract_inventory_policy import _cli_surfaces
 
 ROOT = Path(__file__).resolve().parents[2]
 MATRIX = ROOT / "docs/architecture/cli-behavior-matrix.json"
+SAFETY_PARAMETERS = {
+    "roadmap health fix": {"repair_type", "dry_run", "confirmed"},
+    "roadmap migrate": {"dry_run", "yes"},
+    "roadmap issue archive": {"dry_run", "yes", "force"},
+    "roadmap milestone archive": {"dry_run", "yes", "force"},
+    "roadmap project archive": {"dry_run", "yes", "force"},
+}
 
 
 def _live_parameters():
@@ -83,10 +90,15 @@ def test_live_cli_requires_reviewed_roster_and_behavioral_evidence():
 def test_matrix_evidence_references_existing_journeys():
     commands = json.loads(MATRIX.read_text())["commands"]
     references = set()
-    for row in commands.values():
+    for surface, row in commands.items():
         references.update(row["evidence"])
         for parameter in row["parameters"]:
-            assert parameter["evidence"] == "command"
+            evidence = parameter["evidence"]
+            if parameter["parameter"] in SAFETY_PARAMETERS.get(surface, set()):
+                assert isinstance(evidence, list) and evidence
+            if evidence != "command":
+                assert isinstance(evidence, list) and evidence
+                references.update(evidence)
     cache = {}
     for reference in sorted(references):
         filename, identifier = reference.split("::", 1)

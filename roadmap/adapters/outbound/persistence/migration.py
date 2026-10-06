@@ -24,6 +24,7 @@ from .documents import (
     DocumentError,
     DocumentKind,
     DocumentRepository,
+    canonical_paths,
     parse_document,
     serialize_document,
 )
@@ -340,7 +341,9 @@ class FilesystemWorkspaceMigration:
         paths: set[Path] = set()
         for kind, patterns in self._patterns.items():
             for pattern in patterns:
-                for path in sorted(self.roadmap_dir.glob(pattern)):
+                for path in canonical_paths(
+                    self.roadmap_dir / pattern.removesuffix("/**/*.md")
+                ):
                     if path in paths:
                         continue
                     paths.add(path)
@@ -429,7 +432,12 @@ class FilesystemWorkspaceMigration:
             conflicts.append(str(error))
             return None
         version = existing.get("schema_version", 1)
-        if not isinstance(version, int) or version > 1 or version < 0:
+        if (
+            not isinstance(version, int)
+            or isinstance(version, bool)
+            or version > 1
+            or version < 0
+        ):
             conflicts.append("user configuration has an unsupported schema version")
             return None
         user = _section(legacy, "user")
@@ -481,7 +489,9 @@ class FilesystemWorkspaceMigration:
         candidates = [self.project_config_path]
         for patterns in self._patterns.values():
             for pattern in patterns:
-                candidates.extend(self.roadmap_dir.glob(pattern))
+                candidates.extend(
+                    canonical_paths(self.roadmap_dir / pattern.removesuffix("/**/*.md"))
+                )
         if self.user_config_path.exists():
             candidates.append(self.user_config_path)
         for path in sorted(set(candidates), key=lambda item: str(item)):

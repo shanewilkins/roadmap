@@ -1,9 +1,10 @@
 # Requirements Register
 
 This directory is the product and engineering input to the development
-roadmap. The registers were triaged on 2026-08-16: every 0.2 requirement is
-Accepted and assigned to an implementation phase, while deliberately postponed
-directions are Deferred to post-0.2.
+roadmap. The initial 0.2 scope was triaged on 2026-08-16. `Accepted` means approved
+scope, not delivered behavior. Selected implemented requirements now have scoped
+verification records; postponed directions remain `Deferred`. Read the status
+and evidence, not the roadmap target alone, to determine delivery.
 
 ## Files
 
@@ -75,3 +76,23 @@ paths, observable completion, and recovery.
 
 Approval and status transitions follow the
 [project governance process](../governance/README.md#requirement-lifecycle).
+
+## Verification records
+
+[verification-evidence.json](verification-evidence.json) records the assessed
+requirements, baseline commit, candidate scope, date, named tests, commands and
+remaining gaps. [October verification notes](verification-2026-10-06.md) explain
+the scope and status decisions. This is repository governance data; it does not
+introduce an in-app requirements feature or a second canonical workspace store.
+
+- `Verified` requires a passing scoped record, concrete evidence and no known
+  unmet acceptance criteria. It is verification of the candidate, not a claim
+  that the code is already released or independently reviewed.
+- A partial record keeps status `Accepted` and lists the missing proof. An
+  unassessed requirement also stays `Accepted`; a related green test is not enough.
+- Update `last_updated` and the `source` reference when the meaning/status changes.
+  Preserve the earlier triage record as history. Revisit verification when the
+  implementation, supported platform scope or contract changes.
+- CI validates IDs, lifecycle/dependency states and verification prerequisites.
+  Named test references prove traceability; passing tests and human review still
+  determine whether their assertions satisfy the requirement.

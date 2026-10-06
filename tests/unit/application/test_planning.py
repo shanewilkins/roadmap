@@ -7,7 +7,9 @@ import pytest
 
 from roadmap.application.contracts import (
     MilestoneCreateCommand,
+    MilestoneUpdateCommand,
     ProjectCreateCommand,
+    ProjectUpdateCommand,
 )
 from roadmap.application.failures import ApplicationFailure
 from roadmap.application.use_cases import Planning
@@ -27,6 +29,21 @@ from roadmap.domain.types import (
 )
 
 NOW = Timestamp(datetime(2026, 8, 24, 12, tzinfo=UTC))
+
+
+@pytest.mark.parametrize("kind", ["project", "milestone"])
+def test_archived_planning_entities_require_explicit_visibility(kind):
+    value = (
+        _project("archived", retention=RetentionState.ARCHIVED)
+        if kind == "project"
+        else _milestone("archived", retention=RetentionState.ARCHIVED)
+    )
+    units = Units(value)
+    lookup = getattr(_service(units), kind)
+    with pytest.raises(ApplicationFailure, match="not found"):
+        lookup(str(value.id))
+    assert getattr(lookup(str(value.id), include_archived=True), kind) == value
+    assert units.commits == 0
 
 
 def _issue(identity: str, **updates) -> Issue:
@@ -156,6 +173,147 @@ class Clock:
 
 def _service(units: Units) -> Planning:
     return Planning(units, Clock())
+
+
+@pytest.mark.parametrize("kind", ["project", "milestone"])
+def test_duplicate_names_refuse_creation_without_commit(kind):
+    existing = _project("one") if kind == "project" else _milestone("one")
+    units = Units(existing)
+    service = _service(units)
+    command = (
+        ProjectCreateCommand(existing.name)
+        if kind == "project"
+        else MilestoneCreateCommand(existing.name)
+    )
+    with pytest.raises(ApplicationFailure, match="already exists"):
+        getattr(service, f"create_{kind}")(command)
+    assert units.commits == 0
+    assert tuple(getattr(units, f"{kind}s").values()) == (existing,)
+
+
+@pytest.mark.parametrize("missing", ["issue", "milestone"])
+def test_assignment_with_missing_entity_preserves_existing_relations(missing):
+    issue, milestone = _issue("issue"), _milestone("milestone")
+    units = Units(issue, milestone)
+    with pytest.raises(ApplicationFailure, match="not found"):
+        _service(units).assign_issue(
+            EntityId("missing") if missing == "issue" else issue.id,
+            EntityId("missing") if missing == "milestone" else milestone.id,
+        )
+    assert units.issues[issue.id] == issue
+    assert units.milestones[milestone.id] == milestone
+    assert units.commits == 0
+
+
+def test_repeated_assignment_and_closure_do_not_add_events_or_commits():
+    issue, milestone, project = (
+        _issue("issue"),
+        _milestone("milestone"),
+        _project("project"),
+    )
+    units = Units(issue, milestone, project)
+    service = _service(units)
+    service.assign_issue(issue.id, milestone.id)
+    service.close_milestone(milestone.id, force=True)
+    service.close_project(project.id, force=False)
+    before = (
+        dict(units.issues),
+        dict(units.milestones),
+        dict(units.projects),
+        units.commits,
+    )
+    service.assign_issue(issue.id, milestone.id)
+    service.close_milestone(milestone.id, force=True)
+    service.close_project(project.id, force=False)
+    assert (units.issues, units.milestones, units.projects, units.commits) == before
+
+
+def test_projectless_milestone_and_unique_prefix_resolution():
+    units = Units(_project("project-unique"))
+    service = _service(units)
+    result = service.create_milestone(MilestoneCreateCommand(Name("Standalone")))
+    assert isinstance(result.aggregate, Milestone)
+    assert result.aggregate.relation.project_id is None
+    assert service.project("project-u").project.id == EntityId("project-unique")
+    assert units.commits == 1
+
+
+def test_unchanged_project_update_does_not_commit():
+    project = _project("project")
+    units = Units(project)
+    assert (
+        _service(units).update_project(ProjectUpdateCommand(project.id)).aggregate
+        == project
+    )
+    assert units.commits == 0
+
+
+@pytest.mark.parametrize("kind", ["project", "milestone"])
+def test_archive_requires_a_selector(kind):
+    units = Units(_project("project"), _milestone("milestone"))
+    with pytest.raises(ApplicationFailure):
+        getattr(_service(units), f"archive_{kind}")(
+            None, all_closed=False, dry_run=False, force=False
+        )
+    assert units.commits == 0
+
+
+def test_daily_summary_terminates_on_manually_authored_dependency_cycle():
+    milestone = _milestone("milestone", due_at=Timestamp(NOW.value + timedelta(days=1)))
+    first = _issue(
+        "a",
+        assignee="alice",
+        priority=Priority.HIGH,
+        relations=IssueRelations(
+            milestone_id=milestone.id, depends_on=(EntityId("b"),)
+        ),
+    )
+    second = _issue(
+        "b",
+        assignee="alice",
+        priority=Priority.HIGH,
+        relations=IssueRelations(milestone_id=milestone.id, depends_on=(first.id,)),
+    )
+    units = Units(milestone, first, second)
+    service = _service(units)
+    result = service.daily_summary("alice")
+    assert {item.id for item in result.up_next} == {first.id, second.id}
+    assert service.daily_summary("alice") == result
+    assert units.commits == 0
+
+
+def test_critical_path_handles_dependency_absent_from_visible_snapshot():
+    issue = _issue(
+        "visible",
+        estimated_hours=2,
+        relations=IssueRelations(depends_on=(EntityId("absent"),)),
+    )
+    units = Units(issue)
+    result = _service(units).critical_path(milestone=None, include_closed=False)
+    assert result.total_duration == 2
+    assert units.commits == 0
+
+
+def test_reprojecting_existing_reciprocal_link_does_not_duplicate_it():
+    milestone = _milestone("milestone")
+    project = _project("project", relations=ProjectRelations((milestone.id,)))
+    units = Units(milestone, project)
+    _service(units).update_milestone(
+        MilestoneUpdateCommand(milestone.id, project_id=project.id)
+    )
+    assert units.projects[project.id].relations.milestone_ids == (milestone.id,)
+    assert units.milestones[milestone.id].relation.project_id == project.id
+
+
+def test_purge_milestone_leaves_unrelated_project_unchanged():
+    milestone = _milestone("milestone", retention=RetentionState.ARCHIVED)
+    linked = _project("linked", relations=ProjectRelations((milestone.id,)))
+    unrelated = _project("unrelated")
+    units = Units(milestone, linked, unrelated)
+    _service(units).purge_milestone(milestone.id)
+    assert units.projects[unrelated.id] == unrelated
+    assert units.projects[linked.id].relations.milestone_ids == ()
+    assert milestone.id not in units.milestones
 
 
 def test_create_project_and_milestone_records_one_reciprocal_relationship() -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 from pathlib import Path
 
@@ -12,11 +13,32 @@ import yaml
 from roadmap.adapters.outbound.persistence.documents import DocumentRepository
 from roadmap.adapters.outbound.persistence.migration import (
     FilesystemWorkspaceMigration,
+    MigrationError,
 )
 from roadmap.adapters.outbound.persistence.projection import SQLiteProjection
+from roadmap.application.failures import ApplicationFailure
 from roadmap.application.use_cases.workspace_migration import WorkspaceMigration
 
 FIXTURE = Path(__file__).parents[3] / "fixtures" / "compatibility" / "v0_1_1"
+
+
+def test_missing_project_configuration_migrates_documents_and_creates_current_config(
+    tmp_path,
+):
+    root = _copy_fixture(tmp_path)
+    (root / ".roadmap/config.yaml").unlink()
+    migration, _ = _migration(root, tmp_path / "user.yaml")
+    plan = migration.preflight()
+    assert not plan.conflicts
+    assert plan.source_version == 0
+    migration.execute(plan.fingerprint)
+    assert (
+        yaml.safe_load((root / ".roadmap/config.yaml").read_text())[
+            "workspace_schema_version"
+        ]
+        == 1
+    )
+    assert not migration.preflight().required
 
 
 def _copy_fixture(tmp_path: Path) -> Path:
@@ -40,6 +62,96 @@ def _migration(root: Path, user_config: Path, **kwargs):
         root / ".roadmap", projection, user_config, **kwargs
     )
     return WorkspaceMigration(adapter), projection
+
+
+@pytest.mark.parametrize(
+    "configuration, message",
+    [
+        ({"behavior": {key: "yes"}}, f"behavior.{key}")
+        for key in (
+            "auto_branch_on_start",
+            "confirm_destructive",
+            "show_tips",
+            "include_closed_in_critical_path",
+        )
+    ]
+    + [
+        ({"behavior": {"default_project_id": 42}}, "default_project_id"),
+        ({"display": {"table_width": 19}}, "table_width"),
+        ({"output": {"columns": [42]}}, "output.columns"),
+        ({"workspace_schema_version": True}, "workspace_schema_version"),
+        ({"workspace_schema_version": -1}, "workspace_schema_version"),
+        ({"workspace_schema_version": "1"}, "workspace_schema_version"),
+        (["not", "a", "mapping"], "must be a mapping"),
+    ],
+)
+def test_invalid_configuration_refuses_adapter_execution_without_writes(
+    tmp_path, configuration, message
+):
+    root = _copy_fixture(tmp_path)
+    (root / ".roadmap/config.yaml").write_text(yaml.safe_dump(configuration))
+    repository = DocumentRepository(root / ".roadmap")
+    adapter = FilesystemWorkspaceMigration(
+        root / ".roadmap",
+        SQLiteProjection(root / ".roadmap/db/projection.db", repository),
+        tmp_path / "user.yaml",
+    )
+    before = _digests(tmp_path)
+    plan = adapter.preflight()
+    assert any(message in conflict for conflict in plan.conflicts)
+    with pytest.raises(MigrationError, match=message):
+        adapter.execute(plan.fingerprint)
+    assert _digests(tmp_path) == before
+
+
+def test_current_schema_with_legacy_layout_is_refused_without_relocation(tmp_path):
+    root = _copy_fixture(tmp_path)
+    (root / ".roadmap/config.yaml").write_text("workspace_schema_version: 1\n")
+    before = _digests(tmp_path)
+    migration, _ = _migration(root, tmp_path / "user.yaml")
+    plan = migration.preflight()
+    assert plan.conflicts
+    with pytest.raises(ApplicationFailure):
+        migration.execute(plan.fingerprint)
+    assert _digests(tmp_path) == before
+
+
+def test_minimal_legacy_configuration_migrates_without_external_settings_warning(
+    tmp_path,
+):
+    root = _copy_fixture(tmp_path)
+    (root / ".roadmap/config.yaml").write_text("behavior: {}\n")
+    migration, _ = _migration(root, tmp_path / "user.yaml")
+    plan = migration.preflight()
+    assert not plan.conflicts
+    assert not plan.warnings
+    migration.execute(plan.fingerprint)
+    assert not migration.preflight().required
+
+
+@pytest.mark.parametrize("hazard", ["symlink", "case-collision"])
+def test_unsafe_document_targets_refuse_migration_without_changing_sources(
+    tmp_path, hazard
+):
+    root = _copy_fixture(tmp_path)
+    source = root / ".roadmap/issues/v0-1-1/951f146d-visible-fixture-issue.md"
+    if hazard == "symlink":
+        outside = tmp_path / "outside.md"
+        outside.write_bytes(source.read_bytes())
+        (source.parent / "linked.md").symlink_to(outside)
+        message = "escapes workspace"
+    else:
+        content = source.read_text()
+        (source.parent / "first.md").write_text(content.replace("951f146d", "Case-ID"))
+        (source.parent / "second.md").write_text(content.replace("951f146d", "case-id"))
+        message = "case-insensitive target collision"
+    before = _digests(tmp_path)
+    migration, _ = _migration(root, tmp_path / "user.yaml")
+    plan = migration.preflight()
+    assert any(message in conflict for conflict in plan.conflicts)
+    with pytest.raises(ApplicationFailure):
+        migration.execute(plan.fingerprint)
+    assert _digests(tmp_path) == before
 
 
 def test_dry_run_is_byte_for_byte_non_mutating_and_enumerates_complete_write_set(
@@ -258,3 +370,72 @@ def test_interrupted_migration_rolls_forward_deterministically_on_retry(
     assert result.target_version == 1
     assert projection.query()
     assert not list((root / ".roadmap/db/transactions").glob("*"))
+
+
+@pytest.mark.parametrize("version", [True, False, 2, -1, "1"])
+def test_invalid_personal_schema_refuses_migration_without_writes(tmp_path, version):
+    root = _copy_fixture(tmp_path)
+    personal = tmp_path / "user.yaml"
+    personal.write_text(yaml.safe_dump({"schema_version": version}))
+    before = _digests(tmp_path)
+    migration, _ = _migration(root, personal)
+
+    plan = migration.preflight()
+
+    assert "user configuration has an unsupported schema version" in plan.conflicts
+    with pytest.raises(ApplicationFailure, match="Migration cannot proceed"):
+        migration.execute(plan.fingerprint)
+    assert _digests(tmp_path) == before
+
+
+@pytest.mark.parametrize("boundary", ["application", "adapter"])
+@pytest.mark.parametrize("changed", ["canonical", "new-personal", "existing-personal"])
+def test_changed_migration_preview_preserves_latest_files(tmp_path, boundary, changed):
+    root = _copy_fixture(tmp_path)
+    personal = tmp_path / "user.yaml"
+    if changed == "existing-personal":
+        personal.write_text("schema_version: 1\nidentity:\n  name: Original\n")
+    use_case, projection = _migration(root, personal)
+    migration = (
+        use_case
+        if boundary == "application"
+        else FilesystemWorkspaceMigration(root / ".roadmap", projection, personal)
+    )
+    plan = migration.preflight()
+    if changed == "canonical":
+        path = root / ".roadmap/issues/v0-1-1/951f146d-visible-fixture-issue.md"
+        path.write_text(path.read_text() + "\nNew manual edit\n")
+    else:
+        personal.write_text("schema_version: 1\nidentity:\n  name: Latest\n")
+    latest = _digests(tmp_path)
+
+    with pytest.raises((ApplicationFailure, MigrationError), match="changed after"):
+        migration.execute(plan.fingerprint)
+
+    assert _digests(tmp_path) == latest
+    assert migration.execute(migration.preflight().fingerprint).projection_rebuilt
+    if changed != "canonical":
+        assert yaml.safe_load(personal.read_text())["identity"]["name"] == "Latest"
+    else:
+        assert "New manual edit" in (root / ".roadmap/issues/951f146d.md").read_text()
+
+
+def test_unreadable_nested_canonical_directory_refuses_migration(tmp_path, monkeypatch):
+    root = _copy_fixture(tmp_path)
+    personal = tmp_path / "user.yaml"
+    denied = root / ".roadmap/issues/v0-1-1"
+    before = _digests(tmp_path)
+    scandir = os.scandir
+
+    def deny(path):
+        if Path(path) == denied:
+            raise PermissionError("canonical enumeration denied")
+        return scandir(path)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(os, "scandir", deny)
+        with pytest.raises(PermissionError, match="canonical enumeration denied"):
+            _migration(root, personal)[0].preflight()
+
+    assert _digests(tmp_path) == before
+    assert not personal.exists()

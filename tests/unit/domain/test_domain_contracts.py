@@ -18,6 +18,7 @@ from roadmap.domain.transitions import (
 )
 from roadmap.domain.types import (
     EntityId,
+    IssueComment,
     IssueRelations,
     IssueStatus,
     MilestoneRelation,
@@ -32,6 +33,68 @@ from roadmap.domain.types import (
 
 NOW = Timestamp(datetime(2026, 8, 16, 12, tzinfo=UTC))
 LATER = Timestamp(NOW.value + timedelta(minutes=1))
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"actual_start_at": LATER, "actual_end_at": NOW},
+        {"comments": (IssueComment(1, "alice", "First", NOW, NOW),) * 2},
+        {"comments": (IssueComment(2, "alice", "Reply", NOW, NOW, in_reply_to=1),)},
+    ],
+)
+def test_issue_rejects_inconsistent_dates_and_comment_graph_without_mutation(changes):
+    from dataclasses import replace
+
+    original = Issue(EntityId("issue"), NOW, NOW, title=Title("Original"))
+    with pytest.raises(InvariantViolation):
+        replace(original, **changes)
+    assert original.comments == ()
+    assert original.actual_start_at is None
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"estimated_hours": 0},
+        {"estimated_hours": -1},
+        {"actual_hours": -1},
+        {"start_at": LATER, "target_end_at": NOW},
+    ],
+)
+def test_project_rejects_invalid_hours_and_date_range(changes):
+    with pytest.raises(InvariantViolation):
+        Project(EntityId("project"), NOW, NOW, name=Name("Project"), **changes)
+
+
+@pytest.mark.parametrize("percentage", [-1, 101])
+def test_out_of_range_progress_preserves_original(percentage):
+    original = Issue(EntityId("issue"), NOW, NOW, title=Title("Original"))
+    with pytest.raises(InvariantViolation):
+        original.set_progress(percentage, LATER)
+    assert original.progress_percentage is None
+    assert original.updated == NOW
+
+
+def test_reset_progress_and_repeated_branch_link_preserve_consistency():
+    original = Issue(
+        EntityId("issue"),
+        NOW,
+        NOW,
+        title=Title("Original"),
+        status=IssueStatus.IN_PROGRESS,
+        progress_percentage=50,
+    )
+    reset = original.set_progress(0, LATER)
+    assert reset.status is IssueStatus.TODO
+    assert reset.progress_percentage == 0
+    assert original.status is IssueStatus.IN_PROGRESS
+    with pytest.raises(InvariantViolation):
+        original.link_branch("  ", LATER)
+    linked = original.link_branch(" feature/work ", LATER)
+    assert linked.link_branch("feature/work", LATER) == linked
+    assert linked.git_branches == ("feature/work",)
+
 
 TRANSITION_CASES = (
     [

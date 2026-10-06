@@ -882,7 +882,10 @@
           ],
           "disposition": "supported",
           "contract": "Select repair type; see cli-interface-contract.md for selection, validation and side effects.",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_projection_preview_with_consent_never_repairs_corrupt_index",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_health_repair_requires_explicit_bounded_target"
+          ],
           "required": true,
           "default": "Sentinel.UNSET",
           "choices": [
@@ -897,7 +900,10 @@
           ],
           "disposition": "supported",
           "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_projection_preview_with_consent_never_repairs_corrupt_index",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_health_repair_requires_explicit_bounded_target"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -910,7 +916,10 @@
           ],
           "disposition": "supported",
           "contract": "Select confirmed; see cli-interface-contract.md for selection, validation and side effects.",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_projection_preview_with_consent_never_repairs_corrupt_index",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_health_repair_requires_explicit_bounded_target"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -1279,7 +1288,10 @@
           ],
           "disposition": "supported",
           "contract": "Preview without saving",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_archive_preview_with_consent_and_override_preserves_all_state",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -1291,7 +1303,10 @@
           ],
           "disposition": "supported",
           "contract": "Allow non-closed issues and skip prompt",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_archive_preview_with_consent_and_override_preserves_all_state",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -1304,7 +1319,10 @@
           ],
           "disposition": "supported",
           "contract": "Skip confirmation without bypassing lifecycle guards",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_archive_preview_with_consent_and_override_preserves_all_state",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -2772,7 +2790,10 @@
           ],
           "disposition": "supported",
           "contract": "Enumerate and validate changes without writing.",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_migration_preview_with_consent_preserves_legacy_and_personal_data",
+            "tests/integration/cli/test_cli_quality_followup.py::test_migration_unreadable_canonical_tree_fails_loudly_without_writes"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -2785,7 +2806,10 @@
           ],
           "disposition": "supported",
           "contract": "Apply without confirmation.",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_migration_preview_with_consent_preserves_legacy_and_personal_data",
+            "tests/integration/cli/test_cli_quality_followup.py::test_migration_unreadable_canonical_tree_fails_loudly_without_writes"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -2886,7 +2910,10 @@
           ],
           "disposition": "supported",
           "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_archive_preview_with_consent_and_override_preserves_all_state",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -2898,7 +2925,10 @@
           ],
           "disposition": "supported",
           "contract": "Allow non-completed records; legacy confirmation shortcut deprecated for 0.4",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_archive_preview_with_consent_and_override_preserves_all_state",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -2911,7 +2941,10 @@
           ],
           "disposition": "supported",
           "contract": "Skip confirmation without bypassing lifecycle guards",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_archive_preview_with_consent_and_override_preserves_all_state",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -3693,7 +3726,10 @@
           ],
           "disposition": "supported",
           "contract": "Select dry run; see cli-interface-contract.md for selection, validation and side effects.",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_archive_preview_with_consent_and_override_preserves_all_state",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -3705,7 +3741,10 @@
           ],
           "disposition": "supported",
           "contract": "Allow non-completed records; legacy confirmation shortcut deprecated for 0.4",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_archive_preview_with_consent_and_override_preserves_all_state",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []
@@ -3718,7 +3757,10 @@
           ],
           "disposition": "supported",
           "contract": "Skip confirmation without bypassing lifecycle guards",
-          "evidence": "command",
+          "evidence": [
+            "tests/integration/cli/test_cli_quality_followup.py::test_archive_preview_with_consent_and_override_preserves_all_state",
+            "tests/integration/cli/test_cli_correctness_closeout.py::test_yes_is_consent_and_does_not_override_archive_lifecycle"
+          ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": []

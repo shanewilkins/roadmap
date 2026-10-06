@@ -228,8 +228,13 @@ reason, and planned migration stage. Enforcement:
 4. reports exact source, target, and rule; and
 5. passes only with an empty baseline when migration is declared complete.
 
-The checker uses Python AST import analysis. It does not infer architecture from
-filesystem names alone and does not claim to prove semantic design quality.
+The completed migration now uses stock Import Linter/Grimp for import resolution,
+layer direction, adapter independence and bootstrap wiring. Narrow AST guards
+reject retired namespaces and imports omitted by the graph tool. The baseline
+is empty and cannot be extended; the historical shrinking-baseline procedure
+above describes the refactor, not a current exception mechanism. See
+[ADR-0001](adr/0001-pragmatic-hexagonal-architecture.md#enforcement-contract).
+These checks do not claim to prove semantic design quality.
 
 ## Migration sequence
 

@@ -109,7 +109,9 @@ def _report_empty_results(console, result) -> None:
         console.print("📋 No upcoming milestones with due dates found.", style="yellow")
         return
     console.print(f"📋 No {result.description} issues found.", style="yellow")
-    console.print("Create one with: roadmap issue create 'Issue title'", style="dim")
+    console.print(
+        "Create one with: roadmap issue create --title 'Issue title'", style="dim"
+    )
 
 
 @click.command("list")

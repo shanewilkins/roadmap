@@ -131,6 +131,7 @@ def _assert_complete(actual: set[str], inventoried: set[str], label: str) -> Non
 
 
 ACCEPTED_ROADMAP_TARGET = re.compile(r"0\.[3-9]|1\.0")
+DELIVERY_STATUSES = {"Accepted", "Verified"}
 
 
 def test_requirement_registers_are_fully_triaged_and_referentially_valid() -> None:
@@ -150,12 +151,12 @@ def test_requirement_registers_are_fully_triaged_and_referentially_valid() -> No
     assert all(re.fullmatch(r"TR-\d{3}", item) for item in technical_ids)
 
     for row in [*users, *technical]:
-        assert row["status"] in {"Accepted", "Deferred", "Rejected"}
+        assert row["status"] in DELIVERY_STATUSES | {"Deferred", "Rejected"}
         assert row["roadmap_target"] != "TBD"
         assert date.fromisoformat(row["last_updated"]) <= date.today()
         if row["priority"] == "Must":
-            assert row["status"] == "Accepted", row["id"]
-        if row["status"] == "Accepted":
+            assert row["status"] in DELIVERY_STATUSES, row["id"]
+        if row["status"] in DELIVERY_STATUSES:
             legacy_0_2_target = row["roadmap_target"].startswith("0.2.0 / Phase")
             assert legacy_0_2_target or ACCEPTED_ROADMAP_TARGET.fullmatch(
                 row["roadmap_target"]
@@ -166,16 +167,20 @@ def test_requirement_registers_are_fully_triaged_and_referentially_valid() -> No
     for row in users:
         dependencies = _split_references(row["depends_on"])
         assert dependencies <= user_ids
-        if row["status"] == "Accepted":
-            assert all(user_status[item] == "Accepted" for item in dependencies)
+        if row["status"] in DELIVERY_STATUSES:
+            assert all(user_status[item] in DELIVERY_STATUSES for item in dependencies)
     for row in technical:
         dependencies = _split_references(row["depends_on"])
         supported_users = _split_references(row["supports_user_requirements"])
         assert dependencies <= technical_ids
         assert supported_users <= user_ids
-        if row["status"] == "Accepted":
-            assert all(technical_status[item] == "Accepted" for item in dependencies)
-            assert all(user_status[item] == "Accepted" for item in supported_users)
+        if row["status"] in DELIVERY_STATUSES:
+            assert all(
+                technical_status[item] in DELIVERY_STATUSES for item in dependencies
+            )
+            assert all(
+                user_status[item] in DELIVERY_STATUSES for item in supported_users
+            )
 
 
 def test_inventory_schema_references_and_remove_guidance() -> None:

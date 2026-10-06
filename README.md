@@ -5,7 +5,16 @@ their planning data in reviewable Markdown and YAML files rather than a hosted
 service. It supports issues, dependencies, comments, projects, milestones,
 daily views, health checks, and machine-readable exports.
 
-The current release is 0.3.0. Its deliberately contracted behavior is defined
+The published PyPI release is **0.3.0**. This `master` checkout also contains
+**unreleased** CLI additions and reliability fixes; its package version still
+reads 0.3.0 and does not identify those changes. Use the
+[0.3.0 documentation](https://github.com/shanewilkins/roadmap/tree/v0.3.0/docs)
+for a published installation, and the [Unreleased changelog](CHANGELOG.md#unreleased)
+and [current CLI contract](docs/architecture/cli-interface-contract.md) for this
+checkout. GitHub Releases are historical announcements; PyPI and the tagged
+changelog identify the published version.
+
+The released 0.3.0 behavior is defined
 by an explicit
 [public compatibility contract](docs/architecture/public-contract-0.2.md).
 0.3 is an internal quality-hardening release; the 0.2 CLI and data contract is
@@ -179,7 +188,9 @@ product direction.
 
 ## Project status
 
-The current package release is 0.3.0. The architecture was established through
+The published package release is 0.3.0; the workflow shortcuts below describe
+unreleased master behavior. See the [next-release checklist](docs/releases/NEXT_RELEASE.md)
+for the remaining publication checks. The architecture was established through
 thirteen independently verified refactor phases for 0.2.0.
 See the
 [execution plan](docs/architecture/refactor-execution-plan.md) and published

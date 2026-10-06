@@ -4,8 +4,11 @@ Implemented on 2026-10-06, following the reviewed
 [interface contract](cli-interface-contract.md). The checked
 [behavior matrix](cli-behavior-matrix.json) records every command and parameter,
 its supported/deprecated disposition, choices, defaults, and journey evidence.
-Shared evidence is declared at command level; it does not claim every test
-individually exercises every option. Policy checks require live signatures and
+Most shared evidence is declared at command level; it does not claim every test
+individually exercises every option. The safety-sensitive archive consent/force/
+preview and migration/repair parameters now link directly to named assertion
+journeys, including consent combined with dry-run. Policy checks require those
+parameter references as well as live signatures and
 parameter metadata to agree and all evidence IDs to exist. Help is evidence for
 namespaces, not for mutation correctness.
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import errno
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -30,6 +31,88 @@ def _pending(root: Path) -> Path:
             unit.stage_file("second.txt", b"new second")
             unit.commit()
     return next((root / "db/transactions").iterdir())
+
+
+def test_unknown_journal_state_preserves_files_and_recovery_evidence(tmp_path):
+    root = tmp_path / ".roadmap"
+    directory = _pending(root)
+    journal = directory / "journal.json"
+    payload = json.loads(journal.read_text())
+    payload["state"] = "unrecognized"
+    journal.write_text(json.dumps(payload))
+    before = {
+        str(p.relative_to(root)): p.read_bytes()
+        for p in root.rglob("*")
+        if p.is_file() and p.name != "canonical-write.lock"
+    }
+    with pytest.raises(RecoveryError, match="state"):
+        with CanonicalUnitOfWork(DocumentRepository(root)):
+            pass
+    assert {
+        str(p.relative_to(root)): p.read_bytes()
+        for p in root.rglob("*")
+        if p.is_file() and p.name != "canonical-write.lock"
+    } == before
+    with WorkspaceLock(root / "db/canonical-write.lock", timeout=0):
+        pass
+
+
+def test_failure_before_journal_leaves_no_pending_transaction_and_allows_retry(
+    tmp_path,
+):
+    root = tmp_path / ".roadmap"
+    root.mkdir()
+    target = root / "first.txt"
+    target.write_bytes(b"original")
+
+    def fail(stage, _path):
+        if stage == "before_journal":
+            raise OSError(errno.ENOSPC, "disk full")
+
+    with CanonicalUnitOfWork(DocumentRepository(root), failure_injector=fail) as unit:
+        unit.stage_file("first.txt", b"replacement")
+        with pytest.raises(OSError) as failure:
+            unit.commit()
+        assert failure.value.errno == errno.ENOSPC
+    assert target.read_bytes() == b"original"
+    assert not list((root / "db/transactions").iterdir())
+    with CanonicalUnitOfWork(DocumentRepository(root)) as unit:
+        unit.stage_file("first.txt", b"replacement")
+        unit.commit()
+    assert target.read_bytes() == b"replacement"
+
+
+def test_unexpected_lock_error_closes_descriptor_and_preserves_errno(
+    tmp_path, monkeypatch
+):
+    lock = WorkspaceLock(tmp_path / "write.lock", timeout=0)
+    with monkeypatch.context() as patch:
+
+        def fail(_descriptor, _operation):
+            raise OSError(errno.EIO, "lock device failure")
+
+        patch.setattr(fcntl, "flock", fail)
+        with pytest.raises(OSError) as failure:
+            lock.__enter__()
+        assert failure.value.errno == errno.EIO
+        assert lock._file is not None
+        assert lock._file.closed
+    with WorkspaceLock(lock.path, timeout=0):
+        pass
+
+
+def test_read_only_commit_refuses_writes_and_missing_deletion_is_repeatable(tmp_path):
+    repository = DocumentRepository(tmp_path / ".roadmap")
+    with CanonicalUnitOfWork(repository, read_only=True) as unit:
+        with pytest.raises(RuntimeError, match="read.only"):
+            unit.commit()
+    with CanonicalUnitOfWork(repository) as unit:
+        from roadmap.domain.types import EntityId
+
+        assert not unit.delete_issue(EntityId("absent"))
+        assert not unit.delete_issue(EntityId("absent"))
+        unit.commit()
+    assert not repository.scan()
 
 
 @pytest.mark.parametrize(

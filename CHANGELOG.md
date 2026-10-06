@@ -8,6 +8,13 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ### Added
 
+- Add branch-outcome regressions for migration refusals, canonical transaction
+  failure/retry, planning idempotency, aggregate invariants and scoped issue-list
+  workload output.
+
+- Add scoped requirement verification records, fail-closed evidence policy and
+  an executable maintainer handover runbook with a current release checklist.
+
 - Add explicit workspace selection, JSON entity inspection with issue history,
   project/milestone ID-only creation, nullable-field clearing, issue due dates and
   label edits, project owner/priority controls, and stderr-only operational verbosity.
@@ -38,6 +45,15 @@ All notable changes to Roadmap CLI are recorded here. The format follows
   require the full CI workflow before a release can publish.
 
 ### Fixed
+
+- Correct the empty issue-list creation hint to include the required `--title`
+  option, with a CLI regression proving the suggested command works.
+
+- Refuse migration when canonical directories cannot be enumerated or a personal
+  configuration schema version is boolean; protect changed migration previews
+  and prove projection failure rollback/retry with regression tests.
+- Distinguish unpublished master behavior from PyPI 0.3.0 and correct the package
+  documentation URL to the actual default branch.
 
 - Refuse dry-run recovery writes and parent-close guard bypasses; reject explicit
   branch options without branch action before canonical writes.
