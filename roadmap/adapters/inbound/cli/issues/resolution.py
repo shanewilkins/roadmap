@@ -32,8 +32,12 @@ def resolve_issue_id(core, supplied: str) -> EntityId:
     if not matches:
         raise click.ClickException(f"Issue '{supplied}' was not found")
     if len(matches) > 1:
+        choices = "\n".join(
+            f"  {identity}: {core.issue_queries.view(identity).issue.title}"
+            for identity in sorted(matches)
+        )
         raise click.ClickException(
-            f"Ambiguous issue ID prefix '{supplied}'; use a complete ID"
+            f"Ambiguous issue ID prefix '{supplied}'; use a complete ID:\n{choices}"
         )
     return next(iter(matches))
 

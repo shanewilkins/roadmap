@@ -39,6 +39,26 @@ USER_KEYS = {
 }
 
 
+_SETTING_FIELDS = {
+    "behavior.default_project_id": "default_project_id",
+    "behavior.include_closed_in_critical_path": "include_closed_in_critical_path",
+    "identity.name": "name",
+    "identity.email": "email",
+    "display.default_milestone": "default_milestone",
+    "display.table_width": "table_width",
+    "behavior.auto_branch_on_start": "auto_branch_on_start",
+    "behavior.confirm_destructive": "confirm_destructive",
+    "behavior.show_tips": "show_tips",
+    "output.format": "output_format",
+    "output.columns": "output_columns",
+    "output.sort_by": "output_sort_by",
+    "export.directory": "export_directory",
+    "export.format": "export_format",
+    "export.include_metadata": "export_include_metadata",
+    "export.auto_gitignore": "export_auto_gitignore",
+}
+
+
 class ConfigurationError(ValueError):
     """Configuration is invalid for its declared schema or scope."""
 
@@ -55,7 +75,7 @@ def _read(path: Path) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise ConfigurationError(f"configuration {path} must be a mapping")
     version = loaded.get("schema_version", 0)
-    if not isinstance(version, int) or version < 0 or version > 1:
+    if type(version) is not int or version < 0 or version > 1:
         raise ConfigurationError(
             f"unsupported configuration schema_version {version!r} in {path}"
         )
@@ -147,6 +167,14 @@ def _validate_value(key: str, value: Any) -> None:
     _validate_text_value(key, value)
 
 
+def _validate_present_values(data: dict[str, Any], keys: set[str]) -> None:
+    for key in keys:
+        section, name = key.split(".")
+        values = _nested(data, section)
+        if name in values and not (key in _BOOLEAN_KEYS and values[name] is None):
+            _validate_value(key, values[name])
+
+
 class ConfigurationFiles:
     """Load once into immutable settings; mutate only through scoped CLI actions."""
 
@@ -161,6 +189,8 @@ class ConfigurationFiles:
             project, PROJECT_KEYS, {"schema_version", "workspace_schema_version"}
         )
         _validate_scope(user, USER_KEYS, {"schema_version"})
+        _validate_present_values(project, PROJECT_KEYS)
+        _validate_present_values(user, USER_KEYS)
         project_behavior = _nested(project, "behavior")
         identity = _nested(user, "identity")
         display = _nested(user, "display")
@@ -237,6 +267,24 @@ class ConfigurationFiles:
                 return None
             value = value[part]
         return value
+
+    def explain(self, key: str) -> dict[str, Any]:
+        """Explain the effective value and its declared owner without machine paths."""
+        if key not in _SETTING_FIELDS:
+            raise ConfigurationError(f"unknown configuration key: {key}")
+        scope: ConfigurationScope = "project" if key in PROJECT_KEYS else "user"
+        snapshot = self.resolve()
+        settings = snapshot.project if scope == "project" else snapshot.user
+        value = getattr(settings, _SETTING_FIELDS[key])
+        section, name = key.split(".")
+        raw = _nested(self.view(scope), section)
+        configured = name in raw and not (key in _BOOLEAN_KEYS and raw[name] is None)
+        return {
+            "key": key,
+            "scope": scope,
+            "source": scope if configured else "default",
+            "value": list(value) if isinstance(value, tuple) else value,
+        }
 
     def set(self, key: str, value: Any, scope: ConfigurationScope) -> None:
         allowed = PROJECT_KEYS if scope == "project" else USER_KEYS

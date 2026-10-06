@@ -18,7 +18,7 @@ Implementation changes require separate, explicitly scoped work.
   measurements remain in the execution plan and checkpoints; architecture,
   complexity, test, typing, security, and artifact gates now prevent regression.
 - The first complete post-refactor suite established a 78.42% statement-
-  coverage baseline; CI now enforces an 85% floor alongside installed
+  coverage baseline; CI now enforces a 90% floor alongside installed
   end-to-end journeys.
 - All planned 0.2 implementation phases are complete.
 
@@ -43,6 +43,7 @@ Implementation changes require separate, explicitly scoped work.
 - [Canonical persistence and projection contract](canonical-persistence-contract-0.2.md)
 - [Reliability guarantees and evidence](reliability-evidence.md)
 - [Reliability coverage expansion — 2026-10-06](reliability-coverage-expansion-2026-10-06.md)
+- [Usability and 90% coverage pass — 2026-10-06](usability-and-coverage-2026-10-06.md)
 - [Runtime dependency boundaries](dependency-boundaries.md)
 - [Measured 0.2 performance envelope](performance-envelope-0.2.md)
 - [Portfolio case study](portfolio-case-study.md)

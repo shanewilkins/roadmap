@@ -37,7 +37,7 @@ uv run --locked --extra dev python tests/policy/architecture_checker.py
 uv run --locked --extra dev ty check
 uv run --locked --extra dev radon cc roadmap --exclude '*/migrations/*' --total-average --show-complexity --min D
 uv run --locked --extra dev xenon --exclude '*/migrations/*' --max-absolute B --max-modules B --max-average A roadmap
-uv run --locked --extra dev pytest -q
+uv run --locked --extra dev pytest -q --cov=roadmap --cov-config=config/.coveragerc --cov-report=term
 ```
 
 CI also validates workflow semantics with actionlint 1.7.12 and exercises the
@@ -48,7 +48,9 @@ ARM64.
 ty is the sole type checker and targets the minimum supported Python version,
 3.12. Development dependencies have one declaration in the `dev` extra.
 Pre-commit runs architecture enforcement, Ruff, Xenon, and ty; the descriptive
-Radon report stays in CI. CI retains JSON/XML coverage reports for 14 days.
+Radon report stays in CI. CI retains JSON/XML coverage reports for 14 days and enforces a 90% statement-
+coverage floor. Use its explicit coverage configuration locally so measurements
+are comparable. Prefer tests of failure behavior and canonical postconditions.
 Release tags run the same full quality/test/package workflow before building
 the distributions for publication.
 

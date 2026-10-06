@@ -859,14 +859,24 @@ class Planning:
         ]
         if len(exact) == 1:
             return exact[0]
-        matches = [item for item in values if str(item.id).startswith(supplied)]
+        matches = exact or [
+            item for item in values if str(item.id).startswith(supplied)
+        ]
         if not matches:
             raise Planning._missing(label, supplied)
         if len(matches) > 1:
-            raise Planning._conflict(
-                f"Ambiguous {label.lower()} ID prefix '{supplied}'"
-            )
+            raise Planning._ambiguous(matches, label, supplied)
         return matches[0]
+
+    @staticmethod
+    def _ambiguous(matches, label: str, supplied: str) -> ApplicationFailure:
+        choices = "\n".join(
+            f"  {item.id}: {item.name}"
+            for item in sorted(matches, key=lambda value: str(value.id))
+        )
+        return Planning._conflict(
+            f"Ambiguous {label.lower()} name or ID prefix '{supplied}'; use a complete ID:\n{choices}"
+        )
 
     @staticmethod
     def _load_issue(unit: PlanningUnitOfWork, identity: EntityId) -> Issue:
