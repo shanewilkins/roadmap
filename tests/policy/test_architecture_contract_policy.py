@@ -1,4 +1,4 @@
-"""Executable policy tests for Roadmap's target architecture."""
+"""Architecture contracts, governance metadata, and the type checking gate."""
 
 from __future__ import annotations
 
@@ -11,20 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from tests.policy.architecture_checker import (
-    ArchitectureConfigurationError,
-    BaselineEntry,
-    Violation,
-    check_repository,
-    compare_baseline,
-    find_violations,
-    load_baseline,
-    load_policy,
-)
-
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = Path(__file__).parent / "fixtures" / "architecture"
-POLICY = load_policy(ROOT / "architecture.toml")
+POLICY = tomllib.loads((ROOT / "architecture.toml").read_text())["architecture"]
 EXECUTION_PLAN = ROOT / "docs" / "architecture" / "refactor-execution-plan.md"
 ARCHITECTURE_INDEX = ROOT / "docs" / "architecture" / "README.md"
 CHECKPOINTS = ROOT / "docs" / "architecture" / "checkpoints"
@@ -40,200 +29,26 @@ def test_governance_phase_state_is_consistent() -> None:
         for match in re.finditer(r"^## Phase (\d+) —", plan, flags=re.MULTILINE)
     }
 
-    assert phases == set(range(POLICY.final_phase + 1))
-    assert f"Execution status: Phase {POLICY.current_phase} checkpoint passed" in header
-    if POLICY.current_phase < POLICY.final_phase:
-        assert f"approval before Phase {POLICY.current_phase + 1}" in header
+    assert phases == set(range(POLICY["final_phase"] + 1))
+    assert (
+        f"Execution status: Phase {POLICY['current_phase']} checkpoint passed" in header
+    )
+    if POLICY["current_phase"] < POLICY["final_phase"]:
+        assert f"approval before Phase {POLICY['current_phase'] + 1}" in header
     else:
         assert "separate authorization before release" in header
-    assert f"Accepted checkpoint: Phase {POLICY.current_phase}" in index
-    assert f"Final planned implementation phase: Phase {POLICY.final_phase}" in index
+    assert f"Accepted checkpoint: Phase {POLICY['current_phase']}" in index
+    assert f"Final planned implementation phase: Phase {POLICY['final_phase']}" in index
 
-    checkpoints = sorted(CHECKPOINTS.glob(f"phase-{POLICY.current_phase}-*.md"))
+    checkpoints = sorted(CHECKPOINTS.glob(f"phase-{POLICY['current_phase']}-*.md"))
     assert len(checkpoints) == 1
     checkpoint = checkpoints[0].read_text(encoding="utf-8")
     assert "Decision: **GO**" in checkpoint
-    if POLICY.current_phase < POLICY.final_phase:
-        assert f"before Phase {POLICY.current_phase + 1}" in checkpoint
+    if POLICY["current_phase"] < POLICY["final_phase"]:
+        assert f"before Phase {POLICY['current_phase'] + 1}" in checkpoint
     else:
         assert "Separate authorization is required" in checkpoint
     assert checkpoints[0].name in index
-
-
-def test_valid_fixture_obeys_every_architecture_rule() -> None:
-    """The complete allowed dependency direction produces no violations."""
-    assert find_violations(FIXTURES / "valid" / "roadmap", POLICY) == ()
-
-
-def test_requirements_domain_stub_fits_existing_zones_unregistered() -> None:
-    """TR-045: a stub Requirements domain/application/adapter/bootstrap module
-    set passes the real, currently-committed architecture.toml with zero
-    violations and no new zone, rule, or phase bump — the planned 0.4
-    Requirements feature needs no architecture change before it starts."""
-    assert (
-        find_violations(FIXTURES / "requirements_domain_stub" / "roadmap", POLICY) == ()
-    )
-
-
-@pytest.mark.parametrize(
-    ("fixture", "phase", "expected"),
-    [
-        (
-            "domain_dependencies",
-            2,
-            Violation("roadmap.domain.bad", "click", "domain-dependencies"),
-        ),
-        (
-            "application_dependencies",
-            2,
-            Violation(
-                "roadmap.application.bad", "structlog", "application-dependencies"
-            ),
-        ),
-        (
-            "inbound_adapter_dependencies",
-            2,
-            Violation(
-                "roadmap.adapters.inbound.cli.bad",
-                "roadmap.adapters.inbound.http",
-                "inbound-adapter-dependencies",
-            ),
-        ),
-        (
-            "outbound_adapter_dependencies",
-            2,
-            Violation(
-                "roadmap.adapters.outbound.documents.bad",
-                "roadmap.adapters.outbound.sqlite",
-                "outbound-adapter-dependencies",
-            ),
-        ),
-        (
-            "bootstrap_only_adapter_wiring",
-            2,
-            Violation(
-                "roadmap.legacy",
-                "roadmap.adapters.outbound.sqlite",
-                "bootstrap-only-adapter-wiring",
-            ),
-        ),
-        (
-            "zone_cycle",
-            2,
-            Violation("roadmap.domain.bad", "roadmap.application", "zone-cycle"),
-        ),
-        (
-            "removed_namespace",
-            12,
-            Violation(
-                "roadmap.adapters.sync.legacy",
-                "roadmap.adapters.sync",
-                "removed-namespace",
-            ),
-        ),
-    ],
-)
-def test_each_focused_invalid_fixture_reports_exact_violation(
-    fixture: str, phase: int, expected: Violation
-) -> None:
-    """Every configured rule is proven by a focused negative fixture."""
-    violations = find_violations(
-        FIXTURES / "invalid" / fixture / "roadmap",
-        POLICY,
-        current_phase=phase,
-    )
-    assert expected in violations
-
-
-def test_unchanged_production_tree_matches_only_the_exact_reviewed_baseline() -> None:
-    """The current migration debt passes only through reviewed exact entries."""
-    result = check_repository(ROOT)
-    assert result.passed, result.render()
-    assert result.violations == ()
-
-
-def test_unused_baseline_entry_is_stale() -> None:
-    """Exceptions cannot survive after their violating import disappears."""
-    violations = find_violations(ROOT / POLICY.production_root, POLICY)
-    baseline = load_baseline(ROOT / POLICY.baseline, POLICY)
-    unused = BaselineEntry(
-        source="roadmap.domain.removed",
-        target="click",
-        rule="domain-dependencies",
-        reason="A deliberately unused entry for the stale-baseline negative proof.",
-        owner="Maintainer",
-        removal_phase=4,
-    )
-    result = compare_baseline(violations, [*baseline, unused])
-    assert result.stale == (unused,)
-    assert not result.passed
-
-
-@pytest.mark.parametrize(
-    "body",
-    [
-        """version = 1
-[[violations]]
-source = "roadmap.domain.bad"
-target = "click"
-rule = "domain-dependencies"
-reason = "Missing required ownership and removal phase fields."
-""",
-        """version = 1
-[[violations]]
-source = "roadmap.domain.bad"
-target = "click"
-rule = "domain-dependencies"
-reason = "First duplicate architecture exception for a negative proof."
-owner = "Maintainer"
-removal_phase = 4
-[[violations]]
-source = "roadmap.domain.bad"
-target = "click"
-rule = "domain-dependencies"
-reason = "Second duplicate architecture exception for a negative proof."
-owner = "Maintainer"
-removal_phase = 4
-        """,
-    ],
-    ids=["missing-fields", "duplicate"],
-)
-def test_malformed_or_duplicate_baseline_fails(tmp_path: Path, body: str) -> None:
-    """The exception file permits no wildcard, malformed, or duplicate rows."""
-    path = tmp_path / "baseline.toml"
-    path.write_text(body, encoding="utf-8")
-    with pytest.raises(ArchitectureConfigurationError):
-        load_baseline(path, POLICY)
-
-
-def test_removed_namespace_rule_is_inactive_before_its_declared_phase() -> None:
-    """Scheduled removal does not rewrite the unchanged Phase 2 tree."""
-    fixture = FIXTURES / "invalid" / "removed_namespace" / "roadmap"
-    assert find_violations(fixture, POLICY, current_phase=11) == ()
-
-
-def test_activated_rule_remains_enforced_after_its_declared_phase() -> None:
-    """Activation is permanent rather than invalidating the final policy."""
-    fixture = FIXTURES / "invalid" / "removed_namespace" / "roadmap"
-    violations = find_violations(fixture, POLICY, current_phase=POLICY.final_phase)
-    assert (
-        Violation(
-            "roadmap.adapters.sync.legacy",
-            "roadmap.adapters.sync",
-            "removed-namespace",
-        )
-        in violations
-    )
-
-
-def test_policy_rejects_an_active_phase_outside_the_plan(tmp_path: Path) -> None:
-    body = (ROOT / "architecture.toml").read_text(encoding="utf-8")
-    path = tmp_path / "architecture.toml"
-    path.write_text(
-        body.replace("active_phase = 12", "active_phase = 14"), encoding="utf-8"
-    )
-    with pytest.raises(ArchitectureConfigurationError, match="active_phase"):
-        load_policy(path)
 
 
 def test_ty_configuration_keeps_meaningful_error_rules() -> None:
@@ -282,66 +97,117 @@ def test_ty_rejects_known_correctness_errors(tmp_path, source, diagnostic):
     assert diagnostic in result.stdout + result.stderr
 
 
-def test_policy_rejects_a_nonfuture_removal_phase(tmp_path: Path) -> None:
-    """Removal phases are exact future obligations, never open-ended patterns."""
-    path = tmp_path / "baseline.toml"
-    path.write_text(
-        f"""version = 1
-[[violations]]
-source = "roadmap.domain.bad"
-target = "click"
-rule = "domain-dependencies"
-reason = "This exception deliberately has a nonfuture removal phase."
-owner = "Maintainer"
-removal_phase = {POLICY.current_phase}
-""",
-        encoding="utf-8",
-    )
-    with pytest.raises(ArchitectureConfigurationError, match="removal phase"):
-        load_baseline(path, POLICY)
-
-
-def test_policy_rejects_unreviewed_configuration_fields(tmp_path: Path) -> None:
-    """Policy typos cannot silently weaken or alter the declared contract."""
-    body = (ROOT / "architecture.toml").read_text(encoding="utf-8")
-    path = tmp_path / "architecture.toml"
-    path.write_text(body.replace("version = 1", "version = 1\nignored = true", 1))
-    with pytest.raises(ArchitectureConfigurationError, match="exactly"):
-        load_policy(path)
-
-
-def test_policy_rejects_a_rule_id_bound_to_the_wrong_kind(tmp_path: Path) -> None:
-    """Required IDs cannot pass validation while enforcing a different rule."""
-    body = (ROOT / "architecture.toml").read_text(encoding="utf-8")
-    path = tmp_path / "architecture.toml"
-    path.write_text(
-        body.replace('kind = "zone_cycle"', 'kind = "bootstrap_only_wiring"', 1),
-        encoding="utf-8",
-    )
-    with pytest.raises(ArchitectureConfigurationError, match="identity"):
-        load_policy(path)
-
-
-def test_checker_process_returns_failure_for_a_real_violation(tmp_path: Path) -> None:
-    """No command wrapper converts an architecture failure into success."""
-    shutil.copy2(ROOT / "architecture.toml", tmp_path / "architecture.toml")
-    (tmp_path / "architecture-baseline.toml").write_text(
-        "version = 1\nviolations = []\n", encoding="utf-8"
-    )
-    shutil.copytree(
-        FIXTURES / "invalid" / "domain_dependencies" / "roadmap",
-        tmp_path / "roadmap",
-    )
-    result = subprocess.run(
+def run_gate(root):
+    return subprocess.run(
         [
             sys.executable,
-            str(Path(__file__).with_name("architecture_checker.py")),
+            str(ROOT / "tests/policy/architecture_checker.py"),
             "--root",
-            str(tmp_path),
+            str(root),
         ],
-        check=False,
         capture_output=True,
         text=True,
+        timeout=30,
     )
-    assert result.returncode == 1
-    assert "domain-dependencies: roadmap.domain.bad -> click" in result.stdout
+
+
+def fixture_tree(tmp_path, fixture=None):
+    shutil.copytree(FIXTURES / "valid" / "roadmap", tmp_path / "roadmap")
+    if fixture:
+        shutil.copytree(
+            FIXTURES / fixture / "roadmap", tmp_path / "roadmap", dirs_exist_ok=True
+        )
+    # Old AST fixtures referenced these missing modules. Materialize them so
+    # Grimp can test real graph edges instead of ignoring unresolved imports.
+    for relative in ("adapters/inbound/http", "adapters/outbound/sqlite"):
+        (tmp_path / "roadmap" / relative).mkdir(parents=True, exist_ok=True)
+    for directory in [tmp_path / "roadmap", *(tmp_path / "roadmap").rglob("*")]:
+        if directory.is_dir():
+            (directory / "__init__.py").touch()
+    for name in (".importlinter", "architecture.toml", "architecture-baseline.toml"):
+        shutil.copy2(ROOT / name, tmp_path / name)
+    return tmp_path
+
+
+@pytest.mark.parametrize("fixture", [None, "requirements_domain_stub"])
+def test_allowed_architecture_and_new_features_pass(tmp_path, fixture):
+    result = run_gate(fixture_tree(tmp_path, fixture))
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    "fixture",
+    [
+        "domain_dependencies",
+        "application_dependencies",
+        "inbound_adapter_dependencies",
+        "outbound_adapter_dependencies",
+        "bootstrap_only_adapter_wiring",
+        "zone_cycle",
+        "removed_namespace",
+    ],
+)
+def test_every_original_negative_fixture_still_fails(tmp_path, fixture):
+    result = run_gate(fixture_tree(tmp_path, "invalid/" + fixture))
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert (
+        "BROKEN" in result.stdout
+        or "-dependencies:" in result.stdout
+        or "removed-namespace:" in result.stdout
+    )
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "from ..outbound import sqlite",  # Relative imports are resolved by Grimp.
+        "from roadmap.adapters.outbound import sqlite",  # Import-from aliases.
+        "from typing import TYPE_CHECKING\nif TYPE_CHECKING:\n    from roadmap.adapters.outbound import sqlite",
+    ],
+)
+def test_alias_relative_and_type_checking_imports_cannot_evade_wiring(tmp_path, source):
+    root = fixture_tree(tmp_path)
+    (root / "roadmap/adapters/inbound/bad.py").write_text(source)
+    result = run_gate(root)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "BROKEN" in result.stdout
+
+
+def test_real_repository_passes():
+    result = run_gate(ROOT)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_retired_migration_baseline_cannot_be_broadened(tmp_path):
+    root = fixture_tree(tmp_path)
+    (root / "architecture-baseline.toml").write_text(
+        'version = 1\nviolations = ["exception"]\n'
+    )
+    result = run_gate(root)
+    assert result.returncode != 0
+    assert "permits no exceptions" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "module,source",
+    [
+        ("domain/bad.py", "import uninstalled_framework"),
+        ("application/bad.py", "import uninstalled_framework"),
+        ("application/bad.py", "from .. import common"),
+        ("domain/bad.py", "from .. import utility"),
+        ("domain/__init__.py", "from roadmap import utility"),
+        ("adapters/inbound/cli/bad.py", "from .... import utility"),
+    ],
+)
+def test_unknown_dependencies_and_relative_retired_imports_fail(
+    tmp_path, module, source
+):
+    root = fixture_tree(tmp_path)
+    (root / "roadmap" / module).write_text(source)
+    result = run_gate(root)
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert (
+        "-dependencies:" in result.stdout
+        or "unzoned-dependency:" in result.stdout
+        or "removed-namespace:" in result.stdout
+    )

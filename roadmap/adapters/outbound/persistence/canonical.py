@@ -5,6 +5,7 @@ from __future__ import annotations
 import errno
 import fcntl
 import json
+import logging
 import os
 import shutil
 import tempfile
@@ -162,6 +163,7 @@ class CanonicalUnitOfWork:
         self._raw_writes: dict[Path, _RawWrite] = {}
         self._raw_deletes: dict[Path, _Delete] = {}
         self.projection_stale = False
+        self.cleanup_pending = False
         self._entered = False
 
     def __enter__(self) -> CanonicalUnitOfWork:
@@ -534,18 +536,36 @@ class CanonicalUnitOfWork:
                 self._restore(directory, entries)
             self._discard_transaction(directory)
             raise
-        self._discard_transaction(directory)
+        # All canonical replacements are durable here. Maintenance failures
+        # must not report a failed mutation and encourage a duplicate retry.
+        try:
+            self._discard_transaction(directory)
+        except OSError:
+            self.cleanup_pending = True
+            logging.getLogger(__name__).warning(
+                "Canonical commit succeeded; transaction cleanup will retry on reopen",
+                exc_info=True,
+            )
         changed_ids = tuple(key[1] for key in (*self._writes, *self._deletes))
         self._writes.clear()
         self._deletes.clear()
         self._raw_writes.clear()
         self._raw_deletes.clear()
+        self._refresh_projection(changed_ids)
+
+    def _refresh_projection(self, changed_ids: tuple[EntityId, ...]) -> None:
         if self._projection is not None:
             try:
                 self._projection.refresh(changed_ids)
             except Exception:
                 self.projection_stale = True
-                self._projection.mark_stale()
+                try:
+                    self._projection.mark_stale()
+                except Exception:
+                    logging.getLogger(__name__).warning(
+                        "Canonical commit succeeded; projection stale marker could not be written",
+                        exc_info=True,
+                    )
 
     def rollback(self) -> None:
         self._writes.clear()

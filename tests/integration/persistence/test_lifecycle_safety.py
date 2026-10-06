@@ -333,3 +333,190 @@ def test_issue_batch_archive_dry_run_and_force_are_bounded(workspace, selection)
         is RetentionState.VISIBLE
     )
     assert workspace.projection.inspect_state() == "current"
+
+
+@pytest.mark.parametrize("case", ["success", "missing", "cycle", "write-failure"])
+def test_create_with_blocking_relationships_is_atomic(workspace, monkeypatch, case):
+    from roadmap.application.contracts import IssueCreateCommand
+
+    dependency, blocked = issue("dependency"), issue("blocked")
+    workspace.seed(dependency, blocked)
+    before, rows = workspace.bytes(), workspace.projected()
+    command = IssueCreateCommand(
+        Title("New linked issue"),
+        depends_on=(blocked.id if case == "cycle" else dependency.id,),
+        blocks=(EntityId("absent") if case == "missing" else blocked.id,),
+    )
+    if case == "write-failure":
+        original = os.replace
+        writes = 0
+
+        def replace(source, target):
+            nonlocal writes
+            if Path(target).suffix == ".md":
+                writes += 1
+                if writes == 2:
+                    raise OSError("injected relationship write failure")
+            return original(source, target)
+
+        monkeypatch.setattr(os, "replace", replace)
+    if case != "success":
+        with pytest.raises(OSError if case == "write-failure" else ApplicationFailure):
+            workspace.issues.create(command)
+        assert workspace.bytes() == before
+        assert workspace.projected() == rows
+        return
+    created = workspace.issues.create(command).issue
+    assert workspace.documents.load(
+        "issue", dependency.id
+    ).aggregate.relations.blocks == (created.id,)
+    assert workspace.documents.load(
+        "issue", blocked.id
+    ).aggregate.relations.depends_on == (created.id,)
+    assert created.relations.depends_on == (dependency.id,)
+    assert created.relations.blocks == (blocked.id,)
+    assert len(workspace.projected()) == 3
+    assert workspace.projection.inspect_state() == "current"
+
+
+@pytest.mark.parametrize(
+    "initial,target",
+    [
+        (IssueStatus.CLOSED, IssueStatus.TODO),
+        (IssueStatus.CLOSED, IssueStatus.IN_PROGRESS),
+        (IssueStatus.TODO, IssueStatus.CLOSED),
+        (IssueStatus.BLOCKED, IssueStatus.TODO),
+        (IssueStatus.TODO, IssueStatus.TODO),
+    ],
+)
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_restore_status_changes_preserve_retention_timing_and_dry_runs(
+    workspace, initial, target, dry_run
+):
+    value = issue("archived", status=initial, retention=RetentionState.ARCHIVED)
+    workspace.seed(value)
+    before, rows = workspace.bytes(), workspace.projected()
+    restored = workspace.issues.restore(
+        value.id, status=target, dry_run=dry_run
+    ).issues[0]
+    assert restored.retention is RetentionState.VISIBLE
+    assert restored.status is target
+    assert restored.history[-1].action == "restored"
+    if target is IssueStatus.IN_PROGRESS:
+        assert restored.actual_start_at == NOW
+    if target is IssueStatus.CLOSED:
+        assert restored.actual_end_at is None
+        assert restored.progress_percentage == 100.0
+    if dry_run:
+        assert workspace.bytes() == before
+        assert workspace.projected() == rows
+    else:
+        assert workspace.documents.load("issue", value.id).aggregate == restored
+        assert workspace.projection.inspect_state() == "current"
+
+
+def test_invalid_second_restore_transition_preserves_entire_batch(workspace):
+    workspace.seed(
+        issue(
+            "first", status=IssueStatus.IN_PROGRESS, retention=RetentionState.ARCHIVED
+        ),
+        issue("second", status=IssueStatus.TODO, retention=RetentionState.ARCHIVED),
+    )
+    before, rows = workspace.bytes(), workspace.projected()
+    with pytest.raises(ApplicationFailure, match="not permitted"):
+        workspace.issues.restore(restore_all=True, status=IssueStatus.REVIEW)
+    assert workspace.bytes() == before
+    assert workspace.projected() == rows
+
+
+@pytest.mark.parametrize("failure", [False, True])
+def test_milestone_reassignment_updates_both_projects_atomically(
+    workspace, monkeypatch, failure
+):
+    from roadmap.application.contracts import MilestoneUpdateCommand
+    from roadmap.domain.types import ProjectRelations
+
+    old = project("old", relations=ProjectRelations((EntityId("milestone"),)))
+    new = project("new")
+    milestone = Milestone(
+        EntityId("milestone"),
+        NOW,
+        NOW,
+        name=Name("milestone"),
+        relation=MilestoneRelation(old.id),
+    )
+    workspace.seed(old, new, milestone)
+    before, rows = workspace.bytes(), workspace.projected()
+    if failure:
+        original = os.replace
+        writes = 0
+
+        def replace(source, target):
+            nonlocal writes
+            if Path(target).suffix == ".md":
+                writes += 1
+                if writes == 2:
+                    raise OSError("injected reassignment write failure")
+            return original(source, target)
+
+        monkeypatch.setattr(os, "replace", replace)
+        with pytest.raises(OSError, match="reassignment"):
+            workspace.planning.update_milestone(
+                MilestoneUpdateCommand(milestone.id, project_id=new.id)
+            )
+        assert workspace.bytes() == before
+        assert workspace.projected() == rows
+    else:
+        workspace.planning.update_milestone(
+            MilestoneUpdateCommand(milestone.id, project_id=new.id)
+        )
+        assert (
+            workspace.documents.load(
+                "project", old.id
+            ).aggregate.relations.milestone_ids
+            == ()
+        )
+        assert workspace.documents.load(
+            "project", new.id
+        ).aggregate.relations.milestone_ids == (milestone.id,)
+        assert (
+            workspace.documents.load(
+                "milestone", milestone.id
+            ).aggregate.relation.project_id
+            == new.id
+        )
+        assert workspace.projection.inspect_state() == "current"
+
+
+def test_concurrent_opposing_dependencies_cannot_create_cycle(workspace):
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    first, second = issue("first"), issue("second")
+    workspace.seed(first, second)
+    start = threading.Barrier(2)
+
+    def add(source, dependency):
+        start.wait(timeout=10)
+        try:
+            workspace.issues.add_dependency(source, dependency)
+            return "committed"
+        except ApplicationFailure:
+            return "rejected"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        a = pool.submit(add, first.id, second.id)
+        b = pool.submit(add, second.id, first.id)
+        assert sorted([a.result(timeout=15), b.result(timeout=15)]) == [
+            "committed",
+            "rejected",
+        ]
+    values = {
+        item.aggregate.id: item.aggregate for item in workspace.documents.scan("issue")
+    }
+    assert sum(len(value.relations.depends_on) for value in values.values()) == 1
+    for value in values.values():
+        for dependency in value.relations.depends_on:
+            assert values[dependency].relations.blocks == (value.id,)
+            assert values[dependency].relations.depends_on == ()
+    assert workspace.projection.inspect_state() == "current"

@@ -15,7 +15,12 @@ from roadmap.application.failures import ApplicationFailure, FailureCategory
 from roadmap.domain.aggregates import Issue, Milestone, Project
 
 from .canonical import CanonicalUnitOfWork, RecoveryError, WorkspaceBusy
-from .documents import DocumentEnvelope, DocumentRepository, parse_document
+from .documents import (
+    DocumentEnvelope,
+    DocumentRepository,
+    canonical_paths,
+    parse_document,
+)
 from .projection import SQLiteProjection
 
 
@@ -203,7 +208,7 @@ class FilesystemWorkspaceDiagnostics:
     ) -> tuple[list[DocumentEnvelope], bool]:
         directory = self._roadmap_dir / f"{kind}s"
         try:
-            paths = sorted(directory.glob("**/*.md"))
+            paths = canonical_paths(directory)
         except OSError as error:
             findings.append(
                 HealthFinding(

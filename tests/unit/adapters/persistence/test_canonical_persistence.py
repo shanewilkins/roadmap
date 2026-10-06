@@ -580,3 +580,79 @@ def test_released_0_1_1_fixture_rebuilds_without_canonical_changes(tmp_path):
         path.relative_to(roadmap_dir): path.read_bytes()
         for path in roadmap_dir.rglob("*.md")
     } == canonical
+
+
+@pytest.mark.parametrize("failure", ["rename", "cleanup", "sync"])
+def test_post_commit_cleanup_failure_acknowledges_commit_and_recovers(
+    tmp_path, monkeypatch, failure
+):
+    repository = _repository(tmp_path)
+    projection = SQLiteProjection(
+        repository.roadmap_dir / "db/projection.db", repository
+    )
+    issue = Issue(EntityId("issue-1"), NOW, NOW, title=Title("Committed exactly once"))
+    with CanonicalUnitOfWork(repository, projection) as unit:
+        unit.save_issue(issue)
+        with monkeypatch.context() as patch:
+            if failure == "cleanup":
+
+                def inject(stage, _path):
+                    if stage == "before_cleanup":
+                        raise OSError("injected cleanup denial")
+
+                patch.setattr(unit, "_inject", inject)
+            elif failure == "rename":
+                original = Path.rename
+
+                def rename(path, target):
+                    if Path(target).name.startswith(".completed-"):
+                        raise PermissionError("injected rename denial")
+                    return original(path, target)
+
+                patch.setattr(Path, "rename", rename)
+            else:
+                from roadmap.adapters.outbound.persistence import canonical
+
+                original_sync = canonical._sync_directory
+
+                def sync(path):
+                    if path == unit._transactions and any(path.glob(".completed-*")):
+                        raise OSError("injected cleanup sync failure")
+                    return original_sync(path)
+
+                patch.setattr(canonical, "_sync_directory", sync)
+            unit.commit()
+            assert unit.cleanup_pending
+            # Cleared writes mean an explicit repeated commit is a no-op.
+            unit.commit()
+        assert len(projection.query()) == 1
+    before = repository.default_path("issue", issue).read_bytes()
+    with CanonicalUnitOfWork(repository, projection):
+        pass
+    assert repository.default_path("issue", issue).read_bytes() == before
+    assert not tuple((repository.roadmap_dir / "db/transactions").iterdir())
+
+
+def test_projection_and_stale_marker_failures_preserve_commit_and_rebuild(tmp_path):
+    repository = _repository(tmp_path)
+    projection = SQLiteProjection(
+        repository.roadmap_dir / "db/projection.db", repository
+    )
+    projection.rebuild()
+
+    class FailedProjection:
+        def refresh(self, _ids):
+            raise sqlite3.OperationalError("disk full")
+
+        def mark_stale(self):
+            raise PermissionError("stale marker cannot be written")
+
+    issue = Issue(EntityId("issue-1"), NOW, NOW, title=Title("Canonical wins twice"))
+    with CanonicalUnitOfWork(repository, FailedProjection()) as unit:
+        unit.save_issue(issue)
+        unit.commit()
+        assert unit.projection_stale
+    before = repository.default_path("issue", issue).read_bytes()
+    assert projection.ensure_current() == "refreshed"
+    assert len(projection.query()) == 1
+    assert repository.default_path("issue", issue).read_bytes() == before

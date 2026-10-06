@@ -134,9 +134,19 @@ strict dependency policy; it must not become a new name for `common`.
 
 ## Enforcement contract
 
-Architectural conformance will be enforced by a first-party policy test that
-examines Python imports. It will run under the normal pytest suite rather than
-as a separate linting system.
+Architectural conformance is enforced by stock Import Linter contracts in
+`.importlinter`, exercised by first-party policy tests and the CI/pre-commit gate.
+As of 2026-10-06, Import Linter/Grimp owns import resolution, graph traversal,
+layers, adapter independence, and protected adapter wiring. A narrow guard in
+`tests/policy/architecture_checker.py` checks removed namespaces, unzoned
+internal dependencies, and the default ban on third-party imports in Domain
+and Application, including uninstalled modules omitted by Grimp.
+
+`architecture.toml` retains phase metadata and removed namespaces. The completed
+migration baseline must be empty; the old temporary-exception engine is retired.
+Negative fixtures cover every original rule plus relative imports, import-from
+aliases, and imports inside `TYPE_CHECKING`. Layer direction rejects cycles
+across architectural zones without forbidding ordinary cycles within a zone.
 
 The enforcement mechanism must:
 

@@ -12,7 +12,9 @@ omit =
 # surface. The first complete post-refactor run measured 78.42%; keep a rounded
 # floor so new work cannot silently reduce that retained baseline.
 # Raised to 85 after the CLI output/query-presenter test sweep reached 85.70%.
-fail_under = 85
+# Raised to 87 after reliability regression tests; retain headroom for the
+# supported Python/platform matrix while iterating toward 90%.
+fail_under = 87
 exclude_lines =
     pragma: no cover
     def __repr__

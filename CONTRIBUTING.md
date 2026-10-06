@@ -33,6 +33,7 @@ Run these before opening a pull request.
 uv run --locked --extra dev ruff format --config config/ruff.toml roadmap tests
 uv run --locked --extra dev ruff check --config config/ruff.toml roadmap tests
 uv run --locked --extra dev python tests/policy/architecture_checker.py
+# Runs stock Import Linter contracts plus namespace/core dependency guards.
 uv run --locked --extra dev ty check
 uv run --locked --extra dev radon cc roadmap --exclude '*/migrations/*' --total-average --show-complexity --min D
 uv run --locked --extra dev xenon --exclude '*/migrations/*' --max-absolute B --max-modules B --max-average A roadmap
@@ -80,7 +81,7 @@ runs.
 
 ## Coding Guidelines
 
-- Follow `architecture.toml`; do not add or broaden an
+- Follow `.importlinter` and the namespace guards in `architecture.toml`; do not add or broaden an
   `architecture-baseline.toml` exception to bypass a dependency violation.
 - Keep functions readable and avoid unnecessary complexity.
 - Prefer explicit types for new code.

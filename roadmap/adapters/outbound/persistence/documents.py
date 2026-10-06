@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
+import stat
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -445,6 +447,28 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
     return f"---\n{yaml_text}\n---{separator}{aggregate.content}".encode()
 
 
+def canonical_paths(directory: Path) -> tuple[Path, ...]:
+    """Enumerate documents without silently treating unreadable trees as empty."""
+    try:
+        mode = directory.stat().st_mode
+    except FileNotFoundError:
+        return ()
+    if not stat.S_ISDIR(mode):
+        raise NotADirectoryError(str(directory))
+
+    def fail(error: OSError) -> None:
+        raise error
+
+    return tuple(
+        sorted(
+            Path(parent) / name
+            for parent, _directories, files in os.walk(directory, onerror=fail)
+            for name in files
+            if name.endswith(".md")
+        )
+    )
+
+
 class DocumentRepository:
     """Canonical lookup with read compatibility for the 0.1.1 layout."""
 
@@ -463,7 +487,9 @@ class DocumentRepository:
         kinds = (kind,) if kind else ("project", "milestone", "issue")
         for current_kind in kinds:
             for pattern in self._patterns[current_kind]:
-                for path in sorted(self.roadmap_dir.glob(pattern)):
+                for path in canonical_paths(
+                    self.roadmap_dir / pattern.removesuffix("/**/*.md")
+                ):
                     envelope = parse_document(path, current_kind)
                     key = (current_kind, envelope.identity)
                     if key in identities:

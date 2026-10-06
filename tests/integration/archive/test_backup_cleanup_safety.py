@@ -2,7 +2,6 @@
 
 import os
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import pytest
 
@@ -111,15 +110,15 @@ def test_partial_cleanup_failure_returns_nonzero_and_names_failed_file(
     populated, cli_runner, monkeypatch
 ):
     denied = populated / "backups/issue_b.backup.md"
-    original = Path.unlink
+    original = os.unlink
 
     def unlink(path, *args, **kwargs):
-        if path == denied:
+        if path == denied.name and kwargs.get("dir_fd") is not None:
             raise PermissionError("injected denial")
         return original(path, *args, **kwargs)
 
     before = denied.read_bytes()
-    monkeypatch.setattr(Path, "unlink", unlink)
+    monkeypatch.setattr(os, "unlink", unlink)
     result = cli_runner.invoke(cli, ["cleanup", "--keep", "0", "--force"])
     assert result.exit_code == 1, result.output
     output = clean_cli_output(result.output)
@@ -129,3 +128,46 @@ def test_partial_cleanup_failure_returns_nonzero_and_names_failed_file(
     assert not (populated / "backups/issue_a.backup.md").exists()
     assert denied.read_bytes() == before
     assert (populated / "artifacts/protected.md").exists()
+
+
+@pytest.mark.parametrize("dry_run", [True, False])
+@pytest.mark.parametrize("linked", ["directory", "file", "dangling-file"])
+def test_cleanup_refuses_symlink_scope_and_preserves_external_files(
+    populated, cli_runner, tmp_path, dry_run, linked
+):
+    outside = tmp_path / "outside"
+    external = backup(outside, "external.backup.md")
+    if linked == "directory":
+        (populated / "backups").rename(populated / "original-backups")
+        (populated / "backups").symlink_to(outside, target_is_directory=True)
+    else:
+        target = external if linked == "file" else outside / "missing.md"
+        (populated / "backups/link.backup.md").symlink_to(target)
+    before = {p: p.read_bytes() for p in populated.rglob("*") if p.is_file()}
+    result = cli_runner.invoke(
+        cli, ["cleanup", "--keep", "0", "--dry-run" if dry_run else "--force"]
+    )
+    assert result.exit_code == 1, result.output
+    assert "Unsafe backup path" in clean_cli_output(result.output)
+    assert external.read_text() == "Backup external.backup.md\n"
+    assert {p: p.read_bytes() for p in populated.rglob("*") if p.is_file()} == before
+
+
+def test_cleanup_rechecks_directory_after_confirmation(
+    populated, cli_runner, monkeypatch, tmp_path
+):
+    import click
+
+    outside = tmp_path / "outside"
+    external = backup(outside, "issue_a.backup.md")
+
+    def confirm(*_args, **_kwargs):
+        (populated / "backups").rename(populated / "original-backups")
+        (populated / "backups").symlink_to(outside, target_is_directory=True)
+        return True
+
+    monkeypatch.setattr(click, "confirm", confirm)
+    result = cli_runner.invoke(cli, ["cleanup", "--keep", "0"])
+    assert result.exit_code == 1, result.output
+    assert external.read_text() == "Backup issue_a.backup.md\n"
+    assert len(tuple((populated / "original-backups").glob("*.backup.md"))) == 2

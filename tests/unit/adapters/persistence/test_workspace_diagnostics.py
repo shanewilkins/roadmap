@@ -240,3 +240,31 @@ def test_failed_projection_repair_is_storage_unavailable_and_preserves_data(
     assert "injected repair failure" in str(captured.value)
     assert path.read_bytes() == before
     assert not projection.path.exists()
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_unreadable_canonical_enumeration_blocks_repair_and_scan(
+    tmp_path, monkeypatch, nested
+):
+    import os
+
+    directory = tmp_path / ".roadmap/issues"
+    _issue(directory / "issue-1.md")
+    denied = directory / "nested" if nested else directory
+    denied.mkdir(exist_ok=True)
+    original = os.scandir
+
+    def scandir(path):
+        if Path(path) == denied:
+            raise PermissionError("injected canonical enumeration denial")
+        return original(path)
+
+    monkeypatch.setattr(os, "scandir", scandir)
+    diagnostics, projection = _diagnostics(tmp_path)
+    report = diagnostics.scan()
+    finding = next(f for f in report.findings if f.finding_id == "canonical.unreadable")
+    assert finding.severity.value == "critical"
+    assert diagnostics.preview("projection") == ()
+    assert not projection.path.exists()
+    with pytest.raises(PermissionError, match="enumeration denial"):
+        DocumentRepository(tmp_path / ".roadmap").scan("issue")

@@ -7,15 +7,19 @@ a new quality-review score or claim the 90% coverage goal has been reached.
 
 ## Results
 
-The full local suite passed **592 tests** on macOS ARM64 / Python 3.14.2.
-Statement coverage increased from **85.90% to 87.76%**: 4,811 of 5,482
-statements covered. The enforced coverage floor remains 85%.
+The full local suite passed **623 tests** on macOS ARM64 / Python 3.14.2.
+Statement coverage increased from **85.90% to 88.06%**: 4,829 of 5,484
+statements covered. The enforced coverage floor is raised from 85% to 87%.
 
-There are 48 added reliability cases and three type-gate rejection cases.
+The original tranche added 48 reliability cases and three type-gate rejection
+cases; this follow-up adds 31 more reliability cases plus import-gate proofs.
 Existing successful-path, process-death, and installed-package tests remain.
-An isolated Python invocation also passed 88 lifecycle, cleanup, document, and
+An isolated Python invocation also passed 119 lifecycle, cleanup, document, and
 diagnostics cases against the newly built non-editable wheel, after asserting
 that `roadmap` imports from the isolated environment's site-packages.
+
+The table below records the original tranche; follow-up regressions are described
+separately below.
 
 | Reliability target | Before | After | Evidence |
 | --- | --- | --- | --- |
@@ -46,7 +50,8 @@ automatically change requirement-governance status.
   Explicit correctness rules and executable bad-code probes retain a meaningful
   gate at the Python 3.12 support floor.
 - Remove unused pytest async/HTTP, benchmark, and mocking plugins and duplicate
-  development declarations. The lockfile shrinks from 53 to 38 packages.
+  development declarations. The initial cleanup shrank the lockfile from 53 to 38 packages; adding
+  Import Linter and its graph dependencies brings it to 41.
 - Keep Ruff, Bandit, dependency auditing, architecture enforcement, Xenon,
   actionlint, distribution checks, and the existing compatibility matrix.
 - Replace the descriptive pre-commit Radon report with architecture enforcement;
@@ -57,15 +62,49 @@ automatically change requirement-governance status.
 
 Actionlint 1.7.12 locally validated the reusable CI and release definitions.
 Ruff, ty, architecture enforcement, Bandit, Xenon, lock integrity, and dependency
-audit passed locally. Remote checks for this change still need to run.
+audit passed locally. The first PR head passed all 12 CI jobs and CodeQL, with 87.72% Linux
+coverage. The follow-up head must repeat the supported matrix before closeout.
+
+## Follow-up architecture and reliability fixes
+
+Stock Import Linter 2.15 / Grimp 3.17 now enforces layers, independent adapter
+features, and protected bootstrap wiring. The old 649-line graph/exception
+engine is replaced by narrow guards for retired namespaces, unzoned internal
+imports, and the blanket external-library ban in core layers. All seven
+original negative fixtures still fail; relative imports, aliases, and imports
+inside `TYPE_CHECKING` have additional bypass regressions. The completed
+migration baseline remains strictly empty.
+
+Post-commit transaction cleanup errors now preserve successful acknowledgement,
+clear pending writes, refresh the projection, and retain journals for retry on
+reopen. Tests inject completed-directory rename, removal, and sync errors and
+verify reopen preserves bytes. A simultaneous projection-refresh and stale-marker
+failure also preserves canonical success; content comparison repairs the cache
+on the next read. Warnings expose maintenance failures without encouraging a
+retry of a committed mutation.
+
+Backup cleanup refuses symlinked directories/files (including dangling links),
+revalidates every selected path after confirmation, and unlinks through a
+directory descriptor opened with `O_NOFOLLOW`. External backup bytes and all
+unselected workspace files survive refusal. Canonical enumeration now uses an
+error-reporting walk: root and nested directory denials fail scans and block
+projection repair instead of producing an apparently empty inventory.
+
+Additional real-storage tests cover issue creation with outgoing blocking links,
+cycle/missing-target refusal, partial-write rollback, restore status transitions
+and dry runs, batch restore refusal after a later invalid transition, milestone
+reassignment across two projects, and concurrent opposing dependency additions.
+The latter permits exactly one valid commit and rejects the cycle-producing edit.
+
+The coverage floor is 87%, leaving matrix headroom below the observed result;
+90% remains an incremental goal. No exclusions or synthetic execution were added
+to reach that floor.
 
 ## Remaining reliability work
 
-Prioritize issue creation with outgoing blocking relationships and restore
-status changes, planning edits that reassign linked entities, ambiguous name
-resolution, and inaccessible canonical directory enumeration. These remain
-meaningful safety gaps even though these five files now mostly exceed 90%.
-Then assess configuration validation and workspace discovery. Prefer asserted
+Prioritize ambiguous planning-name resolution, configuration validation, and
+workspace discovery next. Broaden cross-process relationship contention and
+filesystem fault coverage where the failure could violate a documented promise. Prefer asserted
 postconditions and failed-operation immutability over incidental execution.
 
 Coverage remains statement-only; subprocess execution is not instrumented by

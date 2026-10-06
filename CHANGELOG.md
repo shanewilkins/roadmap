@@ -8,12 +8,22 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ### Changed
 
+- Replace the hand-written import graph checker with Import Linter contracts
+  and narrow namespace/core dependency guards; raise the coverage floor to 87%.
+
 - Standardize type checking on ty and remove Pyright and unused pytest plugins;
   consolidate development dependencies into the dev extra.
 - Run architecture checks in pre-commit, retain CI coverage evidence, and
   require the full CI workflow before a release can publish.
 
 ### Fixed
+
+- Preserve successful canonical mutation results when post-commit cleanup or
+  projection stale-marker persistence fails; retry journals on reopen.
+- Reject symlinked backup directories/files and anchor cleanup deletion to a
+  directory descriptor, including revalidation after confirmation.
+- Fail canonical scans on unreadable directories instead of treating them as
+  empty, and block projection repair when enumeration fails.
 
 - Refuse recovery preview and projection repair when transaction journals
   cannot be inspected, instead of silently treating them as absent.
