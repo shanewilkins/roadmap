@@ -273,7 +273,6 @@ class FilesystemWorkspaceMigration:
         return (
             source_version == WORKSPACE_SCHEMA_VERSION
             and not conflicts
-            and (self.projection.path.exists() or self.projection.stale_path.exists())
             and self.projection.needs_rebuild()
         )
 

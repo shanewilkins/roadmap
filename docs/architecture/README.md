@@ -11,13 +11,14 @@ Implementation changes require separate, explicitly scoped work.
 ## Current execution state
 
 - Accepted checkpoint: Phase 13, hardening and 0.2.0 release preparation.
-- Current release: 0.2.0.
+- Current package release: 0.3.0. The 0.2 specifications and checkpoints below
+  remain the historical basis of the current architecture.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
 - The production-CLOC phase ratchet retired after Phase 13. Historical
   measurements remain in the execution plan and checkpoints; architecture,
   complexity, test, typing, security, and artifact gates now prevent regression.
 - The first complete post-refactor suite established a 78.42% statement-
-  coverage baseline; CI enforces a rounded 78% floor alongside installed
+  coverage baseline; CI now enforces an 85% floor alongside installed
   end-to-end journeys.
 - All planned 0.2 implementation phases are complete.
 
@@ -40,12 +41,14 @@ Implementation changes require separate, explicitly scoped work.
 - [Roadmap 0.2 public contract](public-contract-0.2.md)
 - [Roadmap 0.2 compatibility inventory](compatibility-inventory-0.2.csv)
 - [Canonical persistence and projection contract](canonical-persistence-contract-0.2.md)
+- [Reliability guarantees and evidence](reliability-evidence.md)
 - [Runtime dependency boundaries](dependency-boundaries.md)
 - [Measured 0.2 performance envelope](performance-envelope-0.2.md)
 - [Portfolio case study](portfolio-case-study.md)
 
 ## Delivery plans
 
+- [Reliability coverage battle plan — 2026-10-06](coverage-battle-plan-2026-10-06.md)
 - [Roadmap 0.2 architecture simplification plan](roadmap-0.2.md)
 - [Roadmap 0.2 refactor execution plan](refactor-execution-plan.md)
 - [Roadmap 0.2.0 release checklist](../releases/0.2.0-checklist.md)

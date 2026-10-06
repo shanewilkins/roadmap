@@ -30,8 +30,12 @@ Include as much detail as possible.
 ## Security Practices
 
 This repository uses static analysis and security checks in CI.
-Current checks include Bandit and Semgrep.
+Current static security checks include Bandit.
 Type and lint checks also run as part of the quality gate.
+The required quality job also runs pinned `pip-audit` against a hashed export
+of the locked runtime and development dependencies. Known vulnerabilities or
+audit collection failures fail the job. Dependabot provides ongoing alerts
+between CI runs. See CONTRIBUTING.md for the local audit command.
 
 For detailed implementation notes and operational guidance, see
 docs/architecture/adr/0002-git-owned-synchronization.md.

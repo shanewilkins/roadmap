@@ -66,12 +66,18 @@ class WorkspaceLock:
                         f"workspace lock timed out: {self.path}"
                     ) from error
                 time.sleep(0.05)
-        metadata = json.dumps({"pid": os.getpid(), "acquired_at": time.time()}) + "\n"
-        self._file.seek(0)
-        self._file.truncate()
-        self._file.write(metadata)
-        self._file.flush()
-        os.fsync(self._file.fileno())
+        try:
+            metadata = (
+                json.dumps({"pid": os.getpid(), "acquired_at": time.time()}) + "\n"
+            )
+            self._file.seek(0)
+            self._file.truncate()
+            self._file.write(metadata)
+            self._file.flush()
+            os.fsync(self._file.fileno())
+        except BaseException as error:
+            self.__exit__(type(error), error, error.__traceback__)
+            raise
         return self
 
     def __exit__(self, _exc_type, _exc, _tb) -> None:
@@ -101,6 +107,14 @@ class _RawWrite:
     final: bool = False
 
 
+def _sync_directory(path: Path) -> None:
+    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def _atomic_write(path: Path, content: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, raw_temp = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
@@ -111,11 +125,7 @@ def _atomic_write(path: Path, content: bytes) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temp, path)
-        directory = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory)
-        finally:
-            os.close(directory)
+        _sync_directory(path.parent)
     finally:
         if temp.exists():
             temp.unlink()
@@ -125,11 +135,7 @@ def _atomic_delete(path: Path) -> None:
     path.unlink(missing_ok=True)
     if not path.parent.exists():
         return
-    directory = os.open(path.parent, os.O_RDONLY)
-    try:
-        os.fsync(directory)
-    finally:
-        os.close(directory)
+    _sync_directory(path.parent)
 
 
 class CanonicalUnitOfWork:
@@ -161,7 +167,12 @@ class CanonicalUnitOfWork:
     def __enter__(self) -> CanonicalUnitOfWork:
         self._lock.__enter__()
         self._entered = True
-        self.recover()
+        try:
+            self.recover()
+        except BaseException as error:
+            self._entered = False
+            self._lock.__exit__(type(error), error, error.__traceback__)
+            raise
         return self
 
     def __exit__(self, exc_type, _exc, _tb) -> None:
@@ -320,22 +331,28 @@ class CanonicalUnitOfWork:
     ) -> dict[str, Any]:
         before_name = f"{index}.before"
         after_name = f"{index}.after"
-        if path.exists():
-            (directory / before_name).write_bytes(path.read_bytes())
-        (directory / after_name).write_bytes(content)
+        before = path.read_bytes() if path.exists() else None
+        if before is not None:
+            _atomic_write(directory / before_name, before)
+        _atomic_write(directory / after_name, content)
         return {
             "target": str(path.relative_to(self.repository.roadmap_dir)),
-            "before": before_name if path.exists() else None,
+            "before": before_name if before is not None else None,
             "after": after_name,
+            "before_digest": content_identity(before) if before is not None else None,
+            "after_digest": content_identity(content),
         }
 
     def _delete_entry(self, directory: Path, index: int, path: Path) -> dict[str, Any]:
         before_name = f"{index}.before"
-        (directory / before_name).write_bytes(path.read_bytes())
+        before = path.read_bytes()
+        _atomic_write(directory / before_name, before)
         return {
             "target": str(path.relative_to(self.repository.roadmap_dir)),
             "before": before_name,
             "after": None,
+            "before_digest": content_identity(before),
+            "after_digest": None,
         }
 
     def _journal(self, directory: Path) -> list[dict[str, Any]]:
@@ -372,10 +389,45 @@ class CanonicalUnitOfWork:
                 self._write_entry(directory, index, write.path, write.content)
             )
         journal = directory / "journal.json"
-        journal.write_text(json.dumps({"state": "prepared", "entries": entries}))
-        with journal.open("rb") as stream:
-            os.fsync(stream.fileno())
+        _atomic_write(
+            journal, json.dumps({"state": "prepared", "entries": entries}).encode()
+        )
         return entries
+
+    @staticmethod
+    def _snapshot(directory: Path, entry: dict[str, Any], side: str) -> bytes | None:
+        name = entry[side]
+        if name is None:
+            return None
+        if not isinstance(name, str) or Path(name).name != name:
+            raise RecoveryError("transaction snapshot must be a local filename")
+        path = directory / name
+        if path.is_symlink() or not path.is_file():
+            raise RecoveryError(f"transaction snapshot is missing or unsafe: {name}")
+        content = path.read_bytes()
+        digest = entry.get(f"{side}_digest")
+        if digest is not None and content_identity(content) != digest:
+            raise RecoveryError(f"transaction snapshot is corrupt: {name}")
+        return content
+
+    def _validate_recovery(
+        self, directory: Path, entries: list[dict[str, Any]]
+    ) -> None:
+        if not isinstance(entries, list) or not entries:
+            raise RecoveryError("transaction entries must be a nonempty list")
+        targets: set[Path] = set()
+        for entry in entries:
+            target = self._target(entry["target"])
+            if target in targets:
+                raise RecoveryError(f"duplicate transaction target: {target}")
+            targets.add(target)
+            before = self._snapshot(directory, entry, "before")
+            after = self._snapshot(directory, entry, "after")
+            current = target.read_bytes() if target.exists() else None
+            if current not in (before, after):
+                raise RecoveryError(
+                    f"transaction target changed after interruption: {target}"
+                )
 
     def _target(self, relative: str) -> Path:
         target = (self.repository.roadmap_dir / relative).resolve()
@@ -413,18 +465,38 @@ class CanonicalUnitOfWork:
         for directory in sorted(
             path for path in self._transactions.iterdir() if path.is_dir()
         ):
+            if directory.name.startswith((".preparing-", ".completed-")):
+                self._discard_transaction(directory)
+                continue
             journal = directory / "journal.json"
             try:
                 payload = json.loads(journal.read_text())
+                if payload["state"] not in {"prepared", "rollback"}:
+                    raise RecoveryError("unknown transaction state")
                 entries = payload["entries"]
-                self._apply(directory, entries)
+                self._validate_recovery(directory, entries)
+                if payload["state"] == "rollback":
+                    self._restore(directory, entries)
+                else:
+                    self._apply(directory, entries)
             except Exception as error:
                 raise RecoveryError(
-                    f"cannot recover transaction {directory.name}"
+                    f"cannot recover transaction {directory.name}: {error}"
                 ) from error
-            shutil.rmtree(directory)
+            self._discard_transaction(directory)
             recovered += 1
         return recovered
+
+    def _discard_transaction(self, directory: Path) -> None:
+        if not directory.name.startswith(".completed-"):
+            identity = directory.name.removeprefix(".preparing-")
+            completed = directory.with_name(f".completed-{identity}")
+            directory.rename(completed)
+            directory = completed
+            _sync_directory(self._transactions)
+        self._inject("before_cleanup", directory)
+        shutil.rmtree(directory)
+        _sync_directory(self._transactions)
 
     def commit(self) -> None:
         self._require_lock()
@@ -439,19 +511,30 @@ class CanonicalUnitOfWork:
         self._validate()
         self._inject("after_validate", None)
         self._transactions.mkdir(parents=True, exist_ok=True)
-        directory = self._transactions / uuid.uuid4().hex
+        _sync_directory(self._transactions.parent)
+        identity = uuid.uuid4().hex
+        directory = self._transactions / f".preparing-{identity}"
         directory.mkdir()
         entries: list[dict[str, Any]] = []
         try:
+            self._inject("before_journal", directory)
             entries = self._journal(directory)
+            prepared = self._transactions / identity
+            directory.rename(prepared)
+            directory = prepared
+            _sync_directory(self._transactions)
             self._inject("after_journal", directory)
             self._apply(directory, entries)
         except Exception:
             if entries:
+                _atomic_write(
+                    directory / "journal.json",
+                    json.dumps({"state": "rollback", "entries": entries}).encode(),
+                )
                 self._restore(directory, entries)
-            shutil.rmtree(directory, ignore_errors=True)
+            self._discard_transaction(directory)
             raise
-        shutil.rmtree(directory)
+        self._discard_transaction(directory)
         changed_ids = tuple(key[1] for key in (*self._writes, *self._deletes))
         self._writes.clear()
         self._deletes.clear()

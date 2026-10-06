@@ -6,6 +6,28 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Validate complete recovery journals and snapshot integrity before replay;
+  preserve post-interruption manual edits and reject unsafe snapshot paths.
+- Release workspace locks when recovery or lock-metadata persistence fails.
+- Persist transaction snapshots and preparation/cleanup boundaries; preserve
+  rollback intent when an ordinary write failure cannot finish restoration.
+- Rebuild missing projections when retrying a migration interrupted after
+  canonical commit.
+- Explicitly select locked development dependencies for CI and pre-commit
+  checks and the documented contributor commands.
+
+### Added
+
+- A maintainer continuity/inactivity policy and a review closeout record that
+  distinguishes local verification from remote CI and independent review.
+- A required CI audit of locked runtime/development dependencies using pinned
+  pip-audit, in addition to GitHub's Dependabot monitoring.
+- Reliability tests covering actual process termination, separate writers,
+  filesystem replacement failures, recovery conflicts, and installed CLI
+  repair, plus a recovery guide and guarantee-to-test evidence map.
+
 ## [0.3.0] - 2026-09-02
 
 ### Changed

@@ -92,7 +92,7 @@ Organize delivery:
 
 ```bash
 roadmap project create --title "Web application"
-roadmap milestone create --title "0.2" --due-date 2026-09-30
+roadmap milestone create --title "0.2" --due-date 2026-09-30 --project "Web application"
 roadmap milestone assign <issue-id> "0.2"
 roadmap milestone view "0.2"
 ```
@@ -164,6 +164,7 @@ migration. Do not treat the internal SQLite schema as a public API.
 - [Workflows](docs/user_guide/WORKFLOWS.md)
 - [FAQ](docs/user_guide/FAQ.md)
 - [0.2 migration guide](docs/user_guide/MIGRATING_TO_0_2.md)
+- [Recovery guide](docs/user_guide/RECOVERY.md)
 - [Architecture decisions](docs/architecture/README.md)
 - [Refactor case study](docs/architecture/portfolio-case-study.md)
 - [0.2 release checklist](docs/releases/0.2.0-checklist.md)
@@ -178,7 +179,8 @@ product direction.
 
 ## Project status
 
-Roadmap 0.2.0 is the result of thirteen independently verified refactor phases.
+The current package release is 0.3.0. The architecture was established through
+thirteen independently verified refactor phases for 0.2.0.
 See the
 [execution plan](docs/architecture/refactor-execution-plan.md) and published
 [checkpoint reports](docs/architecture/README.md#execution-checkpoints).

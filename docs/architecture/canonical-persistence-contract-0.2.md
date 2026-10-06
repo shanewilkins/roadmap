@@ -55,6 +55,28 @@ Canonical commit precedes projection refresh. Projection failure marks the
 projection stale and cannot roll back canonical success. A later maintenance
 operation rebuilds the projection.
 
+### Recovery hardening after 0.3.0
+
+Snapshots and the journal are atomically written and flushed in a
+`.preparing-<id>` directory. The prepared directory is published and its parent
+flushed before canonical replacement starts. Recovery discards unprepared
+intent without applying it. Completed/fully restored transactions move to a
+`.completed-<id>` cleanup-only directory before their evidence is removed, so
+interrupted cleanup cannot replay a transaction with partially deleted evidence.
+
+Recovery validates the complete pending write set before replacing any target:
+snapshot files must stay inside the transaction directory, new snapshot digests
+must match, targets must be unique and stay inside the workspace, and each
+target must still match its before or after state. Later manual edits and
+damaged evidence block replay and preserve the journal for investigation.
+Legacy prepared journals without digest fields remain readable.
+
+Ordinary commit failures persist rollback intent before restoration. If
+restoration itself fails, the next recovery retries rollback instead of
+committing the failed operation. Failed recovery/lock-metadata persistence also
+releases acquired locks. See the [evidence map](reliability-evidence.md) and
+[recovery guide](../user_guide/RECOVERY.md) for tested behavior and limitations.
+
 ## SQLite connection ownership
 
 The retained database manager owns every connection it creates, including

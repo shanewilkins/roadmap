@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import os
 import re
-import subprocess
+
+# Local Git boundary uses argv and never a shell.
+import subprocess  # nosec B404
 from pathlib import Path
 
 from roadmap.application.contracts import GitSnapshot
@@ -96,7 +98,9 @@ class SubprocessLocalGit:
             {"GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0", "LC_ALL": "C"}
         )
         try:
-            result = subprocess.run(
+            # Fixed Git operations use separate argv entries; branch names are
+            # validated before invocation, and no command is passed to a shell.
+            result = subprocess.run(  # nosec B603
                 ("git", "-C", str(self._repository), *arguments),
                 capture_output=True,
                 text=True,
