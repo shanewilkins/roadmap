@@ -157,6 +157,84 @@ def test_missing_document_returns_none(tmp_path):
     assert _repository(tmp_path).load("issue", EntityId("absent")) is None
 
 
+@pytest.mark.parametrize(
+    "updates,message",
+    [
+        ({"created": None}, "missing created timestamp"),
+        ({"priority": "urgent"}, "invalid priority"),
+        ({"retention": "deleted"}, "invalid retention"),
+        ({"id": "../outside"}, "invalid id"),
+        ({"id": None}, "missing id"),
+        ({"depends_on": "issue-2"}, "depends_on must be a list"),
+        ({"blocks": ["../outside"]}, "invalid blocks"),
+        ({"comments": [{"id": "bad"}]}, "invalid issue comment"),
+        ({"history": "not-a-list"}, "history must be a list"),
+        ({"history": [{}]}, "invalid issue history"),
+        ({"due_date": 42}, "missing due_date timestamp"),
+        ({"schema_version": -1}, "unsupported schema_version"),
+    ],
+)
+def test_invalid_canonical_fields_never_rewrite_user_content(
+    tmp_path, updates, message
+):
+    path = _write(
+        tmp_path / ".roadmap/issues/issue-1.md",
+        _issue_values(**updates),
+        "Authored content ☕\n",
+    )
+    before = path.read_bytes()
+    with pytest.raises(DocumentError, match=message):
+        parse_document(path, "issue")
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "yaml_text,message",
+    [("- list", "must be a mapping"), ("title: [", "invalid YAML frontmatter")],
+)
+def test_invalid_frontmatter_is_rejected_without_modification(
+    tmp_path, yaml_text, message
+):
+    path = tmp_path / "issue.md"
+    path.write_text(f"---\n{yaml_text}\n---\nAuthored content\n")
+    before = path.read_bytes()
+    with pytest.raises(DocumentError, match=message):
+        parse_document(path, "issue")
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "kind,values", [("milestone", _milestone_values()), ("project", _project_values())]
+)
+def test_invalid_planning_status_is_a_document_error(tmp_path, kind, values):
+    path = _write(tmp_path / f"{kind}.md", {**values, "status": "invalid"})
+    before = path.read_bytes()
+    with pytest.raises(DocumentError, match=f"invalid {kind} document"):
+        parse_document(path, kind)
+    assert path.read_bytes() == before
+
+
+def test_legacy_archive_layout_and_unknown_issue_type_round_trip(tmp_path):
+    path = _write(
+        tmp_path / ".roadmap/archive/issues/issue-1.md",
+        _issue_values(
+            status="archived", issue_type="legacy-type", custom={"review": "retain"}
+        ),
+        "Preserved body\n",
+    )
+    before = path.read_bytes()
+    envelope = parse_document(path, "issue")
+    assert isinstance(envelope.aggregate, Issue)
+    assert envelope.aggregate.retention.value == "archived"
+    assert envelope.aggregate.status.value == "closed"
+    assert envelope.aggregate.issue_type.value == "other"
+    assert path.read_bytes() == before
+    path.write_bytes(serialize_document(envelope))
+    reread = parse_document(path, "issue")
+    assert reread.aggregate == envelope.aggregate
+    assert reread.extra_frontmatter == {"custom": {"review": "retain"}}
+
+
 def test_duplicate_identity_is_rejected(tmp_path):
     root = tmp_path / ".roadmap/issues"
     _write(root / "backlog/one.md", _issue_values())
@@ -502,3 +580,79 @@ def test_released_0_1_1_fixture_rebuilds_without_canonical_changes(tmp_path):
         path.relative_to(roadmap_dir): path.read_bytes()
         for path in roadmap_dir.rglob("*.md")
     } == canonical
+
+
+@pytest.mark.parametrize("failure", ["rename", "cleanup", "sync"])
+def test_post_commit_cleanup_failure_acknowledges_commit_and_recovers(
+    tmp_path, monkeypatch, failure
+):
+    repository = _repository(tmp_path)
+    projection = SQLiteProjection(
+        repository.roadmap_dir / "db/projection.db", repository
+    )
+    issue = Issue(EntityId("issue-1"), NOW, NOW, title=Title("Committed exactly once"))
+    with CanonicalUnitOfWork(repository, projection) as unit:
+        unit.save_issue(issue)
+        with monkeypatch.context() as patch:
+            if failure == "cleanup":
+
+                def inject(stage, _path):
+                    if stage == "before_cleanup":
+                        raise OSError("injected cleanup denial")
+
+                patch.setattr(unit, "_inject", inject)
+            elif failure == "rename":
+                original = Path.rename
+
+                def rename(path, target):
+                    if Path(target).name.startswith(".completed-"):
+                        raise PermissionError("injected rename denial")
+                    return original(path, target)
+
+                patch.setattr(Path, "rename", rename)
+            else:
+                from roadmap.adapters.outbound.persistence import canonical
+
+                original_sync = canonical._sync_directory
+
+                def sync(path):
+                    if path == unit._transactions and any(path.glob(".completed-*")):
+                        raise OSError("injected cleanup sync failure")
+                    return original_sync(path)
+
+                patch.setattr(canonical, "_sync_directory", sync)
+            unit.commit()
+            assert unit.cleanup_pending
+            # Cleared writes mean an explicit repeated commit is a no-op.
+            unit.commit()
+        assert len(projection.query()) == 1
+    before = repository.default_path("issue", issue).read_bytes()
+    with CanonicalUnitOfWork(repository, projection):
+        pass
+    assert repository.default_path("issue", issue).read_bytes() == before
+    assert not tuple((repository.roadmap_dir / "db/transactions").iterdir())
+
+
+def test_projection_and_stale_marker_failures_preserve_commit_and_rebuild(tmp_path):
+    repository = _repository(tmp_path)
+    projection = SQLiteProjection(
+        repository.roadmap_dir / "db/projection.db", repository
+    )
+    projection.rebuild()
+
+    class FailedProjection:
+        def refresh(self, _ids):
+            raise sqlite3.OperationalError("disk full")
+
+        def mark_stale(self):
+            raise PermissionError("stale marker cannot be written")
+
+    issue = Issue(EntityId("issue-1"), NOW, NOW, title=Title("Canonical wins twice"))
+    with CanonicalUnitOfWork(repository, FailedProjection()) as unit:
+        unit.save_issue(issue)
+        unit.commit()
+        assert unit.projection_stale
+    before = repository.default_path("issue", issue).read_bytes()
+    assert projection.ensure_current() == "refreshed"
+    assert len(projection.query()) == 1
+    assert repository.default_path("issue", issue).read_bytes() == before

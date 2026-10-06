@@ -15,7 +15,12 @@ from roadmap.application.failures import ApplicationFailure, FailureCategory
 from roadmap.domain.aggregates import Issue, Milestone, Project
 
 from .canonical import CanonicalUnitOfWork, RecoveryError, WorkspaceBusy
-from .documents import DocumentEnvelope, DocumentRepository, parse_document
+from .documents import (
+    DocumentEnvelope,
+    DocumentRepository,
+    canonical_paths,
+    parse_document,
+)
 from .projection import SQLiteProjection
 
 
@@ -90,7 +95,8 @@ class FilesystemWorkspaceDiagnostics:
             blocked = any(
                 (
                     finding.finding_id.startswith("canonical.")
-                    or finding.finding_id == "projection.unreadable"
+                    or finding.finding_id
+                    in {"projection.unreadable", "transaction.unreadable"}
                 )
                 and finding.severity in {HealthSeverity.ERROR, HealthSeverity.CRITICAL}
                 for finding in report.findings
@@ -202,7 +208,7 @@ class FilesystemWorkspaceDiagnostics:
     ) -> tuple[list[DocumentEnvelope], bool]:
         directory = self._roadmap_dir / f"{kind}s"
         try:
-            paths = sorted(directory.glob("**/*.md"))
+            paths = canonical_paths(directory)
         except OSError as error:
             findings.append(
                 HealthFinding(
@@ -333,7 +339,11 @@ class FilesystemWorkspaceDiagnostics:
                         f"Transaction journals cannot be read: {type(error).__name__}",
                     )
                 )
-            return ()
+                return ()
+            raise ApplicationFailure(
+                FailureCategory.STORAGE_UNAVAILABLE,
+                f"Transaction journals cannot be inspected safely: {error}",
+            ) from error
 
     @staticmethod
     def _finding_key(finding: HealthFinding) -> tuple[str, str, str]:

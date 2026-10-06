@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -18,11 +19,32 @@ def _validate_retention_options(keep: int, days: int | None) -> None:
         raise click.BadParameter("days must be non-negative", param_hint="--days")
 
 
+def _safe_backup(path: Path, backups_dir: Path) -> None:
+    if (
+        backups_dir.is_symlink()
+        or path.is_symlink()
+        or path.resolve().parent != backups_dir.resolve()
+    ):
+        raise click.ClickException(
+            "Unsafe backup path: symbolic links are not eligible for cleanup"
+        )
+
+
 def _group_backups(backups_dir: Path) -> dict[str, list[Path]]:
+    _safe_backup(backups_dir / "scope", backups_dir)
     grouped: dict[str, list[Path]] = defaultdict(list)
-    for path in backups_dir.glob("*.backup.md") if backups_dir.exists() else ():
-        parts = path.stem.split("_")
-        grouped["_".join(parts[:-1])].append(path)
+    try:
+        paths = tuple(backups_dir.iterdir()) if backups_dir.exists() else ()
+        for path in paths:
+            if not path.name.endswith(".backup.md"):
+                continue
+            _safe_backup(path, backups_dir)
+            if not path.is_file():
+                raise click.ClickException(f"Backup is not a regular file: {path.name}")
+            parts = path.stem.split("_")
+            grouped["_".join(parts[:-1])].append(path)
+    except OSError as error:
+        raise click.ClickException(f"Cannot inspect backup files: {error}") from error
     return grouped
 
 
@@ -74,11 +96,28 @@ def _report_diagnostic_matches(core, finding_id: str) -> None:
     click.echo("\n".join(matches) + ("\n" if matches else "No findings.\n"), nl=False)
 
 
-def _remove_backups(candidates: tuple[Path, ...], relative: tuple[str, ...]) -> None:
+def _unlink_backup(path: Path, backups_dir: Path) -> None:
+    # Anchor deletion to a directory descriptor. O_NOFOLLOW closes the race
+    # where backups is changed into an external symlink after validation.
+    descriptor = os.open(backups_dir, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        os.unlink(path.name, dir_fd=descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _remove_backups(
+    candidates: tuple[Path, ...], relative: tuple[str, ...], backups_dir: Path
+) -> None:
+    # Revalidate the complete selection after interactive confirmation, before
+    # deleting anything: the directory or a candidate may have been replaced.
+    for path in candidates:
+        _safe_backup(path, backups_dir)
     failures: list[str] = []
     for path, label in zip(candidates, relative, strict=True):
         try:
-            path.unlink()
+            _safe_backup(path, backups_dir)
+            _unlink_backup(path, backups_dir)
         except OSError as error:
             failures.append(f"{label}: {error}")
     if failures:
@@ -134,4 +173,4 @@ def cleanup(
         return
     if not force:
         click.confirm("Remove exactly these backup files?", abort=True, default=False)
-    _remove_backups(candidates, relative)
+    _remove_backups(candidates, relative, roadmap_dir / "backups")

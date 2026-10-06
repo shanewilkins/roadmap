@@ -89,7 +89,7 @@ Run the repository's CI-equivalent commands:
 uv lock --check
 uv run --locked ruff format --config config/ruff.toml --check roadmap tests
 uv run --locked ruff check --config config/ruff.toml roadmap tests
-uv run --locked pyright
+uv run --locked --extra dev ty check
 uv run --locked bandit -c config/bandit.toml -r roadmap --severity-level=high
 uv run --locked radon cc roadmap --exclude '*/migrations/*' --total-average --show-complexity --min D
 uv run --locked xenon --exclude '*/migrations/*' --max-absolute C --max-modules C --max-average A roadmap

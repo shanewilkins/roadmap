@@ -1,0 +1,31 @@
+[importlinter]
+root_package = roadmap
+include_external_packages = True
+exclude_type_checking_imports = False
+
+[importlinter:contract:layers]
+name = Dependency direction and independent adapter zones
+type = layers
+layers =
+    roadmap.bootstrap
+    roadmap.adapters.inbound | roadmap.adapters.outbound
+    roadmap.application
+    roadmap.domain
+
+[importlinter:contract:inbound]
+name = Independent inbound adapter features
+type = independence
+modules = roadmap.adapters.inbound.*
+
+[importlinter:contract:outbound]
+name = Independent outbound adapter features
+type = independence
+modules = roadmap.adapters.outbound.*
+
+[importlinter:contract:wiring]
+name = Bootstrap owns adapter wiring
+type = protected
+protected_modules =
+    roadmap.adapters.inbound.*
+    roadmap.adapters.outbound.*
+allowed_importers = roadmap.bootstrap

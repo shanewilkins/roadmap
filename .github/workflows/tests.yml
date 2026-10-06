@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_call:
   workflow_dispatch:
   push:
     branches: [master, main]
@@ -72,9 +73,6 @@ jobs:
       - name: Enforce architecture contract
         run: uv run --locked --extra dev python tests/policy/architecture_checker.py
 
-      - name: Type check (pyright)
-        run: uv run --locked --extra dev pyright
-
       - name: Type check (ty)
         run: uv run --locked --extra dev ty check
 
@@ -137,6 +135,19 @@ jobs:
           --cov=roadmap
           --cov-config=config/.coveragerc
           --cov-report=term-missing
+          --cov-report=json:coverage.json
+          --cov-report=xml:coverage.xml
+
+      - name: Save coverage evidence
+        if: always() && matrix.python-version == '3.14'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-coverage
+          path: |
+            coverage.json
+            coverage.xml
+          if-no-files-found: warn
+          retention-days: 14
 
   build:
     name: Build distributions

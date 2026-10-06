@@ -32,13 +32,12 @@ repos:
         language: system
         types: [python]
 
-      - id: radon-complexity-report
-        name: radon complexity report
-        entry: uv run --locked --extra dev radon cc roadmap --exclude */migrations/* --total-average --show-complexity --min D
+      - id: architecture-contract
+        name: architecture contract
+        entry: uv run --locked --extra dev python tests/policy/architecture_checker.py
         language: system
         pass_filenames: false
         always_run: true
-        verbose: true
 
       - id: xenon-complexity
         name: xenon complexity gate

@@ -59,18 +59,14 @@ dependencies = [
 dev = [
     "pytest>=9.0.3",
     "pytest-cov>=7.1.0",
-    "pytest-asyncio>=1.3.0",
-    "pytest-aiohttp>=1.1.0",
     "ruff>=0.16.10",
     "pre-commit>=4.6.0",
     "bandit[toml]>=1.9.4",
     "radon>=6.0.1,<7.0.0",
     "xenon>=0.9.3,<1.0.0",
     "pytest-xdist>=3.8.0",
-    "pytest-benchmark>=5.2.3",
-    "pyright>=1.1.414",
-    "pytest-mock>=3.16.0",
     "ty>=0.0.84",
+    "import-linter>=2.11,<3",
 ]
 
 [project.urls]
@@ -113,10 +109,9 @@ include = [
 # - ruff.toml: Linting and formatting rules
 # - bandit.toml: Security scanning configuration
 # - .coveragerc: Test coverage thresholds and exclusions
-# - pyrightconfig.json: Type checking configuration (current)
+# - tool.ty below: Type checking configuration
 
-# ty runs alongside Pyright and is enforced in CI and pre-commit (0.3 quality
-# cleanup, see notes/path_to_1_point_0.md).
+# ty is the sole type checker, enforced in CI and pre-commit.
 [tool.ty.src]
 include = ["roadmap", "tests"]
 # These fixture trees are synthetic "roadmap" packages used only for the
@@ -126,6 +121,15 @@ exclude = ["tests/policy/fixtures/architecture"]
 
 [tool.ty.environment]
 python-version = "3.12"
+
+[tool.ty.rules]
+unresolved-import = "error"
+unresolved-reference = "error"
+invalid-argument-type = "error"
+invalid-assignment = "error"
+invalid-return-type = "error"
+possibly-missing-attribute = "error"
+unresolved-attribute = "error"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -140,18 +144,6 @@ markers = [
     "performance: Performance-focused tests",
     "mock_scanning: Tests with mocked repository scanning operations",
     "no_xdist: Tests that should not run in parallel (disables xdist parallelization)"
-]
-filterwarnings = [
-    "ignore::pytest_benchmark.logger.PytestBenchmarkWarning"
-]
-
-[dependency-groups]
-dev = [
-    "pytest-asyncio>=1.4.0",
-    "pytest-benchmark>=5.2.3",
-    "pytest-cov>=7.1.0",
-    "pytest-mock>=3.16.0",
-    "pytest-xdist>=3.8.0",
 ]
 
 # Coverage configuration moved to config/.coveragerc

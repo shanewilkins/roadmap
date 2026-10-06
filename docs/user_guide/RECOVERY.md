@@ -64,6 +64,24 @@ include snapshot digests; snapshot filenames must stay in their transaction
 directory. Missing/corrupt snapshots, malformed journals, and post-interruption
 manual edits stop recovery and leave the transaction available for inspection.
 
+## Successful writes with maintenance warnings
+
+A transaction-cleanup warning means canonical changes already committed. Do
+not repeat the mutation merely because cleanup could not finish. The next
+mutation retries journal cleanup under the workspace lock; health can show
+remaining transaction state. Preserve journals if recovery itself reports an
+error rather than deleting them manually.
+
+If projection refresh or its stale marker cannot be written, canonical changes
+also remain committed. The next query compares canonical content with the
+projection and refreshes it. Use health and the projection-repair workflow if
+the storage problem persists. An unreadable canonical directory blocks repair
+so an incomplete inventory cannot overwrite the projection.
+
+Backup retention cleanup rejects symbolic links and requires its selected files
+to remain inside the backups directory after confirmation. Correct unsafe paths
+before retrying; cleanup does not follow links to delete external backup files.
+
 ## When automatic recovery stops
 
 Keep the backup and the original transaction directory. The error identifies

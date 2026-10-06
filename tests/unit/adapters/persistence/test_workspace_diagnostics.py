@@ -4,6 +4,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
 import yaml
 
 from roadmap.adapters.outbound.persistence.diagnostics import (
@@ -11,6 +12,7 @@ from roadmap.adapters.outbound.persistence.diagnostics import (
 )
 from roadmap.adapters.outbound.persistence.documents import DocumentRepository
 from roadmap.adapters.outbound.persistence.projection import SQLiteProjection
+from roadmap.application.failures import ApplicationFailure, FailureCategory
 
 
 def _issue(path, *, milestone_id=None) -> None:
@@ -144,3 +146,125 @@ def test_interrupted_recovery_is_previewable_repeatable_and_validated(tmp_path):
     assert (tmp_path / ".roadmap/artifacts/recovered.txt").read_text() == "recovered\n"
     assert diagnostics.preview("recovery") == ()
     assert not transaction.exists()
+
+
+@pytest.mark.parametrize(
+    "damage,finding",
+    [
+        ("duplicate", "canonical.duplicate-id"),
+        ("wrong-path", "canonical.noncanonical-path"),
+        ("malformed", "canonical.invalid"),
+    ],
+)
+def test_ambiguous_or_damaged_canonical_state_blocks_projection_repair(
+    tmp_path, damage, finding
+):
+    path = tmp_path / ".roadmap/issues/issue-1.md"
+    _issue(path)
+    if damage == "duplicate":
+        other = path.with_name("other.md")
+        other.write_bytes(path.read_bytes())
+    elif damage == "wrong-path":
+        path.rename(path.with_name("wrong.md"))
+    else:
+        path.write_text("---\nnot: [valid\n---\nBody\n")
+    before = {p: p.read_bytes() for p in tmp_path.rglob("*.md")}
+    diagnostics, projection = _diagnostics(tmp_path)
+    assert finding in {f.finding_id for f in diagnostics.scan().findings}
+    assert diagnostics.preview("projection") == ()
+    assert not projection.path.exists()
+    assert {p: p.read_bytes() for p in tmp_path.rglob("*.md")} == before
+
+
+def test_unreadable_journal_directory_is_critical_and_not_silently_skipped(
+    tmp_path, monkeypatch
+):
+    _issue(tmp_path / ".roadmap/issues/issue-1.md")
+    root = tmp_path / ".roadmap/db/transactions"
+    root.mkdir(parents=True)
+    original = Path.iterdir
+
+    def iterdir(path):
+        if path == root:
+            raise PermissionError("injected journal denial")
+        return original(path)
+
+    monkeypatch.setattr(Path, "iterdir", iterdir)
+    diagnostics, projection = _diagnostics(tmp_path)
+    finding = next(
+        f
+        for f in diagnostics.scan().findings
+        if f.finding_id == "transaction.unreadable"
+    )
+    assert finding.severity.value == "critical"
+    with pytest.raises(ApplicationFailure) as captured:
+        diagnostics.preview("recovery")
+    assert captured.value.category is FailureCategory.STORAGE_UNAVAILABLE
+    assert diagnostics.preview("projection") == ()
+    assert not projection.path.exists()
+
+
+def test_projection_inspection_failure_is_reported_and_repair_is_blocked(
+    tmp_path, monkeypatch
+):
+    _issue(tmp_path / ".roadmap/issues/issue-1.md")
+    diagnostics, projection = _diagnostics(tmp_path)
+
+    def fail_inspection():
+        raise PermissionError("injected projection denial")
+
+    monkeypatch.setattr(projection, "inspect_state", fail_inspection)
+    report = diagnostics.scan()
+    assert report.exit_code == 2
+    assert [f.finding_id for f in report.findings] == ["projection.unreadable"]
+    assert diagnostics.preview("projection") == ()
+    assert not projection.path.exists()
+
+
+def test_failed_projection_repair_is_storage_unavailable_and_preserves_data(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / ".roadmap/issues/issue-1.md"
+    _issue(path)
+    before = path.read_bytes()
+    diagnostics, projection = _diagnostics(tmp_path)
+    actions = diagnostics.preview("projection")
+
+    def fail_rebuild():
+        raise OSError("injected repair failure")
+
+    monkeypatch.setattr(projection, "rebuild", fail_rebuild)
+    with pytest.raises(ApplicationFailure) as captured:
+        diagnostics.apply(actions)
+    assert captured.value.category is FailureCategory.STORAGE_UNAVAILABLE
+    assert "injected repair failure" in str(captured.value)
+    assert path.read_bytes() == before
+    assert not projection.path.exists()
+
+
+@pytest.mark.parametrize("nested", [False, True])
+def test_unreadable_canonical_enumeration_blocks_repair_and_scan(
+    tmp_path, monkeypatch, nested
+):
+    import os
+
+    directory = tmp_path / ".roadmap/issues"
+    _issue(directory / "issue-1.md")
+    denied = directory / "nested" if nested else directory
+    denied.mkdir(exist_ok=True)
+    original = os.scandir
+
+    def scandir(path):
+        if Path(path) == denied:
+            raise PermissionError("injected canonical enumeration denial")
+        return original(path)
+
+    monkeypatch.setattr(os, "scandir", scandir)
+    diagnostics, projection = _diagnostics(tmp_path)
+    report = diagnostics.scan()
+    finding = next(f for f in report.findings if f.finding_id == "canonical.unreadable")
+    assert finding.severity.value == "critical"
+    assert diagnostics.preview("projection") == ()
+    assert not projection.path.exists()
+    with pytest.raises(PermissionError, match="enumeration denial"):
+        DocumentRepository(tmp_path / ".roadmap").scan("issue")

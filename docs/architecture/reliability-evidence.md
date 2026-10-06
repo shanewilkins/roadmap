@@ -99,3 +99,15 @@ digest fields retain compatibility but cannot provide the new snapshot-digest
 check. Persistent inability to write/restore requires manual recovery from
 trusted data. Evidence records implementation behavior; requirement governance
 status is not changed automatically by passing tests.
+
+
+## 2026-10-06 follow-up regressions
+
+The coverage expansion adds tests for post-commit acknowledgement and retryable
+cleanup (rename/removal/sync faults), simultaneous projection/marker failure,
+backup symlink scope and post-confirmation replacement, and canonical directory
+enumeration failures. See the [expansion evidence](reliability-coverage-expansion-2026-10-06.md)
+for measured results. Ordinary failures before the canonical commit point still
+roll back; maintenance failures after it preserve successful acknowledgement.
+Real-storage regressions also exercise reciprocal creation, restore transitions,
+project reassignment rollback, and concurrent graph edits that must reject cycles.
