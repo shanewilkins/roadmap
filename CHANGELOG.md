@@ -6,8 +6,17 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Standardize type checking on ty and remove Pyright and unused pytest plugins;
+  consolidate development dependencies into the dev extra.
+- Run architecture checks in pre-commit, retain CI coverage evidence, and
+  require the full CI workflow before a release can publish.
+
 ### Fixed
 
+- Refuse recovery preview and projection repair when transaction journals
+  cannot be inspected, instead of silently treating them as absent.
 - Validate complete recovery journals and snapshot integrity before replay;
   preserve post-interruption manual edits and reject unsafe snapshot paths.
 - Release workspace locks when recovery or lock-metadata persistence fails.
@@ -20,6 +29,8 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ### Added
 
+- Reliability coverage for deletion guards, reciprocal dependency edits,
+  populated backup cleanup, malformed canonical input, and repair refusal.
 - A maintainer continuity/inactivity policy and a review closeout record that
   distinguishes local verification from remote CI and independent review.
 - A required CI audit of locked runtime/development dependencies using pinned

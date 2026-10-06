@@ -1,0 +1,131 @@
+"""Populated backup cleanup must delete exactly the selected legacy files."""
+
+import os
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+import pytest
+
+from roadmap.adapters.inbound.cli.cleanup import _candidates
+from roadmap.bootstrap import cli
+from tests.fixtures.ansi import clean_cli_output
+
+NOW = datetime(2026, 10, 6, tzinfo=UTC)
+
+
+def backup(root, name, age=0):
+    path = root / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"Backup {name}\n")
+    instant = (NOW - timedelta(days=age)).timestamp()
+    os.utime(path, (instant, instant))
+    return path
+
+
+@pytest.mark.parametrize(
+    "keep,days,expected",
+    [
+        (1, None, {"alpha_b.backup.md", "alpha_c.backup.md"}),
+        (10, 30, {"alpha_c.backup.md"}),
+        (1, 30, {"alpha_b.backup.md", "alpha_c.backup.md"}),
+        (
+            0,
+            None,
+            {
+                "alpha_a.backup.md",
+                "alpha_b.backup.md",
+                "alpha_c.backup.md",
+                "beta_a.backup.md",
+            },
+        ),
+    ],
+)
+def test_retention_selection_respects_groups_age_boundary_and_ties(
+    tmp_path, keep, days, expected
+):
+    # Equal timestamps sort by filename. Exactly 30 days old is retained by
+    # the age criterion; more than 30 days old is selected.
+    for name, age in [
+        ("alpha_a.backup.md", 30),
+        ("alpha_b.backup.md", 30),
+        ("alpha_c.backup.md", 31),
+        ("beta_a.backup.md", 0),
+    ]:
+        backup(tmp_path, name, age)
+    backup(tmp_path, "canonical.md", 90)
+    before = {p: p.read_bytes() for p in tmp_path.iterdir()}
+    assert {p.name for p in _candidates(tmp_path, keep, days, NOW)} == expected
+    assert {p: p.read_bytes() for p in tmp_path.iterdir()} == before
+
+
+@pytest.fixture
+def populated(tmp_path, monkeypatch, cli_runner):
+    monkeypatch.chdir(tmp_path)
+    result = cli_runner.invoke(cli, ["init", "--skip-project", "--non-interactive"])
+    assert result.exit_code == 0, result.output
+    root = tmp_path / ".roadmap"
+    backup(root / "backups", "issue_a.backup.md")
+    backup(root / "backups", "issue_b.backup.md", 1)
+    backup(root / "backups", "untouched.txt")
+    backup(root / "artifacts", "protected.md")
+    return root
+
+
+@pytest.mark.parametrize(
+    "arguments,input_text",
+    [
+        (["--dry-run"], None),
+        ([], "n\n"),
+        (["--keep", "-1"], None),
+        (["--days", "-1"], None),
+    ],
+)
+def test_preview_decline_and_invalid_options_preserve_all_files(
+    populated, cli_runner, arguments, input_text
+):
+    before = {p: p.read_bytes() for p in populated.rglob("*") if p.is_file()}
+    result = cli_runner.invoke(
+        cli, ["cleanup", "--keep", "1", *arguments], input=input_text
+    )
+    assert result.exit_code == (
+        0 if "--dry-run" in arguments else 2 if "-1" in arguments else 1
+    ), result.output
+    assert {p: p.read_bytes() for p in populated.rglob("*") if p.is_file()} == before
+
+
+def test_confirmed_cleanup_only_removes_listed_backup(populated, cli_runner):
+    before = {p: p.read_bytes() for p in populated.rglob("*") if p.is_file()}
+    result = cli_runner.invoke(cli, ["cleanup", "--keep", "1"], input="y\n")
+    assert result.exit_code == 0, result.output
+    removed = populated / "backups/issue_b.backup.md"
+    output = clean_cli_output(result.output)
+    assert "backups/issue_b.backup.md" in output
+    assert "Removed 1 backup file(s)" in output
+    assert not removed.exists()
+    assert {p: p.read_bytes() for p in populated.rglob("*") if p.is_file()} == {
+        p: b for p, b in before.items() if p != removed
+    }
+
+
+def test_partial_cleanup_failure_returns_nonzero_and_names_failed_file(
+    populated, cli_runner, monkeypatch
+):
+    denied = populated / "backups/issue_b.backup.md"
+    original = Path.unlink
+
+    def unlink(path, *args, **kwargs):
+        if path == denied:
+            raise PermissionError("injected denial")
+        return original(path, *args, **kwargs)
+
+    before = denied.read_bytes()
+    monkeypatch.setattr(Path, "unlink", unlink)
+    result = cli_runner.invoke(cli, ["cleanup", "--keep", "0", "--force"])
+    assert result.exit_code == 1, result.output
+    output = clean_cli_output(result.output)
+    assert "incomplete" in output
+    assert "backups/issue_b.backup.md" in output
+    assert "Removed 2" not in output
+    assert not (populated / "backups/issue_a.backup.md").exists()
+    assert denied.read_bytes() == before
+    assert (populated / "artifacts/protected.md").exists()

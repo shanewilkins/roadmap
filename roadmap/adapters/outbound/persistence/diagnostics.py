@@ -90,7 +90,8 @@ class FilesystemWorkspaceDiagnostics:
             blocked = any(
                 (
                     finding.finding_id.startswith("canonical.")
-                    or finding.finding_id == "projection.unreadable"
+                    or finding.finding_id
+                    in {"projection.unreadable", "transaction.unreadable"}
                 )
                 and finding.severity in {HealthSeverity.ERROR, HealthSeverity.CRITICAL}
                 for finding in report.findings
@@ -333,7 +334,11 @@ class FilesystemWorkspaceDiagnostics:
                         f"Transaction journals cannot be read: {type(error).__name__}",
                     )
                 )
-            return ()
+                return ()
+            raise ApplicationFailure(
+                FailureCategory.STORAGE_UNAVAILABLE,
+                f"Transaction journals cannot be inspected safely: {error}",
+            ) from error
 
     @staticmethod
     def _finding_key(finding: HealthFinding) -> tuple[str, str, str]:

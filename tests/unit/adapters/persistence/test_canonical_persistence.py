@@ -157,6 +157,84 @@ def test_missing_document_returns_none(tmp_path):
     assert _repository(tmp_path).load("issue", EntityId("absent")) is None
 
 
+@pytest.mark.parametrize(
+    "updates,message",
+    [
+        ({"created": None}, "missing created timestamp"),
+        ({"priority": "urgent"}, "invalid priority"),
+        ({"retention": "deleted"}, "invalid retention"),
+        ({"id": "../outside"}, "invalid id"),
+        ({"id": None}, "missing id"),
+        ({"depends_on": "issue-2"}, "depends_on must be a list"),
+        ({"blocks": ["../outside"]}, "invalid blocks"),
+        ({"comments": [{"id": "bad"}]}, "invalid issue comment"),
+        ({"history": "not-a-list"}, "history must be a list"),
+        ({"history": [{}]}, "invalid issue history"),
+        ({"due_date": 42}, "missing due_date timestamp"),
+        ({"schema_version": -1}, "unsupported schema_version"),
+    ],
+)
+def test_invalid_canonical_fields_never_rewrite_user_content(
+    tmp_path, updates, message
+):
+    path = _write(
+        tmp_path / ".roadmap/issues/issue-1.md",
+        _issue_values(**updates),
+        "Authored content ☕\n",
+    )
+    before = path.read_bytes()
+    with pytest.raises(DocumentError, match=message):
+        parse_document(path, "issue")
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "yaml_text,message",
+    [("- list", "must be a mapping"), ("title: [", "invalid YAML frontmatter")],
+)
+def test_invalid_frontmatter_is_rejected_without_modification(
+    tmp_path, yaml_text, message
+):
+    path = tmp_path / "issue.md"
+    path.write_text(f"---\n{yaml_text}\n---\nAuthored content\n")
+    before = path.read_bytes()
+    with pytest.raises(DocumentError, match=message):
+        parse_document(path, "issue")
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    "kind,values", [("milestone", _milestone_values()), ("project", _project_values())]
+)
+def test_invalid_planning_status_is_a_document_error(tmp_path, kind, values):
+    path = _write(tmp_path / f"{kind}.md", {**values, "status": "invalid"})
+    before = path.read_bytes()
+    with pytest.raises(DocumentError, match=f"invalid {kind} document"):
+        parse_document(path, kind)
+    assert path.read_bytes() == before
+
+
+def test_legacy_archive_layout_and_unknown_issue_type_round_trip(tmp_path):
+    path = _write(
+        tmp_path / ".roadmap/archive/issues/issue-1.md",
+        _issue_values(
+            status="archived", issue_type="legacy-type", custom={"review": "retain"}
+        ),
+        "Preserved body\n",
+    )
+    before = path.read_bytes()
+    envelope = parse_document(path, "issue")
+    assert isinstance(envelope.aggregate, Issue)
+    assert envelope.aggregate.retention.value == "archived"
+    assert envelope.aggregate.status.value == "closed"
+    assert envelope.aggregate.issue_type.value == "other"
+    assert path.read_bytes() == before
+    path.write_bytes(serialize_document(envelope))
+    reread = parse_document(path, "issue")
+    assert reread.aggregate == envelope.aggregate
+    assert reread.extra_frontmatter == {"custom": {"review": "retain"}}
+
+
 def test_duplicate_identity_is_rejected(tmp_path):
     root = tmp_path / ".roadmap/issues"
     _write(root / "backlog/one.md", _issue_values())

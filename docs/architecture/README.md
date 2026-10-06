@@ -42,6 +42,7 @@ Implementation changes require separate, explicitly scoped work.
 - [Roadmap 0.2 compatibility inventory](compatibility-inventory-0.2.csv)
 - [Canonical persistence and projection contract](canonical-persistence-contract-0.2.md)
 - [Reliability guarantees and evidence](reliability-evidence.md)
+- [Reliability coverage expansion — 2026-10-06](reliability-coverage-expansion-2026-10-06.md)
 - [Runtime dependency boundaries](dependency-boundaries.md)
 - [Measured 0.2 performance envelope](performance-envelope-0.2.md)
 - [Portfolio case study](portfolio-case-study.md)

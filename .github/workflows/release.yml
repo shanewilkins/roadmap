@@ -9,8 +9,13 @@ permissions:
   contents: read
 
 jobs:
+  verify:
+    name: Verify release quality
+    uses: ./.github/workflows/tests.yml
+
   build:
     name: Build and verify distributions
+    needs: verify
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 

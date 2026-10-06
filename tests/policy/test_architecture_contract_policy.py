@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import json
 import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -236,21 +236,50 @@ def test_policy_rejects_an_active_phase_outside_the_plan(tmp_path: Path) -> None
         load_policy(path)
 
 
-def test_pyright_configuration_keeps_meaningful_error_rules() -> None:
-    """Pyright success cannot come from disabling core correctness checks."""
-    config = json.loads((ROOT / "pyrightconfig.json").read_text(encoding="utf-8"))
-    assert config["typeCheckingMode"] in {"basic", "standard", "strict"}
+def test_ty_configuration_keeps_meaningful_error_rules() -> None:
+    """Type-check success cannot come from disabling core correctness checks."""
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))[
+        "tool"
+    ]["ty"]
     for rule in (
-        "reportMissingImports",
-        "reportUndefinedVariable",
-        "reportGeneralTypeIssues",
-        "reportOptionalMemberAccess",
-        "reportOptionalSubscript",
+        "unresolved-import",
+        "unresolved-reference",
+        "invalid-argument-type",
+        "invalid-assignment",
+        "invalid-return-type",
+        "possibly-missing-attribute",
     ):
-        assert config[rule] == "error"
-    assert "extraPaths" not in config
-    assert config["venv"] == ".venv"
-    assert config["exclude"][-1] == "tests/policy/fixtures/architecture/invalid"
+        assert config["rules"][rule] == "error"
+    assert config["environment"]["python-version"] == "3.12"
+    assert config["src"]["include"] == ["roadmap", "tests"]
+    assert config["src"]["exclude"] == ["tests/policy/fixtures/architecture"]
+
+
+@pytest.mark.parametrize(
+    "source, diagnostic",
+    [
+        ("def value() -> int:\n    return 'wrong'\n", "invalid-return-type"),
+        ("import missing_roadmap_gate_dependency\n", "unresolved-import"),
+        (
+            "def upper(value: str | None) -> str:\n    return value.upper()\n",
+            "unresolved-attribute",
+        ),
+    ],
+)
+def test_ty_rejects_known_correctness_errors(tmp_path, source, diagnostic):
+    """The sole type gate must actually fail on representative mistakes."""
+    path = tmp_path / "incorrect.py"
+    path.write_text(source)
+    executable = shutil.which("ty")
+    assert executable is not None
+    result = subprocess.run(
+        [executable, "check", "--project", str(ROOT), str(path)],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 1
+    assert diagnostic in result.stdout + result.stderr
 
 
 def test_policy_rejects_a_nonfuture_removal_phase(tmp_path: Path) -> None:

@@ -33,7 +33,6 @@ Run these before opening a pull request.
 uv run --locked --extra dev ruff format --config config/ruff.toml roadmap tests
 uv run --locked --extra dev ruff check --config config/ruff.toml roadmap tests
 uv run --locked --extra dev python tests/policy/architecture_checker.py
-uv run --locked --extra dev pyright
 uv run --locked --extra dev ty check
 uv run --locked --extra dev radon cc roadmap --exclude '*/migrations/*' --total-average --show-complexity --min D
 uv run --locked --extra dev xenon --exclude '*/migrations/*' --max-absolute B --max-modules B --max-average A roadmap
@@ -44,6 +43,13 @@ CI also validates workflow semantics with actionlint 1.7.12 and exercises the
 full suite on every supported Python minor. Package compatibility is verified
 from one exact wheel/source-distribution build on Ubuntu 24.04 x64 and macOS 15
 ARM64.
+
+ty is the sole type checker and targets the minimum supported Python version,
+3.12. Development dependencies have one declaration in the `dev` extra.
+Pre-commit runs architecture enforcement, Ruff, Xenon, and ty; the descriptive
+Radon report stays in CI. CI retains JSON/XML coverage reports for 14 days.
+Release tags run the same full quality/test/package workflow before building
+the distributions for publication.
 
 Optional security check.
 
