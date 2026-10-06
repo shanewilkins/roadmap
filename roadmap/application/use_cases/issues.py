@@ -14,7 +14,13 @@ from roadmap.application.contracts import (
 )
 from roadmap.application.failures import ApplicationFailure, FailureCategory
 from roadmap.application.ports import Clock, CurrentIdentity, ReadIssueRecords
-from roadmap.domain.types import EntityId, IssueStatus, RetentionState
+from roadmap.domain.types import (
+    EntityId,
+    IssueStatus,
+    IssueType,
+    Priority,
+    RetentionState,
+)
 
 
 class IssueQueries:
@@ -167,6 +173,15 @@ class IssueQueries:
 
     @staticmethod
     def _validate(query: IssueListQuery) -> None:
+        for name, value, choices in (
+            ("status", query.status, IssueStatus),
+            ("priority", query.priority, Priority),
+            ("issue_type", query.issue_type, IssueType),
+        ):
+            if value is not None and value not in {choice.value for choice in choices}:
+                raise ApplicationFailure(
+                    FailureCategory.INVALID_REQUEST, f"Invalid {name}: {value}"
+                )
         if query.assignee and query.current_assignee:
             raise ApplicationFailure(
                 FailureCategory.INVALID_REQUEST,

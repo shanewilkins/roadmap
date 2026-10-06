@@ -1,5 +1,6 @@
 """Rich presentation of target issue query records."""
 
+import click
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
@@ -18,6 +19,46 @@ def _metadata() -> Table:
 
 
 class IssueQueryPresenter:
+    def render_plain(self, record: IssueQueryRecord) -> None:
+        issue = record.issue
+        values = (
+            ("Issue", issue.title),
+            ("ID", issue.id),
+            ("Status", issue.status.value),
+            ("Priority", issue.priority.value),
+            ("Type", issue.issue_type.value),
+            ("Lifecycle", issue.retention.value),
+            ("Assignee", issue.assignee),
+            ("Milestone", record.milestone_name or issue.relations.milestone_id),
+            ("Labels", ", ".join(issue.labels)),
+            ("Estimate", issue.estimated_hours),
+            ("Progress", issue.progress_percentage),
+            ("Due", issue.due_at.value.isoformat() if issue.due_at else None),
+            (
+                "Started",
+                issue.actual_start_at.value.isoformat()
+                if issue.actual_start_at
+                else None,
+            ),
+            (
+                "Completed",
+                issue.actual_end_at.value.isoformat() if issue.actual_end_at else None,
+            ),
+            ("Created", issue.created.value.isoformat()),
+            ("Updated", issue.updated.value.isoformat()),
+            ("Depends on", ", ".join(issue.relations.depends_on)),
+            ("Blocks", ", ".join(issue.relations.blocks)),
+        )
+        for label, value in values:
+            click.echo(f"{label}: {value if value is not None else 'None'}")
+        click.echo("\n" + issue.content)
+        for comment in record.comments:
+            click.echo(f"Comment {comment.id} by {comment.author}: {comment.body}")
+        for event in issue.history:
+            click.echo(
+                f"History {event.at.value.isoformat()}: {event.action} {event.reason or ''}"
+            )
+
     def _render_header(self, console, issue) -> None:
         status = issue.status.value
         priority = issue.priority.value

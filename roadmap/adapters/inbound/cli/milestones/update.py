@@ -21,6 +21,8 @@ from roadmap.domain.types import MilestoneStatus, Name
 @click.option("--due-date")
 @click.option("--status", type=click.Choice(["open", "closed"]))
 @click.option("--project", "-p", default=None)
+@click.option("--clear-project", is_flag=True)
+@click.option("--clear-due-date", is_flag=True)
 @click.pass_context
 @require_initialized
 def update_milestone(
@@ -31,6 +33,8 @@ def update_milestone(
     due_date: str | None,
     status: str | None,
     project: str | None,
+    clear_project: bool,
+    clear_due_date: bool,
 ) -> None:
     """Update a milestone and its reciprocal project relation."""
     core = ctx.obj["core"]
@@ -38,11 +42,13 @@ def update_milestone(
         lambda: core.planning.update_milestone(
             MilestoneUpdateCommand(
                 resolve_milestone_id(core, milestone_id),
-                Name(name) if name else None,
+                Name(name) if name is not None else None,
                 description,
                 date_value(due_date),
                 MilestoneStatus(status) if status else None,
                 resolve_project_id(core, project) if project else None,
+                clear_project=clear_project,
+                clear_due_date=clear_due_date,
             )
         )
     )

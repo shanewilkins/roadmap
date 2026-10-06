@@ -209,3 +209,6 @@ created issue, so inspect it before retrying creation.
 
 Enable [shell completion](docs/user_guide/SHELL_COMPLETION.md) for commands,
 options, and choice values.
+
+The reviewed command and option contracts, compatibility guidance, and examples
+are in the [CLI correctness guide](docs/architecture/cli-correctness-closeout.md).

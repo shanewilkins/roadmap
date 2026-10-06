@@ -17,6 +17,11 @@ def recalculate_milestone_progress(
     ctx, milestone_name: str | None, method: str
 ) -> None:
     """Recalculate on read; derived progress is never persisted as authority."""
+    if ctx.info_name == "recalculate":
+        click.echo(
+            "Deprecated through 0.3; removed in 0.4: milestone recalculate; use milestone progress.",
+            err=True,
+        )
     planning = ctx.obj["core"].planning
     summaries = (
         (invoke(lambda: planning.milestone(milestone_name)),)

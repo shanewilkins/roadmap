@@ -3,6 +3,7 @@
 import click
 
 from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.inspection import inspect_json
 from roadmap.adapters.inbound.cli.planning_resolution import invoke
 
 
@@ -55,6 +56,9 @@ def _print_issues(issues) -> None:
     multiple=True,
 )
 @click.option("--only-open", is_flag=True)
+@click.option(
+    "--format", "format_name", type=click.Choice(["plain", "json"]), default="plain"
+)
 @click.pass_context
 @require_initialized
 def view_milestone(
@@ -63,6 +67,7 @@ def view_milestone(
     status: tuple[str, ...],
     priority: tuple[str, ...],
     only_open: bool,
+    format_name: str,
 ) -> None:
     """Display a milestone with filtered canonical issues."""
     planning = ctx.obj["core"].planning
@@ -74,5 +79,8 @@ def view_milestone(
         if item.relations.milestone_id == milestone.id
         and _matches_filters(item, status, priority, only_open)
     ]
+    if format_name == "json":
+        inspect_json("milestone", summary, issues=issues)
+        return
     _print_summary(milestone, summary)
     _print_issues(issues)

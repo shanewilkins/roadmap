@@ -2,13 +2,19 @@
 
 import click
 
-from roadmap.adapters.inbound.cli.cli_command_helpers import require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    require_initialized,
+    validate_branch_options,
+)
 from roadmap.adapters.inbound.cli.issues.resolution import (
     invoke,
     projection_warning,
     resolve_issue_ids,
 )
-from roadmap.adapters.inbound.cli.planning_resolution import resolve_milestone_id
+from roadmap.adapters.inbound.cli.planning_resolution import (
+    date_value,
+    resolve_milestone_id,
+)
 from roadmap.application.contracts import IssueCreateCommand
 from roadmap.domain.types import IssueType, Priority, Title
 
@@ -21,13 +27,7 @@ def _report_created(result, assignee: str | None, print_id: bool) -> None:
     if not print_id and assignee is None and result.issue.assignee:
         click.echo(f"Auto-detected assignee from Git: {result.issue.assignee}")
         click.echo(f"Assignee: {result.issue.assignee}")
-    if print_id and result.projection_stale:
-        click.echo(
-            "Warning: SQLite projection is stale; canonical Markdown was saved.",
-            err=True,
-        )
-    elif not print_id:
-        projection_warning(result)
+    projection_warning(result)
 
 
 @click.command("create")
@@ -55,6 +55,7 @@ def _report_created(result, assignee: str | None, print_id: bool) -> None:
 @click.option("--depends-on", multiple=True, help="Issue IDs this depends on")
 @click.option("--blocks", multiple=True, help="Issue IDs this blocks")
 @click.option("--content", "-d", help="Markdown description")
+@click.option("--due-date", help="Due date in UTC")
 @click.option("--git-branch", is_flag=True, help="Create a Git branch")
 @click.option("--checkout/--no-checkout", default=True)
 @click.option("--branch-name", default=None, help="Override suggested branch name")
@@ -78,8 +79,10 @@ def create_issue(
     branch_name: str | None,
     force: bool,
     print_id: bool,
+    due_date: str | None,
 ) -> None:
     """Create a new canonical issue."""
+    validate_branch_options(ctx, git_branch)
     core = ctx.obj["core"]
     command = invoke(
         lambda: IssueCreateCommand(
@@ -93,6 +96,7 @@ def create_issue(
             depends_on=resolve_issue_ids(core, depends_on),
             blocks=resolve_issue_ids(core, blocks),
             content=content or "",
+            due_at=date_value(due_date),
         )
     )
     result = invoke(lambda: core.issue_mutations.create(command))

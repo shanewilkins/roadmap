@@ -526,12 +526,15 @@ def test_manual_canonical_edit_incrementally_refreshes_projection(tmp_path):
     assert issue_row["name"] == "Manual"
 
 
-def test_projection_failure_does_not_rollback_canonical_commit(tmp_path):
+@pytest.mark.parametrize(
+    "error", [sqlite3.OperationalError("disk full"), RuntimeError("projection bug")]
+)
+def test_projection_failure_does_not_rollback_canonical_commit(tmp_path, caplog, error):
     class FailedProjection:
         stale = False
 
         def refresh(self, _ids) -> None:
-            raise sqlite3.OperationalError("disk full")
+            raise error
 
         def mark_stale(self) -> None:
             self.stale = True
@@ -547,6 +550,9 @@ def test_projection_failure_does_not_rollback_canonical_commit(tmp_path):
 
     assert repository.load("issue", EntityId("issue-1")) is not None
     assert projection.stale
+    record = next(r for r in caplog.records if "projection refresh failed" in r.message)
+    assert record.exc_info is not None
+    assert record.exc_info[1] is error
 
 
 def test_projection_connections_emit_no_resource_warnings(tmp_path):

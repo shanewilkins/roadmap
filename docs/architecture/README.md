@@ -37,6 +37,9 @@ Implementation changes require separate, explicitly scoped work.
 
 ## Approved implementation specification
 
+- [CLI interface contract and correctness plan](cli-interface-contract.md)
+- [CLI mutation-safety evidence and open findings](cli-mutation-safety-evidence.md)
+- [CLI query/output evidence and open findings](cli-query-output-evidence.md)
 - [Refactor implementation](refactor-implementation.md)
 - [Roadmap 0.2 public contract](public-contract-0.2.md)
 - [Roadmap 0.2 compatibility inventory](compatibility-inventory-0.2.csv)
@@ -74,3 +77,5 @@ Implementation changes require separate, explicitly scoped work.
 - [Phase 11 remote sync removal — 2026-08-24](checkpoints/phase-11-remote-sync-removal-2026-08-24.md)
 - [Phase 12 legacy-zone dissolution — 2026-08-26](checkpoints/phase-12-legacy-zone-dissolution-2026-08-26.md)
 - [Phase 13 release candidate — 2026-08-26](checkpoints/phase-13-release-candidate-2026-08-26.md)
+
+- [CLI correctness closeout](cli-correctness-closeout.md) and [behavior matrix](cli-behavior-matrix.json).

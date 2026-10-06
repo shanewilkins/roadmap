@@ -117,6 +117,7 @@ class IssueCreateCommand:
     depends_on: tuple[EntityId, ...] = ()
     blocks: tuple[EntityId, ...] = ()
     content: str = ""
+    due_at: Timestamp | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,6 +131,13 @@ class IssueUpdateCommand:
     content: str | None = None
     estimated_hours: float | None = None
     reason: str | None = None
+    clear_assignee: bool = False
+    clear_milestone: bool = False
+    clear_estimate: bool = False
+    due_at: Timestamp | None = None
+    clear_due_date: bool = False
+    add_labels: tuple[str, ...] = ()
+    remove_labels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,6 +175,8 @@ class ProjectCreateCommand:
     name: Name
     content: str = ""
     repository_url: str | None = None
+    owner: str | None = None
+    priority: Priority = Priority.MEDIUM
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,6 +189,7 @@ class ProjectUpdateCommand:
     priority: Priority | None = None
     owner: str | None = None
     estimated_hours: float | None = None
+    clear_owner: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -197,6 +208,8 @@ class MilestoneUpdateCommand:
     due_at: Timestamp | None = None
     status: MilestoneStatus | None = None
     project_id: EntityId | None = None
+    clear_project: bool = False
+    clear_due_date: bool = False
 
 
 @dataclass(frozen=True, slots=True)

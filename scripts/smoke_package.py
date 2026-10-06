@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -24,6 +25,50 @@ def _installable(source: str) -> str:
     if candidate.is_file():
         return str(candidate.resolve(strict=True))
     return source
+
+
+def _check_inspection(roadmap: Path, workspace: Path, env: dict[str, str]) -> None:
+    """Prove new adapter modules and machine output ship in the wheel."""
+    prefix = [str(roadmap), "--workspace", str(workspace / ".roadmap")]
+    created = subprocess.run(
+        [
+            *prefix,
+            "project",
+            "create",
+            "--title",
+            "[red]Literal project[/red]",
+            "--owner",
+            "alice",
+            "--priority",
+            "high",
+            "--print-id",
+        ],
+        cwd=workspace,
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    identity = created.stdout.strip()
+    assert identity and "\n" not in identity, created.stdout
+    inspected = subprocess.run(
+        [*prefix, "project", "view", identity, "--format", "json"],
+        cwd=workspace,
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(inspected.stdout)
+    assert payload["schema_version"] == 1 and payload["kind"] == "roadmap.project"
+    assert payload["record"]["project"]["id"] == identity
+    assert payload["record"]["project"]["name"] == "[red]Literal project[/red]"
+    assert payload["record"]["project"]["owner"] == "alice"
+    assert payload["record"]["project"]["priority"] == "high"
+    print(
+        "Installed workspace selection, ID-only creation and JSON inspection passed.",
+        flush=True,
+    )
 
 
 def _install_with_retries(
@@ -128,6 +173,7 @@ def smoke_test(
             env=clean_environment,
         )
         _run([str(roadmap), "issue", "list"], cwd=workspace, env=clean_environment)
+        _check_inspection(roadmap, workspace, clean_environment)
 
 
 def main() -> None:

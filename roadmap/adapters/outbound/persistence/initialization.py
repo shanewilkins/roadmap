@@ -17,6 +17,8 @@ class FilesystemWorkspaceLayout:
         )
 
     def is_initialized(self) -> bool:
+        # Preflight schema/access errors before preview or directory creation.
+        self.configuration.resolve()
         return self.roadmap_dir.is_dir() and self.configuration.project_path.is_file()
 
     def prepare(self) -> None:
@@ -29,9 +31,9 @@ class FilesystemWorkspaceLayout:
     def _ensure_gitignore(self) -> None:
         path = self.root_path / ".gitignore"
         entries = (
-            ".roadmap/db/*.db",
-            ".roadmap/db/*.db-*",
-            ".roadmap/db/*.lock",
+            f"{self.roadmap_dir.name}/db/*.db",
+            f"{self.roadmap_dir.name}/db/*.db-*",
+            f"{self.roadmap_dir.name}/db/*.lock",
         )
         existing = path.read_text(encoding="utf-8") if path.exists() else ""
         missing = tuple(item for item in entries if item not in existing.splitlines())

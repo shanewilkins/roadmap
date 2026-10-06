@@ -24,6 +24,7 @@ from roadmap.application.ports import (
     PlanningUnitOfWork,
     PlanningUnitOfWorkFactory,
 )
+from roadmap.application.use_cases.updates import optional_update
 from roadmap.domain.aggregates import Issue, Milestone, Project
 from roadmap.domain.failures import DomainFailure
 from roadmap.domain.types import (
@@ -372,41 +373,54 @@ class Planning:
                     name=command.name,
                     content=command.content,
                     repository_url=command.repository_url,
+                    owner=command.owner,
+                    priority=command.priority,
                 )
                 unit.save_project(project)
                 return self._commit(unit, project)
         except DomainFailure as error:
             raise self._invalid(error) from error
 
+    @staticmethod
+    def _revise_project(
+        project: Project,
+        command: ProjectUpdateCommand,
+        at: Timestamp,
+        status: ProjectStatus,
+    ) -> Project:
+        return project.revise(
+            at=at,
+            name=command.name or project.name,
+            headline=project.headline,
+            content=(
+                command.content if command.content is not None else project.content
+            ),
+            status=status,
+            priority=command.priority or project.priority,
+            owner=optional_update(project.owner, command.owner, command.clear_owner),
+            estimated_hours=(
+                command.estimated_hours
+                if command.estimated_hours is not None
+                else project.estimated_hours
+            ),
+            repository_url=(
+                command.repository_url
+                if command.repository_url is not None
+                else project.repository_url
+            ),
+        )
+
     def update_project(self, command: ProjectUpdateCommand) -> PlanningMutationResult:
+        if command.clear_owner and command.owner is not None:
+            raise self._invalid("Cannot set and clear owner together")
         at = self._clock.now()
         try:
             with self._units.create() as unit:
                 project = self._load_project(unit, command.project_id)
                 status = command.status or project.status
-                changed = project.revise(
-                    at=at,
-                    name=command.name or project.name,
-                    headline=project.headline,
-                    content=(
-                        command.content
-                        if command.content is not None
-                        else project.content
-                    ),
-                    status=status,
-                    priority=command.priority or project.priority,
-                    owner=command.owner if command.owner is not None else project.owner,
-                    estimated_hours=(
-                        command.estimated_hours
-                        if command.estimated_hours is not None
-                        else project.estimated_hours
-                    ),
-                    repository_url=(
-                        command.repository_url
-                        if command.repository_url is not None
-                        else project.repository_url
-                    ),
-                )
+                if command.status is ProjectStatus.COMPLETED:
+                    self._require_project_complete(unit, project)
+                changed = self._revise_project(project, command, at, status)
                 if changed == project:
                     return PlanningMutationResult(project)
                 unit.save_project(changed)
@@ -458,17 +472,23 @@ class Planning:
     def update_milestone(
         self, command: MilestoneUpdateCommand
     ) -> PlanningMutationResult:
+        if command.clear_project and command.project_id is not None:
+            raise self._invalid("Cannot set and clear project together")
+        if command.clear_due_date and command.due_at is not None:
+            raise self._invalid("Cannot set and clear due-date together")
         at = self._clock.now()
         try:
             with self._units.create() as unit:
                 milestone = self._load_milestone(unit, command.milestone_id)
+                if command.status is MilestoneStatus.CLOSED:
+                    self._require_milestone_complete(unit, milestone)
                 old_project = self._optional_project(
                     unit, milestone.relation.project_id
                 )
-                project_id = (
-                    command.project_id
-                    if command.project_id is not None
-                    else milestone.relation.project_id
+                project_id = optional_update(
+                    milestone.relation.project_id,
+                    command.project_id,
+                    command.clear_project,
                 )
                 new_project = self._optional_project(unit, project_id)
                 changed = milestone.revise(
@@ -482,9 +502,9 @@ class Planning:
                     ),
                     status=command.status or milestone.status,
                     relation=MilestoneRelation(project_id),
-                    due_at=command.due_at
-                    if command.due_at is not None
-                    else milestone.due_at,
+                    due_at=optional_update(
+                        milestone.due_at, command.due_at, command.clear_due_date
+                    ),
                 )
                 unit.save_milestone(changed)
                 self._reproject_milestone(
@@ -518,23 +538,44 @@ class Planning:
             unit.save_issue(changed)
             return self._commit(unit, changed)
 
+    def _require_milestone_complete(
+        self, unit: PlanningUnitOfWork, milestone: Milestone
+    ) -> None:
+        open_issues = tuple(
+            issue
+            for issue in unit.list_issues()
+            if issue.retention is RetentionState.VISIBLE
+            and issue.relations.milestone_id == milestone.id
+            and issue.status is not IssueStatus.CLOSED
+        )
+        if open_issues:
+            raise self._conflict(
+                f"Milestone '{milestone.name}' has {len(open_issues)} open issue(s)"
+            )
+
+    def _require_project_complete(
+        self, unit: PlanningUnitOfWork, project: Project
+    ) -> None:
+        milestones = {item.id: item for item in unit.list_milestones()}
+        open_count = sum(
+            item.status is not MilestoneStatus.CLOSED
+            for item in milestones.values()
+            if item.id in project.relations.milestone_ids
+            or item.relation.project_id == project.id
+        )
+        if open_count:
+            raise self._conflict(
+                f"Project '{project.name}' has {open_count} open milestone(s)"
+            )
+
     def close_milestone(
         self, milestone_id: EntityId, *, force: bool
     ) -> PlanningMutationResult:
         at = self._clock.now()
         with self._units.create() as unit:
             milestone = self._load_milestone(unit, milestone_id)
-            open_issues = tuple(
-                issue
-                for issue in unit.list_issues()
-                if issue.retention is RetentionState.VISIBLE
-                and issue.relations.milestone_id == milestone_id
-                and issue.status is not IssueStatus.CLOSED
-            )
-            if open_issues and not force:
-                raise self._conflict(
-                    f"Milestone '{milestone.name}' has {len(open_issues)} open issue(s)"
-                )
+            if not force:
+                self._require_milestone_complete(unit, milestone)
             changed = (
                 milestone
                 if milestone.status is MilestoneStatus.CLOSED
@@ -551,17 +592,8 @@ class Planning:
         at = self._clock.now()
         with self._units.create() as unit:
             project = self._load_project(unit, project_id)
-            milestones = {item.id: item for item in unit.list_milestones()}
-            open_count = sum(
-                item.status is not MilestoneStatus.CLOSED
-                for item in milestones.values()
-                if item.id in project.relations.milestone_ids
-                or item.relation.project_id == project.id
-            )
-            if open_count and not force:
-                raise self._conflict(
-                    f"Project '{project.name}' has {open_count} open milestone(s)"
-                )
+            if not force:
+                self._require_project_complete(unit, project)
             changed = (
                 project
                 if project.status is ProjectStatus.COMPLETED
@@ -677,7 +709,7 @@ class Planning:
     ) -> PlanningBatchResult:
         at = self._clock.now()
         try:
-            with self._units.create() as unit:
+            with self._units.create(read_only=dry_run) as unit:
                 values: tuple[Project | Milestone, ...] = (
                     tuple(unit.list_projects())
                     if kind == "project"

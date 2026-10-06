@@ -27,6 +27,12 @@ def _configuration(ctx: click.Context):
 @click.pass_context
 def view(ctx: click.Context, project: bool, level: str) -> None:
     """View configuration without exposing secrets or machine paths."""
+    if (
+        project
+        and ctx.get_parameter_source("level") is click.core.ParameterSource.COMMANDLINE
+        and level != "project"
+    ):
+        raise click.UsageError("--project conflicts with --level; choose one scope")
     if project:
         level = "project"
     store = _configuration(ctx)

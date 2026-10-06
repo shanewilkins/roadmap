@@ -145,7 +145,7 @@ class Units:
         self.fail_commit = fail_commit
         self.commits = 0
 
-    def create(self):
+    def create(self, *, read_only=False):
         return Unit(self)
 
 

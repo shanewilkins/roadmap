@@ -180,7 +180,7 @@ class OutputFormatter:
             - Headers from display_name
             - All values as strings
         """
-        if not self.table.active_columns or not self.table.active_rows:
+        if not self.table.active_columns:
             return ""
 
         output = StringIO()

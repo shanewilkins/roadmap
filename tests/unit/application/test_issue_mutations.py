@@ -84,7 +84,7 @@ class Units:
         self.projection_stale = projection_stale
         self.commits = 0
 
-    def create(self):
+    def create(self, *, read_only=False):
         return Unit(self)
 
 

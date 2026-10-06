@@ -20,6 +20,28 @@ def _store(tmp_path) -> ConfigurationFiles:
     return store
 
 
+def test_configuration_permission_error_is_not_missing_file(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    from roadmap.adapters.outbound.persistence.configuration import _read
+
+    path = tmp_path / "config.yaml"
+    path.write_text("schema_version: 1\n", encoding="utf-8")
+    before = path.read_bytes()
+
+    def denied(*args, **kwargs):
+        raise PermissionError("configuration access denied")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "stat", denied)
+        patch.setattr(Path, "read_text", denied)
+        with pytest.raises(ConfigurationError, match="access denied") as failure:
+            _read(path)
+        assert isinstance(failure.value.__cause__, PermissionError)
+    assert path.read_bytes() == before
+    assert _read(tmp_path / "absent.yaml") == {}
+
+
 def test_resolve_returns_one_immutable_typed_snapshot(tmp_path) -> None:
     snapshot = _store(tmp_path).resolve()
 

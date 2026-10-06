@@ -148,9 +148,11 @@ class CanonicalUnitOfWork:
         projection: Any | None = None,
         *,
         timeout: float = 30.0,
+        read_only: bool = False,
         failure_injector: Callable[[str, Path | None], None] | None = None,
     ):
         self.repository = repository
+        self._read_only = read_only
         state_dir = repository.roadmap_dir / "db"
         self._lock = WorkspaceLock(state_dir / "canonical-write.lock", timeout)
         self._transactions = state_dir / "transactions"
@@ -170,12 +172,26 @@ class CanonicalUnitOfWork:
         self._lock.__enter__()
         self._entered = True
         try:
-            self.recover()
+            if self._read_only:
+                self._require_no_pending_transactions()
+            else:
+                self.recover()
         except BaseException as error:
             self._entered = False
             self._lock.__exit__(type(error), error, error.__traceback__)
             raise
         return self
+
+    def _require_no_pending_transactions(self) -> None:
+        try:
+            pending = tuple(self._transactions.iterdir())
+        except FileNotFoundError:
+            return
+        if pending:
+            raise RecoveryError(
+                "Cannot preview while canonical recovery is pending; run "
+                "'roadmap health fix --fix-type recovery --dry-run' first"
+            )
 
     def __exit__(self, exc_type, _exc, _tb) -> None:
         if exc_type is not None:
@@ -502,6 +518,8 @@ class CanonicalUnitOfWork:
 
     def commit(self) -> None:
         self._require_lock()
+        if self._read_only:
+            raise RuntimeError("Cannot commit a read-only preview")
         if (
             not self._writes
             and not self._deletes
@@ -559,6 +577,10 @@ class CanonicalUnitOfWork:
                 self._projection.refresh(changed_ids)
             except Exception:
                 self.projection_stale = True
+                logging.getLogger(__name__).warning(
+                    "Canonical commit succeeded; projection refresh failed; rebuild the projection",
+                    exc_info=True,
+                )
                 try:
                     self._projection.mark_stale()
                 except Exception:
@@ -581,5 +603,7 @@ class CanonicalIssueUnitOfWorkFactory:
         self._repository = repository
         self._projection = projection
 
-    def create(self) -> CanonicalUnitOfWork:
-        return CanonicalUnitOfWork(self._repository, self._projection)
+    def create(self, *, read_only: bool = False) -> CanonicalUnitOfWork:
+        return CanonicalUnitOfWork(
+            self._repository, self._projection, read_only=read_only
+        )

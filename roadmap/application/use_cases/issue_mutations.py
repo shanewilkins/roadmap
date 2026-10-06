@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
 
 from roadmap.application.contracts import (
     IssueBatchResult,
@@ -18,6 +19,7 @@ from roadmap.application.ports import (
     IssueUnitOfWork,
     IssueUnitOfWorkFactory,
 )
+from roadmap.application.use_cases.updates import optional_update
 from roadmap.domain.aggregates import Issue
 from roadmap.domain.failures import DomainFailure
 from roadmap.domain.types import (
@@ -66,6 +68,7 @@ class IssueMutations:
                     assignee=assignee,
                     estimated_hours=command.estimated_hours,
                     content=command.content,
+                    due_at=command.due_at,
                 ).record_event("created", at)
                 changed = self._reciprocate_new(issue, issues, at)
                 self._require_acyclic((*issues.values(), issue, *changed))
@@ -79,6 +82,8 @@ class IssueMutations:
     def _resolved_update_assignee(
         self, issue: Issue, command: IssueUpdateCommand
     ) -> str | None:
+        if command.clear_assignee:
+            return None
         if command.assignee is not None:
             return self._resolve_assignee(command.assignee)
         return issue.assignee
@@ -87,33 +92,13 @@ class IssueMutations:
     def _resolved_update_relations(
         issue: Issue, command: IssueUpdateCommand
     ) -> IssueRelations:
-        if command.milestone_id is not None:
+        if command.milestone_id is not None or command.clear_milestone:
             return IssueRelations(
                 command.milestone_id,
                 issue.relations.depends_on,
                 issue.relations.blocks,
             )
         return issue.relations
-
-    @staticmethod
-    def _update_unchanged(
-        issue: Issue,
-        *,
-        title: str,
-        content: str,
-        priority,
-        relations: IssueRelations,
-        assignee: str | None,
-        estimated_hours: float | None,
-    ) -> bool:
-        return (
-            title == issue.title
-            and content == issue.content
-            and priority is issue.priority
-            and relations == issue.relations
-            and assignee == issue.assignee
-            and estimated_hours == issue.estimated_hours
-        )
 
     def _apply_update_status(
         self, changed: Issue, command: IssueUpdateCommand, at: Timestamp
@@ -124,47 +109,72 @@ class IssueMutations:
             )
         return changed.record_event("updated", at, command.reason)
 
+    @staticmethod
+    def _validate_update(command: IssueUpdateCommand) -> None:
+        for name, value, clear in (
+            ("assignee", command.assignee, command.clear_assignee),
+            ("milestone", command.milestone_id, command.clear_milestone),
+            ("estimate", command.estimated_hours, command.clear_estimate),
+            ("due-date", command.due_at, command.clear_due_date),
+        ):
+            if value is not None and clear:
+                raise ApplicationFailure(
+                    FailureCategory.INVALID_REQUEST,
+                    f"Cannot set and clear {name} together",
+                )
+        if set(command.add_labels) & set(command.remove_labels):
+            raise ApplicationFailure(
+                FailureCategory.INVALID_REQUEST, "Cannot add and remove the same label"
+            )
+        if any(
+            not label.strip() for label in (*command.add_labels, *command.remove_labels)
+        ):
+            raise ApplicationFailure(
+                FailureCategory.INVALID_REQUEST, "Labels must not be empty"
+            )
+
+    def _revise_issue(
+        self, issue: Issue, command: IssueUpdateCommand, at: Timestamp
+    ) -> Issue:
+        changed = issue.revise(
+            at=at,
+            title=command.title or issue.title,
+            content=command.content if command.content is not None else issue.content,
+            priority=command.priority or issue.priority,
+            relations=self._resolved_update_relations(issue, command),
+            assignee=self._resolved_update_assignee(issue, command),
+            estimated_hours=optional_update(
+                issue.estimated_hours, command.estimated_hours, command.clear_estimate
+            ),
+        )
+        labels = tuple(
+            dict.fromkeys(
+                label
+                for label in (*issue.labels, *command.add_labels)
+                if label not in command.remove_labels
+            )
+        )
+        return replace(
+            changed,
+            due_at=optional_update(
+                issue.due_at, command.due_at, command.clear_due_date
+            ),
+            labels=labels,
+        )
+
     def update(self, command: IssueUpdateCommand) -> IssueMutationResult:
+        self._validate_update(command)
         at = self._clock.now()
         try:
             with self._units.create() as unit:
                 issue = self._load(unit, command.issue_id)
                 self._require_milestone(unit, command.milestone_id)
-                assignee = self._resolved_update_assignee(issue, command)
-                relations = self._resolved_update_relations(issue, command)
-                title = command.title or issue.title
-                content = (
-                    command.content if command.content is not None else issue.content
-                )
-                priority = command.priority or issue.priority
-                estimated_hours = (
-                    command.estimated_hours
-                    if command.estimated_hours is not None
-                    else issue.estimated_hours
-                )
-                unchanged = self._update_unchanged(
-                    issue,
-                    title=title,
-                    content=content,
-                    priority=priority,
-                    relations=relations,
-                    assignee=assignee,
-                    estimated_hours=estimated_hours,
-                )
-                if unchanged and (
+                changed = self._revise_issue(issue, command, at)
+                if replace(changed, updated=issue.updated) == issue and (
                     command.status is None
                     or IssueStatus(command.status) is issue.status
                 ):
                     return IssueMutationResult(issue)
-                changed = issue.revise(
-                    at=at,
-                    title=title,
-                    content=content,
-                    priority=priority,
-                    relations=relations,
-                    assignee=assignee,
-                    estimated_hours=estimated_hours,
-                )
                 changed = self._apply_update_status(changed, command, at)
                 unit.save_issue(changed)
                 return self._commit(unit, changed)
@@ -351,7 +361,7 @@ class IssueMutations:
     ) -> IssueBatchResult:
         at = self._clock.now()
         try:
-            with self._units.create() as unit:
+            with self._units.create(read_only=dry_run) as unit:
                 issues = self._issues(unit)
                 selected = self._archive_selection(
                     issues, issue_id, all_closed, orphaned
@@ -381,7 +391,7 @@ class IssueMutations:
     ) -> IssueBatchResult:
         at = self._clock.now()
         try:
-            with self._units.create() as unit:
+            with self._units.create(read_only=dry_run) as unit:
                 issues = self._issues(unit)
                 selected = (
                     tuple(

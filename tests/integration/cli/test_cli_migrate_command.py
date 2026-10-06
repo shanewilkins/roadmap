@@ -78,3 +78,13 @@ def test_cli_rejects_future_workspace_without_mutation(
     assert result.exit_code == 1
     assert "newer than supported" in result.output
     assert _digests(root) == before
+
+
+def test_declined_migration_preserves_complete_legacy_workspace(
+    cli_runner, tmp_path, monkeypatch
+) -> None:
+    root = _workspace(tmp_path, monkeypatch)
+    before = _digests(root)
+    result = cli_runner.invoke(cli, ["migrate"], input="n\n")
+    assert result.exit_code == 1
+    assert _digests(root) == before

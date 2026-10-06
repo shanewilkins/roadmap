@@ -222,6 +222,8 @@ def list_issues(  # noqa: F841
     except (ApplicationFailure, ValueError) as error:
         raise click.ClickException(str(error)) from error
     console = get_console()
+    if ctx.params.get("format", "rich") != "rich":
+        return _table(result)
     if result.next_milestone_missing or not result.records:
         _report_empty_results(console, result)
         return None

@@ -10,6 +10,7 @@ Provides decorators and functions to reduce duplication in CLI commands:
 import functools
 import sys
 from collections.abc import Callable, Sequence
+from pathlib import Path
 from typing import Any, TypeVar
 
 import click  # type: ignore[import-not-found]
@@ -23,6 +24,113 @@ console = Console()
 F = TypeVar("F", bound=Callable[..., Any])
 
 
+def verbose_message(enabled: bool, message: str) -> None:
+    if enabled:
+        click.echo(message, err=True)
+
+
+def validate_list_mode(list_mode: bool, selectors: Sequence[bool]) -> None:
+    if list_mode and any(selectors):
+        raise click.UsageError(
+            "--list cannot be combined with selectors or mutation options"
+        )
+
+
+def confirm_override_action(dry_run: bool, force: bool, yes: bool, prompt: str) -> None:
+    if force and not yes and not dry_run:
+        click.echo(
+            "Deprecated through 0.3: --force also skips confirmation; in 0.4 use --force --yes for override and consent.",
+            err=True,
+        )
+    if not dry_run and not (yes or force):
+        click.confirm(prompt, abort=True)
+
+
+def write_report(content: str, path: Path, description: str) -> None:
+    """Create a report exclusively; never replace a user's existing file."""
+    try:
+        with path.open("x", encoding="utf-8", newline="") as stream:
+            stream.write(content)
+            if not content.endswith("\n"):
+                stream.write("\n")
+    except FileExistsError as error:
+        raise click.ClickException(
+            f"Refusing to overwrite existing report: {path}"
+        ) from error
+    except OSError as error:
+        raise click.ClickException(f"Cannot write report {path}: {error}") from error
+    click.echo(f"Exported {description} to {path}", err=True)
+
+
+def compatibility_warnings(ctx: click.Context) -> None:
+    """Keep old spellings through 0.3; announce their 0.4 replacement."""
+    marker = f"compatibility:{ctx.command_path}"
+    if ctx.meta.get(marker):
+        return
+    ctx.meta[marker] = True
+    name = ctx.command.name
+    replacements: dict[str, str] = {}
+    if name not in {"archive", "restore", "cleanup", "migrate", "fix"}:
+        replacements["verbose"] = (
+            "remove --verbose; use global --debug for unexpected failures"
+        )
+    if name == "init":
+        replacements["force"] = (
+            "remove --force; initialization is idempotent and never overwrites existing canonical data"
+        )
+        replacements.update(
+            dict.fromkeys(
+                ("interactive", "yes", "template", "template_path"),
+                "remove this option; init is noninteractive and templates are deferred",
+            )
+        )
+    if name == "cleanup":
+        replacements.update(
+            {
+                "force": "use --yes",
+                "backups_only": "remove --backups-only; cleanup only handles backups",
+                **dict.fromkeys(
+                    ("check_folders", "check_duplicates", "check_malformed"),
+                    "use health scan for canonical diagnostics",
+                ),
+            }
+        )
+    if name == "restore":
+        replacements["force"] = "use --yes"
+    if name in {"scan", "check", "health", "db-integrity", "fix"}:
+        replacements.update(
+            dict.fromkeys(
+                ("details", "group_by", "show_ids", "limit", "json_output"),
+                "use health scan filters, --summary-only, or --format",
+            )
+        )
+    if name == "kanban":
+        replacements.update(
+            {
+                "compact": "remove --compact; there is one board layout",
+                "no_color": "remove --no-color; the board is uncolored",
+            }
+        )
+    for parameter, replacement in replacements.items():
+        if (
+            ctx.get_parameter_source(parameter)
+            is click.core.ParameterSource.COMMANDLINE
+        ):
+            click.echo(
+                f"Deprecated through 0.3; removed in 0.4: --{parameter.replace('_', '-')}; {replacement}.",
+                err=True,
+            )
+
+
+def validate_branch_options(ctx: click.Context, git_branch: bool) -> None:
+    """Reject explicit branch-only arguments before any canonical mutation."""
+    if git_branch:
+        return
+    for name in ("branch_name", "checkout", "force"):
+        if ctx.get_parameter_source(name) is click.core.ParameterSource.COMMANDLINE:
+            raise click.UsageError(f"--{name.replace('_', '-')} requires --git-branch")
+
+
 def invoke(operation: Callable[[], Any]) -> Any:
     """Translate stable application/domain failures into Click failures."""
     try:
@@ -33,7 +141,11 @@ def invoke(operation: Callable[[], Any]) -> Any:
 
 def projection_warning(result: Any) -> None:
     if getattr(result, "projection_stale", False):
-        click.echo("Warning: SQLite projection is stale; canonical Markdown was saved.")
+        click.echo(
+            "Warning: SQLite projection is stale; canonical Markdown was saved. "
+            "Preview repair with 'roadmap health fix --fix-type projection --dry-run'.",
+            err=True,
+        )
 
 
 def echo_batch_result(
@@ -86,6 +198,7 @@ def require_initialized(func: Callable) -> Callable:
 
     @functools.wraps(func)
     def wrapper(ctx: click.Context, *args: Any, **kwargs: Any) -> Any:
+        compatibility_warnings(ctx)
         core = ctx.obj.get("core")
         if not core or not core.is_initialized():
             console.print(

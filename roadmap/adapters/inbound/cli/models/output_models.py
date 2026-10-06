@@ -300,13 +300,19 @@ class TableData:
         """
         sort_spec_list = self._normalize_sort_spec(sort_spec)
         col_indices, sort_directions = self._resolve_sort_columns(sort_spec_list)
-        sorted_rows = sorted(
-            self.rows, key=self._sort_key_for(sort_spec_list, col_indices)
-        )
-
+        sorted_rows = list(self.rows)
         for col_name, _direction in reversed(sort_spec_list):
-            if sort_directions[col_name]:
-                sorted_rows.reverse()
+            index = col_indices[col_name]
+            populated = [row for row in sorted_rows if row[index] is not None]
+            missing = [row for row in sorted_rows if row[index] is None]
+            sorted_rows = (
+                sorted(
+                    populated,
+                    key=lambda row: row[index],
+                    reverse=sort_directions[col_name],
+                )
+                + missing
+            )
 
         return TableData(
             columns=self.columns,
