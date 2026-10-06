@@ -7,14 +7,14 @@ a new quality-review score or claim the 90% coverage goal has been reached.
 
 ## Results
 
-The full local suite passed **623 tests** on macOS ARM64 / Python 3.14.2.
+The full local suite passed **624 tests** on macOS ARM64 / Python 3.14.2.
 Statement coverage increased from **85.90% to 88.06%**: 4,829 of 5,484
 statements covered. The enforced coverage floor is raised from 85% to 87%.
 
 The original tranche added 48 reliability cases and three type-gate rejection
-cases; this follow-up adds 31 more reliability cases plus import-gate proofs.
+cases; this follow-up adds 32 more reliability cases plus import-gate proofs.
 Existing successful-path, process-death, and installed-package tests remain.
-An isolated Python invocation also passed 119 lifecycle, cleanup, document, and
+An isolated Python invocation also passed 120 lifecycle, cleanup, document, and
 diagnostics cases against the newly built non-editable wheel, after asserting
 that `roadmap` imports from the isolated environment's site-packages.
 
@@ -63,7 +63,8 @@ automatically change requirement-governance status.
 Actionlint 1.7.12 locally validated the reusable CI and release definitions.
 Ruff, ty, architecture enforcement, Bandit, Xenon, lock integrity, and dependency
 audit passed locally. The first PR head passed all 12 CI jobs and CodeQL, with 87.72% Linux
-coverage. The follow-up head must repeat the supported matrix before closeout.
+coverage. The production follow-up at `5bf9ffba` also passed all 12 CI jobs and
+CodeQL. Consult PR #3774 checks for the final deletion-race regression head.
 
 ## Follow-up architecture and reliability fixes
 

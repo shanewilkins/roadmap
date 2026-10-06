@@ -171,3 +171,27 @@ def test_cleanup_rechecks_directory_after_confirmation(
     assert result.exit_code == 1, result.output
     assert external.read_text() == "Backup issue_a.backup.md\n"
     assert len(tuple((populated / "original-backups").glob("*.backup.md"))) == 2
+
+
+def test_directory_swap_between_validation_and_open_cannot_delete_external_backup(
+    populated, cli_runner, monkeypatch, tmp_path
+):
+    outside = tmp_path / "outside"
+    external = backup(outside, "issue_b.backup.md")
+    original = os.open
+    swapped = False
+
+    def open_directory(path, flags, *args, **kwargs):
+        nonlocal swapped
+        if path == populated / "backups" and not swapped:
+            swapped = True
+            path.rename(populated / "original-backups")
+            path.symlink_to(outside, target_is_directory=True)
+        return original(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", open_directory)
+    result = cli_runner.invoke(cli, ["cleanup", "--keep", "1", "--force"])
+    assert result.exit_code == 1, result.output
+    assert "incomplete" in clean_cli_output(result.output)
+    assert external.read_text() == "Backup issue_b.backup.md\n"
+    assert len(tuple((populated / "original-backups").glob("*.backup.md"))) == 2
