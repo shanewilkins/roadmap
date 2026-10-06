@@ -273,8 +273,8 @@ class FilesystemWorkspaceDiagnostics:
             ]
         return []
 
-    @staticmethod
     def _append_broken_reference_findings(
+        self,
         envelope: DocumentEnvelope,
         references: list[tuple[str, set[str]]],
         findings: list[HealthFinding],
@@ -286,15 +286,14 @@ class FilesystemWorkspaceDiagnostics:
                 HealthFinding(
                     "canonical.broken-reference",
                     HealthSeverity.ERROR,
-                    envelope.path.name,
+                    envelope.path.relative_to(self._roadmap_dir).as_posix(),
                     f"Entity {envelope.identity} references missing entity {missing}",
                     envelope.identity,
                 )
             )
 
-    @classmethod
     def _relationship_findings(
-        cls, envelopes: list[DocumentEnvelope], findings: list[HealthFinding]
+        self, envelopes: list[DocumentEnvelope], findings: list[HealthFinding]
     ) -> None:
         issue_ids = {
             str(item.aggregate.id)
@@ -312,10 +311,10 @@ class FilesystemWorkspaceDiagnostics:
             if isinstance(item.aggregate, Project)
         }
         for envelope in envelopes:
-            references = cls._references_for(
+            references = self._references_for(
                 envelope.aggregate, issue_ids, milestone_ids, project_ids
             )
-            cls._append_broken_reference_findings(envelope, references, findings)
+            self._append_broken_reference_findings(envelope, references, findings)
 
     def _pending_transactions(
         self, findings: list[HealthFinding] | None = None

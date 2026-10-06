@@ -13,7 +13,27 @@ from roadmap.application.contracts import IssueCreateCommand
 from roadmap.domain.types import IssueType, Priority, Title
 
 
+def _report_created(result, assignee: str | None, print_id: bool) -> None:
+    if print_id:
+        click.echo(str(result.issue.id))
+    else:
+        click.echo(f"Created issue: [{result.issue.id}] {result.issue.title}")
+    if not print_id and assignee is None and result.issue.assignee:
+        click.echo(f"Auto-detected assignee from Git: {result.issue.assignee}")
+        click.echo(f"Assignee: {result.issue.assignee}")
+    if print_id and result.projection_stale:
+        click.echo(
+            "Warning: SQLite projection is stale; canonical Markdown was saved.",
+            err=True,
+        )
+    elif not print_id:
+        projection_warning(result)
+
+
 @click.command("create")
+@click.option(
+    "--print-id", is_flag=True, help="Print only the created issue ID to stdout."
+)
 @click.option("--title", required=True, help="Issue title")
 @click.option(
     "--priority",
@@ -57,6 +77,7 @@ def create_issue(
     checkout: bool,
     branch_name: str | None,
     force: bool,
+    print_id: bool,
 ) -> None:
     """Create a new canonical issue."""
     core = ctx.obj["core"]
@@ -75,11 +96,7 @@ def create_issue(
         )
     )
     result = invoke(lambda: core.issue_mutations.create(command))
-    click.echo(f"Created issue: [{result.issue.id}] {result.issue.title}")
-    if assignee is None and result.issue.assignee:
-        click.echo(f"Auto-detected assignee from Git: {result.issue.assignee}")
-        click.echo(f"Assignee: {result.issue.assignee}")
-    projection_warning(result)
+    _report_created(result, assignee, print_id)
     if git_branch:
         branch = invoke(
             lambda: core.local_git.create_issue_branch(
@@ -89,4 +106,4 @@ def create_issue(
                 force=force,
             )
         )
-        click.echo(f"Created branch: {branch.branch}")
+        click.echo(f"Created branch: {branch.branch}", err=print_id)

@@ -1,5 +1,6 @@
 """Scoped configuration commands backed by Bootstrap-resolved files."""
 
+import json
 from typing import Any
 
 import click
@@ -49,6 +50,25 @@ def get_cmd(ctx: click.Context, key: str) -> None:
     if value is None:
         raise click.ClickException(f"Configuration key '{key}' is not set.")
     click.echo(f"{key}: {value}")
+
+
+@config.command("explain")
+@click.argument("key")
+@click.option(
+    "--format", "format_name", type=click.Choice(["plain", "json"]), default="plain"
+)
+@click.pass_context
+def explain(ctx: click.Context, key: str, format_name: str) -> None:
+    """Show a key's effective value, owning scope, and configuration source."""
+    try:
+        explanation = _configuration(ctx).explain(key)
+    except ValueError as error:
+        raise click.ClickException(str(error)) from error
+    if format_name == "json":
+        click.echo(json.dumps(explanation, ensure_ascii=False, sort_keys=True))
+    else:
+        click.echo(f"{key}: {json.dumps(explanation['value'], ensure_ascii=False)}")
+        click.echo(f"Scope: {explanation['scope']}; source: {explanation['source']}")
 
 
 @config.command("set")

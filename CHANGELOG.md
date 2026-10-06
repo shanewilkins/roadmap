@@ -6,7 +6,19 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Show candidate IDs and labels for ambiguous issue/project/milestone lookups.
+- Explain effective configuration values, owning scope, and default/configured
+  source with `config explain KEY [--format json]`.
+- Print only the created issue ID with `issue create --print-id`, keeping
+  warnings and branch notifications on stderr.
+- Show repair-preview commands in plain health output and document built-in
+  shell completion.
+
 ### Changed
+
+- Raise the statement-coverage floor to 90% after real-storage CLI safety journeys.
 
 - Replace the hand-written import graph checker with Import Linter contracts
   and narrow namespace/core dependency guards; raise the coverage floor to 87%.
@@ -17,6 +29,12 @@ All notable changes to Roadmap CLI are recorded here. The format follows
   require the full CI workflow before a release can publish.
 
 ### Fixed
+
+- Keep broken-reference health findings visible when filtering by entity, with
+  workspace-relative scopes and an accurate unhealthy exit code.
+- Validate manually edited configuration values using the same type rules as
+  scoped writes; reject boolean schema versions without rewriting input.
+- Treat duplicate project/milestone names as ambiguous and list candidates.
 
 - Preserve successful canonical mutation results when post-commit cleanup or
   projection stale-marker persistence fails; retry journals on reopen.

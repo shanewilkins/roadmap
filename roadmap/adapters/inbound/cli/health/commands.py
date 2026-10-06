@@ -70,10 +70,14 @@ def _render(
         assert isinstance(summary, dict)
         lines.append(" ".join(f"{key}={summary[key]}" for key in summary))
     elif report.findings:
-        lines.extend(
-            f"[{item.severity.value}] {item.finding_id} ({item.scope}): {item.message}"
-            for item in report.findings
-        )
+        for item in report.findings:
+            lines.append(
+                f"[{item.severity.value}] {item.finding_id} ({item.scope}): {item.message}"
+            )
+            if item.safe_action in {"projection", "recovery"}:
+                lines.append(
+                    f"  Preview repair: roadmap health fix --fix-type {item.safe_action} --dry-run"
+                )
     else:
         lines.append("No findings.")
     return "\n".join(lines) + "\n"

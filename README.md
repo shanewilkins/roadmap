@@ -188,3 +188,24 @@ See the
 ## License
 
 [MIT](LICENSE.md)
+
+
+### Small workflow shortcuts
+
+- Ambiguous issue, project, and milestone lookups list matching IDs and labels.
+- Plain health output offers repair-preview commands; previews never apply repairs.
+- `roadmap config explain output.format` shows the effective value and its source;
+  add `--format json` for structured output.
+- Capture a created issue ID without parsing prose:
+
+```sh
+issue_id=$(roadmap issue create --title "Improve recovery guidance" --print-id)
+roadmap issue view "$issue_id"
+```
+
+`--print-id` keeps warnings and branch notifications on stderr. A subsequent
+Git-branch failure still returns nonzero; the printed ID identifies the already
+created issue, so inspect it before retrying creation.
+
+Enable [shell completion](docs/user_guide/SHELL_COMPLETION.md) for commands,
+options, and choice values.
