@@ -4,10 +4,10 @@ from importlib.metadata import PackageNotFoundError, version
 
 # Installed artifacts read their distribution metadata; source checkouts use the
 # matching fallback without importing the executable adapter as a side effect.
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 try:
     __version__ = version("roadmap-cli")
 except PackageNotFoundError:
-    __version__ = "0.3.0"
+    __version__ = "0.3.1"
 
 __all__ = ["__version__"]

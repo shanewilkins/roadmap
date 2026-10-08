@@ -35,6 +35,8 @@ uv run --locked --extra dev ruff check --config config/ruff.toml roadmap tests
 uv run --locked --extra dev python tests/policy/architecture_checker.py
 # Runs stock Import Linter contracts plus namespace/core dependency guards.
 uv run --locked --extra dev ty check
+uv run --locked --extra dev vulture roadmap config/vulture_whitelist.py --min-confidence 100
+uv run --locked --extra dev pytest -n 0 -q tests/policy/test_documentation_links.py
 uv run --locked --extra dev radon cc roadmap --exclude '*/migrations/*' --total-average --show-complexity --min D
 uv run --locked --extra dev xenon --exclude '*/migrations/*' --max-absolute B --max-modules B --max-average A roadmap
 uv run --locked --extra dev pytest -q --cov=roadmap --cov-config=config/.coveragerc --cov-report=term
@@ -53,6 +55,13 @@ coverage floor. Use its explicit coverage configuration locally so measurements
 are comparable. Prefer tests of failure behavior and canonical postconditions.
 Release tags run the same full quality/test/package workflow before building
 the distributions for publication.
+
+CI also rejects high-confidence dead code with Vulture. Its reviewed whitelist
+contains Click compatibility arguments and context-manager protocol arguments;
+it does not exclude modules. Lower-confidence findings still need human review.
+The documentation gate checks local files and Markdown heading anchors in the
+README, contributor/security guides, scripts README and all docs Markdown. It
+does not crawl external URLs. Negative fixtures prove both gates reject defects.
 
 Optional security check.
 

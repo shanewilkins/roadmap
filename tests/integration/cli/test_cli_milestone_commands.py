@@ -14,25 +14,25 @@ from tests.fixtures.integration_helpers import IntegrationTestBase
 
 
 @pytest.fixture
-def empty_roadmap(cli_runner):
+def empty_roadmap(cli_runner, workspace_directory):
     """Create an isolated empty roadmap.
 
     Yields:
         tuple: (cli_runner, temp_dir_path)
     """
-    with cli_runner.isolated_filesystem():
+    with workspace_directory():
         IntegrationTestBase.init_roadmap(cli_runner)
         yield cli_runner, None
 
 
 @pytest.fixture
-def roadmap_with_milestones(cli_runner):
+def roadmap_with_milestones(cli_runner, workspace_directory):
     """Create a roadmap with pre-populated sample milestones.
 
     Yields:
         tuple: (cli_runner, core)
     """
-    with cli_runner.isolated_filesystem():
+    with workspace_directory():
         core = IntegrationTestBase.init_roadmap(cli_runner)
         # Create multiple milestones for testing
         for i in range(1, 4):

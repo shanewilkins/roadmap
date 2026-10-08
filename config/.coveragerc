@@ -1,11 +1,4 @@
 [run]
-# Omit configuration files and stubs from coverage
-omit =
-    */settings.py
-    */version.py
-    */adapters/cli/init.py
-    */adapters/cli/sync_context.py
-    */adapters/cli/sync_service.py
 
 [report]
 # Phase 13 deliberately skipped the full suite while deleting the legacy test

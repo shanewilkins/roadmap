@@ -12,8 +12,10 @@ def _invoke(cli_runner, *arguments: str):
     return cli_runner.invoke(cli, ["init", *arguments])
 
 
-def test_dry_run_reports_complete_plan_without_writing(cli_runner) -> None:
-    with cli_runner.isolated_filesystem():
+def test_dry_run_reports_complete_plan_without_writing(
+    cli_runner, workspace_directory
+) -> None:
+    with workspace_directory():
         result = _invoke(cli_runner, "--dry-run", "--project-name", "Demo")
 
         assert result.exit_code == 0, result.exception
@@ -21,8 +23,10 @@ def test_dry_run_reports_complete_plan_without_writing(cli_runner) -> None:
         assert not Path(".roadmap").exists()
 
 
-def test_initialization_creates_versioned_layout_and_first_project(cli_runner) -> None:
-    with cli_runner.isolated_filesystem():
+def test_initialization_creates_versioned_layout_and_first_project(
+    cli_runner, workspace_directory
+) -> None:
+    with workspace_directory():
         result = _invoke(
             cli_runner,
             "--non-interactive",
@@ -48,8 +52,10 @@ def test_initialization_creates_versioned_layout_and_first_project(cli_runner) -
         ]
 
 
-def test_repeated_initialization_preserves_existing_canonical_data(cli_runner) -> None:
-    with cli_runner.isolated_filesystem():
+def test_repeated_initialization_preserves_existing_canonical_data(
+    cli_runner, workspace_directory
+) -> None:
+    with workspace_directory():
         first = _invoke(cli_runner, "--project-name", "Demo")
         before = tuple(Path(".roadmap/projects").rglob("*.md"))[0].read_bytes()
         second = _invoke(cli_runner, "--project-name", "Different", "--force")
@@ -60,8 +66,10 @@ def test_repeated_initialization_preserves_existing_canonical_data(cli_runner) -
         assert len(create_core(Path.cwd()).planning.all_projects()) == 1
 
 
-def test_skip_project_and_custom_directory_are_explicit(cli_runner) -> None:
-    with cli_runner.isolated_filesystem():
+def test_skip_project_and_custom_directory_are_explicit(
+    cli_runner, workspace_directory
+) -> None:
+    with workspace_directory():
         result = _invoke(cli_runner, "--name", ".planning", "--skip-project")
 
         assert result.exit_code == 0, result.exception
@@ -69,8 +77,8 @@ def test_skip_project_and_custom_directory_are_explicit(cli_runner) -> None:
         assert create_core(Path.cwd(), ".planning").planning.all_projects() == ()
 
 
-def test_initialization_rejects_path_traversal(cli_runner) -> None:
-    with cli_runner.isolated_filesystem():
+def test_initialization_rejects_path_traversal(cli_runner, workspace_directory) -> None:
+    with workspace_directory():
         result = _invoke(cli_runner, "--name", "../outside", "--skip-project")
 
         assert result.exit_code == 2

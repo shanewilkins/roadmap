@@ -12,17 +12,17 @@ from tests.fixtures.cli_test_helpers import CLIOutputParser
 class TestCleanupCommand:
     """Test cleanup command for backup pruning."""
 
-    def test_cleanup_help(self, cli_runner):
+    def test_cleanup_help(self, cli_runner, workspace_directory):
         """Test cleanup command help."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             result = cli_runner.invoke(main, ["cleanup", "--help"])
             output = clean_cli_output(result.output).lower()
             assert result.exit_code == 0
             assert "backup" in output or "cleanup" in output
 
-    def test_cleanup_no_backups(self, cli_runner):
+    def test_cleanup_no_backups(self, cli_runner, workspace_directory):
         """Test cleanup when no backups exist."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -44,9 +44,9 @@ class TestCleanupCommand:
                 or "correct folders" in result.output
             )
 
-    def test_cleanup_list(self, cli_runner):
+    def test_cleanup_list(self, cli_runner, workspace_directory):
         """Test cleanup handles check flags gracefully."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -63,9 +63,9 @@ class TestCleanupCommand:
             result = cli_runner.invoke(main, ["cleanup", "--check-folders"])
             assert result.exit_code == 0
 
-    def test_cleanup_dry_run(self, cli_runner):
+    def test_cleanup_dry_run(self, cli_runner, workspace_directory):
         """Test cleanup --dry-run flag."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -81,9 +81,9 @@ class TestCleanupCommand:
             result = cli_runner.invoke(main, ["cleanup", "--dry-run"])
             assert result.exit_code == 0
 
-    def test_cleanup_with_keep_option(self, cli_runner):
+    def test_cleanup_with_keep_option(self, cli_runner, workspace_directory):
         """Test cleanup with --keep option."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -99,9 +99,9 @@ class TestCleanupCommand:
             result = cli_runner.invoke(main, ["cleanup", "--keep", "5"])
             assert result.exit_code == 0
 
-    def test_cleanup_with_days_option(self, cli_runner):
+    def test_cleanup_with_days_option(self, cli_runner, workspace_directory):
         """Test cleanup with --days option."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -117,9 +117,9 @@ class TestCleanupCommand:
             result = cli_runner.invoke(main, ["cleanup", "--days", "30"])
             assert result.exit_code == 0
 
-    def test_cleanup_with_combined_options(self, cli_runner):
+    def test_cleanup_with_combined_options(self, cli_runner, workspace_directory):
         """Test cleanup with both --keep and --days options."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -142,9 +142,9 @@ class TestCleanupCommand:
 class TestProjectCommands:
     """Test project management commands."""
 
-    def test_project_create(self, cli_runner):
+    def test_project_create(self, cli_runner, workspace_directory):
         """Test creating a project."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -172,9 +172,9 @@ class TestProjectCommands:
             assert result.exit_code == 0
             assert "created" in result.output.lower() or "My Project" in result.output
 
-    def test_project_list(self, cli_runner):
+    def test_project_list(self, cli_runner, workspace_directory):
         """Test listing projects."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -199,9 +199,9 @@ class TestProjectCommands:
             assert result.exit_code == 0
             assert "Test Project" in result.output or "project" in result.output.lower()
 
-    def test_project_view(self, cli_runner):
+    def test_project_view(self, cli_runner, workspace_directory):
         """Test viewing a project."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -223,9 +223,9 @@ class TestProjectCommands:
             # Either succeeds or fails gracefully
             assert result.exit_code in [0, 1]
 
-    def test_project_update(self, cli_runner):
+    def test_project_update(self, cli_runner, workspace_directory):
         """Test updating a project."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -259,9 +259,9 @@ class TestProjectCommands:
 
             assert result.exit_code == 0
 
-    def test_project_delete(self, cli_runner):
+    def test_project_delete(self, cli_runner, workspace_directory):
         """Test deleting a project."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -287,9 +287,9 @@ class TestProjectCommands:
 class TestCommentCommands:
     """Test comment management commands."""
 
-    def test_comment_help(self, cli_runner):
+    def test_comment_help(self, cli_runner, workspace_directory):
         """Test comment command help."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             result = cli_runner.invoke(main, ["issue", "comment", "--help"])
             assert result.exit_code == 0
             assert "comment" in result.output.lower()
@@ -313,9 +313,9 @@ class TestCommentCommands:
         )
         return str(rows[0][id_idx])
 
-    def test_comment_add_to_issue(self, cli_runner):
+    def test_comment_add_to_issue(self, cli_runner, workspace_directory):
         """Test adding a comment to an issue."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,
@@ -367,9 +367,9 @@ class TestCommentCommands:
             # Should succeed or handle gracefully
             assert result.exit_code in [0, 1, 2]
 
-    def test_comment_list(self, cli_runner):
+    def test_comment_list(self, cli_runner, workspace_directory):
         """Test listing comments on an issue."""
-        with cli_runner.isolated_filesystem():
+        with workspace_directory():
             # Initialize a roadmap
             result = cli_runner.invoke(
                 main,

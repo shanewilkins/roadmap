@@ -11,7 +11,7 @@ Implementation changes require separate, explicitly scoped work.
 ## Current execution state
 
 - Accepted checkpoint: Phase 13, hardening and 0.2.0 release preparation.
-- Current package release: 0.3.0. The 0.2 specifications and checkpoints below
+- Published package release: 0.3.0; source candidate: 0.3.1. The 0.2 specifications and checkpoints below
   remain the historical basis of the current architecture.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
 - The production-CLOC phase ratchet retired after Phase 13. Historical
@@ -53,6 +53,7 @@ Implementation changes require separate, explicitly scoped work.
 
 ## Delivery plans
 
+- [B+ review follow-up — 2026-10-08](../governance/bplus-followup-2026-10-08.md)
 - [Reliability coverage battle plan — 2026-10-06](coverage-battle-plan-2026-10-06.md)
 - [Roadmap 0.2 architecture simplification plan](roadmap-0.2.md)
 - [Roadmap 0.2 refactor execution plan](refactor-execution-plan.md)

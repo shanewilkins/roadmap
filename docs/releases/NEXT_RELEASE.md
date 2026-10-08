@@ -1,24 +1,32 @@
 # Next release preparation
 
-The published version is 0.3.0. Current master changes remain Unreleased and
-still carry that source version. This checklist prepares a reviewable release;
+The published version is 0.3.0. The local release candidate is 0.3.1; it is
+not yet tagged or published. This checklist prepares a reviewable release;
 it does not authorize a tag, push, merge, publication or permission change.
+
+The [October 8 review follow-up](../governance/bplus-followup-2026-10-08.md)
+records the current local fixes and baseline CI evidence. Maintainer-selected version:
+**0.3.1**, retaining the planned 0.4 feature and
+deprecation-removal boundary. Baseline CI is not proof of the final candidate.
 
 ## Candidate and compatibility
 
-- [ ] Select a new version with the maintainer; never reuse immutable PyPI 0.3.0.
+- [x] Select 0.3.1 with the maintainer; never reuse immutable PyPI 0.3.0.
 - [ ] Record the clean candidate SHA, requirement evidence and green CI URL.
-- [ ] Move only delivered entries from Unreleased to the dated version section.
-- [ ] Update package version and lock metadata together; verify artifact versions.
-- [ ] If still in the 0.3 line, preserve deprecated spellings and warnings.
+- [x] Move delivered entries to the dated 0.3.1 candidate section.
+- [x] Update package version and lock metadata together; artifact verification recorded below.
+- [x] Full local suite: 1,188 passed, 97.21% statement coverage, no deprecation warnings.
+- [x] In the 0.3 line, preserve deprecated spellings and warnings.
   Removal belongs to 0.4, with replacement commands in the migration notes.
-- [ ] Document bounded `health fix --fix-type projection|recovery`, read-only
+- [x] Document bounded `health fix --fix-type projection|recovery`, read-only
   previews, `--yes` consent vs `--force` lifecycle override, and stderr diagnostics.
-- [ ] Retain the explicit 0.1.1 migration and supported macOS/Linux limitations.
+- [x] Retain the explicit 0.1.1 migration and supported macOS/Linux limitations.
 
 The [CLI contract](../architecture/cli-interface-contract.md) and
-[Unreleased changelog](../../CHANGELOG.md#unreleased) are the candidate roster.
+[candidate changelog](../../CHANGELOG.md#031---2026-10-08) are the candidate roster.
 Internal Python APIs and SQLite schema are not public integration contracts.
+The [draft announcement](0.3.1-announcement.md) is prepared for the matching
+GitHub Release after publication verification.
 
 ## Verification
 
@@ -37,11 +45,16 @@ uv run --locked python scripts/smoke_package.py /tmp/roadmap-release-candidate/r
 ```
 
 - [ ] Check metadata documentation URL resolves to `master` or the candidate tag.
-- [ ] Install the exact built wheel in a clean environment and run
+- [x] Install the exact built wheel in a clean environment and run
   `scripts/checkpoint_journey.py` with that environment's absolute `roadmap` path.
-- [ ] Verify repeated migration/recovery, unchanged canonical digests, JSON
+- [x] Verify repeated migration/recovery, unchanged canonical digests, JSON
   stdout and explicit selection/repair behavior.
-- [ ] Obtain the maintainer's decision; record risks and review capacity honestly.
+
+The [October 8 follow-up](../governance/bplus-followup-2026-10-08.md#verification-performed)
+records wheel/sdist hashes, clean-install results and the installed cumulative
+journey. Artifacts remain local and unpublished.
+- [x] Maintainer approved commit/push, the version tag and PyPI release on October 8.
+  Review capacity and remaining evidence limits stay explicit in the follow-up report.
 
 ## Publication, only after approval
 

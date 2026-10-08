@@ -37,8 +37,8 @@ class TestCLIIssueCreate:
             ("Task", ["--priority", "medium"]),
         ],
     )
-    def test_create_issue(self, cli_runner, title, options):
-        with cli_runner.isolated_filesystem():
+    def test_create_issue(self, cli_runner, title, options, workspace_directory):
+        with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)
             result = cli_runner.invoke(
                 main, ["issue", "create", "--title", title, *options]
@@ -59,8 +59,8 @@ class TestCLIIssueList:
         "filter_args",
         [[], ["--status", "todo"], ["--priority", "high"]],
     )
-    def test_list_issues(self, cli_runner, filter_args):
-        with cli_runner.isolated_filesystem():
+    def test_list_issues(self, cli_runner, filter_args, workspace_directory):
+        with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)
             IntegrationTestBase.create_issue(
                 cli_runner, title="High Priority Issue", priority="high"
@@ -69,8 +69,8 @@ class TestCLIIssueList:
             IntegrationTestBase.assert_cli_success(result)
             assert "High Priority Issue" in clean_cli_output(result.output)
 
-    def test_list_issues_empty(self, cli_runner):
-        with cli_runner.isolated_filesystem():
+    def test_list_issues_empty(self, cli_runner, workspace_directory):
+        with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)
             result = cli_runner.invoke(main, ["issue", "list"])
             IntegrationTestBase.assert_cli_success(result)
@@ -90,8 +90,10 @@ class TestCLIIssueUpdate:
             ("--status", "in-progress", "status", "in-progress"),
         ],
     )
-    def test_update_issue(self, cli_runner, option, value, attribute, expected):
-        with cli_runner.isolated_filesystem():
+    def test_update_issue(
+        self, cli_runner, option, value, attribute, expected, workspace_directory
+    ):
+        with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)
             issue_id = _created_issue_id(cli_runner)
             result = cli_runner.invoke(
@@ -101,8 +103,8 @@ class TestCLIIssueUpdate:
             actual = getattr(_issue(issue_id), attribute)
             assert getattr(actual, "value", str(actual)) == expected
 
-    def test_update_nonexistent_issue_fails(self, cli_runner):
-        with cli_runner.isolated_filesystem():
+    def test_update_nonexistent_issue_fails(self, cli_runner, workspace_directory):
+        with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)
             result = cli_runner.invoke(
                 main, ["issue", "update", "999", "--title", "Test"]
@@ -113,8 +115,8 @@ class TestCLIIssueUpdate:
 
 class TestCLIIssueDelete:
     @pytest.mark.parametrize("use_yes", [False, True])
-    def test_delete_archived_issue(self, cli_runner, use_yes):
-        with cli_runner.isolated_filesystem():
+    def test_delete_archived_issue(self, cli_runner, use_yes, workspace_directory):
+        with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)
             issue_id = _created_issue_id(cli_runner)
             archived = cli_runner.invoke(
@@ -126,8 +128,8 @@ class TestCLIIssueDelete:
             IntegrationTestBase.assert_cli_success(result)
             assert "deleted" in clean_cli_output(result.output).lower()
 
-    def test_delete_nonexistent_issue_fails(self, cli_runner):
-        with cli_runner.isolated_filesystem():
+    def test_delete_nonexistent_issue_fails(self, cli_runner, workspace_directory):
+        with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)
             result = cli_runner.invoke(main, ["issue", "delete", "999", "--yes"])
             assert result.exit_code != 0
@@ -135,8 +137,8 @@ class TestCLIIssueDelete:
 
 
 class TestCLIIssueWorkflow:
-    def test_start_close_and_progress(self, cli_runner):
-        with cli_runner.isolated_filesystem():
+    def test_start_close_and_progress(self, cli_runner, workspace_directory):
+        with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)
             issue_id = _created_issue_id(cli_runner)
             started = cli_runner.invoke(main, ["issue", "start", issue_id])
@@ -153,8 +155,8 @@ class TestCLIIssueWorkflow:
             assert issue.status.value == "closed"
             assert issue.progress_percentage == 100
 
-    def test_block_and_unblock(self, cli_runner):
-        with cli_runner.isolated_filesystem():
+    def test_block_and_unblock(self, cli_runner, workspace_directory):
+        with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)
             issue_id = _created_issue_id(cli_runner)
             blocked = cli_runner.invoke(

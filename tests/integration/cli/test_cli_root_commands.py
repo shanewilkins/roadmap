@@ -25,26 +25,26 @@ def _output(result) -> str:
 
 
 @pytest.fixture
-def isolated_roadmap(cli_runner):
+def isolated_roadmap(cli_runner, workspace_directory):
     """Create an isolated roadmap environment with initialized database.
 
     Yields:
         tuple: (cli_runner, roadmap_core)
     """
-    with cli_runner.isolated_filesystem():
+    with workspace_directory():
         core = IntegrationTestBase.init_roadmap(cli_runner)
         yield cli_runner, core
         # Cleanup happens here when context exits
 
 
 @pytest.fixture
-def isolated_roadmap_with_issues(cli_runner):
+def isolated_roadmap_with_issues(cli_runner, workspace_directory):
     """Create an isolated roadmap with sample issues.
 
     Yields:
         tuple: (cli_runner, roadmap_core)
     """
-    with cli_runner.isolated_filesystem():
+    with workspace_directory():
         core = IntegrationTestBase.init_roadmap(cli_runner)
 
         # Create a few test issues
@@ -120,8 +120,8 @@ class TestCLIInit:
             ),
         ],
     )
-    def test_init_variants(self, cli_runner, cmd, check):
-        with cli_runner.isolated_filesystem():
+    def test_init_variants(self, cli_runner, cmd, check, workspace_directory):
+        with workspace_directory():
             result = cli_runner.invoke(main, cmd)
             assert check(result)
 
@@ -161,9 +161,11 @@ class TestCLIStatus:
             ),
         ],
     )
-    def test_status_variants(self, cli_runner, isolated_roadmap, cmd, env, check):
+    def test_status_variants(
+        self, cli_runner, isolated_roadmap, cmd, env, check, workspace_directory
+    ):
         if env == "no_init":
-            with cli_runner.isolated_filesystem():
+            with workspace_directory():
                 result = cli_runner.invoke(main, cmd)
                 assert check(result)
         else:
@@ -309,13 +311,13 @@ class TestCLIRootHelp:
 
 
 @pytest.fixture
-def isolated_roadmap_with_milestone(cli_runner):
+def isolated_roadmap_with_milestone(cli_runner, workspace_directory):
     """Create an isolated roadmap with issues and a milestone.
 
     Yields:
         tuple: (cli_runner, roadmap_core)
     """
-    with cli_runner.isolated_filesystem():
+    with workspace_directory():
         core = IntegrationTestBase.init_roadmap(cli_runner)
 
         # Create some issues

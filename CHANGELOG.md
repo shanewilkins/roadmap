@@ -6,7 +6,12 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-08
+
 ### Added
+
+- Add CI gates for high-confidence dead code and active documentation links,
+  with negative fixtures proving rejected inputs.
 
 - Add branch-outcome regressions for migration refusals, canonical transaction
   failure/retry, planning idempotency, aggregate invariants and scoped issue-list
@@ -33,6 +38,10 @@ All notable changes to Roadmap CLI are recorded here. The format follows
   shell completion.
 
 ### Changed
+
+- Replace deprecated Click filesystem isolation in tests with pytest-managed
+  temporary workspaces, remove retired coverage exclusions, and enable Bandit's
+  try/except/pass rule instead of suppressing it globally.
 
 - Raise the statement-coverage floor to 90% after real-storage CLI safety journeys.
 

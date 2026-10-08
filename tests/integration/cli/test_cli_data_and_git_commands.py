@@ -18,13 +18,13 @@ from tests.fixtures.integration_helpers import IntegrationTestBase
 
 
 @pytest.fixture
-def isolated_roadmap(cli_runner):
+def isolated_roadmap(cli_runner, workspace_directory):
     """Create an isolated roadmap environment with initialized database.
 
     Yields:
         tuple: (cli_runner, roadmap_core)
     """
-    with cli_runner.isolated_filesystem():
+    with workspace_directory():
         core = IntegrationTestBase.init_roadmap(cli_runner)
 
         yield cli_runner, core
@@ -32,13 +32,13 @@ def isolated_roadmap(cli_runner):
 
 
 @pytest.fixture
-def isolated_roadmap_with_issues(cli_runner):
+def isolated_roadmap_with_issues(cli_runner, workspace_directory):
     """Create an isolated roadmap with sample issues.
 
     Yields:
         tuple: (cli_runner, roadmap_core)
     """
-    with cli_runner.isolated_filesystem():
+    with workspace_directory():
         core = IntegrationTestBase.init_roadmap(cli_runner)
 
         # Create a few test issues

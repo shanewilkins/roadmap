@@ -76,6 +76,12 @@ jobs:
       - name: Type check (ty)
         run: uv run --locked --extra dev ty check
 
+      - name: Check high-confidence dead code
+        run: uv run --locked --extra dev vulture roadmap config/vulture_whitelist.py --min-confidence 100
+
+      - name: Check active documentation links
+        run: uv run --locked --extra dev pytest -n 0 -q tests/policy/test_documentation_links.py
+
       - name: Scan for high-severity security issues
         run: uv run --locked --extra dev bandit -c config/bandit.toml -r roadmap --severity-level=high
 
