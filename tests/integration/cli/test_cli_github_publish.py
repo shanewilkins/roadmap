@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from roadmap.bootstrap import cli
+from tests.fixtures.ansi import clean_cli_output
 
 
 def run(runner, *arguments):
@@ -168,4 +169,10 @@ def test_missing_git_history_fails_without_publication(
             cli, ["github", "publish-closures", "--repo", "owner/repo", "--apply"]
         )
     assert result.exit_code != 0
-    assert "Git HEAD" in result.output
+    assert "Git HEAD" in clean_cli_output(result.output)
+
+
+def test_github_namespace_help(cli_runner):
+    result = cli_runner.invoke(cli, ["github", "--help"])
+    assert result.exit_code == 0
+    assert "publish-closures" in clean_cli_output(result.output)

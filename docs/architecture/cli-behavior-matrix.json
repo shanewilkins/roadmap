@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "reviewed": "2026-10-06",
+  "reviewed": "2026-10-08",
   "compatibility_boundary": "0.4",
   "commands": {
     "roadmap": {
@@ -631,6 +631,64 @@
       "parameters": [],
       "evidence": [
         "tests/integration/cli/test_cli_data_and_git_commands.py::TestCLIGitIntegration::test_git_status"
+      ],
+      "unresolved": []
+    },
+    "roadmap github": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Explicit outbound GitHub publication namespace; ordinary commands remain offline.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_github_publish.py::test_github_namespace_help"
+      ],
+      "unresolved": []
+    },
+    "roadmap github publish-closures": {
+      "signature": "opt:--repo;opt:--apply",
+      "kind": "command",
+      "contract": "Read pinned Git HEAD and preview eligible closures offline as JSON; --apply publishes qualified explicit closure decisions with committed evidence and retry safety.",
+      "parameters": [
+        {
+          "parameter": "repo",
+          "spellings": [
+            "--repo"
+          ],
+          "disposition": "supported",
+          "contract": "GitHub OWNER/REPO; only matching targets are selected.",
+          "evidence": [
+            "tests/integration/cli/test_cli_github_publish.py::test_preview_uses_committed_closure_despite_uncommitted_reopen",
+            "tests/integration/cli/test_cli_github_publish.py::test_uncommitted_closure_is_never_published",
+            "tests/integration/cli/test_cli_github_publish.py::test_apply_passes_exact_plan_without_local_receipt_writes",
+            "tests/integration/cli/test_cli_github_publish.py::test_missing_git_history_fails_without_publication"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "apply",
+          "spellings": [
+            "--apply"
+          ],
+          "disposition": "supported",
+          "contract": "Write to GitHub; default is an offline preview.",
+          "evidence": [
+            "tests/integration/cli/test_cli_github_publish.py::test_preview_uses_committed_closure_despite_uncommitted_reopen",
+            "tests/integration/cli/test_cli_github_publish.py::test_uncommitted_closure_is_never_published",
+            "tests/integration/cli/test_cli_github_publish.py::test_apply_passes_exact_plan_without_local_receipt_writes",
+            "tests/integration/cli/test_cli_github_publish.py::test_missing_git_history_fails_without_publication"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_github_publish.py::test_preview_uses_committed_closure_despite_uncommitted_reopen",
+        "tests/integration/cli/test_cli_github_publish.py::test_uncommitted_closure_is_never_published",
+        "tests/integration/cli/test_cli_github_publish.py::test_apply_passes_exact_plan_without_local_receipt_writes",
+        "tests/integration/cli/test_cli_github_publish.py::test_missing_git_history_fails_without_publication"
       ],
       "unresolved": []
     },

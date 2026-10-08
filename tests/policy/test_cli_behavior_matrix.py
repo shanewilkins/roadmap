@@ -12,6 +12,7 @@ from tests.policy.test_public_contract_inventory_policy import _cli_surfaces
 ROOT = Path(__file__).resolve().parents[2]
 MATRIX = ROOT / "docs/architecture/cli-behavior-matrix.json"
 SAFETY_PARAMETERS = {
+    "roadmap github publish-closures": {"apply"},
     "roadmap health fix": {"repair_type", "dry_run", "confirmed"},
     "roadmap migrate": {"dry_run", "yes"},
     "roadmap issue archive": {"dry_run", "yes", "force"},
