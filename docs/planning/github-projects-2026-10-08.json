@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "owner": "shanewilkins",
+  "captured_at": "2026-10-08T13:19:01.706865+00:00",
+  "includes_closed": true,
+  "command": "gh project list --owner shanewilkins --closed --limit 100 --format json",
+  "result": {
+    "projects": [],
+    "totalCount": 0
+  }
+}

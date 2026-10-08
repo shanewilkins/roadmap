@@ -4,11 +4,13 @@ from pathlib import Path
 
 from roadmap.adapters.inbound.cli import WorkspaceServices
 from roadmap.adapters.outbound.git import SubprocessLocalGit
+from roadmap.adapters.outbound.github import GhClosurePublisher
 from roadmap.adapters.outbound.persistence import (
     CanonicalIssueUnitOfWorkFactory,
     DocumentIssueQueries,
     FilesystemWorkspaceDiagnostics,
 )
+from roadmap.adapters.outbound.persistence.committed_issues import GitCommittedIssues
 from roadmap.adapters.outbound.persistence.configuration import ConfigurationFiles
 from roadmap.adapters.outbound.persistence.documents import DocumentRepository
 from roadmap.adapters.outbound.persistence.initialization import (
@@ -28,6 +30,7 @@ from roadmap.application.use_cases import (
     WorkspaceHealth,
     WorkspaceInitialization,
 )
+from roadmap.application.use_cases.github_publish import PublishGitHubClosures
 
 
 def _planning(roadmap_dir: Path, clock: SystemClock) -> Planning:
@@ -75,6 +78,7 @@ def create_core(
         LocalGit(local_git_adapter, queries, mutations),
         Planning(units, clock),
         WorkspaceHealth(FilesystemWorkspaceDiagnostics(documents, projection)),
+        PublishGitHubClosures(GitCommittedIssues(roadmap_dir), GhClosurePublisher()),
     )
 
 

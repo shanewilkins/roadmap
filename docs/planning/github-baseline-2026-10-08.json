@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "repository": "shanewilkins/roadmap",
+  "captured_date": "2026-10-08",
+  "baseline_state": "open",
+  "issues": [
+    {
+      "assignees": [],
+      "body": "",
+      "createdAt": "2026-05-05T22:56:30Z",
+      "labels": [],
+      "number": 3756,
+      "title": "hangs when attempting to block an issue with a reason given.",
+      "updatedAt": "2026-05-05T22:56:30Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3756",
+      "local_issue_id": "9928b489-c652-4116-8f7d-831700b4c7fd",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Reproduce block-with-reason on installed 0.3.1 in an isolated fixture; diagnose hang and add bounded regression proof."
+    },
+    {
+      "assignees": [],
+      "body": "I initialized a new repo, generated a token and gave it to the credential manager.\n\nbut when i did `roadmap today`, I got this:\n\n2026-02-23T07:43:03Z [ WARNING] roadmap.common.observability.otel_init: opentelemetry_not_available | detail=Tracing features will be disabled. Install with: pip install opentelemetry-exporter-jaeger error=No module named 'opentelemetry.exporter.otlp' level=warning\n\u274c No user configured. Initialize with 'roadmap init' or set ROADMAP_USER.",
+      "createdAt": "2026-02-23T13:45:36Z",
+      "labels": [],
+      "number": 3755,
+      "title": "Problem with user initialization",
+      "updatedAt": "2026-02-23T13:45:36Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3755",
+      "local_issue_id": "74684a37-de5a-448a-89c3-bef4fd4cdf96",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Compare the old initialization/token/telemetry report with current offline identity setup; reproduce supported path before deciding obsolete versus defect."
+    },
+    {
+      "assignees": [],
+      "body": "on some systems I'm seeing the following warnings when i run the test suite.\n\n=============================== warnings summary ===============================\ntests/unit/adapters/sync/test_sync_merge_engine.py::TestSyncMergeEngine::test_resolve_conflicts_with_auto_merge\n  /home/runner/.local/share/uv/python/cpython-3.14.2-linux-x86_64-gnu/lib/python3.14/unittest/mock.py:2252: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f457e0787c0>\n    def __init__(self, name, parent):\n  Enable tracemalloc to get traceback where the object was allocated.\n  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.\n\ntests/unit/adapters/sync/test_sync_merge_engine.py::TestSyncMergeEngine::test_resolve_conflicts_with_auto_merge\n  /home/runner/.local/share/uv/python/cpython-3.14.2-linux-x86_64-gnu/lib/python3.14/unittest/mock.py:2252: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f457e079210>\n    def __init__(self, name, parent):\n  Enable tracemalloc to get traceback where the object was allocated.\n  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.\n\ntests/unit/adapters/sync/test_sync_merge_engine.py::TestSyncMergeEngine::test_resolve_conflicts_with_auto_merge\n  /home/runner/.local/share/uv/python/cpython-3.14.2-linux-x86_64-gnu/lib/python3.14/unittest/mock.py:2252: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f457e0793f0>\n    def __init__(self, name, parent):\n  Enable tracemalloc to get traceback where the object was allocated.\n  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.",
+      "createdAt": "2026-02-19T15:39:21Z",
+      "labels": [],
+      "number": 3754,
+      "title": "database connection not closed warnings",
+      "updatedAt": "2026-02-19T15:39:21Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3754",
+      "local_issue_id": "65ec3783-e287-4e6c-bbb6-9e387ea7d657",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Verify resource cleanup on current persistence/test paths; removed sync tests alone do not prove all connections close."
+    },
+    {
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjY3NzcwNzM=",
+          "login": "shanewilkins",
+          "name": "Shane M. Wilkins",
+          "databaseId": 6777073
+        }
+      ],
+      "body": "# refactor hardcoded paths to use centralized project root/configuration\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "createdAt": "2026-02-12T19:08:24Z",
+      "labels": [],
+      "number": 3753,
+      "title": "refactor hardcoded paths to use centralized project root/configuration",
+      "updatedAt": "2026-02-12T19:08:24Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3753",
+      "local_issue_id": "444e2773-9d34-4216-bd5d-78a598d834ad",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Define which hardcoded paths remain and exercise alternate workspace roots; verify before completed disposition."
+    },
+    {
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjY3NzcwNzM=",
+          "login": "shanewilkins",
+          "name": "Shane M. Wilkins",
+          "databaseId": 6777073
+        }
+      ],
+      "body": "# update backend to graphql\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "createdAt": "2026-02-10T13:45:15Z",
+      "labels": [],
+      "number": 3749,
+      "title": "update backend to graphql",
+      "updatedAt": "2026-02-10T13:45:15Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3749",
+      "local_issue_id": "07b21448",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Candidate not planned: GraphQL backend conflicts with current file-first/offline architecture. Record rationale; no closure until reviewed."
+    },
+    {
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjY3NzcwNzM=",
+          "login": "shanewilkins",
+          "name": "Shane M. Wilkins",
+          "databaseId": 6777073
+        }
+      ],
+      "body": "# Implement AI-powered project insights and recommendations\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "createdAt": "2026-02-09T21:33:09Z",
+      "labels": [
+        {
+          "id": "LA_kwDOQAvBac8AAAACMv4PEA",
+          "name": "priority:high",
+          "description": "High priority issue",
+          "color": "ff6b6b"
+        },
+        {
+          "id": "LA_kwDOQAvBac8AAAACMv4PMA",
+          "name": "status:todo",
+          "description": "Issue is in todo status",
+          "color": "e1e4e8"
+        },
+        {
+          "id": "LA_kwDOQAvBac8AAAACUjZn1Q",
+          "name": "synced:from-github",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 3716,
+      "title": "Implement AI-powered project insights and recommendations",
+      "updatedAt": "2026-02-10T00:58:41Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3716",
+      "local_issue_id": "1007b6f2",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Candidate not planned for current project: AI insights are outside accepted deterministic decision-support scope. Record rationale rather than treating recommendations as delivery."
+    },
+    {
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjY3NzcwNzM=",
+          "login": "shanewilkins",
+          "name": "Shane M. Wilkins",
+          "databaseId": 6777073
+        }
+      ],
+      "body": "# Phase 3: Complete git hooks integration testing\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "createdAt": "2026-02-09T21:33:08Z",
+      "labels": [
+        {
+          "id": "LA_kwDOQAvBac8AAAACUjZn1Q",
+          "name": "synced:from-github",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 3715,
+      "title": "Phase 3: Complete git hooks integration testing",
+      "updatedAt": "2026-02-10T00:58:48Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3715",
+      "local_issue_id": "09c69060",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Candidate not planned: automatic Git hooks are deferred. Local closed status is not remote closure evidence; reopen local triage."
+    },
+    {
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjY3NzcwNzM=",
+          "login": "shanewilkins",
+          "name": "Shane M. Wilkins",
+          "databaseId": 6777073
+        }
+      ],
+      "body": "# Optimize Test Suite Performance\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3",
+      "createdAt": "2026-02-09T21:32:56Z",
+      "labels": [
+        {
+          "id": "LA_kwDOQAvBac8AAAACUjZn1Q",
+          "name": "synced:from-github",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 3703,
+      "title": "Optimize Test Suite Performance",
+      "updatedAt": "2026-02-10T00:58:49Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3703",
+      "local_issue_id": "76d11a36",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Agree a measurable test runtime budget and environment; measure current suite and avoid weakening assertions or timing ceilings."
+    },
+    {
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjY3NzcwNzM=",
+          "login": "shanewilkins",
+          "name": "Shane M. Wilkins",
+          "databaseId": 6777073
+        }
+      ],
+      "body": "# Test assignee validation improved\n\n## Description\n\nBrief description of the issue or feature request.\n\n## Acceptance Criteria\n\n- [ ] Criterion 1\n- [ ] Criterion 2\n- [ ] Criterion 3\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins",
+      "createdAt": "2026-02-09T21:32:42Z",
+      "labels": [
+        {
+          "id": "LA_kwDOQAvBac8AAAACMv4PKg",
+          "name": "priority:low",
+          "description": "Low priority issue",
+          "color": "28a745"
+        },
+        {
+          "id": "LA_kwDOQAvBac8AAAACMv4PMA",
+          "name": "status:todo",
+          "description": "Issue is in todo status",
+          "color": "e1e4e8"
+        },
+        {
+          "id": "LA_kwDOQAvBac8AAAACUjZn1Q",
+          "name": "synced:from-github",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 3689,
+      "title": "Test assignee validation improved",
+      "updatedAt": "2026-02-10T00:58:46Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3689",
+      "local_issue_id": "8a1080c8",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Clarify supported assignee validation behavior and verify success/failure paths; local closed status lacks remote disposition evidence."
+    },
+    {
+      "assignees": [
+        {
+          "id": "MDQ6VXNlcjY3NzcwNzM=",
+          "login": "shanewilkins",
+          "name": "Shane M. Wilkins",
+          "databaseId": 6777073
+        }
+      ],
+      "body": "# Implement performance optimization strategy with hybrid storage and caching\n\n## Description\n\nThe current file-based storage system works well for small datasets but has scalability limitations as the number of issues, milestones, and roadmaps grows. We need to implement a hybrid storage approach that maintains the git-friendly file format while adding performance optimizations through SQLite indexing and intelligent caching.\n\n## Current Performance Analysis\n\n### File-Store Limitations\n- **List operations**: O(n) file reads for every query\n- **Search operations**: Full-text grep across all files\n- **Relationship queries**: Expensive traversal for dependencies/milestones\n- **Memory usage**: Grows linearly with dataset size\n- **Concurrent access**: Risk of file corruption\n\n### Scale Breaking Points\n- **~100-500 issues**: Noticeable delays but acceptable\n- **~1,000-5,000 issues**: Slow operations, user frustration\n- **~10,000+ issues**: Likely unusable without optimization\n\n### Current Bottlenecks\n```bash\n# These operations become expensive at scale:\nroadmap issue list --status in-progress    # Scans all files\nroadmap issue list --assignee shane        # Full file reads\nroadmap milestone status v090              # Relationship traversal\n```\n\n## Proposed Hybrid Architecture\n\n### Core Design Principles\n1. **Files remain source of truth** - Maintains git integration\n2. **SQLite for fast queries** - Indexed metadata for performance\n3. **Lazy loading content** - Only load full issue when needed\n4. **Automatic sync** - Keep file and database in sync\n5. **Graceful degradation** - Falls back to file-only if DB issues\n\n### Architecture Overview\n```python\n# Hybrid storage layer\nclass HybridStorage:\n    def __init__(self):\n        self.file_store = FileStore()           # Current implementation\n        self.index_db = SQLiteIndex()           # New performance layer\n        self.cache = InMemoryCache()            # Fast access cache\n\n    def list_issues(self, filters):\n        # Fast: Query SQLite index\n        return self.index_db.query(filters)\n\n    def get_issue(self, issue_id):\n        # Full content: Always from file\n        return self.file_store.load(issue_id)\n\n    def update_issue(self, issue_id, data):\n        # Write to file, sync to index\n        self.file_store.save(issue_id, data)\n        self.index_db.update_from_file(issue_id)\n```\n\n## Implementation Plan\n\n### Phase 1: SQLite Index Layer (2.5h)\n\n#### Database Schema\n```sql\nCREATE TABLE issues (\n    id TEXT PRIMARY KEY,\n    title TEXT NOT NULL,\n    status TEXT NOT NULL,\n    priority TEXT NOT NULL,\n    assignee TEXT,\n    milestone TEXT,\n    estimated_hours REAL,\n    progress_percentage INTEGER,\n    created_date TEXT,\n    updated_date TEXT,\n    file_path TEXT NOT NULL,\n    file_mtime INTEGER NOT NULL\n);\n\nCREATE INDEX idx_issues_status ON issues(status);\nCREATE INDEX idx_issues_assignee ON issues(assignee);\nCREATE INDEX idx_issues_milestone ON issues(milestone);\nCREATE INDEX idx_issues_priority ON issues(priority);\n\nCREATE TABLE milestones (\n    id TEXT PRIMARY KEY,\n    title TEXT NOT NULL,\n    status TEXT NOT NULL,\n    due_date TEXT,\n    file_path TEXT NOT NULL,\n    file_mtime INTEGER NOT NULL\n);\n\nCREATE TABLE roadmaps (\n    id TEXT PRIMARY KEY,\n    title TEXT NOT NULL,\n    status TEXT NOT NULL,\n    owner TEXT,\n    priority TEXT,\n    file_path TEXT NOT NULL,\n    file_mtime INTEGER NOT NULL\n);\n```\n\n#### Index Management\n```python\nclass SQLiteIndex:\n    def __init__(self, db_path='.roadmap/index.db'):\n        self.db_path = db_path\n        self.conn = sqlite3.connect(db_path)\n        self.init_schema()\n\n    def sync_from_files(self):\n        \"\"\"Full rebuild from all files\"\"\"\n        for file_path in glob('.roadmap/issues/*.md'):\n            self.update_from_file(file_path)\n\n    def update_from_file(self, file_path):\n        \"\"\"Update single file in index\"\"\"\n        metadata = parse_yaml_header(file_path)\n        mtime = os.path.getmtime(file_path)\n\n        self.conn.execute(\"\"\"\n            INSERT OR REPLACE INTO issues\n            (id, title, status, priority, assignee, milestone,\n             estimated_hours, progress_percentage, created_date,\n             updated_date, file_path, file_mtime)\n            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n        \"\"\", (metadata['id'], metadata['title'], ...))\n\n    def is_stale(self, file_path):\n        \"\"\"Check if index needs update\"\"\"\n        current_mtime = os.path.getmtime(file_path)\n        db_mtime = self.get_file_mtime(file_path)\n        return current_mtime > db_mtime\n```\n\n### Phase 2: Intelligent Caching (1.5h)\n\n#### Memory Cache Layer\n```python\nclass InMemoryCache:\n    def __init__(self, max_size=1000):\n        self.metadata_cache = LRUCache(max_size)\n        self.content_cache = LRUCache(max_size // 4)  # Smaller for full content\n\n    @lru_cache(maxsize=1000)\n    def get_issue_metadata(self, issue_id, file_mtime):\n        \"\"\"Cache metadata keyed by file modification time\"\"\"\n        return self.load_metadata_from_file(issue_id)\n\n    def invalidate_issue(self, issue_id):\n        \"\"\"Clear cache when file changes\"\"\"\n        # Clear all cached versions of this issue\n```\n\n#### File System Watching\n```python\nclass FileWatcher:\n    def __init__(self, storage):\n        self.storage = storage\n        self.observer = Observer()\n\n    def start_watching(self):\n        \"\"\"Watch .roadmap directory for changes\"\"\"\n        handler = FileSystemEventHandler()\n        handler.on_modified = self.on_file_changed\n        self.observer.schedule(handler, '.roadmap', recursive=True)\n        self.observer.start()\n\n    def on_file_changed(self, event):\n        \"\"\"Update index when files change\"\"\"\n        if event.src_path.endswith('.md'):\n            self.storage.index_db.update_from_file(event.src_path)\n            self.storage.cache.invalidate_file(event.src_path)\n```\n\n### Phase 3: Performance Optimizations (2h)\n\n#### Lazy Loading Implementation\n```python\nclass LazyIssue:\n    def __init__(self, metadata, file_path):\n        self._metadata = metadata\n        self._file_path = file_path\n        self._content = None\n\n    @property\n    def content(self):\n        \"\"\"Load full content only when accessed\"\"\"\n        if self._content is None:\n            self._content = load_full_issue(self._file_path)\n        return self._content\n\n    # Fast access to indexed fields\n    @property\n    def status(self):\n        return self._metadata['status']\n\n    @property\n    def assignee(self):\n        return self._metadata['assignee']\n```\n\n#### Batch Operations\n```python\nclass BatchOperations:\n    def bulk_update_status(self, issue_ids, new_status):\n        \"\"\"Update multiple issues efficiently\"\"\"\n        with self.storage.index_db.transaction():\n            for issue_id in issue_ids:\n                # Update file\n                self.storage.file_store.update_metadata(issue_id, {'status': new_status})\n                # Update index\n                self.storage.index_db.update_field(issue_id, 'status', new_status)\n\n    def bulk_assign_milestone(self, issue_ids, milestone):\n        \"\"\"Assign multiple issues to milestone\"\"\"\n        # Similar batch processing\n```\n\n## Acceptance Criteria\n\n### Performance Improvements\n- [ ] List operations complete in <200ms for datasets up to 1000 issues\n- [ ] Search operations complete in <500ms across all content\n- [ ] Memory usage remains constant regardless of dataset size\n- [ ] CLI remains responsive during large operations\n\n### Data Integrity\n- [ ] File format remains unchanged (git-friendly)\n- [ ] Index automatically rebuilds when inconsistencies detected\n- [ ] Graceful fallback to file-only mode if database issues\n- [ ] No data loss during index rebuilding or corruption\n\n### Compatibility\n- [ ] Existing CLI commands work unchanged\n- [ ] File-based workflows (git, manual editing) continue working\n- [ ] Database is optional - tool works without it\n- [ ] Migration path for existing installations\n\n### Developer Experience\n- [ ] Index rebuilding is automatic and transparent\n- [ ] Performance monitoring and metrics available\n- [ ] Clear error messages for storage issues\n- [ ] Debug tools for troubleshooting performance\n\n## Technical Implementation Details\n\n### Configuration Options\n```bash\n# Performance settings\nroadmap config set storage.use_index true\nroadmap config set storage.cache_size 1000\nroadmap config set storage.auto_rebuild_index true\nroadmap config set storage.watch_files true\n\n# Performance monitoring\nroadmap config set debug.log_query_times true\nroadmap config set debug.profile_operations true\n```\n\n### Migration Strategy\n```python\ndef migrate_to_hybrid_storage():\n    \"\"\"One-time migration for existing installations\"\"\"\n    print(\"\ud83d\udd04 Migrating to hybrid storage...\")\n\n    # Create SQLite index\n    index = SQLiteIndex()\n    index.init_schema()\n\n    # Rebuild from all existing files\n    index.sync_from_files()\n\n    # Update configuration\n    config.set('storage.use_index', True)\n\n    print(\"\u2705 Migration complete!\")\n```\n\n### Performance Monitoring\n```python\nclass PerformanceMonitor:\n    def time_operation(self, operation_name):\n        \"\"\"Decorator to monitor operation performance\"\"\"\n        def decorator(func):\n            def wrapper(*args, **kwargs):\n                start = time.time()\n                result = func(*args, **kwargs)\n                duration = time.time() - start\n\n                if duration > 1.0:  # Log slow operations\n                    logger.warning(f\"Slow operation: {operation_name} took {duration:.2f}s\")\n\n                return result\n            return wrapper\n        return decorator\n```\n\n## Success Metrics\n\n### Performance Targets\n- **List operations**: <200ms for 1000 issues\n- **Search operations**: <500ms full-text search\n- **Memory usage**: <100MB regardless of dataset size\n- **Startup time**: <1s even with large datasets\n\n### Scalability Goals\n- Support 10,000+ issues without performance degradation\n- Linear scaling of storage space only\n- Constant time for common operations\n- Graceful handling of concurrent access\n\n## Related Issues\n\n- 1fb2b36c: Enhanced init command (should set up performance optimizations)\n- 515a927c: Progress tracking (will benefit from fast queries)\n- ea4606b6: CI/CD integration (needs efficient data access)\n\n## Risk Mitigation\n\n### Data Safety\n- Always keep files as source of truth\n- Index is rebuild-able from files\n- Atomic operations prevent corruption\n- Regular integrity checks\n\n### Backwards Compatibility\n- Index is optional enhancement\n- Fallback to file-only mode\n- No breaking changes to CLI\n- Migration is reversible\n\n### Performance Regression\n- Monitoring and alerting for slow operations\n- A/B testing of optimizations\n- Rollback capability if issues arise\n- Performance benchmarks in CI/CD\n\n## Future Enhancements\n\n### Advanced Optimizations\n- Distributed storage for enterprise scale\n- Read replicas for multi-user scenarios\n- Advanced query optimization\n- Compressed storage for large datasets\n\n### Integration Opportunities\n- External database support (PostgreSQL, etc.)\n- Cloud storage backends\n- Real-time collaboration features\n- Advanced analytics and reporting\n\n---\n*Created by roadmap CLI*\nAssignee: @shanewilkins\n\n---\n*Synced from GitHub: #11*",
+      "createdAt": "2026-02-09T21:32:40Z",
+      "labels": [
+        {
+          "id": "LA_kwDOQAvBac8AAAACUjZn1Q",
+          "name": "synced:from-github",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 3687,
+      "title": "Implement performance optimization strategy with hybrid storage and caching",
+      "updatedAt": "2026-02-10T00:58:41Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3687",
+      "local_issue_id": "b902692e",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Split delivered hybrid persistence architecture from unproved scale/latency/memory claims; do not blanket-close the entire report as completed."
+    },
+    {
+      "assignees": [],
+      "body": "Coding agent has begun work on **Ensuring adherence to semantic versioning in GitHub** and will update this pull request as work progresses.\n\n<!-- START COPILOT CODING AGENT SUFFIX -->\n\n\n\n<details>\n\n<summary>Original prompt</summary>\n\n> all the tests are now passing. what i want to do now is ensure that we're adhering to semantic versioning. how do we indicate the current version of the project in github?\n>\n> ### Summary of Conversation History\n>\n> #### Recent Agent Commands and Tool Results\n> 1. **User Command**: \"all the tests are now passing. what i want to do now is ensure that we're adhering to semantic versioning. how do we indicate the current version of the project in github?\"\n>    - **Context**: The user confirmed that all tests are passing, indicating a successful resolution of previous issues related to the CLI refactor and test failures.\n>\n> 2. **Context Update**:\n>    - The current date is October 17, 2025.\n>    - The repository information was provided, indicating the repository name is \"roadmap,\" owned by \"shanewilkins,\" with the current and default branch being \"master.\"\n>\n> #### Results from Recent Tool Calls\n> - No specific tool results were returned for the last command as it was a question about semantic versioning in GitHub. However, the context indicates that the user is looking for guidance on how to indicate the project's version in GitHub, which is a crucial step in adhering to semantic versioning.\n>\n> #### Active Work When Token Budget Exceeded\n> - The agent was actively working on ensuring that all functionalities from the legacy `cli.py` were successfully migrated to the new modules and that all tests were passing. The user had just confirmed that all tests were passing, which was a significant milestone in the development process.\n>\n> #### Connection to Overall User Goals\n> - The recent operations connect to the user's overall goals of improving the CLI tool, ensuring all functionalities are intact, and adhering to semantic versioning. The user is focused on maintaining high code quality and ensuring that the project is well-documented and versioned correctly, which is essential for future development and collaboration.\n>\n> ### Conclusion\n> The conversation has progressed from addressing test failures and refactoring the CLI to confirming that all tests are now passing. The user is now focused on ensuring semantic versioning compliance, indicating a shift towards project maintenance and future-proofing the codebase.\n> TITLE: Ensuring adherence to semantic versioning in GitHub\n>\n\n\n</details>\n\nCreated from VS Code via the [GitHub Pull Request](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github) extension.\n\n<!-- START COPILOT CODING AGENT TIPS -->\n---\n\n\u2728 Let Copilot coding agent [set things up for you](https://github.com/shanewilkins/roadmap/issues/new?title=\u2728+Set+up+Copilot+instructions&body=Configure%20instructions%20for%20this%20repository%20as%20documented%20in%20%5BBest%20practices%20for%20Copilot%20coding%20agent%20in%20your%20repository%5D%28https://gh.io/copilot-coding-agent-tips%29%2E%0A%0A%3COnboard%20this%20repo%3E&assignees=copilot) \u2014 coding agent works faster and does higher quality work when set up for your repo.",
+      "createdAt": "2026-02-09T21:32:29Z",
+      "labels": [
+        {
+          "id": "LA_kwDOQAvBac8AAAACUjZn1Q",
+          "name": "synced:from-github",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 3676,
+      "title": "[WIP] Add semantic versioning support to project",
+      "updatedAt": "2026-02-10T00:58:51Z",
+      "url": "https://github.com/shanewilkins/roadmap/issues/3676",
+      "local_issue_id": "847923fe-b895-4569-8cf6-9c8e1b677982",
+      "local_disposition": "triage-pending",
+      "remote_disposition": "pending",
+      "triage_recommendation": "Candidate completed: assess semantic versioning against 0.3.1 tag, package and release evidence; verify exact issue intent before closure."
+    }
+  ]
+}

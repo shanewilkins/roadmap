@@ -12,8 +12,7 @@ and evidence, not the roadmap target alone, to determine delivery.
   observable acceptance criteria.
 - [technical-requirements.csv](technical-requirements.csv) records system
   constraints, rationale, and verification methods.
-- [Requirements as First-Class Artifacts](REQUIREMENTS_AS_ARTIFACTS.md) is the
-  deferred product and architecture proposal for managing these records in
+- [Requirements as First-Class Artifacts](REQUIREMENTS_AS_ARTIFACTS.md) records the reconciled product and architecture direction for managing these records in
   Roadmap itself.
 - [Phase 1 requirements triage](phase-1-triage-2026-08-16.md) records the
   accepted scope, deferrals, counts, and scheduling rationale.
@@ -57,7 +56,7 @@ paths, observable completion, and recovery.
 | `J-07` Report and automate | Produce stable terminal, structured, export, and stakeholder reporting outputs. |
 | `J-08` Diagnose and recover | Detect corruption or inconsistency, preview repair, recover data, and understand failures. |
 | `J-09` Configure and evolve | Manage configuration and safely upgrade or migrate repository data. |
-| `J-10` Manage requirements as code | Create, govern, link, verify, exchange, and plan from requirements. This application feature is Deferred to post-0.2; the CSV registers remain governance artifacts. |
+| `J-10` Manage requirements as code | Create, govern, link, verify, exchange, and plan from requirements. The minimal optional scope is Accepted for 0.4; broader interchange and supersession remain Deferred. CSV remains authoritative until verified cutover. |
 
 ## Editing rules
 
@@ -96,3 +95,17 @@ introduce an in-app requirements feature or a second canonical workspace store.
 - CI validates IDs, lifecycle/dependency states and verification prerequisites.
   Named test references prove traceability; passing tests and human review still
   determine whether their assertions satisfy the requirement.
+
+## Accepted 0.4 scope
+
+The [0.4.0 plan](../planning/0.4.0-plan.md) records nine accepted outcomes,
+implementation recommendations and remaining design gates. The
+[work items](../planning/0.4.0-work-items.md) link these registers to the live
+Roadmap workspace. Accepted scope is not implemented or verified behavior.
+
+## Collaboration and import release decision
+
+[Completion after pull and bounded GitHub import](proposals/collaboration-completion-after-pull.md)
+records the accepted 2026-10-08 scope decision: UR-067/UR-068 and TR-055/TR-056
+target 0.4; GitHub-only closure correctness, UR-069/TR-057, targets 0.5.
+The registers and live work items reflect that boundary.

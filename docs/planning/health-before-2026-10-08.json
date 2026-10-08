@@ -1,0 +1,902 @@
+{
+  "exit_code": 2,
+  "findings": [
+    {
+      "entity_id": "00c3e19e",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 00c3e19e references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/00c3e19e.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "078b0056",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 078b0056 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/078b0056.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "07b21448",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 07b21448 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/07b21448.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "07cab6d1",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 07cab6d1 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/07cab6d1.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "09f0b31d",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 09f0b31d references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/09f0b31d.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "0a322f03",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 0a322f03 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/0a322f03.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "0e1aee32",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 0e1aee32 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/0e1aee32.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "0e9c3350",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 0e9c3350 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/0e9c3350.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "0f1d27a0",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 0f1d27a0 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/0f1d27a0.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "1007b6f2",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 1007b6f2 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/1007b6f2.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "122f1222",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 122f1222 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/122f1222.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "1586d27c",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 1586d27c references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/1586d27c.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "15d17909",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 15d17909 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/15d17909.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "16435bfb",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 16435bfb references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/16435bfb.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "1912972b",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 1912972b references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/1912972b.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "1bc39c3b",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 1bc39c3b references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/1bc39c3b.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "1ca8a5ed",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 1ca8a5ed references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/1ca8a5ed.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "1f5943b4",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 1f5943b4 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/1f5943b4.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "1fa2e1b5",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 1fa2e1b5 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/1fa2e1b5.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "21da1994",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 21da1994 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/21da1994.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "2207c2d9",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 2207c2d9 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/2207c2d9.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "221eddf2",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 221eddf2 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/221eddf2.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "23bd7845",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 23bd7845 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/23bd7845.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "285c79d7",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 285c79d7 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/285c79d7.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "2b0bd35d",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 2b0bd35d references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/2b0bd35d.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "2be03d04",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 2be03d04 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/2be03d04.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "2cc67d0a",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 2cc67d0a references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/2cc67d0a.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "2fedade5",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 2fedade5 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/2fedade5.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "306210fe",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 306210fe references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/306210fe.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "335da302",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 335da302 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/335da302.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "36414bda",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 36414bda references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/36414bda.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "3993cd2b",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 3993cd2b references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/3993cd2b.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "3b51dc40",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 3b51dc40 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/3b51dc40.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "3bbc71ee",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 3bbc71ee references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/3bbc71ee.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "3c47370c",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 3c47370c references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/3c47370c.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "3f4dc5fe",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 3f4dc5fe references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/3f4dc5fe.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "3f775ab6",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 3f775ab6 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/3f775ab6.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "456bf6cb",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 456bf6cb references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/456bf6cb.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "4fe29205",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 4fe29205 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/4fe29205.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "5060d198",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 5060d198 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/5060d198.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "51abfce6",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 51abfce6 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/51abfce6.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "522d10ba",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 522d10ba references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/522d10ba.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "57573e3f",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 57573e3f references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/57573e3f.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "57c21a53",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 57c21a53 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/57c21a53.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "5da72015",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 5da72015 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/5da72015.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "610bbc26",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 610bbc26 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/610bbc26.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "61c9f489",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 61c9f489 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/61c9f489.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "61f2be5d",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 61f2be5d references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/61f2be5d.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "62e5b01c",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 62e5b01c references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/62e5b01c.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "651f7e25",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 651f7e25 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/651f7e25.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "6a608e46",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 6a608e46 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/6a608e46.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "6b7b55bb",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 6b7b55bb references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/6b7b55bb.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "6eb50b69",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 6eb50b69 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/6eb50b69.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "6f854dc9",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 6f854dc9 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/6f854dc9.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "726f2efc",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 726f2efc references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/726f2efc.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "761c8e93",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 761c8e93 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/761c8e93.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "76d11a36",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 76d11a36 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/76d11a36.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "78851d1c",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 78851d1c references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/78851d1c.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "824e8932",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 824e8932 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/824e8932.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "87535e8a",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 87535e8a references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/87535e8a.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "8a0d90f8",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 8a0d90f8 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/8a0d90f8.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "8d703851",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 8d703851 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/8d703851.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "9035a9cd",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 9035a9cd references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/9035a9cd.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "933a439a",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 933a439a references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/933a439a.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "97de6edd",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 97de6edd references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/97de6edd.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "98e87e57",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 98e87e57 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/98e87e57.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "9aeca032",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 9aeca032 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/9aeca032.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "9d2d0c03",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity 9d2d0c03 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/9d2d0c03.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "a274e727",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity a274e727 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/a274e727.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "a717a697",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity a717a697 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/a717a697.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "a740e517",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity a740e517 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/a740e517.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "a98ba3ad",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity a98ba3ad references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/a98ba3ad.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "ad8d6ae5",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity ad8d6ae5 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/ad8d6ae5.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "af679cdc",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity af679cdc references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/af679cdc.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "b2d758f4",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity b2d758f4 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/b2d758f4.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "b4027cbc",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity b4027cbc references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/b4027cbc.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "b66078e3",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity b66078e3 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/b66078e3.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "b902692e",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity b902692e references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/b902692e.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "baff6b11",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity baff6b11 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/baff6b11.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "c15daeca",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity c15daeca references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/c15daeca.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "c34d477f",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity c34d477f references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/c34d477f.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "c4d8fbe8",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity c4d8fbe8 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/c4d8fbe8.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "c601eca9",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity c601eca9 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/c601eca9.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "c657d08e",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity c657d08e references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/c657d08e.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "c8eb0a52",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity c8eb0a52 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/c8eb0a52.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "c944b8be",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity c944b8be references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/c944b8be.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "cb6d21af",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity cb6d21af references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/cb6d21af.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "ccfc9191",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity ccfc9191 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/ccfc9191.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "ce7a2475",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity ce7a2475 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/ce7a2475.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "d2bedb30",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity d2bedb30 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/d2bedb30.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "d7366fc3",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity d7366fc3 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/d7366fc3.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "d8a47a6f",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity d8a47a6f references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/d8a47a6f.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "dd975f10",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity dd975f10 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/dd975f10.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "dde78df5",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity dde78df5 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/dde78df5.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "df14e04c",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity df14e04c references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/df14e04c.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "df82c03c",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity df82c03c references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/df82c03c.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "dff42a66",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity dff42a66 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/dff42a66.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "e4b4faf8",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity e4b4faf8 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/e4b4faf8.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "e8791781",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity e8791781 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/e8791781.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "edf9aa41",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity edf9aa41 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/edf9aa41.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "ee3aba55",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity ee3aba55 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/ee3aba55.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "efae2ab3",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity efae2ab3 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/efae2ab3.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "f0df79c6",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity f0df79c6 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/f0df79c6.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "f24bf050",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity f24bf050 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/f24bf050.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "f3b1f0d4",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity f3b1f0d4 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/f3b1f0d4.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "f45ae825",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity f45ae825 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/f45ae825.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "f5afc2b7",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity f5afc2b7 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/f5afc2b7.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "f608c516",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity f608c516 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/f608c516.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "f9b09a6d",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity f9b09a6d references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/f9b09a6d.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": "ff5a4a14",
+      "finding_id": "canonical.broken-reference",
+      "message": "Entity ff5a4a14 references missing entity backlog",
+      "safe_action": null,
+      "scope": "issues/ff5a4a14.md",
+      "severity": "error"
+    },
+    {
+      "entity_id": null,
+      "finding_id": "projection.not-current",
+      "message": "SQLite projection is outdated; canonical files remain authoritative",
+      "safe_action": "projection",
+      "scope": "projection",
+      "severity": "warning"
+    }
+  ],
+  "kind": "roadmap.health",
+  "schema_version": 1,
+  "status": "unhealthy",
+  "summary": {
+    "critical": 0,
+    "error": 110,
+    "info": 0,
+    "warning": 1
+  }
+}

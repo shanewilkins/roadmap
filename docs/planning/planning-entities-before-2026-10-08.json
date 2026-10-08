@@ -1,0 +1,264 @@
+{
+  "milestones": [
+    {
+      "path": ".roadmap/milestones/56ab6d8c-7da0-410c-b303-6b00733a5ea1.md",
+      "frontmatter": {
+        "schema_version": 1,
+        "id": "56ab6d8c-7da0-410c-b303-6b00733a5ea1",
+        "created": "2026-10-08T12:40:46.797313+00:00",
+        "updated": "2026-10-08T12:40:46.797313+00:00",
+        "retention": "visible",
+        "name": "v0-4-0",
+        "headline": "",
+        "status": "open",
+        "project_id": "99d80769",
+        "due_date": null
+      },
+      "body": "\n\nAccepted requirements, decision support, self-hosted governance and evidence-backed baseline GitHub closeout. See docs/planning/0.4.0-plan.md."
+    },
+    {
+      "path": ".roadmap/milestones/a306c058-3cb3-4d6a-9a2b-bc11a57b377f.md",
+      "frontmatter": {
+        "schema_version": 1,
+        "id": "a306c058-3cb3-4d6a-9a2b-bc11a57b377f",
+        "created": "2026-10-08T13:01:29.517032+00:00",
+        "updated": "2026-10-08T13:01:29.517032+00:00",
+        "retention": "visible",
+        "name": "v0-5-0",
+        "headline": "",
+        "status": "open",
+        "project_id": "99d80769",
+        "due_date": null
+      },
+      "body": "\n\nGitHub-only closure propagation correctness follow-up; source ownership, safe retries and merge/pull visibility. Historical archived v.0.5.0 remains separate."
+    },
+    {
+      "path": ".roadmap/milestones/backlog.md",
+      "frontmatter": {
+        "github_milestone": null,
+        "calculated_progress": null,
+        "last_progress_update": null,
+        "completion_velocity": null,
+        "risk_level": "low",
+        "actual_start_date": null,
+        "actual_end_date": null,
+        "comments": [],
+        "schema_version": 1,
+        "id": "backlog",
+        "created": "2025-12-25T19:50:58.054883+00:00",
+        "updated": "2026-10-08T12:37:46.054090+00:00",
+        "retention": "visible",
+        "name": "backlog",
+        "headline": "Backlog of unscheduled work",
+        "status": "open",
+        "project_id": "99d80769",
+        "due_date": null
+      },
+      "body": "\n\n# backlog\n\n## Description\n\nBacklog of unscheduled work\n\n## Goals\n\n- [ ] Goal 1\n- [ ] Goal 2\n- [ ] Goal 3\n"
+    },
+    {
+      "path": ".roadmap/milestones/v.0.3.0.md",
+      "frontmatter": {
+        "github_milestone": 3,
+        "calculated_progress": null,
+        "last_progress_update": null,
+        "completion_velocity": null,
+        "risk_level": "low",
+        "actual_start_date": null,
+        "actual_end_date": null,
+        "comments": [],
+        "schema_version": 1,
+        "id": "v.0.3.0",
+        "created": "2026-02-05T15:18:01.992016+00:00",
+        "updated": "2026-02-10T21:20:14.349100+00:00",
+        "retention": "archived",
+        "name": "v.0.3.0",
+        "headline": "Developer Experience & Workflow - Git integration, CI/CD automation, and developer productivity tool",
+        "status": "closed",
+        "project_id": "99d80769",
+        "due_date": "2025-10-24T00:00:00+00:00"
+      },
+      "body": "\n"
+    },
+    {
+      "path": ".roadmap/milestones/v.0.4.0.md",
+      "frontmatter": {
+        "github_milestone": 4,
+        "calculated_progress": null,
+        "last_progress_update": null,
+        "completion_velocity": null,
+        "risk_level": "low",
+        "actual_start_date": null,
+        "actual_end_date": null,
+        "comments": [],
+        "schema_version": 1,
+        "id": "v.0.4.0",
+        "created": "2026-02-05T15:18:02.009747+00:00",
+        "updated": "2026-02-10T21:20:15.209770+00:00",
+        "retention": "archived",
+        "name": "v.0.4.0",
+        "headline": "User Interface & Visualization - Dashboard, kanban boards, reporting, analytics, and user-facing fea",
+        "status": "closed",
+        "project_id": "99d80769",
+        "due_date": "2025-10-31T00:00:00+00:00"
+      },
+      "body": "\n"
+    },
+    {
+      "path": ".roadmap/milestones/v.0.5.0.md",
+      "frontmatter": {
+        "github_milestone": 5,
+        "calculated_progress": null,
+        "last_progress_update": null,
+        "completion_velocity": null,
+        "risk_level": "low",
+        "actual_start_date": null,
+        "actual_end_date": null,
+        "comments": [],
+        "schema_version": 1,
+        "id": "v.0.5.0",
+        "created": "2026-02-05T15:18:02.020979+00:00",
+        "updated": "2026-02-10T21:20:44.526921+00:00",
+        "retention": "archived",
+        "name": "v.0.5.0",
+        "headline": "Team Collaboration & Advanced Features - Team management, notifications, assignee validation, and co",
+        "status": "closed",
+        "project_id": "99d80769",
+        "due_date": "2025-11-07T00:00:00+00:00"
+      },
+      "body": "\n"
+    },
+    {
+      "path": ".roadmap/milestones/v.1.0.0.md",
+      "frontmatter": {
+        "github_milestone": 9,
+        "calculated_progress": null,
+        "last_progress_update": null,
+        "completion_velocity": null,
+        "risk_level": "low",
+        "actual_start_date": null,
+        "actual_end_date": null,
+        "comments": [],
+        "schema_version": 1,
+        "id": "v.1.0.0",
+        "created": "2026-02-05T15:18:02.043590+00:00",
+        "updated": "2026-02-10T21:20:16.957723+00:00",
+        "retention": "archived",
+        "name": "v.1.0.0",
+        "headline": "Production Release - Stable, feature-complete roadmap platform ready for widespread adoption and com",
+        "status": "closed",
+        "project_id": "99d80769",
+        "due_date": "2025-12-12T00:00:00+00:00"
+      },
+      "body": "\n"
+    },
+    {
+      "path": ".roadmap/milestones/v0-1-0.md",
+      "frontmatter": {
+        "github_milestone": null,
+        "calculated_progress": null,
+        "last_progress_update": null,
+        "completion_velocity": null,
+        "risk_level": "low",
+        "actual_start_date": null,
+        "actual_end_date": null,
+        "comments": [],
+        "schema_version": 1,
+        "id": "v0-1-0",
+        "created": "2026-05-18T21:16:45.773095+00:00",
+        "updated": "2026-05-18T21:16:45.773097+00:00",
+        "retention": "visible",
+        "name": "v0-1-0",
+        "headline": "Baseline release: semantic version revert from 1.0.2 to reflect actual product maturity (Beta)",
+        "status": "open",
+        "project_id": null,
+        "due_date": null
+      },
+      "body": "\n"
+    },
+    {
+      "path": ".roadmap/milestones/v0-2-0.md",
+      "frontmatter": {
+        "github_milestone": 2,
+        "calculated_progress": null,
+        "last_progress_update": null,
+        "completion_velocity": null,
+        "risk_level": "low",
+        "actual_start_date": null,
+        "actual_end_date": null,
+        "comments": [],
+        "schema_version": 1,
+        "id": "v0-2-0",
+        "created": "2026-02-05T15:18:02.032073+00:00",
+        "updated": "2026-02-10T21:19:07.878332+00:00",
+        "retention": "visible",
+        "name": "v0-2-0",
+        "headline": "Foundation & Project Setup - Core infrastructure, project initialization, templates, and basic tooli",
+        "status": "closed",
+        "project_id": "99d80769",
+        "due_date": "2025-10-17T00:00:00+00:00"
+      },
+      "body": "\n"
+    },
+    {
+      "path": ".roadmap/milestones/v1-0-2.md",
+      "frontmatter": {
+        "github_milestone": null,
+        "calculated_progress": null,
+        "last_progress_update": null,
+        "completion_velocity": null,
+        "risk_level": "low",
+        "actual_start_date": null,
+        "actual_end_date": null,
+        "comments": [],
+        "schema_version": 1,
+        "id": "v1-0-2",
+        "created": "2026-02-10T19:56:05.016387+00:00",
+        "updated": "2026-05-18T21:17:43.306216+00:00",
+        "retention": "visible",
+        "name": "v1-0-2",
+        "headline": "",
+        "status": "closed",
+        "project_id": "99d80769",
+        "due_date": null
+      },
+      "body": "\n"
+    }
+  ],
+  "projects": [
+    {
+      "path": ".roadmap/projects/99d80769.md",
+      "frontmatter": {
+        "description": "A project managed with Roadmap CLI",
+        "github_repo": "shanewilkins/roadmap",
+        "timeline": {
+          "start_date": "2026-02-09 21:28:16.277476+00:00",
+          "target_end_date": null
+        },
+        "tags": [],
+        "schema_version": 1,
+        "id": "99d80769",
+        "created": "2026-02-09T21:28:16.277476+00:00",
+        "updated": "2026-10-08T13:01:29.517032+00:00",
+        "retention": "visible",
+        "name": "roadmap",
+        "headline": "",
+        "status": "active",
+        "priority": "high",
+        "milestones": [
+          "backlog",
+          "56ab6d8c-7da0-410c-b303-6b00733a5ea1",
+          "a306c058-3cb3-4d6a-9a2b-bc11a57b377f"
+        ],
+        "owner": "shanewilkins",
+        "estimated_hours": null,
+        "start_date": null,
+        "target_end_date": null,
+        "actual_end_date": null,
+        "actual_hours": null,
+        "repo_url": null
+      },
+      "body": "\n\n# roadmap\n\n## Overview\n\nA project managed with Roadmap CLI\n\n## Project Goals\n\n\n- [ ] Define project scope\n- [ ] Create initial roadmap\n- [ ] Begin implementation\n- [ ] Regular progress reviews\n- [ ] Project completion\n\n## Milestones\n\n### Milestone 1: Setup\n- Initial project structure\n- Team alignment on goals\n\n### Milestone 2: Development\n- Core functionality implementation\n- Regular progress tracking\n\n### Milestone 3: Completion\n- Final deliverables\n- Project retrospective\n\n\n## Resources\n\n- [Link to documentation]\n- [Link to repository]\n- [Link to project tools]\n\n## Notes\n\n[Additional project notes and context]\n"
+    }
+  ]
+}

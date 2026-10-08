@@ -34,6 +34,7 @@ class WorkspaceServices:
     local_git: Any
     planning: Any
     health: Any
+    github_closures: Any
 
     def is_initialized(self) -> bool:
         return (
@@ -53,6 +54,7 @@ COMMAND_REGISTRY: dict[str, CommandLocation] = {
     "config": ("roadmap.adapters.inbound.cli.config", "config", "Manage roadmap configuration."),
     "data": ("roadmap.adapters.inbound.cli.data", "data", "Export canonical Roadmap data."),
     "git": ("roadmap.adapters.inbound.cli.git", "git", "Inspect local Git and link issue branches."),
+    "github": ("roadmap.adapters.inbound.cli.github", "github", "Publish explicit committed closures to GitHub."),
     "issue": ("roadmap.adapters.inbound.cli.issues", "issue", "Manage issues."),
     "milestone": ("roadmap.adapters.inbound.cli.milestones", "milestone", "Manage milestones."),
     "project": ("roadmap.adapters.inbound.cli.projects", "project", "Manage projects (top-level planning documents)."),

@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-08",
+  "project_id": "99d80769",
+  "cleanup_issue_id": "ab3e7120-430a-470a-b9b9-30b0cc87d635",
+  "remote_milestones": [
+    {
+      "github_number": 1,
+      "url": "https://github.com/shanewilkins/roadmap/milestone/1",
+      "local_id": "67251c1c-613e-4628-ae4d-9b0d29ace7b8",
+      "source_sha256": "b2903699d96df5ec67943143c9ba33cfe2de8a9c08735ce9f6aec62decbdc981",
+      "remote_state": "open",
+      "local_disposition": "historical-retired",
+      "new_record": true
+    },
+    {
+      "github_number": 2,
+      "url": "https://github.com/shanewilkins/roadmap/milestone/2",
+      "local_id": "v0-2-0",
+      "source_sha256": "da349b288a3abe720717961f0e9b59cf025da16200b86b3df098c3da904f6dc5",
+      "remote_state": "closed",
+      "local_disposition": "historical-retired",
+      "new_record": false
+    },
+    {
+      "github_number": 3,
+      "url": "https://github.com/shanewilkins/roadmap/milestone/3",
+      "local_id": "v.0.3.0",
+      "source_sha256": "08b37b1b7222c38682afa6e43b230fdae73c97abbe91db0a696ab0f90ab91c6c",
+      "remote_state": "open",
+      "local_disposition": "historical-retired",
+      "new_record": false
+    },
+    {
+      "github_number": 4,
+      "url": "https://github.com/shanewilkins/roadmap/milestone/4",
+      "local_id": "v.0.4.0",
+      "source_sha256": "5086527e96a081b90afe0309150d751a4c6ed43a20c7a719c35b673e002aee7f",
+      "remote_state": "open",
+      "local_disposition": "historical-retired",
+      "new_record": false
+    },
+    {
+      "github_number": 5,
+      "url": "https://github.com/shanewilkins/roadmap/milestone/5",
+      "local_id": "v.0.5.0",
+      "source_sha256": "c2f05e62b73e7456cab2f99973290bc843ab0bb78bc44a96a432a2b7782dac70",
+      "remote_state": "open",
+      "local_disposition": "historical-retired",
+      "new_record": false
+    },
+    {
+      "github_number": 6,
+      "url": "https://github.com/shanewilkins/roadmap/milestone/6",
+      "local_id": "7a2d27d8-4a8b-4d09-b63b-d62aa1e5d558",
+      "source_sha256": "ec218b489add77ace3d012ebe1a66d8781c95fe8b94bb498b9663934e1111fe0",
+      "remote_state": "open",
+      "local_disposition": "historical-retired",
+      "new_record": true
+    },
+    {
+      "github_number": 7,
+      "url": "https://github.com/shanewilkins/roadmap/milestone/7",
+      "local_id": "3449a413-88df-4b4f-8dd5-bf5de4b84f44",
+      "source_sha256": "eb3ad4dbdf983c8fc07c5ac33306d65000545c0646d50900dc230e7bbe7f1c17",
+      "remote_state": "open",
+      "local_disposition": "historical-retired",
+      "new_record": true
+    },
+    {
+      "github_number": 8,
+      "url": "https://github.com/shanewilkins/roadmap/milestone/8",
+      "local_id": "20ec2354-fad0-4f60-900e-cb79751f529d",
+      "source_sha256": "0de8826446789b8a88da964b01acf8204617bd536584630d745adab06e575575",
+      "remote_state": "open",
+      "local_disposition": "historical-retired",
+      "new_record": true
+    },
+    {
+      "github_number": 9,
+      "url": "https://github.com/shanewilkins/roadmap/milestone/9",
+      "local_id": "v.1.0.0",
+      "source_sha256": "5e123dbbeb2a5f084d7b9e627e1c7fa80d5351f90bf8df0aa0c5c77737460518",
+      "remote_state": "open",
+      "local_disposition": "historical-retired",
+      "new_record": false
+    }
+  ],
+  "visible_milestone_ids": [
+    "56ab6d8c-7da0-410c-b303-6b00733a5ea1",
+    "a306c058-3cb3-4d6a-9a2b-bc11a57b377f",
+    "backlog"
+  ],
+  "archived_milestone_count": 11,
+  "project_membership_reciprocal": true,
+  "existing_issues_preserved": 138,
+  "remote_projects": {
+    "status": "verified",
+    "owner": "shanewilkins",
+    "includes_closed": true,
+    "project_count": 0,
+    "captured_at": "2026-10-08T13:19:01.706865+00:00",
+    "snapshot": "docs/planning/github-projects-2026-10-08.json",
+    "followup_issue_id": "185fd22b-0683-45d3-8b61-1a96271b6934",
+    "previous_access_gap": "Resolved through approved gh read:project authorization."
+  },
+  "manual_summary_cleanup": [
+    {
+      "path": ".roadmap/projects/99d80769.md",
+      "reason": "Published CLI description updates body but has no headline setter; populate list summaries. Project legacy template description also corrected.",
+      "changed_fields": [
+        "description",
+        "updated",
+        "headline"
+      ]
+    },
+    {
+      "path": ".roadmap/milestones/56ab6d8c-7da0-410c-b303-6b00733a5ea1.md",
+      "reason": "Published CLI description updates body but has no headline setter; populate list summaries. Project legacy template description also corrected.",
+      "changed_fields": [
+        "updated",
+        "headline"
+      ]
+    },
+    {
+      "path": ".roadmap/milestones/a306c058-3cb3-4d6a-9a2b-bc11a57b377f.md",
+      "reason": "Published CLI description updates body but has no headline setter; populate list summaries. Project legacy template description also corrected.",
+      "changed_fields": [
+        "updated",
+        "headline"
+      ]
+    }
+  ],
+  "summary_cli_followup_issue_id": "211aaa05-945a-4b72-82e6-88be97855259",
+  "manual_historical_metadata_cleanup": [
+    {
+      "path": ".roadmap/milestones/67251c1c-613e-4628-ae4d-9b0d29ace7b8.md",
+      "changed_fields": [
+        "headline",
+        "github_milestone",
+        "updated"
+      ],
+      "reason": "Complete truncated historical summary and retain consistent ordinary github_milestone source identifier; published CLI exposes neither field."
+    },
+    {
+      "path": ".roadmap/milestones/v0-2-0.md",
+      "changed_fields": [
+        "headline",
+        "updated"
+      ],
+      "reason": "Complete truncated historical summary and retain consistent ordinary github_milestone source identifier; published CLI exposes neither field."
+    },
+    {
+      "path": ".roadmap/milestones/v.0.3.0.md",
+      "changed_fields": [
+        "headline",
+        "updated"
+      ],
+      "reason": "Complete truncated historical summary and retain consistent ordinary github_milestone source identifier; published CLI exposes neither field."
+    },
+    {
+      "path": ".roadmap/milestones/v.0.4.0.md",
+      "changed_fields": [
+        "headline",
+        "updated"
+      ],
+      "reason": "Complete truncated historical summary and retain consistent ordinary github_milestone source identifier; published CLI exposes neither field."
+    },
+    {
+      "path": ".roadmap/milestones/v.0.5.0.md",
+      "changed_fields": [
+        "headline",
+        "updated"
+      ],
+      "reason": "Complete truncated historical summary and retain consistent ordinary github_milestone source identifier; published CLI exposes neither field."
+    },
+    {
+      "path": ".roadmap/milestones/7a2d27d8-4a8b-4d09-b63b-d62aa1e5d558.md",
+      "changed_fields": [
+        "headline",
+        "github_milestone",
+        "updated"
+      ],
+      "reason": "Complete truncated historical summary and retain consistent ordinary github_milestone source identifier; published CLI exposes neither field."
+    },
+    {
+      "path": ".roadmap/milestones/3449a413-88df-4b4f-8dd5-bf5de4b84f44.md",
+      "changed_fields": [
+        "headline",
+        "github_milestone",
+        "updated"
+      ],
+      "reason": "Complete truncated historical summary and retain consistent ordinary github_milestone source identifier; published CLI exposes neither field."
+    },
+    {
+      "path": ".roadmap/milestones/20ec2354-fad0-4f60-900e-cb79751f529d.md",
+      "changed_fields": [
+        "headline",
+        "github_milestone",
+        "updated"
+      ],
+      "reason": "Complete truncated historical summary and retain consistent ordinary github_milestone source identifier; published CLI exposes neither field."
+    },
+    {
+      "path": ".roadmap/milestones/v.1.0.0.md",
+      "changed_fields": [
+        "headline",
+        "updated"
+      ],
+      "reason": "Complete truncated historical summary and retain consistent ordinary github_milestone source identifier; published CLI exposes neither field."
+    }
+  ]
+}

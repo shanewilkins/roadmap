@@ -1,0 +1,36 @@
+{
+  "actions": [
+    {
+      "action_id": "rebuild-projection",
+      "description": "Rebuild the outdated SQLite projection from canonical files",
+      "targets": [
+        "db/projection.db"
+      ]
+    }
+  ],
+  "kind": "roadmap.health-repair",
+  "mode": "dry-run",
+  "post_check": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "entity_id": null,
+        "finding_id": "projection.not-current",
+        "message": "SQLite projection is outdated; canonical files remain authoritative",
+        "safe_action": "projection",
+        "scope": "projection",
+        "severity": "warning"
+      }
+    ],
+    "kind": "roadmap.health",
+    "schema_version": 1,
+    "status": "degraded",
+    "summary": {
+      "critical": 0,
+      "error": 0,
+      "info": 0,
+      "warning": 1
+    }
+  },
+  "schema_version": 1
+}

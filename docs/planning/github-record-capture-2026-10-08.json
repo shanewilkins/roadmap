@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "repository": "shanewilkins/roadmap",
+  "captured_at": "2026-10-08T12:50:05.620407+00:00",
+  "open_issue_numbers": [
+    3756,
+    3755,
+    3754,
+    3753,
+    3749,
+    3716,
+    3715,
+    3703,
+    3689,
+    3687,
+    3676
+  ],
+  "coverage": "Full GitHub REST issue payload plus every paginated comment and timeline event; attachment references retained, binary/linked contents and unavailable private edit history excluded.",
+  "records": [
+    {
+      "github_number": 3676,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3676",
+      "local_issue_id": "847923fe-b895-4569-8cf6-9c8e1b677982",
+      "local_comment_id": 2,
+      "source_sha256": "c236c1860198ba5dc4f2a0f35c243203e6449d2c571af3660bd02de271231737",
+      "remote_state": "open",
+      "remote_body_characters": 3245,
+      "remote_comment_count": 0,
+      "timeline_event_count": 1
+    },
+    {
+      "github_number": 3687,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3687",
+      "local_issue_id": "b902692e",
+      "local_comment_id": 2,
+      "source_sha256": "c94e53bafdfc896a77cecff0e1f2af4bca4a272ce81fac7782b1dbd74efc900e",
+      "remote_state": "open",
+      "remote_body_characters": 11207,
+      "remote_comment_count": 0,
+      "timeline_event_count": 4
+    },
+    {
+      "github_number": 3689,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3689",
+      "local_issue_id": "8a1080c8",
+      "local_comment_id": 2,
+      "source_sha256": "546dd61cbb75811c5fb5e4aa1412bee6d29a0205c4639a1d1baa052d3ae1904a",
+      "remote_state": "open",
+      "remote_body_characters": 236,
+      "remote_comment_count": 0,
+      "timeline_event_count": 6
+    },
+    {
+      "github_number": 3703,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3703",
+      "local_issue_id": "76d11a36",
+      "local_comment_id": 2,
+      "source_sha256": "dab8900a9960d6656e286676485c296980b3207418d27d56a8d6b26fffe071c4",
+      "remote_state": "open",
+      "remote_body_characters": 180,
+      "remote_comment_count": 0,
+      "timeline_event_count": 2
+    },
+    {
+      "github_number": 3715,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3715",
+      "local_issue_id": "09c69060",
+      "local_comment_id": 2,
+      "source_sha256": "0d27792158e40b4a041db8f1467cc60c165f5946c560fe71219a1595690dc8b9",
+      "remote_state": "open",
+      "remote_body_characters": 196,
+      "remote_comment_count": 0,
+      "timeline_event_count": 2
+    },
+    {
+      "github_number": 3716,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3716",
+      "local_issue_id": "1007b6f2",
+      "local_comment_id": 2,
+      "source_sha256": "5420a71085bd9dc7396be91b97754e1c3933f0d85c83cb03c9196e31647684cc",
+      "remote_state": "open",
+      "remote_body_characters": 260,
+      "remote_comment_count": 0,
+      "timeline_event_count": 6
+    },
+    {
+      "github_number": 3749,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3749",
+      "local_issue_id": "07b21448",
+      "local_comment_id": 2,
+      "source_sha256": "85aa75abee9d4d888aaaaf11e710702f757ee0af76120c7748d567b818d25f7b",
+      "remote_state": "open",
+      "remote_body_characters": 174,
+      "remote_comment_count": 0,
+      "timeline_event_count": 1
+    },
+    {
+      "github_number": 3753,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3753",
+      "local_issue_id": "444e2773-9d34-4216-bd5d-78a598d834ad",
+      "local_comment_id": 1,
+      "source_sha256": "bcd869e1d90c33f85a0d80f77d7187a38f86ab0f9397281e10932357ec62a568",
+      "remote_state": "open",
+      "remote_body_characters": 219,
+      "remote_comment_count": 0,
+      "timeline_event_count": 1
+    },
+    {
+      "github_number": 3754,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3754",
+      "local_issue_id": "65ec3783-e287-4e6c-bbb6-9e387ea7d657",
+      "local_comment_id": 1,
+      "source_sha256": "928d4f726e93358b4faea35a9767d1e8fbb9efa6960c3e1f1d0e4cd11c9dc864",
+      "remote_state": "open",
+      "remote_body_characters": 1702,
+      "remote_comment_count": 0,
+      "timeline_event_count": 0
+    },
+    {
+      "github_number": 3755,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3755",
+      "local_issue_id": "74684a37-de5a-448a-89c3-bef4fd4cdf96",
+      "local_comment_id": 1,
+      "source_sha256": "188bfd4ee96b184b1041476fcaa60c327351e9aa271a4f8092b9789e9a8ae74b",
+      "remote_state": "open",
+      "remote_body_characters": 468,
+      "remote_comment_count": 0,
+      "timeline_event_count": 0
+    },
+    {
+      "github_number": 3756,
+      "url": "https://github.com/shanewilkins/roadmap/issues/3756",
+      "local_issue_id": "9928b489-c652-4116-8f7d-831700b4c7fd",
+      "local_comment_id": 1,
+      "source_sha256": "e7860d342af457df6e8783816b659a0cc9ceee21641f35a9695690ebd8fd476c",
+      "remote_state": "open",
+      "remote_body_characters": 0,
+      "remote_comment_count": 0,
+      "timeline_event_count": 0
+    }
+  ]
+}

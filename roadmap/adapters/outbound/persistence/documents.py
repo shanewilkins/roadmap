@@ -310,7 +310,11 @@ def _pop_schema_version(data: dict[str, Any], path: Path) -> int:
 
 def parse_document(path: Path, kind: DocumentKind) -> DocumentEnvelope:
     """Parse without rewriting, retaining supported unknown frontmatter and body."""
-    raw = _read_document_text(path)
+    return parse_document_text(_read_document_text(path), path, kind)
+
+
+def parse_document_text(raw: str, path: Path, kind: DocumentKind) -> DocumentEnvelope:
+    """Map canonical text from a filesystem document or a committed Git blob."""
     data, body = _load_frontmatter(raw, path)
     _apply_archive_default(data, path)
     version = _pop_schema_version(data, path)

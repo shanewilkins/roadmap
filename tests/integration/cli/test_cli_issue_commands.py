@@ -1,5 +1,11 @@
 """CLI issue journeys through the composed application boundary."""
 
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
 import pytest
 
 from roadmap.bootstrap import cli as main
@@ -137,6 +143,61 @@ class TestCLIIssueDelete:
 
 
 class TestCLIIssueWorkflow:
+    @pytest.mark.parametrize("started", [False, True], ids=["todo", "in-progress"])
+    @pytest.mark.parametrize(
+        "reason_args,expected_reason",
+        [
+            ([], None),
+            (["--reason", "Waiting for dependency"], "Waiting for dependency"),
+            (["-r", "Bob's dependency: #42"], "Bob's dependency: #42"),
+            (
+                ["--reason", "First line\n---\nWaiting for café approval"],
+                "First line\n---\nWaiting for café approval",
+            ),
+        ],
+        ids=["no-reason", "long-option", "short-option", "multiline-unicode"],
+    )
+    def test_block_exits_and_persists_reason(
+        self, tmp_path, started, reason_args, expected_reason
+    ):
+        """GH #3756: a real CLI process must finish without prompting or hanging."""
+        executable = Path(sys.executable).with_name("roadmap")
+        environment = {**os.environ, "XDG_CONFIG_HOME": str(tmp_path / "personal")}
+
+        def run(*arguments):
+            result = subprocess.run(
+                [str(executable), *arguments],
+                cwd=tmp_path,
+                env=environment,
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            assert result.returncode == 0, result.stdout + result.stderr
+            return result.stdout
+
+        run("init", "--skip-project")
+        identity = run("issue", "create", "--title", "GH #3756", "--print-id").strip()
+        if started:
+            run("issue", "start", identity)
+        run("issue", "block", identity, *reason_args)
+        blocked = json.loads(run("issue", "view", identity, "--format", "json"))[
+            "record"
+        ]["issue"]
+        assert blocked["status"] == "blocked"
+        assert blocked["history"][-1]["action"] == "status:blocked"
+        assert blocked["history"][-1]["reason"] == expected_reason
+
+        # A subsequent process must acquire the workspace lock and save normally.
+        run("issue", "unblock", identity, "--reason", "Dependency ready")
+        unblocked = json.loads(run("issue", "view", identity, "--format", "json"))[
+            "record"
+        ]["issue"]
+        assert unblocked["status"] == "in-progress"
+        assert unblocked["history"][-1]["reason"] == "Dependency ready"
+        assert unblocked["history"][:-1] == blocked["history"]
+
     def test_start_close_and_progress(self, cli_runner, workspace_directory):
         with workspace_directory():
             IntegrationTestBase.init_roadmap(cli_runner)

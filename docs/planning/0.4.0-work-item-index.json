@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-08",
+  "milestone_id": "56ab6d8c-7da0-410c-b303-6b00733a5ea1",
+  "items": {
+    "plan": {
+      "id": "fdcd630e-4de0-4c10-ab00-44be0e365867",
+      "title": "Formalize accepted 0.4 scope and start self-hosted governance",
+      "requirements": "UR-065; UR-066; TR-052; TR-053",
+      "dependencies": []
+    },
+    "health": {
+      "id": "4d2ddfcf-c0b2-4757-a088-057d118d0bb9",
+      "title": "Recover missing backlog milestone and verify health repair",
+      "requirements": "UR-065; TR-052",
+      "dependencies": []
+    },
+    "identity": {
+      "id": "13a711b6-ae83-4d7d-a78f-8126339756bc",
+      "title": "Implement durable requirement capture, lookup and editing",
+      "requirements": "UR-049; UR-050; UR-062; TR-037; TR-038; TR-048; TR-049",
+      "dependencies": [
+        "plan"
+      ]
+    },
+    "lifecycle": {
+      "id": "4c04e9cb-2b7d-4732-a09b-f6a5974a5138",
+      "title": "Implement requirement lifecycle and revision-bound evidence",
+      "requirements": "UR-051; UR-054; TR-039; TR-043; TR-049",
+      "dependencies": [
+        "identity"
+      ]
+    },
+    "relations": {
+      "id": "2237e909-ab42-4095-a1a2-d791676ed9d4",
+      "title": "Implement typed requirement traceability and reverse queries",
+      "requirements": "UR-052; TR-040",
+      "dependencies": [
+        "identity"
+      ]
+    },
+    "gaps": {
+      "id": "dfaeadbc-a870-4d5f-b7dc-b033e8c9e4e5",
+      "title": "Report exact planning and verification gaps",
+      "requirements": "UR-053; TR-042",
+      "dependencies": [
+        "lifecycle",
+        "relations"
+      ]
+    },
+    "next": {
+      "id": "bd5e97bc-8769-4bbe-a505-3661d492db58",
+      "title": "Decide and implement explainable next-work policy",
+      "requirements": "UR-063; TR-050",
+      "dependencies": [
+        "gaps"
+      ]
+    },
+    "schedule": {
+      "id": "08544d5a-beb5-4ae0-8c45-08998c152a90",
+      "title": "Specify and implement full dependency schedule",
+      "requirements": "UR-061; TR-047; TR-054",
+      "dependencies": [
+        "plan"
+      ]
+    },
+    "urls": {
+      "id": "19b7302b-e9b2-4db7-9614-0f7bf7da65cb",
+      "title": "Define a read-only hosting URL command",
+      "requirements": "UR-060; TR-046",
+      "dependencies": [
+        "plan"
+      ]
+    },
+    "adoption": {
+      "id": "58899eda-11d0-4c14-b56d-da664d554b53",
+      "title": "Prove optional requirements adoption and register cutover",
+      "requirements": "UR-064; UR-065; TR-051; TR-052",
+      "dependencies": [
+        "identity",
+        "lifecycle",
+        "relations"
+      ]
+    },
+    "dogfood": {
+      "id": "08baa3c7-738c-4350-8379-bda748329fd5",
+      "title": "Record and disposition real self-hosted workflow friction",
+      "requirements": "UR-065; TR-052",
+      "dependencies": [
+        "plan"
+      ]
+    },
+    "github": {
+      "id": "6e714c10-6905-4d4c-9301-4837ee99e25d",
+      "title": "Complete evidence-backed baseline GitHub dispositions",
+      "requirements": "UR-066; TR-053",
+      "dependencies": [
+        "plan",
+        "import"
+      ]
+    },
+    "compat": {
+      "id": "e0dfb3e2-c21d-4401-aae8-cfe6ee29e297",
+      "title": "Review and execute declared 0.4 deprecation removals",
+      "requirements": "Maintenance: published compatibility inventory and 0.4 release contract",
+      "dependencies": [
+        "plan"
+      ]
+    },
+    "release": {
+      "id": "01aef70d-e85a-4340-afda-6aea96b50508",
+      "title": "Verify 0.4 outcomes and self-hosted release readiness",
+      "requirements": "UR-049; UR-050; UR-051; UR-052; UR-053; UR-054; UR-060; UR-061; UR-062; UR-063; UR-064; UR-065; UR-066; UR-067; UR-068",
+      "dependencies": [
+        "next",
+        "schedule",
+        "urls",
+        "adoption",
+        "dogfood",
+        "github",
+        "compat",
+        "collaboration",
+        "import"
+      ]
+    },
+    "collaboration": {
+      "id": "355390b8-7f70-4f89-8042-34252d6d4981",
+      "title": "Verify completion-after-pull collaboration in two clones",
+      "requirements": "UR-067; TR-055",
+      "dependencies": []
+    },
+    "import": {
+      "id": "ff21f48a-d2bc-4bc1-bce3-90468079190d",
+      "title": "Implement bounded complete GitHub issue import",
+      "requirements": "UR-068; TR-056",
+      "dependencies": []
+    }
+  }
+}

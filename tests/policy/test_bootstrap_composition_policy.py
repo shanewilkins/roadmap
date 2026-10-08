@@ -141,6 +141,7 @@ def test_bootstrap_returns_only_the_retained_command_capabilities(
         "local_git",
         "planning",
         "health",
+        "github_closures",
     }
     assert not hasattr(services, "issues")
     assert not hasattr(services, "milestones")

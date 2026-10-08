@@ -35,6 +35,11 @@ Implementation changes require separate, explicitly scoped work.
 - [ADR-0009: Assign configuration ownership and scope](adr/0009-configuration-ownership-and-scope.md)
 - [ADR-0010: Use stable ID-based canonical paths](adr/0010-stable-id-based-canonical-paths.md)
 
+- [ADR-0011: Add optional requirements with revision-bound governance](adr/0011-optional-requirements-and-governance.md)
+
+- [ADR-0012: Bounded explicit GitHub import](adr/0012-bounded-github-import.md)
+- [ADR-0013: Publish committed GitHub closures](adr/0013-publish-committed-github-closures.md)
+
 ## Approved implementation specification
 
 - [CLI interface contract and correctness plan](cli-interface-contract.md)
@@ -52,6 +57,8 @@ Implementation changes require separate, explicitly scoped work.
 - [Portfolio case study](portfolio-case-study.md)
 
 ## Delivery plans
+
+- [Accepted 0.4.0 scope and delivery plan](../planning/0.4.0-plan.md)
 
 - [B+ review follow-up — 2026-10-08](../governance/bplus-followup-2026-10-08.md)
 - [Reliability coverage battle plan — 2026-10-06](coverage-battle-plan-2026-10-06.md)

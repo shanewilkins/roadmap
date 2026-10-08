@@ -6,6 +6,16 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Add explicit outbound GitHub closure publication from canonical Git HEAD:
+  offline JSON preview, repository-qualified opt-in, completed/not-planned
+  dispositions, committed evidence links, and safe retry after partial failures.
+- Add a serialized default-branch Action to publish opted-in closures after push
+  or merge, without local receipt commits or inbound reconciliation.
+- Add bounded real-process regression coverage for block-with-reason hangs
+  reported in GitHub #3756; current 0.3.1 reproduction cases complete successfully.
+
 ## [0.3.1] - 2026-10-08
 
 ### Added
