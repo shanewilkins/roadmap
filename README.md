@@ -186,7 +186,7 @@ product direction.
 ## Project status
 
 This checkout targets 0.3.1; the workflow shortcuts below describe that version. See the [next-release checklist](docs/releases/NEXT_RELEASE.md)
-for the remaining publication checks. The architecture was established through
+for publication checks and release evidence. The architecture was established through
 thirteen independently verified refactor phases for 0.2.0.
 See the
 [execution plan](docs/architecture/refactor-execution-plan.md) and published

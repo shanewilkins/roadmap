@@ -122,7 +122,7 @@
         "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
       ],
       "remaining": [
-        "The complete interruption-stage/platform cross-product is not proved. Baseline c246bfb9 passed Ubuntu tests and Ubuntu/macOS package journeys; October 8 local test/tooling edits still require candidate CI."
+        "The complete interruption-stage/platform cross-product is not proved. Exact release CI and Ubuntu/macOS installed-package journeys passed; exhaustive stage-by-stage fault injection on every supported OS is not established."
       ]
     },
     "TR-011": {
@@ -137,7 +137,7 @@
         "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
       ],
       "remaining": [
-        "Dedicated Vulture and documentation-link gates now exist with negative fixtures. Candidate CI has not run these additions, and representative negative tests do not yet demonstrate every configured gate failure mode."
+        "Dedicated Vulture and documentation-link gates passed exact-commit candidate and release CI with negative fixtures. Representative negative tests do not yet demonstrate every configured gate failure mode."
       ]
     },
     "TR-014": {
@@ -156,26 +156,30 @@
       ]
     },
     "TR-035": {
-      "result": "partial",
-      "scope": "Current candidate CLI/data contract; supported examples and stated verification method. Broader platform promises remain partial where noted.",
+      "result": "verified",
+      "scope": "Released 0.3.1 at 6a2a11a49412a8e45df157d1f10547e8164d8526: supported legacy migration, refusal/retry semantics, and exact-commit Ubuntu/macOS installed migration journeys. See docs/releases/0.3.1-verification.md.",
       "checked_at": "2026-10-08",
       "tests": [
         "tests/unit/adapters/persistence/test_workspace_migration.py::test_changed_migration_preview_preserves_latest_files",
         "tests/unit/adapters/persistence/test_workspace_migration.py::test_unreadable_nested_canonical_directory_refuses_migration",
-        "tests/unit/adapters/persistence/test_workspace_migration.py::test_invalid_personal_schema_refuses_migration_without_writes"
+        "tests/unit/adapters/persistence/test_workspace_migration.py::test_invalid_personal_schema_refuses_migration_without_writes",
+        "tests/unit/adapters/persistence/test_workspace_migration.py::test_migration_preserves_semantics_content_and_ids_then_rebuilds_projection",
+        "tests/unit/adapters/persistence/test_workspace_migration.py::test_future_workspace_schema_is_rejected_without_changes",
+        "tests/integration/persistence/test_process_recovery.py::test_sigkill_migration_retries_without_losing_ids_or_content"
       ],
       "commands": [
-        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term"
+        "uv run --locked pytest --cov=roadmap --cov-config=config/.coveragerc --cov-report=term",
+        "gh run view 37775505000 --json headSha,status,conclusion,jobs"
       ],
-      "remaining": [
-        "Baseline c246bfb9 passed the supported Ubuntu/macOS installed migration journeys. The October 8 local tooling/test candidate still awaits its exact-commit OS matrix."
-      ]
+      "remaining": []
     }
   },
   "review_followup": {
     "date": "2026-10-08",
     "baseline_commit": "c246bfb962d8fa0f126d46ff3a072178d1877c39",
     "baseline_ci": "https://github.com/shanewilkins/roadmap/actions/runs/37531418989",
-    "scope": "All 12 baseline CI jobs passed, including Ubuntu tests and Ubuntu/macOS installed-package journeys. October 8 local tooling/test edits still need candidate CI. See docs/governance/bplus-followup-2026-10-08.md."
+    "scope": "Candidate and tag-triggered CI passed at exact release SHA, including Ubuntu/macOS installed migration journeys. PyPI publication and workflow/independent index installation passed. TR-035 is verified for released scope; TR-008/TR-011/TR-014 remain partial.",
+    "release_commit": "6a2a11a49412a8e45df157d1f10547e8164d8526",
+    "release_workflow": "https://github.com/shanewilkins/roadmap/actions/runs/37775505000"
   }
 }

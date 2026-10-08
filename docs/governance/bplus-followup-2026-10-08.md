@@ -92,3 +92,16 @@ the version tag and building the PyPI release. The release commit finalizes the
 changelog and version-matched installation links before tagging. The candidate
 hashes above describe the earlier local build; final release artifact hashes
 and workflow evidence are recorded separately after publication.
+
+## Publication closeout
+
+The approved release commit `6a2a11a4` passed all 12 candidate CI jobs and the
+complete tag-triggered release workflow. Version 0.3.1 is published on PyPI;
+both workflow and independent local index installations passed. The matching
+GitHub Release announcement is published. Final hashes and execution links are
+in [release verification](../releases/0.3.1-verification.md).
+
+This supersedes the publication-pending state above. The exact-commit migration
+OS matrix also closes TR-035's remaining proof gap; it is now Verified for the
+released scope. TR-008, TR-011 and TR-014 remain partial. Release completion does
+not establish independent review or a backup maintainer.

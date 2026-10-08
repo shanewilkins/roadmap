@@ -11,7 +11,7 @@ Implementation changes require separate, explicitly scoped work.
 ## Current execution state
 
 - Accepted checkpoint: Phase 13, hardening and 0.2.0 release preparation.
-- Published package release: 0.3.0; source candidate: 0.3.1. The 0.2 specifications and checkpoints below
+- Published package release: 0.3.1. The 0.2 specifications and checkpoints below
   remain the historical basis of the current architecture.
 - Final planned implementation phase: Phase 13, 0.2.0 release preparation.
 - The production-CLOC phase ratchet retired after Phase 13. Historical
