@@ -10,7 +10,7 @@ github_issue: '3676'
 schema_version: 1
 id: d2bedb30
 created: '2026-02-05T15:17:52.481974+00:00'
-updated: '2026-10-08T13:27:01.943157+00:00'
+updated: '2026-10-08T15:12:32.967174+00:00'
 retention: visible
 title: '[WIP] Add semantic versioning support to project'
 headline: Coding agent has begun work on **Ensuring adherence to semantic versioning
@@ -27,6 +27,8 @@ labels:
 - github-baseline
 - github:3676
 - resolution:completed
+- github-publish:shanewilkins/roadmap#3676
+- github-close:completed
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
@@ -226,6 +228,19 @@ comments:
   updated_at: '2026-10-08T13:26:59.585038+00:00'
   in_reply_to: null
   github_url: null
+- id: 4
+  issue_id: d2bedb30
+  author: shanewilkins
+  body: 'Maintainer approved the settled/not-planned GitHub cleanup pass on 2026-10-08.
+    Explicitly opted GitHub #3676 into committed outbound publication with disposition
+    completed. Prior history and source snapshots are retained; earlier notes saying
+    remote action was pending describe the historical state. The master push will
+    publish the recorded rationale and committed evidence through the Roadmap publisher,
+    without importing remote workflow changes.'
+  created_at: '2026-10-08T15:12:32.967174+00:00'
+  updated_at: '2026-10-08T15:12:32.967174+00:00'
+  in_reply_to: null
+  github_url: null
 history:
 - action: updated
   at: '2026-10-08T13:26:33.520497+00:00'
@@ -245,6 +260,9 @@ history:
     https://github.com/shanewilkins/roadmap/releases/tag/v0.3.1. Stable legacy identity
     and complete source snapshot retained. Remote GitHub #3676 closure is still pending
     its explicit external action.'
+- action: updated
+  at: '2026-10-08T15:12:31.655173+00:00'
+  reason: null
 ---
 
 Coding agent has begun work on **Ensuring adherence to semantic versioning in GitHub** and will update this pull request as work progresses.
