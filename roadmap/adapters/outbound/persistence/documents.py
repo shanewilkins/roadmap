@@ -485,23 +485,32 @@ class DocumentRepository:
     def __init__(self, roadmap_dir: Path):
         self.roadmap_dir = roadmap_dir
 
+    def paths(
+        self, kind: DocumentKind | None = None
+    ) -> tuple[tuple[DocumentKind, Path], ...]:
+        """Enumerate canonical document paths without parsing their contents."""
+        kinds = (kind,) if kind else ("project", "milestone", "issue")
+        return tuple(
+            (current_kind, path)
+            for current_kind in kinds
+            for pattern in self._patterns[current_kind]
+            for path in canonical_paths(
+                self.roadmap_dir / pattern.removesuffix("/**/*.md")
+            )
+        )
+
     def scan(self, kind: DocumentKind | None = None) -> list[DocumentEnvelope]:
         found: list[DocumentEnvelope] = []
         identities: set[tuple[DocumentKind, str]] = set()
-        kinds = (kind,) if kind else ("project", "milestone", "issue")
-        for current_kind in kinds:
-            for pattern in self._patterns[current_kind]:
-                for path in canonical_paths(
-                    self.roadmap_dir / pattern.removesuffix("/**/*.md")
-                ):
-                    envelope = parse_document(path, current_kind)
-                    key = (current_kind, envelope.identity)
-                    if key in identities:
-                        raise DuplicateDocument(
-                            f"duplicate {current_kind} id {envelope.identity}"
-                        )
-                    identities.add(key)
-                    found.append(envelope)
+        for current_kind, path in self.paths(kind):
+            envelope = parse_document(path, current_kind)
+            key = (current_kind, envelope.identity)
+            if key in identities:
+                raise DuplicateDocument(
+                    f"duplicate {current_kind} id {envelope.identity}"
+                )
+            identities.add(key)
+            found.append(envelope)
         return found
 
     def load(self, kind: DocumentKind, identity: EntityId) -> DocumentEnvelope | None:

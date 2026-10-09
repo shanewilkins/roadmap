@@ -526,6 +526,22 @@ def test_manual_canonical_edit_incrementally_refreshes_projection(tmp_path):
     assert issue_row["name"] == "Manual"
 
 
+def test_current_projection_checks_content_without_parsing_documents(
+    tmp_path, monkeypatch
+):
+    repository, _ = _canonical_set(tmp_path)
+    projection = SQLiteProjection(tmp_path / ".roadmap/db/projection.db", repository)
+    projection.rebuild()
+
+    def fail_scan(*_args, **_kwargs):
+        raise AssertionError("current documents should not be reparsed")
+
+    monkeypatch.setattr(repository, "scan", fail_scan)
+
+    assert projection.ensure_current() == "current"
+    assert len(projection.query()) == 3
+
+
 @pytest.mark.parametrize(
     "error", [sqlite3.OperationalError("disk full"), RuntimeError("projection bug")]
 )

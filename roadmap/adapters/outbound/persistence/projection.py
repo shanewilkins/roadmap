@@ -213,6 +213,20 @@ class SQLiteProjection:
         if not self._is_compatible():
             self.rebuild()
             return "rebuilt"
+        canonical_files = {
+            str(path.relative_to(self.repository.roadmap_dir)): content_identity(
+                path.read_bytes()
+            )
+            for _kind, path in self.repository.paths()
+        }
+        with self._connection() as connection:
+            projected_files = {
+                row["path"]: row["digest"]
+                for row in connection.execute("SELECT path, digest FROM documents")
+            }
+        if canonical_files == projected_files:
+            return "current"
+
         envelopes = self.repository.scan()
         canonical = {
             (item.kind, item.identity): content_identity(item.path.read_bytes())
