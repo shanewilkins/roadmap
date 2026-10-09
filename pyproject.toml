@@ -138,6 +138,10 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "--tb=short --strict-markers -n auto --maxfail=3 --strict-config -ra"
+filterwarnings = [
+    "error::ResourceWarning",
+    "error::pytest.PytestUnraisableExceptionWarning",
+]
 markers = [
     "unit: Unit tests (fast, no filesystem operations)",
     "integration: Integration tests (slower, with filesystem operations)",

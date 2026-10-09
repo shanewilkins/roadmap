@@ -15,6 +15,9 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ### Added
 
+- Verify SQLite projection connections close on successful operations and on
+  schema, insert, commit, refresh and query failures. Treat resource leaks and
+  unraisable exceptions as test failures across supported Python versions.
 - Add explicit outbound GitHub closure publication from canonical Git HEAD:
   offline JSON preview, repository-qualified opt-in, completed/not-planned
   dispositions, committed evidence links, and safe retry after partial failures.
