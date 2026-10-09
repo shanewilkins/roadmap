@@ -6,6 +6,13 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Normalize configured identity and Git-name fallback consistently with explicit
+  assignees. Daily and assignee-filtered views include legacy padded assignments
+  without rewriting their canonical records. Missing-identity diagnostics now
+  give executable setup commands; document the offline onboarding path.
+
 ### Added
 
 - Add explicit outbound GitHub closure publication from canonical Git HEAD:

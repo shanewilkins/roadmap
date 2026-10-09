@@ -14,7 +14,11 @@ class SystemClock:
 class ConfiguredCurrentIdentity:
     def __init__(self, configured_name: str | None, local_git: LocalGitPort):
         git_name, _git_email = local_git.user_identity()
-        self._identity = configured_name or git_name
+        # Use the same trimmed descriptive name as explicit issue assignment.
+        # Whitespace-only personal configuration must not hide a usable Git name.
+        self._identity = (
+            (configured_name or "").strip() or (git_name or "").strip() or None
+        )
 
     def current_identity(self) -> str | None:
         return self._identity

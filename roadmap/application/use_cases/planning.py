@@ -96,7 +96,8 @@ class Planning:
         issues = tuple(
             item
             for item in snapshot.issues
-            if item.assignee == current_user
+            if item.assignee is not None
+            and item.assignee.strip() == current_user.strip()
             and item.relations.milestone_id == upcoming.milestone.id
         )
         now = self._clock.now()

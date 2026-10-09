@@ -282,6 +282,21 @@ def test_daily_summary_terminates_on_manually_authored_dependency_cycle():
     assert units.commits == 0
 
 
+def test_daily_summary_finds_legacy_padded_assignee_without_rewriting():
+    milestone = _milestone("milestone")
+    issue = _issue(
+        "legacy",
+        assignee=" alice ",
+        priority=Priority.HIGH,
+        relations=IssueRelations(milestone_id=milestone.id),
+    )
+    units = Units(milestone, issue)
+    result = _service(units).daily_summary("alice")
+    assert [item.id for item in result.up_next] == [issue.id]
+    assert units.issues[issue.id].assignee == " alice "
+    assert units.commits == 0
+
+
 def test_critical_path_handles_dependency_absent_from_visible_snapshot():
     issue = _issue(
         "visible",

@@ -17,7 +17,8 @@ def today(ctx: click.Context, verbose: bool = False) -> None:  # noqa: ARG001
     current_user = core.current_identity.current_identity()
     if not current_user:
         raise click.ClickException(
-            "No descriptive identity is configured. Set user identity.name or Git user.name."
+            "No descriptive identity is configured. Run 'roadmap config set "
+            "identity.name YOUR_NAME' or 'git config user.name YOUR_NAME'."
         )
     summary = invoke(lambda: core.planning.daily_summary(current_user))
     DailySummaryPresenter().render(summary)

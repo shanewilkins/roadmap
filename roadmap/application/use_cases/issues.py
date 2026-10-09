@@ -113,7 +113,12 @@ class IssueQueries:
         elif assignee:
             description = f"assigned to {assignee}"
         if assignee:
-            records = [r for r in records if r.issue.assignee == assignee]
+            records = [
+                r
+                for r in records
+                if r.issue.assignee is not None
+                and r.issue.assignee.strip() == assignee.strip()
+            ]
         return records, description
 
     def _apply_filters(

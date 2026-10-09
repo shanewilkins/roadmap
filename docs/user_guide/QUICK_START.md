@@ -18,11 +18,19 @@ roadmap --version
 ```bash
 cd my-project
 roadmap init --project-name "My project"
+roadmap config set identity.name your-name
 roadmap status
 ```
 
 Roadmap stores repository-local data under `.roadmap/`. Commit the canonical
 Markdown and YAML files so collaborators receive them through ordinary Git.
+
+`init` creates the workspace; it does not authenticate you or choose your name.
+`today` and automatic issue assignment use your personal `identity.name`, falling
+back to Git's `user.name`. Choose the same descriptive name you use for issue
+assignments. Names are case-sensitive and surrounding whitespace is trimmed;
+a Git display name and a GitHub login are not automatically interchangeable.
+No GitHub token or telemetry package is needed for this local workflow.
 
 ## Capture and update an issue
 
@@ -41,6 +49,11 @@ roadmap issue close <issue-id> --reason "Implemented and verified"
 
 Use the stable ID printed by `issue create`. Valid issue states include `todo`,
 `in-progress`, `blocked`, `review`, and `closed`.
+
+Omitting `--assignee` uses your configured/Git identity when available; without
+an identity the issue stays unassigned. Explicit assignees are local descriptive
+names, not validated GitHub accounts. Blank names are rejected; use
+`roadmap issue update <issue-id> --clear-assignee` to remove an assignment.
 
 ## Add dependencies and discussion
 

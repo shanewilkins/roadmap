@@ -66,6 +66,24 @@ def _queries(*records: IssueQueryRecord) -> IssueQueries:
     return IssueQueries(Records(*records), Identity(), Clock())
 
 
+@pytest.mark.parametrize(
+    "selection", [{"current_assignee": True}, {"assignee": " me "}]
+)
+def test_assignee_queries_include_legacy_padding_and_preserve_case(selection):
+    records = (
+        _record("padded", "Padded", assignee=" me "),
+        _record("plain", "Plain", assignee="me"),
+        _record("other", "Other", assignee="Me"),
+        _record("unassigned", "Unassigned"),
+    )
+    result = _queries(*records).list(IssueListQuery(scope=IssueScope.ALL, **selection))
+    assert {record.issue.id for record in result.records} == {
+        EntityId("padded"),
+        EntityId("plain"),
+    }
+    assert records[0].issue.assignee == " me "
+
+
 def test_scope_is_explicit_and_default_excludes_archived() -> None:
     visible = _record("b", "Visible")
     closed = _record("c", "Closed", status=IssueStatus.CLOSED)

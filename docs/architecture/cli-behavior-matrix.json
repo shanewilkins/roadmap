@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "reviewed": "2026-10-08",
+  "reviewed": "2026-10-09",
   "compatibility_boundary": "0.4",
   "commands": {
     "roadmap": {
@@ -434,7 +434,8 @@
       ],
       "evidence": [
         "tests/integration/cli/test_cli_usability.py::test_configuration_explanation_tracks_owner_and_configured_value",
-        "tests/integration/cli/test_cli_usability.py::test_unknown_and_wrong_scope_configuration_commands_do_not_write"
+        "tests/integration/cli/test_cli_usability.py::test_unknown_and_wrong_scope_configuration_commands_do_not_write",
+        "tests/integration/cli/test_cli_identity_onboarding.py::test_configured_and_git_identity_agree_with_today_and_assignments"
       ],
       "unresolved": []
     },
@@ -1841,7 +1842,10 @@
         "tests/integration/cli/test_cli_correctness_closeout.py::test_issue_clear_labels_and_due_date_update_preserves_other_fields",
         "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_creation_flags_and_reciprocal_dependencies",
         "tests/integration/cli/test_cli_mutation_contracts.py::test_invalid_creation_never_leaves_entity_or_partial_reciprocal_link",
-        "tests/integration/cli/test_cli_mutation_contracts.py::test_project_and_milestone_creation_fields_and_exact_parent"
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_project_and_milestone_creation_fields_and_exact_parent",
+        "tests/integration/cli/test_cli_identity_onboarding.py::test_missing_identity_is_actionable_and_preserves_unassigned_capture",
+        "tests/integration/cli/test_cli_identity_onboarding.py::test_configured_and_git_identity_agree_with_today_and_assignments",
+        "tests/integration/cli/test_cli_identity_onboarding.py::test_assignment_edit_clear_and_invalid_writes"
       ],
       "unresolved": []
     },
@@ -2790,7 +2794,8 @@
         "tests/integration/cli/test_cli_correctness_closeout.py::test_status_update_cannot_bypass_close_guard",
         "tests/integration/cli/test_cli_mutation_contracts.py::test_project_update_fields_persist_only_on_target",
         "tests/integration/cli/test_cli_mutation_contracts.py::test_milestone_update_fields_and_reassignment_persist_atomically",
-        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_field_options_persist_without_touching_other_entities"
+        "tests/integration/cli/test_cli_mutation_contracts.py::test_issue_field_options_persist_without_touching_other_entities",
+        "tests/integration/cli/test_cli_identity_onboarding.py::test_assignment_edit_clear_and_invalid_writes"
       ],
       "unresolved": []
     },
@@ -4511,7 +4516,9 @@
       ],
       "evidence": [
         "tests/integration/cli/test_cli_query_output_contracts.py::test_today_selects_current_identity_and_next_milestone_only",
-        "tests/integration/cli/test_cli_safety_journeys.py::test_empty_analysis_and_daily_identity_failure_are_read_only"
+        "tests/integration/cli/test_cli_safety_journeys.py::test_empty_analysis_and_daily_identity_failure_are_read_only",
+        "tests/integration/cli/test_cli_identity_onboarding.py::test_missing_identity_is_actionable_and_preserves_unassigned_capture",
+        "tests/integration/cli/test_cli_identity_onboarding.py::test_configured_and_git_identity_agree_with_today_and_assignments"
       ],
       "unresolved": []
     }
