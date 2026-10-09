@@ -64,7 +64,11 @@ history and selected context. No reimport or health repair is required.
 - Eight document regressions cover issue/milestone/project bodies, LF/CRLF,
   resolved retry, inline mentions, diff3 and custom-width conflict markers.
 - CI now runs the installed journey on Ubuntu/macOS with Python 3.12–3.14.
-  Live CI outcomes are retained in the Roadmap work item's comments.
+  [Live CI run 37983657896](https://github.com/shanewilkins/roadmap/actions/runs/37983657896)
+  passed 1,275 tests on each Python version and all six installed collaboration
+  journeys, each reporting eight first-read checks and successful conflict retry.
+  The verified source commit is `0abbef57d6a07a34be16f82bf170198ec6abbb84`.
+  Live CI outcomes are also retained in the Roadmap work item's comments.
 
 This is verification of Git-authored canonical completion. GitHub-only closure
 propagation remains the separate 0.5 requirement UR-069/TR-057. The journey does
