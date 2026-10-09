@@ -16,8 +16,12 @@ from roadmap.adapters.inbound.cli import (
 
 
 def _create_core(root_path: Path, roadmap_dir_name: str) -> Any:
-    from roadmap.bootstrap.core import create_core
+    from roadmap.bootstrap.core import create_core, find_existing_core
 
+    if roadmap_dir_name == ".roadmap":
+        existing = find_existing_core(root_path)
+        if existing is not None:
+            return existing
     return create_core(root_path, roadmap_dir_name)
 
 

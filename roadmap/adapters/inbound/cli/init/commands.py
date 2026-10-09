@@ -18,6 +18,11 @@ def _directory_name(value: str) -> str:
     return value
 
 
+def _default_project_name(workspace: Path | None) -> str:
+    project_root = workspace.parent if workspace is not None else Path.cwd()
+    return project_root.name or "Roadmap"
+
+
 def _report_dry_run(
     name: str, result, skip_project: bool, project_name: str | None, default_name: str
 ) -> None:
@@ -78,7 +83,7 @@ def init(
     factory = ctx.find_root().obj.get("initialization_factory")
     if factory is None:
         raise click.ClickException("Roadmap CLI must be constructed by Bootstrap")
-    default_name = Path.cwd().name or "Roadmap"
+    default_name = _default_project_name(workspace)
     result = factory(name).execute(
         WorkspaceInitializationRequest(
             project_name=None if skip_project else Name(project_name or default_name),

@@ -8,6 +8,10 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ### Fixed
 
+- Derive the default project name from the selected workspace's parent directory
+  when initializing with `--workspace`, including dry runs from another directory.
+- Use the nearest initialized default workspace for commands run in subdirectories
+  instead of treating each current directory as a separate uninitialized root.
 - Normalize configured identity and Git-name fallback consistently with explicit
   assignees. Daily and assignee-filtered views include legacy padded assignments
   without rewriting their canonical records. Missing-identity diagnostics now

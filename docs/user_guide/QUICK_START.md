@@ -32,6 +32,25 @@ assignments. Names are case-sensitive and surrounding whitespace is trimmed;
 a Git display name and a GitHub login are not automatically interchangeable.
 No GitHub token or telemetry package is needed for this local workflow.
 
+To select a workspace from another directory, use the global `--workspace`
+option before the command. It names the canonical data directory itself:
+
+```bash
+roadmap --workspace "/path/My project/custom planning" init
+roadmap --workspace "/path/My project/custom planning" issue list
+```
+
+Absolute, relative and home-relative (`~/...`) workspace paths are supported;
+quote paths containing spaces. Selection governs project, milestone and issue
+storage, configuration, the SQLite projection and repair. Initialization defaults
+the project name to the selected workspace's parent directory (`My project` in
+this example); `--project-name` overrides it. An invalid explicit workspace fails
+instead of falling back to another workspace. Without explicit selection, commands
+discover the nearest initialized `.roadmap/` in the current directory or its
+parents. For a custom directory created with `init --name`, pass `--workspace`
+on subsequent commands. Relative report/export output paths are relative to the
+calling directory.
+
 ## Capture and update an issue
 
 ```bash
