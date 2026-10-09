@@ -244,6 +244,11 @@ jobs:
           python scripts/checkpoint_journey.py
           --roadmap-command .package-journey/bin/roadmap
 
+      - name: Verify installed two-clone collaboration
+        run: >-
+          python scripts/collaboration_journey.py
+          --roadmap-command .package-journey/bin/roadmap
+
   result:
     name: CI result
     if: ${{ always() }}

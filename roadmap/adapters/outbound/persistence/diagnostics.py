@@ -19,6 +19,7 @@ from .documents import (
     DocumentEnvelope,
     DocumentRepository,
     canonical_paths,
+    has_git_conflict,
     parse_document,
 )
 from .projection import SQLiteProjection
@@ -152,7 +153,7 @@ class FilesystemWorkspaceDiagnostics:
                 )
             )
             return None, False
-        if all(marker in content for marker in ("<<<<<<<", "=======", ">>>>>>>")):
+        if has_git_conflict(content):
             findings.append(
                 HealthFinding(
                     "canonical.git-conflict",

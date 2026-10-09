@@ -8,6 +8,9 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ### Fixed
 
+- Reject unresolved Git conflict hunks in canonical Markdown bodies on ordinary
+  reads, using the same diagnosis as health. Verify installed two-clone
+  close/merge/pull and resolved retry with stale or missing SQLite projections.
 - Derive the default project name from the selected workspace's parent directory
   when initializing with `--workspace`, including dry runs from another directory.
 - Use the nearest initialized default workspace for commands run in subdirectories

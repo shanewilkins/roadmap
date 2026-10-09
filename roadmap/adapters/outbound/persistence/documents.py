@@ -45,6 +45,18 @@ class DuplicateDocument(DocumentError):
     """More than one canonical document claims the same identity."""
 
 
+def has_git_conflict(raw: str) -> bool:
+    """Recognize unresolved Git hunks in metadata or Markdown body."""
+    return all(
+        re.search(pattern, raw, re.M) is not None
+        for pattern in (
+            r"^<{7,}(?:[^\S\n].*)?$",
+            r"^={7,}\r?$",
+            r"^>{7,}(?:[^\S\n].*)?$",
+        )
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class DocumentEnvelope:
     """Mapped aggregate plus boundary-owned data that must round-trip."""
@@ -315,6 +327,8 @@ def parse_document(path: Path, kind: DocumentKind) -> DocumentEnvelope:
 
 def parse_document_text(raw: str, path: Path, kind: DocumentKind) -> DocumentEnvelope:
     """Map canonical text from a filesystem document or a committed Git blob."""
+    if has_git_conflict(raw):
+        raise DocumentError(f"unresolved Git conflict markers in {path}")
     data, body = _load_frontmatter(raw, path)
     _apply_archive_default(data, path)
     version = _pop_schema_version(data, path)
