@@ -35,6 +35,7 @@ class WorkspaceServices:
     planning: Any
     health: Any
     github_closures: Any
+    github_import: Any
 
     def is_initialized(self) -> bool:
         return (

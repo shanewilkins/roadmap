@@ -28,8 +28,12 @@ Application do not construct provider clients or shell commands. Bootstrap wires
 the adapter; CLI invokes Application. GitHub authentication stays with `gh`.
 Ordinary core reads/writes remain offline. No credential store, generic provider
 backend, reconciliation engine or background convergence protocol is introduced.
-Exact command flags, source envelope/field mapping, selection, pagination and
-changed-source presentation require an implementation contract before coding.
+The implemented contract is documented in
+[GitHub import](../../user_guide/GITHUB_IMPORT.md): online preview followed by
+explicit apply, repository-qualified ownership, paginated issue/comment/timeline
+envelopes in immutable attributed comments, unchanged-repeat deduplication and
+validated redirects for historical records already resolved as duplicates.
+All selected records validate before the existing canonical transaction writes.
 
 For 0.4 collaboration, closing in Roadmap and committing that canonical record
 with a merged branch must produce correct completion views after another clone

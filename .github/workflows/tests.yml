@@ -249,6 +249,11 @@ jobs:
           python scripts/collaboration_journey.py
           --roadmap-command .package-journey/bin/roadmap
 
+      - name: Verify installed bounded GitHub import
+        run: >-
+          python scripts/github_import_journey.py
+          --roadmap-command .package-journey/bin/roadmap
+
   result:
     name: CI result
     if: ${{ always() }}

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "reviewed": "2026-10-09",
+  "reviewed": "2026-10-10",
   "compatibility_boundary": "0.4",
   "commands": {
     "roadmap": {
@@ -4519,6 +4519,67 @@
         "tests/integration/cli/test_cli_safety_journeys.py::test_empty_analysis_and_daily_identity_failure_are_read_only",
         "tests/integration/cli/test_cli_identity_onboarding.py::test_missing_identity_is_actionable_and_preserves_unassigned_capture",
         "tests/integration/cli/test_cli_identity_onboarding.py::test_configured_and_git_identity_agree_with_today_and_assignments"
+      ],
+      "unresolved": []
+    },
+    "roadmap github import": {
+      "signature": "arg:numbers:required;opt:--repo;opt:--apply",
+      "kind": "command",
+      "contract": "Capture complete attributed source revisions using stable local identities and preserving local decisions.",
+      "parameters": [
+        {
+          "parameter": "numbers",
+          "spellings": [
+            "numbers"
+          ],
+          "disposition": "supported",
+          "contract": "Select 1\u201325 distinct positive issue numbers; all fetches and validation precede ingestion.",
+          "evidence": [
+            "tests/integration/cli/test_cli_github_import.py::test_preview_apply_repeat_and_revision_preserve_local_planning",
+            "tests/integration/cli/test_cli_github_import.py::test_duplicate_local_identity_refuses_entire_batch_without_mutation",
+            "tests/integration/cli/test_cli_github_import.py::test_invalid_selection_does_not_fetch_or_mutate"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "repo",
+          "spellings": [
+            "--repo"
+          ],
+          "disposition": "supported",
+          "contract": "Required repository-qualified OWNER/REPO identity; no title or bare-number matching.",
+          "evidence": [
+            "tests/integration/cli/test_cli_github_import.py::test_preview_apply_repeat_and_revision_preserve_local_planning",
+            "tests/integration/cli/test_cli_github_import.py::test_duplicate_local_identity_refuses_entire_batch_without_mutation",
+            "tests/integration/cli/test_cli_github_import.py::test_invalid_selection_does_not_fetch_or_mutate"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "apply",
+          "spellings": [
+            "--apply"
+          ],
+          "disposition": "supported",
+          "contract": "Explicit atomic capture under workspace lock; default online preview never writes canonical records.",
+          "evidence": [
+            "tests/integration/cli/test_cli_github_import.py::test_preview_apply_repeat_and_revision_preserve_local_planning",
+            "tests/integration/cli/test_cli_github_import.py::test_duplicate_local_identity_refuses_entire_batch_without_mutation",
+            "tests/integration/cli/test_cli_github_import.py::test_invalid_selection_does_not_fetch_or_mutate"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_github_import.py::test_preview_apply_repeat_and_revision_preserve_local_planning",
+        "tests/integration/cli/test_cli_github_import.py::test_duplicate_local_identity_refuses_entire_batch_without_mutation",
+        "tests/integration/cli/test_cli_github_import.py::test_invalid_selection_does_not_fetch_or_mutate"
       ],
       "unresolved": []
     }

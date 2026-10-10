@@ -22,6 +22,10 @@ All notable changes to Roadmap CLI are recorded here. The format follows
 
 ### Added
 
+- Add selected complete GitHub issue import with online preview and explicit
+  atomic apply. Reuse repository-qualified local identities across closed and
+  archived records, capture immutable attributed source revisions, and leave
+  local planning untouched. Repeat imports do not duplicate records or revisions.
 - Verify SQLite projection connections close on successful operations and on
   schema, insert, commit, refresh and query failures. Treat resource leaks and
   unraisable exceptions as test failures across supported Python versions.

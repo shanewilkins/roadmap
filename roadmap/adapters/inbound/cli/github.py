@@ -1,16 +1,56 @@
-"""Explicit preview and publication of committed GitHub closure decisions."""
+"""Explicit GitHub source import and committed closure publication."""
 
 import json
 from dataclasses import asdict
 
 import click
 
-from roadmap.adapters.inbound.cli.cli_command_helpers import invoke, require_initialized
+from roadmap.adapters.inbound.cli.cli_command_helpers import (
+    invoke,
+    projection_warning,
+    require_initialized,
+)
 
 
 @click.group()
 def github() -> None:
-    """Publish explicitly opted-in canonical decisions; authentication uses gh."""
+    """Import source records or publish opted-in closures; authentication uses gh."""
+
+
+@github.command("import")
+@click.argument("numbers", nargs=-1, type=click.IntRange(min=1), required=True)
+@click.option(
+    "--repo",
+    required=True,
+    help="GitHub OWNER/REPO; qualified identity for every selected issue.",
+)
+@click.option(
+    "--apply",
+    is_flag=True,
+    help="Capture locally; default fetches and previews without canonical writes.",
+)
+@click.pass_context
+@require_initialized
+def import_issues(
+    ctx: click.Context, numbers: tuple[int, ...], repo: str, apply: bool
+) -> None:
+    """Import selected complete source records, preserving local planning and IDs."""
+    results = invoke(
+        lambda: ctx.obj["core"].github_import.execute(repo, numbers, apply=apply)
+    )
+    if results:
+        projection_warning(results[0])
+    click.echo(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "kind": "roadmap.github-import",
+                "apply": apply,
+                "issues": [asdict(item) for item in results],
+            },
+            indent=2,
+        )
+    )
 
 
 @github.command("publish-closures")

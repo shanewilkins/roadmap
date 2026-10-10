@@ -5,6 +5,7 @@ from pathlib import Path
 from roadmap.adapters.inbound.cli import WorkspaceServices
 from roadmap.adapters.outbound.git import SubprocessLocalGit
 from roadmap.adapters.outbound.github import GhClosurePublisher
+from roadmap.adapters.outbound.github.issues import GhIssueSource
 from roadmap.adapters.outbound.persistence import (
     CanonicalIssueUnitOfWorkFactory,
     DocumentIssueQueries,
@@ -30,6 +31,7 @@ from roadmap.application.use_cases import (
     WorkspaceHealth,
     WorkspaceInitialization,
 )
+from roadmap.application.use_cases.github_import import ImportGitHubIssues
 from roadmap.application.use_cases.github_publish import PublishGitHubClosures
 
 
@@ -79,6 +81,7 @@ def create_core(
         Planning(units, clock),
         WorkspaceHealth(FilesystemWorkspaceDiagnostics(documents, projection)),
         PublishGitHubClosures(GitCommittedIssues(roadmap_dir), GhClosurePublisher()),
+        ImportGitHubIssues(GhIssueSource(), units, clock),
     )
 
 
