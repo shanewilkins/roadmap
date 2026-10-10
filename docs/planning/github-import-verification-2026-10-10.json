@@ -1,0 +1,88 @@
+{
+  "repository": "shanewilkins/roadmap",
+  "reports": 11,
+  "created_issues": 0,
+  "preview_canonical_writes": 0,
+  "applied_canonical_files": 11,
+  "repeat_canonical_writes": 0,
+  "local_decisions_preserved": true,
+  "issues": [
+    {
+      "target": "shanewilkins/roadmap#3756",
+      "issue_id": "9928b489-c652-4116-8f7d-831700b4c7fd",
+      "action": "capture-revision",
+      "fingerprint": "77f1fea1090eb8d11c5816409aad74c33bfa3bdc7a2e49d8d9da4b1d331ba9cf",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3755",
+      "issue_id": "74684a37-de5a-448a-89c3-bef4fd4cdf96",
+      "action": "capture-revision",
+      "fingerprint": "7f5f09bd395c3d15ac87a083e71e931fc8779248fe6d1f07875af73a2b614fce",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3754",
+      "issue_id": "65ec3783-e287-4e6c-bbb6-9e387ea7d657",
+      "action": "capture-revision",
+      "fingerprint": "17c3c8dc504686bbc725f662855409954bb48547ccde76992c4bbd1a72d8895b",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3753",
+      "issue_id": "444e2773-9d34-4216-bd5d-78a598d834ad",
+      "action": "capture-revision",
+      "fingerprint": "fc186ba65e8a9c514021f9d080a4ba97f43874b2ba2f8b9dd0144bb03f234d79",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3749",
+      "issue_id": "07b21448",
+      "action": "capture-revision",
+      "fingerprint": "6a6e6ee0a2f2e7b68b4b1e2ecccf679515a05e9b465983768913816bc03a5c42",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3716",
+      "issue_id": "1007b6f2",
+      "action": "capture-revision",
+      "fingerprint": "3172db75d1bec5937d0c6f521bee6c676df1958d0589f3df6c396a460630aa2b",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3715",
+      "issue_id": "09c69060",
+      "action": "capture-revision",
+      "fingerprint": "2466be5c866d844cbced42639bdc7d3f3017d1ef164c2f5758da28335fc30d5f",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3703",
+      "issue_id": "76d11a36",
+      "action": "capture-revision",
+      "fingerprint": "1e408d57fcdcf95fec62364b8bf1b3e74d24f9e1df481ed9f56a70cdc80d3c0a",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3689",
+      "issue_id": "8a1080c8",
+      "action": "capture-revision",
+      "fingerprint": "16ca3ac1ea1e851cf13472040cb5fcc6330687adad657af957bd6db48bd5a7b4",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3687",
+      "issue_id": "b902692e",
+      "action": "capture-revision",
+      "fingerprint": "87be15e4b1d432fc3b6bcfd3138f2d6d6c2d0f480c40ae6af53efd86a71205c9",
+      "projection_stale": false
+    },
+    {
+      "target": "shanewilkins/roadmap#3676",
+      "issue_id": "d2bedb30",
+      "action": "capture-revision",
+      "fingerprint": "25bdfeaa121f0c54188e7788f32ad01399546346f4fea73af372429568dfc44a",
+      "projection_stale": false
+    }
+  ]
+}
