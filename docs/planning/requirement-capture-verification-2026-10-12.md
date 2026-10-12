@@ -70,3 +70,17 @@ Candidate metadata still says 0.3.1; this is unreleased 0.4 work, not a PyPI rel
 
 See [operator guide](../user_guide/REQUIREMENTS.md) and
 [capture contract](requirements-capture-contract-0.4.md).
+
+## Remote completion proof
+
+Implementation `662c2a891575bc7aab83ef35299f001333d868b9` is pushed.
+[CI 38279490416](https://github.com/shanewilkins/roadmap/actions/runs/38279490416)
+succeeded. The normal parallel suite passed all 1,328 tests on each of Python
+3.12, 3.13 and 3.14 (31.65s, 32.08s and 34.40s respectively). Quality and build
+jobs passed. Each of the six Ubuntu/macOS package jobs successfully ran the new
+installed requirements capture journey, alongside retained wheel/sdist smoke,
+cumulative and collaboration/import journeys. CodeQL also succeeded.
+
+This completes the capture slice's remote verification gate without relaxing
+performance limits or changing the parallel CI configuration. Project adoption,
+CSV cutover and later requirement lifecycle/relations are still separate work.
