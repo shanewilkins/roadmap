@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from roadmap.domain.aggregates import Issue, Milestone, Project
+from roadmap.domain.requirements import Requirement
 from roadmap.domain.types import EntityId
 
 from .documents import DocumentEnvelope, DocumentRepository, content_identity
@@ -71,7 +72,13 @@ class SQLiteProjection:
 
     def _row(self, envelope: DocumentEnvelope) -> tuple[str, ...]:
         aggregate = envelope.aggregate
-        name = str(aggregate.title if isinstance(aggregate, Issue) else aggregate.name)
+        name = str(
+            aggregate.definition.title
+            if isinstance(aggregate, Requirement)
+            else aggregate.title
+            if isinstance(aggregate, Issue)
+            else aggregate.name
+        )
         attributes: dict[str, Any] = {}
         if isinstance(aggregate, Issue):
             attributes = {
@@ -83,6 +90,14 @@ class SQLiteProjection:
             }
         elif isinstance(aggregate, Milestone):
             attributes = {"project_id": aggregate.relation.project_id}
+        elif isinstance(aggregate, Requirement):
+            attributes = {
+                "key": str(aggregate.key),
+                "requirement_type": aggregate.definition.kind.value,
+                "priority": aggregate.priority.value,
+                "owner": aggregate.owner,
+                "revision": aggregate.current_revision,
+            }
         elif isinstance(aggregate, Project):
             attributes = {
                 "priority": aggregate.priority.value,

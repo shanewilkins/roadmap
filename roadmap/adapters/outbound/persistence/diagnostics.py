@@ -28,7 +28,7 @@ from .projection import SQLiteProjection
 class FilesystemWorkspaceDiagnostics:
     """Diagnose canonical files without treating SQLite as authority."""
 
-    _KINDS = ("project", "milestone", "issue")
+    _KINDS = ("project", "milestone", "issue", "requirement")
 
     def __init__(
         self,

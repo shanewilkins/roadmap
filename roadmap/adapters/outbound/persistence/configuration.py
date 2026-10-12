@@ -63,7 +63,7 @@ class ConfigurationError(ValueError):
     """Configuration is invalid for its declared schema or scope."""
 
 
-def _read(path: Path) -> dict[str, Any]:
+def _read(path: Path, *, max_version: int = 1) -> dict[str, Any]:
     try:
         loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
@@ -75,7 +75,7 @@ def _read(path: Path) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise ConfigurationError(f"configuration {path} must be a mapping")
     version = loaded.get("schema_version", 0)
-    if type(version) is not int or version < 0 or version > 1:
+    if type(version) is not int or version < 0 or version > max_version:
         raise ConfigurationError(
             f"unsupported configuration schema_version {version!r} in {path}"
         )
@@ -175,6 +175,33 @@ def _validate_present_values(data: dict[str, Any], keys: set[str]) -> None:
             _validate_value(key, values[name])
 
 
+def _workspace_version(project: dict[str, Any]) -> int:
+    workspace_version = project.get("workspace_schema_version", 0)
+    if (
+        not isinstance(workspace_version, int)
+        or isinstance(workspace_version, bool)
+        or workspace_version < 0
+    ):
+        raise ConfigurationError(
+            "configuration key workspace_schema_version must be a non-negative integer"
+        )
+    if workspace_version > 2:
+        raise ConfigurationError("workspace schema is newer than supported version 2")
+    if (project.get("schema_version") == 2) != (workspace_version == 2):
+        raise ConfigurationError(
+            "requirements configuration schema 2 needs workspace schema 2"
+        )
+    return workspace_version
+
+
+def _version_fields(data: dict[str, Any], project: bool) -> dict[str, int]:
+    version = 2 if project and data.get("schema_version") == 2 else 1
+    fields = {"schema_version": version}
+    if project:
+        fields["workspace_schema_version"] = version
+    return fields
+
+
 class ConfigurationFiles:
     """Load once into immutable settings; mutate only through scoped CLI actions."""
 
@@ -183,7 +210,7 @@ class ConfigurationFiles:
         self.user_path = user_path
 
     def resolve(self) -> ResolvedConfiguration:
-        project = _read(self.project_path)
+        project = _read(self.project_path, max_version=2)
         user = _read(self.user_path)
         _validate_scope(
             project, PROJECT_KEYS, {"schema_version", "workspace_schema_version"}
@@ -197,15 +224,7 @@ class ConfigurationFiles:
         user_behavior = _nested(user, "behavior")
         output = _nested(user, "output")
         export = _nested(user, "export")
-        workspace_version = project.get("workspace_schema_version", 0)
-        if (
-            not isinstance(workspace_version, int)
-            or isinstance(workspace_version, bool)
-            or workspace_version < 0
-        ):
-            raise ConfigurationError(
-                "configuration key workspace_schema_version must be a non-negative integer"
-            )
+        workspace_version = _workspace_version(project)
         table_width = display.get("table_width", 100)
         if not isinstance(table_width, int) or table_width < 20:
             raise ConfigurationError(
@@ -253,7 +272,10 @@ class ConfigurationFiles:
         )
 
     def view(self, scope: ConfigurationScope) -> dict[str, Any]:
-        return _read(self.project_path if scope == "project" else self.user_path)
+        return _read(
+            self.project_path if scope == "project" else self.user_path,
+            max_version=2 if scope == "project" else 1,
+        )
 
     def get(self, key: str) -> Any:
         scope = (
@@ -302,10 +324,8 @@ class ConfigurationFiles:
         self.resolve()
         _validate_value(key, value)
         path = self.project_path if scope == "project" else self.user_path
-        data = _read(path)
-        data["schema_version"] = 1
-        if scope == "project":
-            data["workspace_schema_version"] = 1
+        data = self.view(scope)
+        data.update(_version_fields(data, scope == "project"))
         target = data
         parts = key.split(".")
         for part in parts[:-1]:
@@ -321,9 +341,9 @@ class ConfigurationFiles:
 
     def reset(self, scope: ConfigurationScope) -> None:
         if scope == "project":
+            existing = _read(self.project_path, max_version=2)
             content = {
-                "schema_version": 1,
-                "workspace_schema_version": 1,
+                **_version_fields(existing, True),
                 "behavior": {
                     "default_project_id": None,
                     "include_closed_in_critical_path": False,

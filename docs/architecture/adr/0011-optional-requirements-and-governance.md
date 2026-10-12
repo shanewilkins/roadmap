@@ -58,3 +58,13 @@ interfaces or a claim of delivered behavior.
 ADRs 0001, 0003–0010 remain in force. The
 [accepted delivery plan](../../planning/0.4.0-plan.md) maps the nine outcomes to
 requirements, implementation recommendations, evidence and delivery gates.
+
+## Capture implementation contract
+
+The [reviewed capture contract](../../planning/requirements-capture-contract-0.4.md)
+settles UUID/alias allocation, explicit collision rekeying, named criteria and
+versioned intent fingerprints with worked examples. The maintainer selected
+explicit optional adoption with older-version refusal: project configuration
+schema and workspace version 2, applied through the existing recoverable unit
+of work. Issue-only workspaces retain version 1. This addition does not approve
+CSV cutover or claim delivery of lifecycle, evidence or typed relations.

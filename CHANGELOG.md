@@ -21,6 +21,10 @@ All notable changes to Roadmap CLI are recorded here. The format follows
   give executable setup commands; document the offline onboarding path.
 
 ### Added
+- Optional durable requirement capture with explicit workspace adoption, UUID4
+  identity, UR/TR aliases, named criteria, attributed intent revisions and
+  collision repair by full UUID. Existing issue-only workspaces remain unchanged.
+
 
 - Add selected complete GitHub issue import with online preview and explicit
   atomic apply. Reuse repository-qualified local identities across closed and

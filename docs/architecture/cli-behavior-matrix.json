@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "reviewed": "2026-10-10",
+  "reviewed": "2026-10-11",
   "compatibility_boundary": "0.4",
   "commands": {
     "roadmap": {
@@ -4580,6 +4580,711 @@
         "tests/integration/cli/test_cli_github_import.py::test_preview_apply_repeat_and_revision_preserve_local_planning",
         "tests/integration/cli/test_cli_github_import.py::test_duplicate_local_identity_refuses_entire_batch_without_mutation",
         "tests/integration/cli/test_cli_github_import.py::test_invalid_selection_does_not_fetch_or_mutate"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement": {
+      "signature": "none",
+      "kind": "group",
+      "contract": "Optional stable requirement capture; explicit adoption and no automatic acceptance/verification.",
+      "parameters": [],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirements.py::test_adoption_preview_and_repeat_preserve_issue_only_workspace"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement enable": {
+      "signature": "opt:--apply",
+      "kind": "command",
+      "contract": "Preview optional configuration/workspace upgrade; --apply uses existing recoverable transaction, older releases refuse.",
+      "parameters": [
+        {
+          "parameter": "apply",
+          "spellings": [
+            "--apply"
+          ],
+          "disposition": "supported",
+          "contract": "Apply the explicit version-2 workspace upgrade; absent means preview.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_adoption_preview_and_repeat_preserve_issue_only_workspace"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirements.py::test_adoption_preview_and_repeat_preserve_issue_only_workspace"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement create": {
+      "signature": "opt:--type[user|technical];opt:--title;opt:--statement;opt:--statement-file;opt:--criterion;opt:--key;opt:--rationale;opt:--scope;opt:--priority[critical|high|medium|low];opt:--owner;opt:--journey;opt:--stage",
+      "kind": "command",
+      "contract": "Create a Draft user/technical requirement with UUID4, named criteria and collision-checked alias under workspace lock.",
+      "parameters": [
+        {
+          "parameter": "kind",
+          "spellings": [
+            "--type"
+          ],
+          "disposition": "supported",
+          "contract": "Select user or technical requirement type; UR/TR prefix must agree.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "user",
+            "technical"
+          ]
+        },
+        {
+          "parameter": "title",
+          "spellings": [
+            "--title"
+          ],
+          "disposition": "supported",
+          "contract": "Non-empty single-line title; title edits change intent.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "statement",
+          "spellings": [
+            "--statement"
+          ],
+          "disposition": "supported",
+          "contract": "Full Markdown statement; mutually exclusive with statement file.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "statement_file",
+          "spellings": [
+            "--statement-file"
+          ],
+          "disposition": "supported",
+          "contract": "Read a UTF-8 Markdown statement file; preserve supplied content.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "criterion_values",
+          "spellings": [
+            "--criterion"
+          ],
+          "disposition": "supported",
+          "contract": "Named ID=TEXT criteria; creation requires at least one, update replaces the complete set; unique IDs required.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "key",
+          "spellings": [
+            "--key"
+          ],
+          "disposition": "supported",
+          "contract": "Canonical positive UR/TR alias; allocate next free number on create if omitted; rekey requires free destination.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "rationale",
+          "spellings": [
+            "--rationale"
+          ],
+          "disposition": "supported",
+          "contract": "Retain rationale without changing acceptance-bearing fingerprint.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": false,
+          "default": "",
+          "choices": []
+        },
+        {
+          "parameter": "scope",
+          "spellings": [
+            "--scope"
+          ],
+          "disposition": "supported",
+          "contract": "Explicit scope text participates in acceptance-bearing fingerprint.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": false,
+          "default": "",
+          "choices": []
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority"
+          ],
+          "disposition": "supported",
+          "contract": "Declared priority metadata; does not change intent revision.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": false,
+          "default": "medium",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "owner",
+          "spellings": [
+            "--owner"
+          ],
+          "disposition": "supported",
+          "contract": "Descriptive owner metadata; does not imply authentication or alter intent.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "journey",
+          "spellings": [
+            "--journey"
+          ],
+          "disposition": "supported",
+          "contract": "Journey metadata or exact capture-field filter.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "stage",
+          "spellings": [
+            "--stage"
+          ],
+          "disposition": "supported",
+          "contract": "Stage metadata or exact capture-field filter.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+            "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+        "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+        "tests/integration/cli/test_cli_requirements.py::test_concurrent_creates_allocate_distinct_aliases_under_existing_lock"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement view": {
+      "signature": "arg:selector:required",
+      "kind": "command",
+      "contract": "Read exact UUID or unambiguous alias, recompute current revision without canonical writes and retain full attributed history.",
+      "parameters": [
+        {
+          "parameter": "selector",
+          "spellings": [
+            "selector"
+          ],
+          "disposition": "supported",
+          "contract": "Exact full UUID or unambiguous case-stable readable alias.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_branch_collision_repair_preserves_ids_and_paths"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+        "tests/integration/cli/test_cli_requirements.py::test_branch_collision_repair_preserves_ids_and_paths"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement list": {
+      "signature": "opt:--type[user|technical];opt:--priority[critical|high|medium|low];opt:--status[draft];opt:--owner;opt:--journey;opt:--stage;opt:--search;opt:--sort[key|title|priority|created|updated]",
+      "kind": "command",
+      "contract": "Deterministic capture-field filters, casefolded search and stable UUID tie-breaks; relation filters belong to the typed-relation slice.",
+      "parameters": [
+        {
+          "parameter": "kind",
+          "spellings": [
+            "--type"
+          ],
+          "disposition": "supported",
+          "contract": "Select user or technical requirement type; UR/TR prefix must agree.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "user",
+            "technical"
+          ]
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority"
+          ],
+          "disposition": "supported",
+          "contract": "Declared priority metadata; does not change intent revision.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "status",
+          "spellings": [
+            "--status"
+          ],
+          "disposition": "supported",
+          "contract": "Capture slice filters Draft only; governed states belong to lifecycle work.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "draft"
+          ]
+        },
+        {
+          "parameter": "owner",
+          "spellings": [
+            "--owner"
+          ],
+          "disposition": "supported",
+          "contract": "Descriptive owner metadata; does not imply authentication or alter intent.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "journey",
+          "spellings": [
+            "--journey"
+          ],
+          "disposition": "supported",
+          "contract": "Journey metadata or exact capture-field filter.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "stage",
+          "spellings": [
+            "--stage"
+          ],
+          "disposition": "supported",
+          "contract": "Stage metadata or exact capture-field filter.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "search",
+          "spellings": [
+            "--search"
+          ],
+          "disposition": "supported",
+          "contract": "Case-insensitive search over key/title/statement/rationale.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": false,
+          "default": "",
+          "choices": []
+        },
+        {
+          "parameter": "sort",
+          "spellings": [
+            "--sort"
+          ],
+          "disposition": "supported",
+          "contract": "Select deterministic key/title/priority/created/updated ordering with stable UUID tie-break.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": false,
+          "default": "key",
+          "choices": [
+            "key",
+            "title",
+            "priority",
+            "created",
+            "updated"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+        "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement update": {
+      "signature": "arg:selector:required;opt:--title;opt:--statement;opt:--statement-file;opt:--criterion;opt:--scope;opt:--rationale;opt:--priority[critical|high|medium|low];opt:--owner;opt:--clear-owner;opt:--journey;opt:--stage;opt:--expected-revision",
+      "kind": "command",
+      "contract": "Edit supplied fields/criteria while preserving UUID, unknown frontmatter, history and prior intent definitions; stale expectations/conflicts refuse atomically.",
+      "parameters": [
+        {
+          "parameter": "selector",
+          "spellings": [
+            "selector"
+          ],
+          "disposition": "supported",
+          "contract": "Exact full UUID or unambiguous case-stable readable alias.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "title",
+          "spellings": [
+            "--title"
+          ],
+          "disposition": "supported",
+          "contract": "Non-empty single-line title; title edits change intent.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "statement",
+          "spellings": [
+            "--statement"
+          ],
+          "disposition": "supported",
+          "contract": "Full Markdown statement; mutually exclusive with statement file.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "statement_file",
+          "spellings": [
+            "--statement-file"
+          ],
+          "disposition": "supported",
+          "contract": "Read a UTF-8 Markdown statement file; preserve supplied content.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "criterion_values",
+          "spellings": [
+            "--criterion"
+          ],
+          "disposition": "supported",
+          "contract": "Named ID=TEXT criteria; creation requires at least one, update replaces the complete set; unique IDs required.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "scope",
+          "spellings": [
+            "--scope"
+          ],
+          "disposition": "supported",
+          "contract": "Explicit scope text participates in acceptance-bearing fingerprint.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "rationale",
+          "spellings": [
+            "--rationale"
+          ],
+          "disposition": "supported",
+          "contract": "Retain rationale without changing acceptance-bearing fingerprint.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "priority",
+          "spellings": [
+            "--priority"
+          ],
+          "disposition": "supported",
+          "contract": "Declared priority metadata; does not change intent revision.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        {
+          "parameter": "owner",
+          "spellings": [
+            "--owner"
+          ],
+          "disposition": "supported",
+          "contract": "Descriptive owner metadata; does not imply authentication or alter intent.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "clear_owner",
+          "spellings": [
+            "--clear-owner"
+          ],
+          "disposition": "supported",
+          "contract": "Explicitly unset descriptive owner; mutually exclusive with owner.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "journey",
+          "spellings": [
+            "--journey"
+          ],
+          "disposition": "supported",
+          "contract": "Journey metadata or exact capture-field filter.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "stage",
+          "spellings": [
+            "--stage"
+          ],
+          "disposition": "supported",
+          "contract": "Stage metadata or exact capture-field filter.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "expected_revision",
+          "spellings": [
+            "--expected-revision"
+          ],
+          "disposition": "supported",
+          "contract": "Refuse an update if recomputed current intent differs from the supplied revision.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+            "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+            "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+            "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
+        "tests/integration/cli/test_cli_requirements.py::test_expected_revision_and_git_conflict_refuse_without_mutation",
+        "tests/integration/cli/test_cli_requirements.py::test_external_edit_during_write_is_preserved",
+        "tests/integration/cli/test_cli_requirements.py::test_interrupted_capture_recovers_without_lost_history"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement rekey": {
+      "signature": "arg:identity:required;opt:--key",
+      "kind": "command",
+      "contract": "Rekey only by full UUID to a free type-matching alias; preserve intent, path and history; explicit branch-collision repair.",
+      "parameters": [
+        {
+          "parameter": "identity",
+          "spellings": [
+            "identity"
+          ],
+          "disposition": "supported",
+          "contract": "Exact complete UUID only; never resolve collision by guessing alias.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_branch_collision_repair_preserves_ids_and_paths",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "key",
+          "spellings": [
+            "--key"
+          ],
+          "disposition": "supported",
+          "contract": "Canonical positive UR/TR alias; allocate next free number on create if omitted; rekey requires free destination.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirements.py::test_branch_collision_repair_preserves_ids_and_paths",
+            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirements.py::test_branch_collision_repair_preserves_ids_and_paths",
+        "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
       ],
       "unresolved": []
     }

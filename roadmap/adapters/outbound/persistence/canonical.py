@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from roadmap.domain.aggregates import Issue, Milestone, Project
+from roadmap.domain.requirements import Requirement
 from roadmap.domain.types import EntityId
 
 from .documents import (
@@ -242,6 +243,35 @@ class CanonicalUnitOfWork:
             if isinstance(envelope.aggregate, aggregate_type):
                 aggregates.append(envelope.aggregate)
         return tuple(aggregates)
+
+    def list_requirements(self) -> tuple[Requirement, ...]:
+        return self._list("requirement", Requirement)
+
+    def save_requirement(self, requirement: Requirement) -> None:
+        self._save("requirement", requirement)
+
+    def enable_requirements(self, *, apply: bool = False) -> bool:
+        """Stage explicit optional adoption in the existing recoverable write set."""
+        import yaml
+
+        from .configuration import _read
+
+        self._require_lock()
+        path = self.repository.roadmap_dir / "config.yaml"
+        expected = content_identity(path.read_bytes())
+        data = _read(path, max_version=2)
+        enabled = data.get("schema_version") == 2
+        if not enabled and data.get("workspace_schema_version") != 1:
+            raise ValueError("Migrate the issue-only workspace to version 1 first")
+        if apply and not enabled:
+            data.update(schema_version=2, workspace_schema_version=2)
+            self.stage_file(
+                "config.yaml",
+                yaml.safe_dump(data, sort_keys=False).encode(),
+                final=True,
+            )
+            self._raw_writes[path].expected = expected
+        return enabled
 
     def list_milestones(self) -> tuple[Milestone, ...]:
         return self._list("milestone", Milestone)

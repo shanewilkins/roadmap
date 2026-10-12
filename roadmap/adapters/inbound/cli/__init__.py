@@ -36,6 +36,7 @@ class WorkspaceServices:
     health: Any
     github_closures: Any
     github_import: Any
+    requirements: Any
 
     def is_initialized(self) -> bool:
         return (
@@ -45,6 +46,7 @@ class WorkspaceServices:
 
 # fmt: off
 COMMAND_REGISTRY: dict[str, CommandLocation] = {
+    "requirement": ("roadmap.adapters.inbound.cli.requirements", "requirement", "Capture, inspect and edit optional requirements."),
     "init": ("roadmap.adapters.inbound.cli.init", "init", "Initialize a new roadmap structure."),
     "status": ("roadmap.adapters.inbound.cli.status", "status", "Show the current status of the roadmap."),
     "health": ("roadmap.adapters.inbound.cli.health", "health", "Read-only diagnosis and explicit recovery."),

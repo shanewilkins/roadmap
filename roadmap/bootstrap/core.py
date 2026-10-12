@@ -33,6 +33,7 @@ from roadmap.application.use_cases import (
 )
 from roadmap.application.use_cases.github_import import ImportGitHubIssues
 from roadmap.application.use_cases.github_publish import PublishGitHubClosures
+from roadmap.application.use_cases.requirements import Requirements
 
 
 def _planning(roadmap_dir: Path, clock: SystemClock) -> Planning:
@@ -82,6 +83,7 @@ def create_core(
         WorkspaceHealth(FilesystemWorkspaceDiagnostics(documents, projection)),
         PublishGitHubClosures(GitCommittedIssues(roadmap_dir), GhClosurePublisher()),
         ImportGitHubIssues(GhIssueSource(), units, clock),
+        Requirements(units, clock, identity),
     )
 
 

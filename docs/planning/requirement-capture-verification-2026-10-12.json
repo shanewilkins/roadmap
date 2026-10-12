@@ -1,0 +1,9 @@
+{
+  "stable_uuid": true,
+  "retained_issue_only_data": true,
+  "read_canonical_writes": 0,
+  "intent_revisions": 2,
+  "rekey_preserved_path": true,
+  "projection_rebuild_preserved_record": true,
+  "released_version_refused_upgrade": true
+}

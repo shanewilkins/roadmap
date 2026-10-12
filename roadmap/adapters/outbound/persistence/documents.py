@@ -14,6 +14,7 @@ from typing import Any, Literal
 import yaml
 
 from roadmap.domain.aggregates import Issue, Milestone, Project
+from roadmap.domain.requirements import Requirement
 from roadmap.domain.types import (
     EntityId,
     IssueComment,
@@ -32,8 +33,8 @@ from roadmap.domain.types import (
     Title,
 )
 
-type DocumentKind = Literal["issue", "milestone", "project"]
-type Aggregate = Issue | Milestone | Project
+type DocumentKind = Literal["issue", "milestone", "project", "requirement"]
+type Aggregate = Issue | Milestone | Project | Requirement
 _FRONTMATTER = re.compile(r"\A---[ \t]*\r?\n(.*?)\r?\n---[ \t]*\r?\n(.*)\Z", re.S)
 
 
@@ -334,6 +335,11 @@ def parse_document_text(raw: str, path: Path, kind: DocumentKind) -> DocumentEnv
     version = _pop_schema_version(data, path)
     if body.startswith("\n"):
         body = body[1:]
+    if kind == "requirement":
+        from .requirement_documents import parse_fields
+
+        aggregate = parse_fields(data, body, path)
+        return DocumentEnvelope(kind, aggregate, path, data, version)
     aggregate = {
         "issue": _parse_issue,
         "milestone": _parse_milestone,
@@ -458,8 +464,12 @@ def serialize_document(envelope: DocumentEnvelope) -> bytes:
         data.update(_issue_fields(aggregate))
     elif isinstance(aggregate, Milestone):
         data.update(_milestone_fields(aggregate))
-    else:
+    elif isinstance(aggregate, Project):
         data.update(_project_fields(aggregate))
+    else:
+        from .requirement_documents import serialize_fields
+
+        data.update(serialize_fields(aggregate))
     yaml_text = yaml.safe_dump(data, sort_keys=False, allow_unicode=True).rstrip()
     separator = "\n\n" if aggregate.content else "\n"
     return f"---\n{yaml_text}\n---{separator}{aggregate.content}".encode()
@@ -491,6 +501,7 @@ class DocumentRepository:
     """Canonical lookup with read compatibility for the 0.1.1 layout."""
 
     _patterns = {
+        "requirement": ("requirements/**/*.md",),
         "project": ("projects/**/*.md", "archive/projects/**/*.md"),
         "milestone": ("milestones/**/*.md", "archive/milestones/**/*.md"),
         "issue": ("issues/**/*.md", "archive/issues/**/*.md"),
@@ -503,7 +514,7 @@ class DocumentRepository:
         self, kind: DocumentKind | None = None
     ) -> tuple[tuple[DocumentKind, Path], ...]:
         """Enumerate canonical document paths without parsing their contents."""
-        kinds = (kind,) if kind else ("project", "milestone", "issue")
+        kinds = (kind,) if kind else ("project", "milestone", "issue", "requirement")
         return tuple(
             (current_kind, path)
             for current_kind in kinds
