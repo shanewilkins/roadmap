@@ -210,6 +210,10 @@ def journey(command, previous=None):
         assert stale["status"] == "draft" and not stale["acceptance_current"]
         assert stale["verification"] == {"C1": "missing"}
         assert requirement("list", "--status", "verified")["requirements"] == []
+        gaps = json.loads(run("requirement", "gaps", "--format", "json"))
+        assert gaps["categories"]["stale_evidence"][0]["entity_id"] == identity
+        assert gaps["counts"]["stale_evidence"] == 1
+        assert gaps["groups"]
         assert canonical(root) == before
         revision = stale["current_revision"]
         renewed = transition("accepted")
@@ -237,6 +241,7 @@ def journey(command, previous=None):
             "manual_edit_staled_acceptance": True,
             "renewed_acceptance_required_fresh_evidence": True,
             "typed_traceability_and_reverse_lookup": True,
+            "exact_gap_reporting": True,
         }
 
 

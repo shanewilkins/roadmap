@@ -12,6 +12,7 @@ from roadmap.adapters.inbound.cli.cli_command_helpers import (
     projection_warning,
     require_initialized,
 )
+from roadmap.application.contracts import REQUIREMENT_GAP_CATEGORIES
 from roadmap.application.use_cases.requirements import criteria
 from roadmap.domain.requirement_governance import EvidenceResult
 from roadmap.domain.requirement_relations import RequirementRelationKind
@@ -46,6 +47,67 @@ def _emit(kind, value):
             indent=2,
         )
     )
+
+
+def _gap_groups(report):
+    return [
+        {
+            "dimension": group.dimension,
+            "value": group.value,
+            "counts": group.counts,
+            "categories": {
+                category.name: category.entity_ids for category in group.categories
+            },
+        }
+        for group in report.groups
+    ]
+
+
+def _emit_gap_group(group):
+    click.echo(f"  {group['dimension']}={group['value']}:")
+    populated = False
+    for name in REQUIREMENT_GAP_CATEGORIES:
+        entity_ids = group["categories"][name]
+        if entity_ids:
+            populated = True
+            click.echo(f"    {name} ({len(entity_ids)}): {', '.join(entity_ids)}")
+    if not populated:
+        click.echo("    no gaps")
+
+
+def _emit_gap_terminal(report, categories, groups):
+    labels = {
+        "accepted_unplanned": "Accepted without planned work",
+        "unjustified_work": "Work without requirement or maintenance rationale",
+        "implemented_awaiting_verification": "Implemented awaiting verification",
+        "stale_evidence": "Stale evidence",
+        "failed_evidence": "Failed or incomplete evidence",
+        "broken_links": "Broken links",
+        "blocked_requirements": "Blocked requirements",
+    }
+    for name, label in labels.items():
+        click.echo(f"{label}: {report.counts[name]}")
+        for item in categories[name]:
+            click.echo(f"  {item['entity_id']}: {'; '.join(item['reasons'])}")
+    if groups:
+        click.echo("Coverage groups:")
+        for group in groups:
+            _emit_gap_group(group)
+
+
+def _emit_gaps(report, output_format):
+    categories = {
+        name: [asdict(item) for item in getattr(report, name)]
+        for name in REQUIREMENT_GAP_CATEGORIES
+    }
+    groups = _gap_groups(report)
+    if output_format == "json":
+        _emit(
+            "roadmap.requirement-gaps",
+            {"counts": report.counts, "categories": categories, "groups": groups},
+        )
+        return
+    _emit_gap_terminal(report, categories, groups)
 
 
 def _statement(text, path, required=False):
@@ -377,3 +439,18 @@ def unlink(ctx, selector, relation, target):
     )
     projection_warning(outcome)
     _emit("roadmap.requirement", {"requirement": _record(outcome.requirement)})
+
+
+@requirement.command("gaps")
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["terminal", "json"]),
+    default="terminal",
+)
+@click.pass_context
+@require_initialized
+def gaps(ctx, output_format):
+    """Report exact planning, implementation and verification gaps."""
+    report = invoke(lambda: ctx.obj["core"].requirements.gaps())
+    _emit_gaps(report, output_format)

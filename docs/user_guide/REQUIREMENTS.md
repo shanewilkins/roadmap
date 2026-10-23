@@ -158,6 +158,33 @@ withdraw acceptance. Unlink removes only the relation. A manually introduced
 missing target remains readable and removable, and `health scan` reports it as a
 broken canonical reference without rewriting the requirement.
 
+## Report planning and verification gaps
+
+```sh
+roadmap requirement gaps
+roadmap requirement gaps --format json
+```
+
+Both forms use one read-only calculation and report exact, sorted IDs and counts
+for accepted intent without visible planned work, unjustified issues, completed
+implementation awaiting verification, stale evidence, current failed/incomplete
+evidence, broken links, and blocked requirements. A requirement is blocked when
+a dependency is not Verified or a linked issue is Blocked. Implementation is
+complete only when every linked issue exists, is visible, and is Closed.
+
+An unlinked issue is justified as maintenance only when it has the exact
+`maintenance` label and a nonempty Markdown body containing the rationale.
+Archived work is excluded from the current eligible population. Broken-link
+diagnosis still recognizes retained archived targets as existing records.
+
+The same report includes deterministic coverage groups by journey, priority,
+milestone target, and `release:<value>` issue label. Missing values are
+`unassigned`; grouped IDs and counts are derived from the global categories and
+do not reclassify them. Reads use canonical Markdown and do not require a current
+SQLite projection. See the
+[gap report contract](../planning/requirements-gap-report-contract-0.4.md) for
+the exact rules.
+
 ## Recovery
 
 Resolve Git conflicts before retrying. Existing optimistic conflict checks

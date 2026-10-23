@@ -5536,6 +5536,36 @@
       ],
       "unresolved": []
     },
+    "roadmap requirement gaps": {
+      "signature": "opt:--format[terminal|json]",
+      "kind": "command",
+      "contract": "Read canonical visible populations once and report deterministic exact gap IDs, reasons, counts and grouped coverage without writes.",
+      "parameters": [
+        {
+          "parameter": "output_format",
+          "spellings": [
+            "--format"
+          ],
+          "disposition": "supported",
+          "contract": "Render terminal or versioned JSON from the same Application report.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_gaps.py::test_gap_terminal_and_json_share_counts_ids_and_write_nothing",
+            "tests/integration/cli/test_cli_requirement_gaps.py::test_gaps_require_explicit_requirements_adoption"
+          ],
+          "required": false,
+          "default": "terminal",
+          "choices": [
+            "terminal",
+            "json"
+          ]
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirement_gaps.py::test_gap_terminal_and_json_share_counts_ids_and_write_nothing",
+        "tests/integration/cli/test_cli_requirement_gaps.py::test_gaps_require_explicit_requirements_adoption"
+      ],
+      "unresolved": []
+    },
     "roadmap requirement link": {
       "signature": "arg:selector:required;opt:--relation[supports|depends-on|implemented-by|project-target|milestone-target|report];opt:--target",
       "kind": "command",

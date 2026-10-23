@@ -21,6 +21,10 @@ All notable changes to Roadmap CLI are recorded here. The format follows
   give executable setup commands; document the offline onboarding path.
 
 ### Added
+- Add deterministic read-only requirement gap reporting in terminal and versioned
+  JSON for unplanned intent, unjustified work, implementation awaiting
+  verification, stale/failed evidence, broken links, and blockers, with exact
+  grouped coverage by journey, priority, milestone, and release.
 - Add canonically owned typed requirement relations for intent support,
   dependencies, implementation issues, delivery targets and attributed external
   reports. Validate targets and dependency cycles atomically, derive evidence and

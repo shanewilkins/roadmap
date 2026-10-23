@@ -294,6 +294,56 @@ class CriticalPathResult:
     project_end_at: Timestamp | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class RequirementGapRecord:
+    entity_id: str
+    reasons: tuple[str, ...]
+
+
+REQUIREMENT_GAP_CATEGORIES = (
+    "accepted_unplanned",
+    "unjustified_work",
+    "implemented_awaiting_verification",
+    "stale_evidence",
+    "failed_evidence",
+    "broken_links",
+    "blocked_requirements",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class RequirementGapGroupCategory:
+    name: str
+    entity_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class RequirementGapGroup:
+    dimension: str
+    value: str
+    categories: tuple[RequirementGapGroupCategory, ...]
+
+    @property
+    def counts(self) -> dict[str, int]:
+        return {category.name: len(category.entity_ids) for category in self.categories}
+
+
+@dataclass(frozen=True, slots=True)
+class RequirementGapReport:
+    accepted_unplanned: tuple[RequirementGapRecord, ...]
+    unjustified_work: tuple[RequirementGapRecord, ...]
+    implemented_awaiting_verification: tuple[RequirementGapRecord, ...]
+    stale_evidence: tuple[RequirementGapRecord, ...]
+    failed_evidence: tuple[RequirementGapRecord, ...]
+    broken_links: tuple[RequirementGapRecord, ...]
+    blocked_requirements: tuple[RequirementGapRecord, ...]
+    groups: tuple[RequirementGapGroup, ...]
+
+    @property
+    def counts(self) -> dict[str, int]:
+        return {name: len(getattr(self, name)) for name in REQUIREMENT_GAP_CATEGORIES}
+
+
 class HealthSeverity(StrEnum):
     """Stable diagnostic severity used by CLI and automation."""
 

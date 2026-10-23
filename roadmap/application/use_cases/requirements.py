@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, replace
 
+from roadmap.application.contracts import RequirementGapReport
 from roadmap.application.failures import ApplicationFailure, FailureCategory
 from roadmap.application.ports import (
     Clock,
@@ -19,6 +20,8 @@ from roadmap.domain.requirements import (
     RequirementStatus,
 )
 from roadmap.domain.types import EntityId, Priority, RequiredText
+
+from .requirement_gaps import calculate_requirement_gaps
 
 
 def invalid(message: str) -> ApplicationFailure:
@@ -222,6 +225,18 @@ class Requirements:
     def view(self, selector: str) -> Requirement:
         with self._units.create(read_only=True) as unit:
             return select(unit.list_requirements(), selector)
+
+    def gaps(self) -> RequirementGapReport:
+        with self._units.create(read_only=True) as unit:
+            self._require_enabled(unit)
+            requirements = unit.list_requirements()
+            unique(requirements)
+            return calculate_requirement_gaps(
+                requirements,
+                unit.list_issues(),
+                unit.list_milestones(),
+                unit.list_projects(),
+            )
 
     def create(
         self,

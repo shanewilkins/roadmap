@@ -2,12 +2,12 @@
 schema_version: 1
 id: dfaeadbc-a870-4d5f-b7dc-b033e8c9e4e5
 created: '2026-10-08T12:40:51.682971+00:00'
-updated: '2026-10-08T12:40:52.576408+00:00'
+updated: '2026-10-23T17:49:41.394370+00:00'
 retention: visible
 title: Report exact planning and verification gaps
 headline: ''
 priority: medium
-status: todo
+status: review
 issue_type: feature
 milestone: 56ab6d8c-7da0-410c-b303-6b00733a5ea1
 depends_on:
@@ -21,8 +21,8 @@ labels:
 assignee: shanewilkins
 estimated_hours: null
 due_date: null
-progress_percentage: null
-actual_start_date: null
+progress_percentage: 0.0
+actual_start_date: '2026-10-23T17:49:39.202464+00:00'
 actual_end_date: null
 git_branches: []
 comments: []
@@ -30,6 +30,13 @@ history:
 - action: created
   at: '2026-10-08T12:40:51.682971+00:00'
   reason: null
+- action: started
+  at: '2026-10-23T17:49:39.202464+00:00'
+  reason: Implementation and focused verification completed
+- action: status:review
+  at: '2026-10-23T17:49:41.394370+00:00'
+  reason: Exact terminal and JSON gap populations, grouped coverage, and read-only
+    behavior verified
 ---
 
 # Intent
