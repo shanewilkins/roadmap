@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Installed optional-adoption and durable requirement capture journey."""
+"""Installed optional-adoption, requirement capture and governance journey."""
 
 import argparse
 import hashlib
@@ -97,6 +97,55 @@ def journey(command, previous=None):
         requirement("rekey", identity, "--key", "UR-012")
         current = requirement("view", "UR-012")["requirement"]
         assert current["id"] == identity and len(current["revisions"]) == 2
+        revision = current["current_revision"]
+
+        def transition(status):
+            return requirement(
+                "transition",
+                identity,
+                "--status",
+                status,
+                "--expected-revision",
+                revision,
+                "--reason",
+                "Installed journey review",
+            )["requirement"]
+
+        def evidence(result):
+            return requirement(
+                "evidence",
+                identity,
+                "--criterion",
+                "C1",
+                "--result",
+                result,
+                "--reference",
+                "artifact:installed-journey",
+                "--expected-revision",
+                revision,
+                "--acceptance-id",
+                acceptance_id,
+            )["requirement"]
+
+        acceptance_id = transition("accepted")["active_acceptance_id"]
+        run(
+            "requirement",
+            "transition",
+            identity,
+            "--status",
+            "verified",
+            "--expected-revision",
+            revision,
+            "--reason",
+            "Missing evidence refuses",
+            code=1,
+        )
+        evidence("pass")
+        transition("verified")
+        assert evidence("fail")["status"] == "in-progress"
+        assert evidence("pass")["status"] == "in-progress"
+        current = transition("verified")
+        old_acceptance = current["active_acceptance_id"]
         path = root / ".roadmap/requirements" / f"{identity}.md"
         assert path.is_file()
         before = canonical(root)
@@ -110,6 +159,25 @@ def journey(command, previous=None):
         run("health", "fix", "--fix-type", "projection", "--yes")
         assert requirement("view", identity)["requirement"] == current
         assert json.loads(run("health", "scan", "--format", "json"))["findings"] == []
+        # Manual intent changes stale accepted proof without writes on reads.
+        header, _body = path.read_text().rsplit("\n---\n", 1)
+        path.write_text(header + "\n---\nManually changed intent\n")
+        before = canonical(root)
+        stale = requirement("view", identity)["requirement"]
+        assert stale["status"] == "draft" and not stale["acceptance_current"]
+        assert stale["verification"] == {"C1": "missing"}
+        assert requirement("list", "--status", "verified")["requirements"] == []
+        assert canonical(root) == before
+        revision = stale["current_revision"]
+        renewed = transition("accepted")
+        acceptance_id = renewed["active_acceptance_id"]
+        assert renewed["active_acceptance_id"] != old_acceptance
+        assert len(renewed["evidence"]) == 3
+        assert renewed["verification"] == {"C1": "missing"}
+        evidence("pass")
+        current = transition("verified")
+        run("health", "fix", "--fix-type", "projection", "--yes")
+        assert requirement("view", identity)["requirement"] == current
         after = canonical(root)
         requirement("enable", "--apply")
         assert canonical(root) == after
@@ -117,10 +185,14 @@ def journey(command, previous=None):
             "stable_uuid": True,
             "retained_issue_only_data": True,
             "read_canonical_writes": 0,
-            "intent_revisions": 2,
+            "intent_revisions": len(current["revisions"]),
             "rekey_preserved_path": True,
             "projection_rebuild_preserved_record": True,
             "released_version_refused_upgrade": bool(previous),
+            "explicit_acceptance_and_verification": True,
+            "failed_evidence_demoted_verified": True,
+            "manual_edit_staled_acceptance": True,
+            "renewed_acceptance_required_fresh_evidence": True,
         }
 
 

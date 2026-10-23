@@ -25,4 +25,14 @@ Analyzes `coverage.json` produced by `pytest-cov` and prints the least-covered f
 uv run python scripts/analyze_coverage_hotspots.py --coverage-file coverage.json --top 20
 ```
 
+### `requirements_journey.py`
+Verifies optional adoption, capture, acceptance, criterion evidence, stale manual
+edits and projection rebuild using an installed candidate in an isolated workspace.
+Pass `--previous-roadmap-command` to additionally prove published 0.3.1 refuses
+the explicitly upgraded workspace. CI runs the candidate journey in every package job.
+
+```bash
+uv run --locked python scripts/requirements_journey.py --help
+```
+
 All scripts are development utilities and are not part of the production package.

@@ -4533,7 +4533,7 @@
             "numbers"
           ],
           "disposition": "supported",
-          "contract": "Select 1\u201325 distinct positive issue numbers; all fetches and validation precede ingestion.",
+          "contract": "Select 1–25 distinct positive issue numbers; all fetches and validation precede ingestion.",
           "evidence": [
             "tests/integration/cli/test_cli_github_import.py::test_preview_apply_repeat_and_revision_preserve_local_planning",
             "tests/integration/cli/test_cli_github_import.py::test_duplicate_local_identity_refuses_entire_batch_without_mutation",
@@ -4859,7 +4859,7 @@
       "unresolved": []
     },
     "roadmap requirement list": {
-      "signature": "opt:--type[user|technical];opt:--priority[critical|high|medium|low];opt:--status[draft];opt:--owner;opt:--journey;opt:--stage;opt:--search;opt:--sort[key|title|priority|created|updated]",
+      "signature": "opt:--type[user|technical];opt:--priority[critical|high|medium|low];opt:--status[draft|accepted|in-progress|verified|deferred|rejected];opt:--owner;opt:--journey;opt:--stage;opt:--search;opt:--sort[key|title|priority|created|updated]",
       "kind": "command",
       "contract": "Deterministic capture-field filters, casefolded search and stable UUID tie-breaks; relation filters belong to the typed-relation slice.",
       "parameters": [
@@ -4907,15 +4907,22 @@
             "--status"
           ],
           "disposition": "supported",
-          "contract": "Capture slice filters Draft only; governed states belong to lifecycle work.",
+          "contract": "Filter effective lifecycle status; manual semantic edits invalidate acceptance without canonical writes.",
           "evidence": [
-            "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
-            "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
           ],
           "required": false,
           "default": "Sentinel.UNSET",
           "choices": [
-            "draft"
+            "draft",
+            "accepted",
+            "in-progress",
+            "verified",
+            "deferred",
+            "rejected"
           ]
         },
         {
@@ -5002,7 +5009,11 @@
       ],
       "evidence": [
         "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
-        "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+        "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
       ],
       "unresolved": []
     },
@@ -5285,6 +5296,229 @@
       "evidence": [
         "tests/integration/cli/test_cli_requirements.py::test_branch_collision_repair_preserves_ids_and_paths",
         "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement transition": {
+      "signature": "arg:selector:required;opt:--status[draft|accepted|in-progress|verified|deferred|rejected];opt:--expected-revision;opt:--reason",
+      "kind": "command",
+      "contract": "Explicit reviewed lifecycle transition with nonempty reason; acceptance starts a new revision-bound cycle; Verified requires latest passing evidence for every criterion; invalid transitions refuse atomically.",
+      "parameters": [
+        {
+          "parameter": "selector",
+          "spellings": [
+            "selector"
+          ],
+          "disposition": "supported",
+          "contract": "Exact UUID or unambiguous readable alias.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "status",
+          "spellings": [
+            "--status"
+          ],
+          "disposition": "supported",
+          "contract": "Destination in the documented transition table; no same-state transition or bypass of acceptance/evidence.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "draft",
+            "accepted",
+            "in-progress",
+            "verified",
+            "deferred",
+            "rejected"
+          ]
+        },
+        {
+          "parameter": "expected_revision",
+          "spellings": [
+            "--expected-revision"
+          ],
+          "disposition": "supported",
+          "contract": "Required current recomputed intent digest; mismatch refuses without mutation.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "reason",
+          "spellings": [
+            "--reason"
+          ],
+          "disposition": "supported",
+          "contract": "Required nonempty attributed transition rationale.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement evidence": {
+      "signature": "arg:selector:required;opt:--criterion;opt:--result[pass|fail|incomplete];opt:--reference;opt:--expected-revision;opt:--acceptance-id;opt:--note",
+      "kind": "command",
+      "contract": "Append attributed criterion result and commit/artifact locator bound to active acceptance and reviewed intent; failure/incomplete demotes Verified; prior results remain immutable history.",
+      "parameters": [
+        {
+          "parameter": "selector",
+          "spellings": [
+            "selector"
+          ],
+          "disposition": "supported",
+          "contract": "Exact UUID or unambiguous readable alias.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "criterion",
+          "spellings": [
+            "--criterion"
+          ],
+          "disposition": "supported",
+          "contract": "Required criterion ID from the currently accepted definition.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "result",
+          "spellings": [
+            "--result"
+          ],
+          "disposition": "supported",
+          "contract": "Latest result in active acceptance determines coverage; pass never implicitly verifies.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "pass",
+            "fail",
+            "incomplete"
+          ]
+        },
+        {
+          "parameter": "reference",
+          "spellings": [
+            "--reference"
+          ],
+          "disposition": "supported",
+          "contract": "Required nonempty offline commit or artifact locator; no remote lookup implied.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "expected_revision",
+          "spellings": [
+            "--expected-revision"
+          ],
+          "disposition": "supported",
+          "contract": "Required current recomputed intent digest; mismatch refuses without mutation.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "acceptance_id",
+          "spellings": [
+            "--acceptance-id"
+          ],
+          "disposition": "supported",
+          "contract": "Required active acceptance UUID reviewed for the result; changed acceptance refuses atomically even at unchanged intent digest.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_old_acceptance_and_stale_intent_results_refuse_atomically"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "note",
+          "spellings": [
+            "--note"
+          ],
+          "disposition": "supported",
+          "contract": "Optional immutable evidence explanation.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+            "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+          ],
+          "required": false,
+          "default": "",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirement_governance.py::test_complete_lifecycle_evidence_preserves_attribution_and_rebuild",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
+        "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
       ],
       "unresolved": []
     }

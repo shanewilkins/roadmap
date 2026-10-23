@@ -13,6 +13,8 @@ from roadmap.adapters.inbound.cli.cli_command_helpers import (
     require_initialized,
 )
 from roadmap.application.use_cases.requirements import criteria
+from roadmap.domain.requirement_governance import EvidenceResult
+from roadmap.domain.requirements import RequirementStatus
 from roadmap.domain.types import Priority, RequiredText
 
 
@@ -27,6 +29,10 @@ def _record(value):
         **asdict(value),
         "current_revision": value.current_revision,
         "uncaptured_intent": value.uncaptured_intent,
+        "status": value.effective_status,
+        "recorded_status": value.status,
+        "acceptance_current": value.acceptance_current,
+        "verification": value.verification,
     }
 
 
@@ -53,7 +59,7 @@ def _statement(text, path, required=False):
 
 @click.group()
 def requirement():
-    """Capture, inspect and edit optional requirements."""
+    """Capture, govern and verify optional requirements."""
 
 
 @requirement.command("enable")
@@ -143,7 +149,7 @@ def view(ctx, selector):
 @requirement.command("list")
 @click.option("--type", "kind", type=click.Choice(["user", "technical"]))
 @click.option("--priority", type=click.Choice([x.value for x in Priority]))
-@click.option("--status", type=click.Choice(["draft"]))
+@click.option("--status", type=click.Choice([x.value for x in RequirementStatus]))
 @click.option("--owner")
 @click.option("--journey")
 @click.option("--stage")
@@ -261,3 +267,64 @@ def rekey(ctx, identity, key):
     result = invoke(lambda: ctx.obj["core"].requirements.rekey(identity, key))
     projection_warning(result)
     _emit("roadmap.requirement", {"requirement": _record(result.requirement)})
+
+
+@requirement.command("transition")
+@click.argument("selector")
+@click.option(
+    "--status", type=click.Choice([x.value for x in RequirementStatus]), required=True
+)
+@click.option(
+    "--expected-revision",
+    required=True,
+    help="Current intent digest reviewed by the actor.",
+)
+@click.option("--reason", required=True)
+@click.pass_context
+@require_initialized
+def transition(ctx, selector, status, expected_revision, reason):
+    """Explicitly accept, start, verify, defer, reject or return intent to Draft."""
+    result = invoke(
+        lambda: ctx.obj["core"].requirements.transition(
+            selector, status=status, expected_revision=expected_revision, reason=reason
+        )
+    )
+    projection_warning(result)
+    _emit("roadmap.requirement", {"requirement": _record(result.requirement)})
+
+
+@requirement.command("evidence")
+@click.argument("selector")
+@click.option("--criterion", required=True)
+@click.option(
+    "--result", type=click.Choice([x.value for x in EvidenceResult]), required=True
+)
+@click.option(
+    "--reference", required=True, help="Commit or artifact locator; captured offline."
+)
+@click.option("--expected-revision", required=True)
+@click.option(
+    "--acceptance-id",
+    required=True,
+    help="Active acceptance UUID reviewed for this result.",
+)
+@click.option("--note", default="")
+@click.pass_context
+@require_initialized
+def evidence(
+    ctx, selector, criterion, result, reference, expected_revision, acceptance_id, note
+):
+    """Append attributed criterion evidence bound to the active acceptance cycle."""
+    outcome = invoke(
+        lambda: ctx.obj["core"].requirements.record_evidence(
+            selector,
+            criterion=criterion,
+            result=result,
+            reference=reference,
+            expected_revision=expected_revision,
+            acceptance_id=acceptance_id,
+            note=note,
+        )
+    )
+    projection_warning(outcome)
+    _emit("roadmap.requirement", {"requirement": _record(outcome.requirement)})

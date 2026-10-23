@@ -1,4 +1,4 @@
-# Durable requirement capture
+# Durable requirements and verification
 
 Requirements are optional. An issue-only workspace keeps working without an
 upgrade or new canonical files on requirement reads. CSV remains the project's
@@ -40,10 +40,10 @@ Creation defaults to Draft, medium priority and no owner. It requires title,
 statement and criteria; rationale, explicit scope, journey, stage, priority and
 owner can be supplied. Reads expose UUID, readable key, current intent fingerprint,
 prior captured definitions and attributed history. Capture alone cannot accept
-or verify a requirement. Lifecycle/evidence and typed relation commands are
-separate 0.4 work; relation/roadmap-target filters arrive with that slice.
+or verify a requirement. Use the explicit lifecycle and evidence operations below.
+Typed relations and relation/roadmap-target filters remain separate work.
 
-List supports type, journey, stage, priority, Draft status and owner filters,
+List supports type, journey, stage, priority, lifecycle status and owner filters,
 case-insensitive search over key/title/statement/rationale, and deterministic
 key/title/priority/created/updated sorting with UUID tie-breaks. View accepts an
 exact full UUID or unambiguous alias. No title matching or short-UUID guessing.
@@ -79,14 +79,67 @@ CLI update retains that manual definition before capturing its own edit.
 Unknown supported frontmatter, prior definitions and history survive updates.
 An unchanged edit or rekey writes nothing, making a persisted retry safe.
 
+## Accept and verify intent
+
+Inspect the current requirement and copy its `current_revision` digest. Every
+governance operation requires that reviewed digest; changed intent refuses.
+
+```sh
+roadmap requirement transition UR-001 --status accepted \
+  --expected-revision DIGEST --reason 'Reviewed statement and criteria'
+roadmap requirement transition UR-001 --status in-progress \
+  --expected-revision DIGEST --reason 'Implementation started'
+roadmap requirement evidence UR-001 --criterion C1 --result pass \
+  --reference 'commit:FULL_COMMIT_SHA' --expected-revision DIGEST \
+  --acceptance-id ACCEPTANCE_UUID \
+  --note 'Identity retained through rename and rebuild'
+roadmap requirement transition UR-001 --status verified \
+  --expected-revision DIGEST --reason 'All criteria have passing evidence'
+```
+
+Copy `ACCEPTANCE_UUID` from `active_acceptance_id` after acceptance. Both UUID and
+digest are checked under the write lock; reacceptance of unchanged intent also
+requires inspecting the new cycle before submitting results.
+
+Acceptance records the actor, date, reviewed digest and reason in a new acceptance
+cycle. Evidence records its own UUID, acceptance UUID, digest, criterion, result,
+commit/artifact reference, actor and date. References are captured offline; the
+CLI does not authenticate actors or check remote artifacts. Repeat evidence for
+every named criterion. The latest result per criterion in the active acceptance
+cycle must be `pass` before an explicit transition to Verified succeeds.
+`fail`, `incomplete` and missing results block verification. A failure or incomplete
+result against Verified returns it to In Progress; a later pass still needs an
+explicit verification transition. Closing an issue never verifies a requirement.
+
+Draft can become Accepted, Deferred or Rejected. Accepted, In Progress and Verified
+can return to Draft, defer or reject; Accepted can start work or verify, In Progress
+can accept again or verify, and Verified can accept again or resume work. Deferred
+and Rejected must return to Draft before acceptance. Every transition needs a reason;
+same-state transitions refuse. Reaccepting starts a new cycle even at the same
+digest and needs new evidence.
+
+Semantic edits withdraw acceptance and return intent to Draft. Earlier definitions,
+acceptances and results remain available as history. Metadata edits and rekeys
+preserve acceptance. Manual intent edits also show effective Draft on reads, with
+`acceptance_current: false`; `recorded_status` preserves the on-disk status for
+diagnosis. The next write records withdrawal. `verification` exposes each current
+criterion's latest result or `missing`; it excludes previous acceptance cycles.
+List filters and rebuilt projection status agree with effective state. Reads
+never rewrite canonical records. Byte-for-byte reversion of unobserved manual
+edits cannot be detected; canonical history is not tamper-proof authentication.
+
 ## Recovery
 
 Resolve Git conflicts before retrying. Existing optimistic conflict checks
 preserve external edits made during a write. Interrupted transactions use the
-normal recovery machinery; retry the same operation. Canonical data remains
+normal recovery machinery. After a governance write reports interruption, inspect
+the requirement before retrying: the write may already be durable. Evidence is
+append-only, so a deliberate repeat creates another attributed result. Canonical data remains
 primary if SQLite refresh fails, with the usual stale-projection warning. Repair
 and rebuild through `roadmap health`, then inspect the same UUID again.
 
 The [capture contract](../planning/requirements-capture-contract-0.4.md) records
 worked examples and the selected fingerprint/alias rules under
 [ADR-0011](../architecture/adr/0011-optional-requirements-and-governance.md).
+The [lifecycle contract](../planning/requirements-lifecycle-contract-0.4.md) records
+the transition table and revision-bound evidence rules.

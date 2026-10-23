@@ -8,12 +8,14 @@ from roadmap.application.ports import (
     CurrentIdentity,
     RequirementUnitOfWorkFactory,
 )
+from roadmap.domain.requirement_governance import EvidenceResult
 from roadmap.domain.requirements import (
     Requirement,
     RequirementCriterion,
     RequirementDefinition,
     RequirementKey,
     RequirementKind,
+    RequirementStatus,
 )
 from roadmap.domain.types import EntityId, Priority, RequiredText
 
@@ -140,10 +142,7 @@ class Requirements:
             unique(records)
         for name, value in (filters or {}).items():
             records = tuple(
-                item
-                for item in records
-                if str(item.definition.kind if name == "type" else getattr(item, name))
-                == value
+                item for item in records if str(self._filter_value(item, name)) == value
             )
         term = search.casefold()
         records = tuple(
@@ -162,6 +161,16 @@ class Requirements:
         if sort not in {"key", "title", "priority", "created", "updated"}:
             raise invalid("Unsupported requirement sort")
         return tuple(sorted(records, key=lambda item: _sort_key(item, sort)))
+
+    @staticmethod
+    def _filter_value(item: Requirement, name: str):
+        if name == "type":
+            return item.definition.kind
+        if name == "status":
+            return item.effective_status
+        if name not in _METADATA | {"key"}:
+            raise invalid("Unsupported requirement filter")
+        return getattr(item, name)
 
     def view(self, selector: str) -> Requirement:
         with self._units.create(read_only=True) as unit:
@@ -232,8 +241,10 @@ class Requirements:
                     "Requirement intent changed; inspect current revision before retry"
                 )
             now, actor = self._clock.now(), self._actor()
+            original_value = value
             if value.uncaptured_intent:
                 value = value.record("manual-intent-captured", now, actor)
+            value = value.withdraw_stale_acceptance(now, actor)
             definition_changes = {
                 name: changes.pop(name)
                 for name in ("title", "statement", "scope", "criteria")
@@ -241,7 +252,7 @@ class Requirements:
             }
             definition = replace(value.definition, **definition_changes)
             changed = replace(value, definition=definition, **changes)
-            if changed == value and not select(records, selector).uncaptured_intent:
+            if changed == original_value:
                 return RequirementMutationResult(value)
             changed = changed.record(
                 "updated",
@@ -250,6 +261,7 @@ class Requirements:
                 "Changed fields: "
                 + ", ".join(sorted(set(changes) | set(definition_changes))),
             )
+            changed = changed.withdraw_stale_acceptance(now, actor)
             unit.save_requirement(changed)
             unit.commit()
             return RequirementMutationResult(changed, unit.projection_stale)
@@ -264,9 +276,68 @@ class Requirements:
             alias = RequirementKey(key)
             if any(x.key == alias and str(x.id) != identity for x in records):
                 raise invalid("Destination requirement alias is already occupied")
-            if found[0].key == alias and not found[0].uncaptured_intent:
+            if (
+                found[0].key == alias
+                and not found[0].uncaptured_intent
+                and found[0].effective_status == found[0].status
+            ):
                 return RequirementMutationResult(found[0])
-            value = found[0].rekey(alias, self._clock.now(), self._actor())
+            now, actor = self._clock.now(), self._actor()
+            value = (
+                found[0].withdraw_stale_acceptance(now, actor).rekey(alias, now, actor)
+            )
             unit.save_requirement(value)
             unit.commit()
             return RequirementMutationResult(value, unit.projection_stale)
+
+    def _reviewed(self, unit, selector: str, expected_revision: str) -> Requirement:
+        self._require_enabled(unit)
+        records = unit.list_requirements()
+        unique(records)
+        value = select(records, selector)
+        if expected_revision != value.current_revision:
+            raise invalid(
+                "Requirement intent changed; inspect current revision before retry"
+            )
+        return value
+
+    def transition(
+        self, selector: str, *, status: str, expected_revision: str, reason: str
+    ) -> RequirementMutationResult:
+        with self._units.create() as unit:
+            value = self._reviewed(unit, selector, expected_revision)
+            changed = value.transition(
+                RequirementStatus(status), self._clock.now(), self._actor(), reason
+            )
+            unit.save_requirement(changed)
+            unit.commit()
+            return RequirementMutationResult(changed, unit.projection_stale)
+
+    def record_evidence(
+        self,
+        selector: str,
+        *,
+        criterion: str,
+        result: str,
+        reference: str,
+        acceptance_id: str,
+        expected_revision: str,
+        note: str = "",
+    ) -> RequirementMutationResult:
+        with self._units.create() as unit:
+            value = self._reviewed(unit, selector, expected_revision)
+            if acceptance_id != value.active_acceptance_id:
+                raise invalid(
+                    "Requirement acceptance changed; inspect the active acceptance before retry"
+                )
+            changed = value.add_evidence(
+                criterion,
+                EvidenceResult(result),
+                reference,
+                self._clock.now(),
+                self._actor(),
+                note,
+            )
+            unit.save_requirement(changed)
+            unit.commit()
+            return RequirementMutationResult(changed, unit.projection_stale)

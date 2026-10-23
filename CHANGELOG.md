@@ -21,6 +21,10 @@ All notable changes to Roadmap CLI are recorded here. The format follows
   give executable setup commands; document the offline onboarding path.
 
 ### Added
+- Add explicit requirement acceptance, lifecycle transitions and criterion-specific
+  evidence bound to acceptance cycles and intent revisions. Verification requires
+  complete latest passing results; changed intent stales prior proof without writes
+  on reads, and failed evidence demotes Verified to In Progress.
 - Optional durable requirement capture with explicit workspace adoption, UUID4
   identity, UR/TR aliases, named criteria, attributed intent revisions and
   collision repair by full UUID. Existing issue-only workspaces remain unchanged.

@@ -110,7 +110,11 @@ class SQLiteProjection:
             str(envelope.path.relative_to(self.repository.roadmap_dir)),
             content_identity(envelope.path.read_bytes()),
             name,
-            aggregate.status.value,
+            (
+                aggregate.effective_status.value
+                if isinstance(aggregate, Requirement)
+                else aggregate.status.value
+            ),
             aggregate.retention.value,
             json.dumps(attributes, sort_keys=True),
         )

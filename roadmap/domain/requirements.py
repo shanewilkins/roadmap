@@ -7,7 +7,12 @@ from enum import StrEnum
 from hashlib import sha256
 from uuid import UUID
 
-from .failures import InvalidValue, InvariantViolation
+from .failures import InvalidTransition, InvalidValue, InvariantViolation
+from .requirement_governance import (
+    EvidenceResult,
+    RequirementAcceptance,
+    RequirementEvidence,
+)
 from .types import EntityId, Priority, RequiredText, RetentionState, Timestamp
 
 
@@ -22,6 +27,31 @@ class RequirementKind(StrEnum):
 
 class RequirementStatus(StrEnum):
     DRAFT = "draft"
+    ACCEPTED = "accepted"
+    IN_PROGRESS = "in-progress"
+    VERIFIED = "verified"
+    DEFERRED = "deferred"
+    REJECTED = "rejected"
+
+
+_ACTIVE = {
+    RequirementStatus.ACCEPTED,
+    RequirementStatus.IN_PROGRESS,
+    RequirementStatus.VERIFIED,
+}
+_TRANSITIONS = {
+    RequirementStatus.DRAFT: {
+        RequirementStatus.ACCEPTED,
+        RequirementStatus.DEFERRED,
+        RequirementStatus.REJECTED,
+    },
+    RequirementStatus.ACCEPTED: set(RequirementStatus) - {RequirementStatus.ACCEPTED},
+    RequirementStatus.IN_PROGRESS: set(RequirementStatus)
+    - {RequirementStatus.IN_PROGRESS},
+    RequirementStatus.VERIFIED: set(RequirementStatus) - {RequirementStatus.VERIFIED},
+    RequirementStatus.DEFERRED: {RequirementStatus.DRAFT},
+    RequirementStatus.REJECTED: {RequirementStatus.DRAFT},
+}
 
 
 class RequirementKey(RequiredText):
@@ -131,6 +161,9 @@ class Requirement:
     history: tuple[RequirementEvent, ...] = ()
     status: RequirementStatus = RequirementStatus.DRAFT
     retention: RetentionState = RetentionState.VISIBLE
+    acceptances: tuple[RequirementAcceptance, ...] = ()
+    evidence: tuple[RequirementEvidence, ...] = ()
+    active_acceptance_id: EntityId | None = None
 
     def __post_init__(self) -> None:
         try:
@@ -145,6 +178,156 @@ class Requirement:
             raise InvariantViolation("updated cannot precede requirement creation")
         if self.owner is not None and not self.owner.strip():
             raise InvalidValue("requirement owner must be non-empty or unset")
+        self._validate_governance()
+
+    def _validate_governance(self) -> None:
+        acceptances = {item.id: item for item in self.acceptances}
+        identities = [x.id for x in (*self.acceptances, *self.evidence)]
+        if len(set(identities)) != len(identities):
+            raise InvariantViolation("governance record IDs must be unique")
+        definitions = {x.definition.fingerprint: x.definition for x in self.revisions}
+        for acceptance in self.acceptances:
+            if acceptance.revision not in definitions or acceptance.at < self.created:
+                raise InvariantViolation(
+                    "acceptance must name a captured intent revision"
+                )
+        self._validate_evidence(acceptances, definitions)
+        self._validate_active_acceptance(acceptances, definitions)
+
+    def _validate_evidence(self, acceptances, definitions) -> None:
+        for entry in self.evidence:
+            acceptance = acceptances.get(entry.acceptance_id)
+            if acceptance is None or entry.revision != acceptance.revision:
+                raise InvariantViolation("evidence must name its acceptance revision")
+            criterion_ids = {x.id for x in definitions[acceptance.revision].criteria}
+            if entry.criterion not in criterion_ids or entry.at < acceptance.at:
+                raise InvariantViolation(
+                    "evidence must name an accepted criterion and date"
+                )
+
+    def _validate_active_acceptance(self, acceptances, definitions) -> None:
+        active = acceptances.get(self.active_acceptance_id)
+        if (self.status in _ACTIVE) != (active is not None):
+            raise InvariantViolation(
+                "active requirement state requires active acceptance"
+            )
+        if self.active_acceptance_id is not None and active is None:
+            raise InvariantViolation("unknown active acceptance")
+        if active and active != self.acceptances[-1]:
+            raise InvariantViolation("only the latest acceptance can be active")
+        if self.status is RequirementStatus.VERIFIED and active:
+            definition = definitions[active.revision]
+            if not self._passing(definition):
+                raise InvariantViolation(
+                    "Verified requires passing evidence for every criterion"
+                )
+
+    @property
+    def acceptance_current(self) -> bool:
+        return bool(
+            self.active_acceptance_id
+            and self.acceptances[-1].revision == self.current_revision
+        )
+
+    @property
+    def effective_status(self) -> RequirementStatus:
+        if self.status in _ACTIVE and not self.acceptance_current:
+            return RequirementStatus.DRAFT
+        return self.status
+
+    def _latest_evidence(self) -> dict[str, RequirementEvidence]:
+        return {
+            entry.criterion: entry
+            for entry in self.evidence
+            if entry.acceptance_id == self.active_acceptance_id
+        }
+
+    def _passing(self, definition: RequirementDefinition) -> bool:
+        latest = self._latest_evidence()
+        return all(
+            item.id in latest and latest[item.id].result is EvidenceResult.PASS
+            for item in definition.criteria
+        )
+
+    @property
+    def verification(self) -> dict[str, str]:
+        latest = self._latest_evidence() if self.acceptance_current else {}
+        return {
+            item.id: latest[item.id].result.value if item.id in latest else "missing"
+            for item in self.definition.criteria
+        }
+
+    def withdraw_stale_acceptance(self, at: Timestamp, actor: str) -> "Requirement":
+        if self.status not in _ACTIVE or self.acceptance_current:
+            return self
+        return replace(
+            self, status=RequirementStatus.DRAFT, active_acceptance_id=None
+        ).record(
+            "acceptance-stale", at, actor, "Intent changed; renewed acceptance required"
+        )
+
+    def transition(
+        self, status: RequirementStatus, at: Timestamp, actor: str, reason: str
+    ) -> "Requirement":
+        if not reason.strip():
+            raise InvalidValue("transition needs a nonempty reason")
+        value = self.withdraw_stale_acceptance(at, actor)
+        if status not in _TRANSITIONS[value.status]:
+            raise InvalidTransition(
+                f"Cannot transition requirement {value.status} -> {status}"
+            )
+        if status is RequirementStatus.VERIFIED and not value._passing(
+            value.definition
+        ):
+            raise InvalidTransition(
+                "Verification requires latest passing evidence for every criterion"
+            )
+        acceptances, active = value.acceptances, value.active_acceptance_id
+        if status is RequirementStatus.ACCEPTED:
+            value = value.record("intent-reviewed", at, actor)
+            acceptance = RequirementAcceptance(
+                EntityId.new(), value.current_revision, at, actor, reason
+            )
+            acceptances, active = (*acceptances, acceptance), acceptance.id
+        elif status not in _ACTIVE:
+            active = None
+        return replace(
+            value, status=status, acceptances=acceptances, active_acceptance_id=active
+        ).record(f"status:{status}", at, actor, reason)
+
+    def add_evidence(
+        self,
+        criterion: str,
+        result: EvidenceResult,
+        reference: str,
+        at: Timestamp,
+        actor: str,
+        note: str = "",
+    ) -> "Requirement":
+        if not self.acceptance_current or self.status not in _ACTIVE:
+            raise InvalidTransition(
+                "Evidence requires active acceptance of current intent"
+            )
+        if criterion not in {item.id for item in self.definition.criteria}:
+            raise InvalidValue(f"Unknown requirement criterion: {criterion}")
+        assert self.active_acceptance_id is not None
+        entry = RequirementEvidence(
+            EntityId.new(),
+            self.active_acceptance_id,
+            self.current_revision,
+            criterion,
+            result,
+            reference,
+            at,
+            actor,
+            note,
+        )
+        status = self.status
+        if status is RequirementStatus.VERIFIED and result is not EvidenceResult.PASS:
+            status = RequirementStatus.IN_PROGRESS
+        return replace(self, evidence=(*self.evidence, entry), status=status).record(
+            f"evidence:{result}", at, actor, note or reference
+        )
 
     @property
     def content(self) -> str:

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "work_item": "4c04e9cb-2b7d-4732-a09b-f6a5974a5138",
+  "date": "2026-10-20",
+  "baseline": "69c7a5ffee2b4f8eda4ebc61b4d23db7aed43261",
+  "candidate": "uncommitted working tree",
+  "local_suite": {
+    "passed": 1352,
+    "seconds": 93.01,
+    "statement_coverage_percent": 97.04,
+    "statements": 6896,
+    "uncovered": 204
+  },
+  "installed_candidate": {
+    "python": "3.14.2",
+    "wheel_sha256": "c06dc064ca28186221a4388e09b3c647de68c2d149611d6b89aa1c4b8c6b474f",
+    "stable_uuid": true,
+    "retained_issue_only_data": true,
+    "read_canonical_writes": 0,
+    "intent_revisions": 3,
+    "rekey_preserved_path": true,
+    "projection_rebuild_preserved_record": true,
+    "released_version_refused_upgrade": false,
+    "explicit_acceptance_and_verification": true,
+    "failed_evidence_demoted_verified": true,
+    "manual_edit_staled_acceptance": true,
+    "renewed_acceptance_required_fresh_evidence": true,
+    "cumulative_checkpoint_journey": "passed",
+    "wheel_smoke": "passed",
+    "sdist_smoke": "passed"
+  },
+  "remote_ci": "pending candidate commit and push",
+  "project_adopted": false,
+  "csv_cutover": false,
+  "published": false
+}
