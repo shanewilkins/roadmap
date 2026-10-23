@@ -46,6 +46,7 @@ class WorkspaceServices:
 
 # fmt: off
 COMMAND_REGISTRY: dict[str, CommandLocation] = {
+    "next-work": ("roadmap.adapters.inbound.cli.next_work", "next_work", "Explain eligible, current and blocked work without changing it."),
     "requirement": ("roadmap.adapters.inbound.cli.requirements", "requirement", "Capture, inspect and edit optional requirements."),
     "init": ("roadmap.adapters.inbound.cli.init", "init", "Initialize a new roadmap structure."),
     "status": ("roadmap.adapters.inbound.cli.status", "status", "Show the current status of the roadmap."),

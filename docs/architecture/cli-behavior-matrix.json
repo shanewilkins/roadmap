@@ -5536,6 +5536,58 @@
       ],
       "unresolved": []
     },
+    "roadmap next-work": {
+      "signature": "opt:--at;opt:--format[terminal|json];opt:--limit",
+      "kind": "command",
+      "contract": "Read-only deterministic local next-work policy with critical-defect-first ordering, explained current/recommended/blocked actions and no provider mutations.",
+      "parameters": [
+        {
+          "parameter": "planning_time",
+          "spellings": ["--at"],
+          "disposition": "supported",
+          "contract": "Explicit offset-bearing ISO-8601 planning time; absent uses the injected clock and output normalizes to UTC.",
+          "evidence": [
+            "tests/integration/cli/test_cli_next_work.py::test_issue_only_next_work_is_read_only_and_reconciles_formats",
+            "tests/integration/cli/test_cli_next_work.py::test_clock_default_and_missing_projection_preserve_canonical_result",
+            "tests/integration/cli/test_cli_next_work.py::test_invalid_next_work_input_is_explicit_and_does_not_write"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "output_format",
+          "spellings": ["--format"],
+          "disposition": "supported",
+          "contract": "Render terminal or schema-version-1 JSON from the same next-work Application report.",
+          "evidence": [
+            "tests/integration/cli/test_cli_next_work.py::test_issue_only_next_work_is_read_only_and_reconciles_formats"
+          ],
+          "required": false,
+          "default": "terminal",
+          "choices": ["terminal", "json"]
+        },
+        {
+          "parameter": "limit",
+          "spellings": ["--limit"],
+          "disposition": "supported",
+          "contract": "Positive recommendation limit applied after full ranking; totals, current work, blockers and unblocking values remain untruncated.",
+          "evidence": [
+            "tests/integration/cli/test_cli_next_work.py::test_governed_issue_recommendations_and_post_ranking_limit",
+            "tests/integration/cli/test_cli_next_work.py::test_invalid_next_work_input_is_explicit_and_does_not_write"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_next_work.py::test_issue_only_next_work_is_read_only_and_reconciles_formats",
+        "tests/integration/cli/test_cli_next_work.py::test_governed_issue_recommendations_and_post_ranking_limit",
+        "tests/integration/cli/test_cli_next_work.py::test_clock_default_and_missing_projection_preserve_canonical_result"
+      ],
+      "unresolved": []
+    },
     "roadmap requirement gaps": {
       "signature": "opt:--format[terminal|json]",
       "kind": "command",

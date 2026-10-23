@@ -171,6 +171,16 @@ def journey(command, previous=None):
             )["requirement"]
 
         acceptance_id = transition("accepted")["active_acceptance_id"]
+        before = canonical(root)
+        next_work = json.loads(
+            run("next-work", "--at", "2026-10-23T13:00:00-05:00", "--format", "json")
+        )
+        assert next_work["policy"] == "roadmap.next-work:v1"
+        assert any(
+            action["entity_id"] == issue and action["requirement_ids"] == [identity]
+            for action in next_work["recommended"]
+        )
+        assert canonical(root) == before
         run(
             "requirement",
             "transition",
@@ -242,6 +252,7 @@ def journey(command, previous=None):
             "renewed_acceptance_required_fresh_evidence": True,
             "typed_traceability_and_reverse_lookup": True,
             "exact_gap_reporting": True,
+            "explainable_next_work": True,
         }
 
 

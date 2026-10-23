@@ -1,6 +1,7 @@
 """Framework-neutral request and response data."""
 
 from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
 
 from roadmap.domain.aggregates import Issue, Milestone, Project
@@ -342,6 +343,35 @@ class RequirementGapReport:
     @property
     def counts(self) -> dict[str, int]:
         return {name: len(getattr(self, name)) for name in REQUIREMENT_GAP_CATEGORIES}
+
+
+@dataclass(frozen=True, slots=True)
+class NextWorkAction:
+    entity_type: str
+    entity_id: str
+    title: str
+    action: str
+    urgency: str
+    effective_priority: Priority
+    priority_sources: tuple[str, ...]
+    effective_deadline: datetime | None
+    deadline_sources: tuple[str, ...]
+    requirement_ids: tuple[str, ...]
+    milestone_ids: tuple[str, ...]
+    reasons: tuple[str, ...]
+    blockers: tuple[str, ...]
+    unblocking_value: int = 0
+    unblocks: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class NextWorkReport:
+    as_of: datetime
+    current_work: tuple[NextWorkAction, ...]
+    recommended: tuple[NextWorkAction, ...]
+    blocked: tuple[NextWorkAction, ...]
+    recommended_total: int
+    policy: str = "roadmap.next-work:v1"
 
 
 class HealthSeverity(StrEnum):

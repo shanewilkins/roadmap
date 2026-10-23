@@ -21,6 +21,10 @@ All notable changes to Roadmap CLI are recorded here. The format follows
   give executable setup commands; document the offline onboarding path.
 
 ### Added
+- Add read-only explainable `next-work` recommendations with explicit planning
+  time, deterministic critical-defect-first ordering, source priorities/deadlines,
+  direct unblocking IDs, and separate current/blocked work. Render one local
+  policy in terminal and versioned JSON without assuming provider feature parity.
 - Add deterministic read-only requirement gap reporting in terminal and versioned
   JSON for unplanned intent, unjustified work, implementation awaiting
   verification, stale/failed evidence, broken links, and blockers, with exact

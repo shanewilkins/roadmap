@@ -185,6 +185,38 @@ SQLite projection. See the
 [gap report contract](../planning/requirements-gap-report-contract-0.4.md) for
 the exact rules.
 
+## Explain the next work
+
+```sh
+roadmap next-work
+roadmap next-work --at 2026-10-23T13:00:00-05:00 --format json
+roadmap next-work --limit 5
+```
+
+The read-only report separates current work, actionable recommendations, and
+blocked actions. It recommends planning accepted intent, implementing governed
+work or justified maintenance, reviewing issues, and verifying completed
+implementation. It never approves intent or changes priority/status.
+
+Critical bugs rank ahead of overdue work, then finish/review actions, then normal
+work. Within each band, earliest deadline, highest priority, direct unblocking
+value, action kind, and UUID decide the order. Source priorities, milestone
+deadlines, exact unblocking IDs, and blockers explain each result. Missing
+estimates are reported but never guessed or used for ranking.
+
+Use an explicit offset-bearing `--at` timestamp for reproducible results;
+otherwise the injected clock supplies planning time. Terminal and versioned JSON
+use the same report. All recommendations are shown by default; `--limit` truncates
+only the ranked recommendations and retains their total.
+
+Issue-only workspaces can use the command without adoption or canonical writes.
+Only issues linked from currently governed intent or justified by the exact
+maintenance label plus Markdown rationale are actionable. Other issues remain
+visible as blocked/unjustified. This does not change existing `today` behavior.
+Recommendations use known local data, not guaranteed complete Git-host metadata.
+See the [next-work policy](../planning/next-work-policy-contract-0.4.md) for the
+eligibility, dependency, deadline, and provider-mapping rules.
+
 ## Recovery
 
 Resolve Git conflicts before retrying. Existing optimistic conflict checks

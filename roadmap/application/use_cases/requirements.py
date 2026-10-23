@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, replace
 
-from roadmap.application.contracts import RequirementGapReport
+from roadmap.application.contracts import NextWorkReport, RequirementGapReport
 from roadmap.application.failures import ApplicationFailure, FailureCategory
 from roadmap.application.ports import (
     Clock,
@@ -19,8 +19,9 @@ from roadmap.domain.requirements import (
     RequirementKind,
     RequirementStatus,
 )
-from roadmap.domain.types import EntityId, Priority, RequiredText
+from roadmap.domain.types import EntityId, Priority, RequiredText, Timestamp
 
+from .next_work import calculate_next_work
 from .requirement_gaps import calculate_requirement_gaps
 
 
@@ -236,6 +237,23 @@ class Requirements:
                 unit.list_issues(),
                 unit.list_milestones(),
                 unit.list_projects(),
+            )
+
+    def next_work(
+        self, *, as_of: Timestamp | None = None, limit: int | None = None
+    ) -> NextWorkReport:
+        if limit is not None and limit < 1:
+            raise invalid("Next-work limit must be positive")
+        with self._units.create(read_only=True) as unit:
+            requirements = unit.list_requirements()
+            unique(requirements)
+            return calculate_next_work(
+                requirements,
+                unit.list_issues(),
+                unit.list_milestones(),
+                unit.list_projects(),
+                as_of if as_of is not None else self._clock.now(),
+                limit,
             )
 
     def create(

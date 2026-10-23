@@ -14,6 +14,8 @@ from roadmap.domain.aggregates import Issue, Milestone, Project
 from roadmap.domain.requirements import Requirement, RequirementStatus
 from roadmap.domain.types import IssueStatus, RetentionState
 
+from .requirement_eligibility import is_governed, maintenance_justified
+
 
 def _record(entity_id, *reasons: str) -> RequirementGapRecord:
     return RequirementGapRecord(str(entity_id), tuple(sorted(reasons)))
@@ -78,10 +80,6 @@ def _blocked_reasons(
         if target in issues and issues[target].status is IssueStatus.BLOCKED
     )
     return tuple(reasons)
-
-
-def _maintenance_justified(issue: Issue) -> bool:
-    return "maintenance" in issue.labels and bool(issue.content.strip())
 
 
 def _release_values(issue: Issue) -> tuple[str, ...]:
@@ -222,14 +220,6 @@ def _broken(
     return _ordered(records)
 
 
-def _is_governed(requirement: Requirement) -> bool:
-    return requirement.acceptance_current and requirement.effective_status in {
-        RequirementStatus.ACCEPTED,
-        RequirementStatus.IN_PROGRESS,
-        RequirementStatus.VERIFIED,
-    }
-
-
 @dataclass(frozen=True, slots=True)
 class _GapContext:
     requirements: tuple[Requirement, ...]
@@ -274,7 +264,7 @@ def _context(
         {str(item.id) for item in issues},
         {str(item.id) for item in milestones},
         {str(item.id) for item in projects},
-        tuple(item for item in visible_requirements if _is_governed(item)),
+        tuple(item for item in visible_requirements if is_governed(item)),
     )
 
 
@@ -288,8 +278,7 @@ def _unjustified(context: _GapContext) -> tuple[RequirementGapRecord, ...]:
     return _ordered(
         _record(issue.id, "no accepted requirement or maintenance rationale")
         for issue in context.issues
-        if str(issue.id) not in justified_issue_ids
-        and not _maintenance_justified(issue)
+        if str(issue.id) not in justified_issue_ids and not maintenance_justified(issue)
     )
 
 
@@ -297,7 +286,7 @@ def _stale(requirements: tuple[Requirement, ...]) -> tuple[RequirementGapRecord,
     return _ordered(
         _record(item.id, "evidence belongs to an inactive or stale acceptance")
         for item in requirements
-        if item.evidence and not _is_governed(item)
+        if item.evidence and not is_governed(item)
     )
 
 
