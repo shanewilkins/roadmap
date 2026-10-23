@@ -1,6 +1,7 @@
 """CLI mutations prove selection and data safety against real storage."""
 
 from datetime import UTC, datetime
+from typing import Literal, overload
 
 import pytest
 
@@ -20,6 +21,8 @@ from roadmap.domain.types import (
 )
 from tests.fixtures.cli_workspace import NOW, canonical_bytes, run, seed
 
+type EntityKind = Literal["issue", "milestone", "project"]
+
 
 def persistent_bytes(core):
     """Include cache, config, backups and journals; lock-owner metadata is ephemeral."""
@@ -30,7 +33,43 @@ def persistent_bytes(core):
     }
 
 
-def entity(kind, identity, *, closed=False, archived=False):
+@overload
+def entity(
+    kind: Literal["issue"],
+    identity: str,
+    *,
+    closed: bool = False,
+    archived: bool = False,
+) -> Issue: ...
+
+
+@overload
+def entity(
+    kind: Literal["milestone"],
+    identity: str,
+    *,
+    closed: bool = False,
+    archived: bool = False,
+) -> Milestone: ...
+
+
+@overload
+def entity(
+    kind: Literal["project"],
+    identity: str,
+    *,
+    closed: bool = False,
+    archived: bool = False,
+) -> Project: ...
+
+
+def entity(
+    kind: EntityKind,
+    identity: str,
+    *,
+    closed: bool = False,
+    archived: bool = False,
+) -> Issue | Milestone | Project:
     retention = RetentionState.ARCHIVED if archived else RetentionState.VISIBLE
     if kind == "issue":
         return Issue(
@@ -60,9 +99,40 @@ def entity(kind, identity, *, closed=False, archived=False):
     )
 
 
-def load(core, kind, identity):
+@overload
+def load(core, kind: Literal["issue"], identity: str) -> Issue: ...
+
+
+@overload
+def load(core, kind: Literal["milestone"], identity: str) -> Milestone: ...
+
+
+@overload
+def load(core, kind: Literal["project"], identity: str) -> Project: ...
+
+
+@overload
+def load(core, kind: EntityKind, identity: str) -> Issue | Milestone | Project: ...
+
+
+def load(core, kind: EntityKind, identity: str) -> Issue | Milestone | Project:
     envelope = DocumentRepository(core.roadmap_dir).load(kind, EntityId(identity))
-    return None if envelope is None else envelope.aggregate
+    assert envelope is not None
+    aggregate = envelope.aggregate
+    if kind == "issue":
+        assert isinstance(aggregate, Issue)
+        return aggregate
+    if kind == "milestone":
+        assert isinstance(aggregate, Milestone)
+        return aggregate
+    assert isinstance(aggregate, Project)
+    return aggregate
+
+
+def document_exists(core, kind: EntityKind, identity: str) -> bool:
+    return (
+        DocumentRepository(core.roadmap_dir).load(kind, EntityId(identity)) is not None
+    )
 
 
 @pytest.mark.parametrize("kind", ["issue", "milestone", "project"])
@@ -146,7 +216,7 @@ def test_delete_consent_does_not_bypass_archive_guard(
     )
     assert load(workspace, kind, "survivor") == survivor
     if mode == "yes":
-        assert load(workspace, kind, "target") is None
+        assert not document_exists(workspace, kind, "target")
         assert set(canonical_bytes(workspace)) == {
             workspace.roadmap_dir / f"{kind}s/survivor.md"
         }
@@ -214,6 +284,7 @@ def test_issue_dates_persist_exact_utc_or_refuse_without_writes(
     else:
         issue = load(workspace, "issue", "target")
         actual = issue.actual_start_at if action == "start" else issue.actual_end_at
+        assert actual is not None
         assert actual.value == datetime.fromisoformat(date).replace(tzinfo=UTC)
         assert (
             persistent_bytes(workspace)["issues/survivor.md"]
@@ -499,6 +570,7 @@ def test_milestone_update_fields_and_reassignment_persist_atomically(
     )
     value = load(workspace, "milestone", "target")
     assert str(value.name) == "Renamed" and value.content.strip() == "Updated"
+    assert value.due_at is not None
     assert value.due_at.value == datetime(2026, 10, 20, tzinfo=UTC)
     assert value.status is MilestoneStatus.CLOSED
     assert value.relation.project_id == EntityId("new")
@@ -718,5 +790,6 @@ def test_update_reason_and_record_time_are_not_just_accepted_options(
     )
     latest = datetime.now(UTC)
     value = load(workspace, "issue", "target")
+    assert value.actual_end_at is not None
     assert earliest <= value.actual_end_at.value <= latest
     assert value.history[-1].reason == "Completed"

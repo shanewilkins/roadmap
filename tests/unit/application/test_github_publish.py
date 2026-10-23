@@ -44,8 +44,8 @@ class Source:
 
 class Destination:
     def __init__(self):
-        self.calls = []
-        self.fail_number = None
+        self.calls: list[int] = []
+        self.fail_number: int | None = None
 
     def publish(self, publication):
         self.calls.append(publication.number)

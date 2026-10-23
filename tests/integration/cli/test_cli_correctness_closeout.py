@@ -281,10 +281,9 @@ def test_issue_clear_labels_and_due_date_update_preserves_other_fields(
     assert changed.labels == ("keep", "new")
     assert changed.title == created.title and changed.status == created.status
     run(cli_runner, "issue", "update", identity, "--due-date", "2101-02-03")
-    assert (
-        load(workspace, "issue", identity).due_at.value.date().isoformat()
-        == "2101-02-03"
-    )
+    due_at = load(workspace, "issue", identity).due_at
+    assert due_at is not None
+    assert due_at.value.date().isoformat() == "2101-02-03"
     inspected = json.loads(
         run(cli_runner, "issue", "view", identity, "--format", "json").stdout
     )

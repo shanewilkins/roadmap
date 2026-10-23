@@ -248,15 +248,19 @@ def test_write_failure_rolls_back_real_deletion_or_reciprocal_edit(
         )
         planning = Planning(units, Clock())
 
-        def action():
+        def purge():
             return planning.purge_project(value.id)
+
+        action = purge
     else:
         monkeypatch.setattr(os, "replace", fail_canonical_once)
 
-        def action():
+        def replace_dependency():
             return workspace.issues.replace_dependency(
                 dependent.id, dependency.id, replacement.id
             )
+
+        action = replace_dependency
 
     with pytest.raises(OSError, match="injected storage failure"):
         action()

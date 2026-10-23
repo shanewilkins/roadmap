@@ -14,6 +14,10 @@
     "roadmap/**/*.py",
     "tests/**/*.py"
   ],
+  "python.analysis.ignore": [
+    "tests/policy/fixtures/architecture/invalid/**",
+    "tests/policy/fixtures/architecture/requirements_domain_stub/**"
+  ],
   "python.analysis.exclude": [
     "**/node_modules",
     "**/__pycache__",
