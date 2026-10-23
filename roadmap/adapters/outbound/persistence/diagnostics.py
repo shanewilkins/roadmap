@@ -13,6 +13,7 @@ from roadmap.application.contracts import (
 )
 from roadmap.application.failures import ApplicationFailure, FailureCategory
 from roadmap.domain.aggregates import Issue, Milestone, Project
+from roadmap.domain.requirements import Requirement
 
 from .canonical import CanonicalUnitOfWork, RecoveryError, WorkspaceBusy
 from .documents import (
@@ -249,30 +250,69 @@ class FilesystemWorkspaceDiagnostics:
         issue_ids: set[str],
         milestone_ids: set[str],
         project_ids: set[str],
+        requirement_ids: set[str],
     ) -> list[tuple[str, set[str]]]:
         if isinstance(aggregate, Issue):
-            references = [
-                (str(identity), issue_ids)
-                for identity in (
-                    *aggregate.relations.depends_on,
-                    *aggregate.relations.blocks,
-                )
-            ]
-            if aggregate.relations.milestone_id is not None:
-                references.append(
-                    (str(aggregate.relations.milestone_id), milestone_ids)
-                )
-            return references
+            return FilesystemWorkspaceDiagnostics._issue_references(
+                aggregate, issue_ids, milestone_ids
+            )
         if isinstance(aggregate, Milestone):
-            if aggregate.relation.project_id is not None:
-                return [(str(aggregate.relation.project_id), project_ids)]
-            return []
+            target = aggregate.relation.project_id
+            return [] if target is None else [(str(target), project_ids)]
         if isinstance(aggregate, Project):
             return [
                 (str(identity), milestone_ids)
                 for identity in aggregate.relations.milestone_ids
             ]
+        if isinstance(aggregate, Requirement):
+            return FilesystemWorkspaceDiagnostics._requirement_references(
+                aggregate,
+                issue_ids,
+                milestone_ids,
+                project_ids,
+                requirement_ids,
+            )
         return []
+
+    @staticmethod
+    def _issue_references(
+        issue: Issue, issue_ids: set[str], milestone_ids: set[str]
+    ) -> list[tuple[str, set[str]]]:
+        references = [
+            (str(identity), issue_ids)
+            for identity in (*issue.relations.depends_on, *issue.relations.blocks)
+        ]
+        target = issue.relations.milestone_id
+        if target is not None:
+            references.append((str(target), milestone_ids))
+        return references
+
+    @staticmethod
+    def _requirement_references(
+        requirement: Requirement,
+        issue_ids: set[str],
+        milestone_ids: set[str],
+        project_ids: set[str],
+        requirement_ids: set[str],
+    ) -> list[tuple[str, set[str]]]:
+        relations = requirement.relations
+        references = [
+            (str(identity), requirement_ids)
+            for identity in (*relations.supports, *relations.depends_on)
+        ]
+        references.extend(
+            (str(identity), issue_ids) for identity in relations.implemented_by
+        )
+        optional_targets = (
+            (relations.project_target, project_ids),
+            (relations.milestone_target, milestone_ids),
+        )
+        references.extend(
+            (str(target), valid_ids)
+            for target, valid_ids in optional_targets
+            if target is not None
+        )
+        return references
 
     def _append_broken_reference_findings(
         self,
@@ -311,9 +351,18 @@ class FilesystemWorkspaceDiagnostics:
             for item in envelopes
             if isinstance(item.aggregate, Project)
         }
+        requirement_ids = {
+            str(item.aggregate.id)
+            for item in envelopes
+            if isinstance(item.aggregate, Requirement)
+        }
         for envelope in envelopes:
             references = self._references_for(
-                envelope.aggregate, issue_ids, milestone_ids, project_ids
+                envelope.aggregate,
+                issue_ids,
+                milestone_ids,
+                project_ids,
+                requirement_ids,
             )
             self._append_broken_reference_findings(envelope, references, findings)
 

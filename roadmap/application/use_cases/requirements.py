@@ -9,6 +9,7 @@ from roadmap.application.ports import (
     RequirementUnitOfWorkFactory,
 )
 from roadmap.domain.requirement_governance import EvidenceResult
+from roadmap.domain.requirement_relations import RequirementRelationKind
 from roadmap.domain.requirements import (
     Requirement,
     RequirementCriterion,
@@ -84,6 +85,62 @@ def _sort_key(item: Requirement, sort: str):
     return value, str(item.id)
 
 
+def _relation_filter(value: str) -> tuple[RequirementRelationKind, str]:
+    name, separator, target = value.partition("=")
+    if not separator or not target.strip():
+        raise invalid("Requirement relation filter must be TYPE=TARGET")
+    try:
+        return RequirementRelationKind(name), target
+    except ValueError as error:
+        raise invalid(f"Unsupported requirement relation: {name}") from error
+
+
+def _validate_dependency_graph(records: tuple[Requirement, ...]) -> None:
+    graph = {item.id: set(item.relations.depends_on) for item in records}
+    visiting: set[EntityId] = set()
+    visited: set[EntityId] = set()
+
+    def visit(identity: EntityId) -> None:
+        if identity in visiting:
+            raise invalid("Requirement dependency relation would create a cycle")
+        if identity in visited:
+            return
+        visiting.add(identity)
+        for dependency in graph.get(identity, ()):
+            if dependency in graph:
+                visit(dependency)
+        visiting.remove(identity)
+        visited.add(identity)
+
+    for identity in graph:
+        visit(identity)
+
+
+def _filter_relations(
+    records: tuple[Requirement, ...], relation_value: str | None
+) -> tuple[Requirement, ...]:
+    if relation_value is None:
+        return records
+    kind, target = _relation_filter(relation_value)
+    if kind in {
+        RequirementRelationKind.SUPPORTS,
+        RequirementRelationKind.DEPENDS_ON,
+    }:
+        target = str(select(records, target).id)
+    return tuple(item for item in records if target in item.relation_targets(kind))
+
+
+def _searchable_text(item: Requirement) -> str:
+    return "\n".join(
+        (
+            str(item.key),
+            str(item.definition.title),
+            item.content,
+            item.rationale,
+        )
+    ).casefold()
+
+
 @dataclass(frozen=True)
 class RequirementMutationResult:
     requirement: Requirement
@@ -140,24 +197,14 @@ class Requirements:
         with self._units.create(read_only=True) as unit:
             records = unit.list_requirements()
             unique(records)
-        for name, value in (filters or {}).items():
+        active_filters = dict(filters or {})
+        records = _filter_relations(records, active_filters.pop("relation", None))
+        for name, value in active_filters.items():
             records = tuple(
                 item for item in records if str(self._filter_value(item, name)) == value
             )
         term = search.casefold()
-        records = tuple(
-            item
-            for item in records
-            if term
-            in "\n".join(
-                (
-                    str(item.key),
-                    str(item.definition.title),
-                    item.content,
-                    item.rationale,
-                )
-            ).casefold()
-        )
+        records = tuple(item for item in records if term in _searchable_text(item))
         if sort not in {"key", "title", "priority", "created", "updated"}:
             raise invalid("Unsupported requirement sort")
         return tuple(sorted(records, key=lambda item: _sort_key(item, sort)))
@@ -338,6 +385,83 @@ class Requirements:
                 self._actor(),
                 note,
             )
+            unit.save_requirement(changed)
+            unit.commit()
+            return RequirementMutationResult(changed, unit.projection_stale)
+
+    @staticmethod
+    def _internal_target(
+        unit,
+        records: tuple[Requirement, ...],
+        source: Requirement,
+        kind: RequirementRelationKind,
+        target: str,
+    ) -> str:
+        if kind in {
+            RequirementRelationKind.SUPPORTS,
+            RequirementRelationKind.DEPENDS_ON,
+        }:
+            requirement = select(records, target)
+            if kind is RequirementRelationKind.SUPPORTS and (
+                source.definition.kind is not RequirementKind.TECHNICAL
+                or requirement.definition.kind is not RequirementKind.USER
+            ):
+                raise invalid(
+                    "supports relations require technical source and user target"
+                )
+            return str(requirement.id)
+        collections = {
+            RequirementRelationKind.IMPLEMENTED_BY: unit.list_issues,
+            RequirementRelationKind.PROJECT_TARGET: unit.list_projects,
+            RequirementRelationKind.MILESTONE_TARGET: unit.list_milestones,
+        }
+        if kind not in collections:
+            return target
+        matches = [item for item in collections[kind]() if str(item.id) == target]
+        if not matches:
+            raise invalid(f"{kind} target does not exist: {target}")
+        return str(matches[0].id)
+
+    def link(
+        self, selector: str, *, relation: str, target: str
+    ) -> RequirementMutationResult:
+        kind = RequirementRelationKind(relation)
+        with self._units.create() as unit:
+            self._require_enabled(unit)
+            records = unit.list_requirements()
+            unique(records)
+            value = select(records, selector)
+            canonical_target = self._internal_target(unit, records, value, kind, target)
+            changed = value.link(
+                kind, canonical_target, self._clock.now(), self._actor()
+            )
+            changed_records = tuple(
+                changed if item.id == changed.id else item for item in records
+            )
+            _validate_dependency_graph(changed_records)
+            unit.save_requirement(changed)
+            unit.commit()
+            return RequirementMutationResult(changed, unit.projection_stale)
+
+    def unlink(
+        self, selector: str, *, relation: str, target: str
+    ) -> RequirementMutationResult:
+        kind = RequirementRelationKind(relation)
+        with self._units.create() as unit:
+            self._require_enabled(unit)
+            records = unit.list_requirements()
+            unique(records)
+            value = select(records, selector)
+            if kind in {
+                RequirementRelationKind.SUPPORTS,
+                RequirementRelationKind.DEPENDS_ON,
+            } and target not in value.relation_targets(kind):
+                try:
+                    target = str(select(records, target).id)
+                except ApplicationFailure as error:
+                    if error.category is not FailureCategory.NOT_FOUND:
+                        raise
+            changed = value.unlink(kind, target, self._clock.now(), self._actor())
             unit.save_requirement(changed)
             unit.commit()
             return RequirementMutationResult(changed, unit.projection_stale)

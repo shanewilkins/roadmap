@@ -4859,9 +4859,9 @@
       "unresolved": []
     },
     "roadmap requirement list": {
-      "signature": "opt:--type[user|technical];opt:--priority[critical|high|medium|low];opt:--status[draft|accepted|in-progress|verified|deferred|rejected];opt:--owner;opt:--journey;opt:--stage;opt:--search;opt:--sort[key|title|priority|created|updated]",
+      "signature": "opt:--type[user|technical];opt:--priority[critical|high|medium|low];opt:--status[draft|accepted|in-progress|verified|deferred|rejected];opt:--owner;opt:--journey;opt:--stage;opt:--relation;opt:--search;opt:--sort[key|title|priority|created|updated]",
       "kind": "command",
-      "contract": "Deterministic capture-field filters, casefolded search and stable UUID tie-breaks; relation filters belong to the typed-relation slice.",
+      "contract": "Deterministic capture and typed-relation filters, casefolded search and stable UUID tie-breaks.",
       "parameters": [
         {
           "parameter": "kind",
@@ -4965,6 +4965,20 @@
           "evidence": [
             "tests/integration/cli/test_cli_requirements.py::test_create_edit_rekey_manual_edit_and_unknown_fields",
             "tests/integration/cli/test_cli_requirements.py::test_technical_lookup_filters_and_invalid_edits_are_atomic"
+          ],
+          "required": false,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "relation",
+          "spellings": [
+            "--relation"
+          ],
+          "disposition": "supported",
+          "contract": "Reverse typed-relation filter as TYPE=TARGET; requirement aliases resolve to canonical UUID targets.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_relations.py::test_all_relation_types_reverse_filter_and_projection_rebuild"
           ],
           "required": false,
           "default": "Sentinel.UNSET",
@@ -5519,6 +5533,130 @@
         "tests/integration/cli/test_cli_requirement_governance.py::test_failed_incomplete_and_missing_evidence_refuse_verification",
         "tests/integration/cli/test_cli_requirement_governance.py::test_semantic_and_manual_edits_stale_evidence_without_read_writes",
         "tests/integration/cli/test_cli_requirement_governance.py::test_invalid_or_stale_governance_refuses_without_canonical_mutation"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement link": {
+      "signature": "arg:selector:required;opt:--relation[supports|depends-on|implemented-by|project-target|milestone-target|report];opt:--target",
+      "kind": "command",
+      "contract": "Atomically add one canonically owned typed relation after target-type, existence, duplicate, cardinality and dependency-cycle validation.",
+      "parameters": [
+        {
+          "parameter": "selector",
+          "spellings": [
+            "selector"
+          ],
+          "disposition": "supported",
+          "contract": "Exact requirement UUID or unambiguous readable alias.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_relations.py::test_all_relation_types_reverse_filter_and_projection_rebuild",
+            "tests/integration/cli/test_cli_requirement_relations.py::test_invalid_types_missing_targets_duplicates_and_cycles_refuse_atomically"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "relation",
+          "spellings": [
+            "--relation"
+          ],
+          "disposition": "supported",
+          "contract": "Fixed mutable relation kind; evidence relations are derived from immutable evidence records.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_relations.py::test_all_relation_types_reverse_filter_and_projection_rebuild",
+            "tests/integration/cli/test_cli_requirement_relations.py::test_invalid_types_missing_targets_duplicates_and_cycles_refuse_atomically"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "supports",
+            "depends-on",
+            "implemented-by",
+            "project-target",
+            "milestone-target",
+            "report"
+          ]
+        },
+        {
+          "parameter": "target",
+          "spellings": [
+            "--target"
+          ],
+          "disposition": "supported",
+          "contract": "Requirement selector, exact internal entity ID, or absolute repository-qualified report URL according to relation kind.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_relations.py::test_all_relation_types_reverse_filter_and_projection_rebuild",
+            "tests/integration/cli/test_cli_requirement_relations.py::test_invalid_types_missing_targets_duplicates_and_cycles_refuse_atomically"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirement_relations.py::test_all_relation_types_reverse_filter_and_projection_rebuild",
+        "tests/integration/cli/test_cli_requirement_relations.py::test_invalid_types_missing_targets_duplicates_and_cycles_refuse_atomically"
+      ],
+      "unresolved": []
+    },
+    "roadmap requirement unlink": {
+      "signature": "arg:selector:required;opt:--relation[supports|depends-on|implemented-by|project-target|milestone-target|report];opt:--target",
+      "kind": "command",
+      "contract": "Atomically remove one owned typed relation without deleting either artifact; broken manual UUID targets can be removed by stored value.",
+      "parameters": [
+        {
+          "parameter": "selector",
+          "spellings": [
+            "selector"
+          ],
+          "disposition": "supported",
+          "contract": "Exact requirement UUID or unambiguous readable alias.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_relations.py::test_all_relation_types_reverse_filter_and_projection_rebuild"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        },
+        {
+          "parameter": "relation",
+          "spellings": [
+            "--relation"
+          ],
+          "disposition": "supported",
+          "contract": "Fixed mutable relation kind; derived evidence history cannot be unlinked.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_relations.py::test_all_relation_types_reverse_filter_and_projection_rebuild"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": [
+            "supports",
+            "depends-on",
+            "implemented-by",
+            "project-target",
+            "milestone-target",
+            "report"
+          ]
+        },
+        {
+          "parameter": "target",
+          "spellings": [
+            "--target"
+          ],
+          "disposition": "supported",
+          "contract": "Exact stored UUID or URL; requirement aliases resolve when their target still exists.",
+          "evidence": [
+            "tests/integration/cli/test_cli_requirement_relations.py::test_all_relation_types_reverse_filter_and_projection_rebuild"
+          ],
+          "required": true,
+          "default": "Sentinel.UNSET",
+          "choices": []
+        }
+      ],
+      "evidence": [
+        "tests/integration/cli/test_cli_requirement_relations.py::test_all_relation_types_reverse_filter_and_projection_rebuild"
       ],
       "unresolved": []
     }

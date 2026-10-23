@@ -13,6 +13,11 @@ from .requirement_governance import (
     RequirementAcceptance,
     RequirementEvidence,
 )
+from .requirement_relations import (
+    ExternalReportReference,
+    RequirementRelationKind,
+    RequirementRelations,
+)
 from .types import EntityId, Priority, RequiredText, RetentionState, Timestamp
 
 
@@ -164,6 +169,7 @@ class Requirement:
     acceptances: tuple[RequirementAcceptance, ...] = ()
     evidence: tuple[RequirementEvidence, ...] = ()
     active_acceptance_id: EntityId | None = None
+    relations: RequirementRelations = RequirementRelations()
 
     def __post_init__(self) -> None:
         try:
@@ -178,6 +184,7 @@ class Requirement:
             raise InvariantViolation("updated cannot precede requirement creation")
         if self.owner is not None and not self.owner.strip():
             raise InvalidValue("requirement owner must be non-empty or unset")
+        self.relations.validate_for(self.id)
         self._validate_governance()
 
     def _validate_governance(self) -> None:
@@ -327,6 +334,95 @@ class Requirement:
             status = RequirementStatus.IN_PROGRESS
         return replace(self, evidence=(*self.evidence, entry), status=status).record(
             f"evidence:{result}", at, actor, note or reference
+        )
+
+    def relation_targets(self, kind: RequirementRelationKind) -> tuple[str, ...]:
+        if kind is RequirementRelationKind.EVIDENCE:
+            return tuple(str(item.id) for item in self.evidence)
+        if kind is RequirementRelationKind.REPORT:
+            return tuple(item.url for item in self.relations.reports)
+        if kind is RequirementRelationKind.PROJECT_TARGET:
+            target = self.relations.project_target
+            return (str(target),) if target is not None else ()
+        if kind is RequirementRelationKind.MILESTONE_TARGET:
+            target = self.relations.milestone_target
+            return (str(target),) if target is not None else ()
+        values = {
+            RequirementRelationKind.SUPPORTS: self.relations.supports,
+            RequirementRelationKind.DEPENDS_ON: self.relations.depends_on,
+            RequirementRelationKind.IMPLEMENTED_BY: self.relations.implemented_by,
+        }[kind]
+        return tuple(map(str, values))
+
+    def link(
+        self,
+        kind: RequirementRelationKind,
+        target: str,
+        at: Timestamp,
+        actor: str,
+    ) -> "Requirement":
+        if kind is RequirementRelationKind.EVIDENCE:
+            raise InvalidValue("evidence relations are derived from evidence records")
+        relations = self.relations
+        if kind is RequirementRelationKind.REPORT:
+            changed = replace(
+                relations,
+                reports=(
+                    *relations.reports,
+                    ExternalReportReference(target, at, actor),
+                ),
+            )
+        else:
+            identity = EntityId(target)
+            if kind is RequirementRelationKind.PROJECT_TARGET:
+                if relations.project_target is not None:
+                    raise InvalidValue("requirement already has a project target")
+                changed = replace(relations, project_target=identity)
+            elif kind is RequirementRelationKind.MILESTONE_TARGET:
+                if relations.milestone_target is not None:
+                    raise InvalidValue("requirement already has a milestone target")
+                changed = replace(relations, milestone_target=identity)
+            else:
+                name = kind.value.replace("-", "_")
+                values = getattr(relations, name)
+                changed = replace(relations, **{name: (*values, identity)})
+        return replace(self, relations=changed).record(
+            f"relation:{kind}:linked", at, actor, target
+        )
+
+    def unlink(
+        self,
+        kind: RequirementRelationKind,
+        target: str,
+        at: Timestamp,
+        actor: str,
+    ) -> "Requirement":
+        if kind is RequirementRelationKind.EVIDENCE:
+            raise InvalidValue("evidence relations are removed with evidence history")
+        relations = self.relations
+        if target not in self.relation_targets(kind):
+            raise InvalidValue(f"requirement has no {kind} relation to {target}")
+        if kind is RequirementRelationKind.REPORT:
+            changed = replace(
+                relations,
+                reports=tuple(item for item in relations.reports if item.url != target),
+            )
+        elif kind is RequirementRelationKind.PROJECT_TARGET:
+            changed = replace(relations, project_target=None)
+        elif kind is RequirementRelationKind.MILESTONE_TARGET:
+            changed = replace(relations, milestone_target=None)
+        else:
+            name = kind.value.replace("-", "_")
+            changed = replace(
+                relations,
+                **{
+                    name: tuple(
+                        item for item in getattr(relations, name) if str(item) != target
+                    )
+                },
+            )
+        return replace(self, relations=changed).record(
+            f"relation:{kind}:unlinked", at, actor, target
         )
 
     @property

@@ -21,6 +21,10 @@ All notable changes to Roadmap CLI are recorded here. The format follows
   give executable setup commands; document the offline onboarding path.
 
 ### Added
+- Add canonically owned typed requirement relations for intent support,
+  dependencies, implementation issues, delivery targets and attributed external
+  reports. Validate targets and dependency cycles atomically, derive evidence and
+  reverse SQLite lookups, and diagnose manually broken links.
 - Add explicit requirement acceptance, lifecycle transitions and criterion-specific
   evidence bound to acceptance cycles and intent revisions. Verification requires
   complete latest passing results; changed intent stales prior proof without writes

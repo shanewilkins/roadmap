@@ -98,6 +98,49 @@ def journey(command, previous=None):
         current = requirement("view", "UR-012")["requirement"]
         assert current["id"] == identity and len(current["revisions"]) == 2
         revision = current["current_revision"]
+        technical = requirement(
+            "create",
+            "--type",
+            "technical",
+            "--title",
+            "Implement retained intent",
+            "--statement",
+            "Trace implementation to intent",
+            "--criterion",
+            "C1=Retain reverse lookup",
+        )["requirement"]
+        supported = requirement(
+            "link",
+            technical["id"],
+            "--relation",
+            "supports",
+            "--target",
+            identity,
+        )["requirement"]
+        linked = requirement(
+            "link",
+            identity,
+            "--relation",
+            "implemented-by",
+            "--target",
+            issue,
+        )["requirement"]
+        linked = requirement(
+            "link",
+            identity,
+            "--relation",
+            "report",
+            "--target",
+            "https://github.com/acme/widgets/issues/42",
+        )["requirement"]
+        assert linked["current_revision"] == revision
+        assert linked["relations"]["implemented_by"] == [issue]
+        assert requirement("list", "--relation", f"implemented-by={issue}")[
+            "requirements"
+        ] == [linked]
+        assert requirement("list", "--relation", f"supports={identity}")[
+            "requirements"
+        ] == [supported]
 
         def transition(status):
             return requirement(
@@ -193,6 +236,7 @@ def journey(command, previous=None):
             "failed_evidence_demoted_verified": True,
             "manual_edit_staled_acceptance": True,
             "renewed_acceptance_required_fresh_evidence": True,
+            "typed_traceability_and_reverse_lookup": True,
         }
 
 

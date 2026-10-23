@@ -11,12 +11,13 @@ from pathlib import Path
 from typing import Any
 
 from roadmap.domain.aggregates import Issue, Milestone, Project
+from roadmap.domain.requirement_relations import RequirementRelationKind
 from roadmap.domain.requirements import Requirement
 from roadmap.domain.types import EntityId
 
 from .documents import DocumentEnvelope, DocumentRepository, content_identity
 
-PROJECTION_SCHEMA_VERSION = 1
+PROJECTION_SCHEMA_VERSION = 2
 
 
 class ProjectionError(RuntimeError):
@@ -63,6 +64,15 @@ class SQLiteProjection:
                 PRIMARY KEY (kind, entity_id)
             );
             CREATE INDEX documents_status ON documents(kind, status);
+            CREATE TABLE requirement_relations (
+                source_id TEXT NOT NULL,
+                relation TEXT NOT NULL,
+                target_kind TEXT NOT NULL,
+                target TEXT NOT NULL,
+                PRIMARY KEY (source_id, relation, target)
+            );
+            CREATE INDEX requirement_relations_reverse
+            ON requirement_relations(relation, target);
             """
         )
         connection.execute(
@@ -130,6 +140,42 @@ class SQLiteProjection:
             """,
             self._row(envelope),
         )
+        aggregate = envelope.aggregate
+        if isinstance(aggregate, Requirement):
+            connection.execute(
+                "DELETE FROM requirement_relations WHERE source_id = ?",
+                (str(aggregate.id),),
+            )
+            connection.executemany(
+                """
+                INSERT INTO requirement_relations
+                (source_id, relation, target_kind, target)
+                VALUES (?, ?, ?, ?)
+                """,
+                self._relation_rows(aggregate),
+            )
+
+    @staticmethod
+    def _relation_rows(
+        requirement: Requirement,
+    ) -> tuple[tuple[str, str, str, str], ...]:
+        source = str(requirement.id)
+        rows: list[tuple[str, str, str, str]] = []
+        relation_targets = (
+            (RequirementRelationKind.SUPPORTS, "requirement"),
+            (RequirementRelationKind.DEPENDS_ON, "requirement"),
+            (RequirementRelationKind.IMPLEMENTED_BY, "issue"),
+            (RequirementRelationKind.PROJECT_TARGET, "project"),
+            (RequirementRelationKind.MILESTONE_TARGET, "milestone"),
+            (RequirementRelationKind.EVIDENCE, "evidence"),
+            (RequirementRelationKind.REPORT, "report"),
+        )
+        for relation, target_kind in relation_targets:
+            rows.extend(
+                (source, relation.value, target_kind, target)
+                for target in requirement.relation_targets(relation)
+            )
+        return tuple(rows)
 
     def _is_compatible(self) -> bool:
         if not self.path.exists() or self.stale_path.exists():
@@ -220,6 +266,10 @@ class SQLiteProjection:
                     "DELETE FROM documents WHERE entity_id = ?",
                     ((identity,) for identity in changed),
                 )
+                connection.executemany(
+                    "DELETE FROM requirement_relations WHERE source_id = ?",
+                    ((identity,) for identity in changed),
+                )
                 for envelope in envelopes:
                     self._insert(connection, envelope)
             self.stale_path.unlink(missing_ok=True)
@@ -279,3 +329,20 @@ class SQLiteProjection:
         sql += " ORDER BY kind, entity_id"
         with self._connection() as connection:
             return [dict(row) for row in connection.execute(sql, parameters)]
+
+    def requirement_sources(self, relation: str, target: str) -> tuple[str, ...]:
+        """Return deterministic reverse requirement IDs from the derived index."""
+        kind = RequirementRelationKind(relation)
+        self.ensure_current()
+        with self._connection() as connection:
+            return tuple(
+                row["source_id"]
+                for row in connection.execute(
+                    """
+                    SELECT source_id FROM requirement_relations
+                    WHERE relation = ? AND target = ?
+                    ORDER BY source_id
+                    """,
+                    (kind.value, target),
+                )
+            )

@@ -7,6 +7,10 @@ from roadmap.domain.requirement_governance import (
     RequirementAcceptance,
     RequirementEvidence,
 )
+from roadmap.domain.requirement_relations import (
+    ExternalReportReference,
+    RequirementRelations,
+)
 from roadmap.domain.requirements import (
     Requirement,
     RequirementCriterion,
@@ -19,7 +23,7 @@ from roadmap.domain.requirements import (
 )
 from roadmap.domain.types import EntityId, Priority, RequiredText
 
-from .documents import DocumentError, _base, _enum, _timestamp
+from .documents import DocumentError, _base, _enum, _ids, _timestamp
 
 
 def _records(data: dict[str, Any], field: str) -> list[dict[str, Any]]:
@@ -49,6 +53,42 @@ def definition(value: dict[str, Any], statement: str) -> RequirementDefinition:
         statement,
         tuple(RequirementCriterion(x["id"], x["text"]) for x in criteria),
         value.get("scope", ""),
+    )
+
+
+def _relations(data: dict[str, Any]) -> RequirementRelations:
+    values = data.pop("relations", {})
+    if not isinstance(values, dict):
+        raise DocumentError("relations must be a mapping")
+    reports = values.pop("reports", [])
+    if not isinstance(reports, list) or any(
+        not isinstance(item, dict) for item in reports
+    ):
+        raise DocumentError("relation reports must be a list of mappings")
+    return RequirementRelations(
+        supports=_ids(values.pop("supports", []), "relations supports"),
+        depends_on=_ids(values.pop("depends_on", []), "relations depends_on"),
+        implemented_by=_ids(
+            values.pop("implemented_by", []), "relations implemented_by"
+        ),
+        project_target=(
+            EntityId(values.pop("project_target"))
+            if values.get("project_target") is not None
+            else values.pop("project_target", None)
+        ),
+        milestone_target=(
+            EntityId(values.pop("milestone_target"))
+            if values.get("milestone_target") is not None
+            else values.pop("milestone_target", None)
+        ),
+        reports=tuple(
+            ExternalReportReference(
+                item["url"],
+                _timestamp(item["at"], "external report at"),
+                item["actor"],
+            )
+            for item in reports
+        ),
     )
 
 
@@ -123,6 +163,7 @@ def parse_fields(data: dict[str, Any], body: str, path) -> Requirement:
                 if data.get("active_acceptance_id") is not None
                 else data.pop("active_acceptance_id", None)
             ),
+            relations=_relations(data),
         )
     except (KeyError, TypeError, ValueError, AttributeError) as error:
         raise DocumentError(f"invalid requirement document {path}: {error}") from error
@@ -167,6 +208,29 @@ def serialize_fields(value: Requirement) -> dict[str, Any]:
             }
             for x in value.evidence
         ],
+        relations={
+            "supports": list(map(str, value.relations.supports)),
+            "depends_on": list(map(str, value.relations.depends_on)),
+            "implemented_by": list(map(str, value.relations.implemented_by)),
+            "project_target": (
+                str(value.relations.project_target)
+                if value.relations.project_target
+                else None
+            ),
+            "milestone_target": (
+                str(value.relations.milestone_target)
+                if value.relations.milestone_target
+                else None
+            ),
+            "reports": [
+                {
+                    "url": item.url,
+                    "at": item.at.value.isoformat(),
+                    "actor": item.actor,
+                }
+                for item in value.relations.reports
+            ],
+        },
         revisions=[
             {
                 "definition": definition_fields(x.definition),

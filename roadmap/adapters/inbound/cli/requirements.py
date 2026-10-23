@@ -14,6 +14,7 @@ from roadmap.adapters.inbound.cli.cli_command_helpers import (
 )
 from roadmap.application.use_cases.requirements import criteria
 from roadmap.domain.requirement_governance import EvidenceResult
+from roadmap.domain.requirement_relations import RequirementRelationKind
 from roadmap.domain.requirements import RequirementStatus
 from roadmap.domain.types import Priority, RequiredText
 
@@ -153,6 +154,10 @@ def view(ctx, selector):
 @click.option("--owner")
 @click.option("--journey")
 @click.option("--stage")
+@click.option(
+    "--relation",
+    help="Filter by reverse typed relation as TYPE=TARGET.",
+)
 @click.option("--search", default="")
 @click.option(
     "--sort",
@@ -161,7 +166,9 @@ def view(ctx, selector):
 )
 @click.pass_context
 @require_initialized
-def list_requirements(ctx, kind, priority, status, owner, journey, stage, search, sort):
+def list_requirements(
+    ctx, kind, priority, status, owner, journey, stage, relation, search, sort
+):
     """Return deterministic versioned JSON; no canonical writes."""
     filters = {
         name: value
@@ -172,6 +179,7 @@ def list_requirements(ctx, kind, priority, status, owner, journey, stage, search
             "owner": owner,
             "journey": journey,
             "stage": stage,
+            "relation": relation,
         }.items()
         if value is not None
     }
@@ -324,6 +332,47 @@ def evidence(
             expected_revision=expected_revision,
             acceptance_id=acceptance_id,
             note=note,
+        )
+    )
+    projection_warning(outcome)
+    _emit("roadmap.requirement", {"requirement": _record(outcome.requirement)})
+
+
+_MUTABLE_RELATIONS = [
+    item.value
+    for item in RequirementRelationKind
+    if item is not RequirementRelationKind.EVIDENCE
+]
+
+
+@requirement.command("link")
+@click.argument("selector")
+@click.option("--relation", type=click.Choice(_MUTABLE_RELATIONS), required=True)
+@click.option("--target", required=True)
+@click.pass_context
+@require_initialized
+def link(ctx, selector, relation, target):
+    """Add one validated typed relation owned by a requirement."""
+    outcome = invoke(
+        lambda: ctx.obj["core"].requirements.link(
+            selector, relation=relation, target=target
+        )
+    )
+    projection_warning(outcome)
+    _emit("roadmap.requirement", {"requirement": _record(outcome.requirement)})
+
+
+@requirement.command("unlink")
+@click.argument("selector")
+@click.option("--relation", type=click.Choice(_MUTABLE_RELATIONS), required=True)
+@click.option("--target", required=True)
+@click.pass_context
+@require_initialized
+def unlink(ctx, selector, relation, target):
+    """Remove one typed relation without deleting either artifact."""
+    outcome = invoke(
+        lambda: ctx.obj["core"].requirements.unlink(
+            selector, relation=relation, target=target
         )
     )
     projection_warning(outcome)

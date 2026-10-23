@@ -41,11 +41,11 @@ statement and criteria; rationale, explicit scope, journey, stage, priority and
 owner can be supplied. Reads expose UUID, readable key, current intent fingerprint,
 prior captured definitions and attributed history. Capture alone cannot accept
 or verify a requirement. Use the explicit lifecycle and evidence operations below.
-Typed relations and relation/roadmap-target filters remain separate work.
 
 List supports type, journey, stage, priority, lifecycle status and owner filters,
 case-insensitive search over key/title/statement/rationale, and deterministic
-key/title/priority/created/updated sorting with UUID tie-breaks. View accepts an
+key/title/priority/created/updated sorting with UUID tie-breaks. It also supports
+reverse relation filtering described below. View accepts an
 exact full UUID or unambiguous alias. No title matching or short-UUID guessing.
 
 ## Identity and edits
@@ -128,6 +128,36 @@ List filters and rebuilt projection status agree with effective state. Reads
 never rewrite canonical records. Byte-for-byte reversion of unobserved manual
 edits cannot be detected; canonical history is not tamper-proof authentication.
 
+## Link intent to work and delivery
+
+Requirements canonically own typed links. Target artifacts are not rewritten;
+SQLite derives reverse lookup rows and can be rebuilt from canonical Markdown.
+
+```sh
+roadmap requirement link TR-001 --relation supports --target UR-001
+roadmap requirement link UR-001 --relation implemented-by --target ISSUE_UUID
+roadmap requirement link UR-001 --relation project-target --target PROJECT_UUID
+roadmap requirement link UR-001 --relation milestone-target --target MILESTONE_UUID
+roadmap requirement link UR-001 --relation report \
+  --target https://github.com/OWNER/REPOSITORY/issues/123
+roadmap requirement list --relation implemented-by=ISSUE_UUID
+roadmap requirement unlink UR-001 --relation implemented-by --target ISSUE_UUID
+```
+
+`supports` permits only a technical source and user target. `depends-on` links
+requirements and refuses directed cycles. `implemented-by` targets issues.
+Project and milestone targets are each optional and singular. Internal writes
+require an existing correctly typed target, but closed and archived targets remain
+valid. Duplicate and self links refuse without mutation.
+
+Evidence relations are derived from immutable criterion evidence and cannot be
+added or removed through link commands. External reports require an absolute
+repository-qualified HTTP(S) URL and record the local actor and time; Roadmap does
+not contact the provider. Relation changes do not alter the intent fingerprint or
+withdraw acceptance. Unlink removes only the relation. A manually introduced
+missing target remains readable and removable, and `health scan` reports it as a
+broken canonical reference without rewriting the requirement.
+
 ## Recovery
 
 Resolve Git conflicts before retrying. Existing optimistic conflict checks
@@ -143,3 +173,5 @@ worked examples and the selected fingerprint/alias rules under
 [ADR-0011](../architecture/adr/0011-optional-requirements-and-governance.md).
 The [lifecycle contract](../planning/requirements-lifecycle-contract-0.4.md) records
 the transition table and revision-bound evidence rules.
+The [traceability contract](../planning/requirements-traceability-contract-0.4.md)
+records relation ownership, cardinality, validation and reverse-query rules.
