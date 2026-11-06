@@ -125,7 +125,7 @@ exclude = ["tests/policy/fixtures/architecture"]
 python-version = "3.12"
 
 [tool.ty.rules]
-unresolved-import = "error"
+import-not-found = "error"
 unresolved-reference = "error"
 invalid-argument-type = "error"
 invalid-assignment = "error"
