@@ -129,9 +129,9 @@ import-not-found = "error"
 unresolved-reference = "error"
 invalid-argument-type = "error"
 invalid-assignment = "error"
-invalid-return-type = "error"
+invalid-explicit-return = "error"
 possibly-missing-attribute = "error"
-unresolved-attribute = "error"
+missing-attribute = "error"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
