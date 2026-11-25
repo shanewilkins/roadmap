@@ -57,12 +57,14 @@ def test_ty_configuration_keeps_meaningful_error_rules() -> None:
         "tool"
     ]["ty"]
     for rule in (
-        "unresolved-import",
+        "import-not-found",
         "unresolved-reference",
         "invalid-argument-type",
         "invalid-assignment",
-        "invalid-return-type",
+        "invalid-explicit-return",
         "possibly-missing-attribute",
+        "missing-attribute",
+        "missing-union-attribute",
     ):
         assert config["rules"][rule] == "error"
     assert config["environment"]["python-version"] == "3.12"
@@ -73,11 +75,11 @@ def test_ty_configuration_keeps_meaningful_error_rules() -> None:
 @pytest.mark.parametrize(
     "source, diagnostic",
     [
-        ("def value() -> int:\n    return 'wrong'\n", "invalid-return-type"),
-        ("import missing_roadmap_gate_dependency\n", "unresolved-import"),
+        ("def value() -> int:\n    return 'wrong'\n", "invalid-explicit-return"),
+        ("import missing_roadmap_gate_dependency\n", "import-not-found"),
         (
             "def upper(value: str | None) -> str:\n    return value.upper()\n",
-            "unresolved-attribute",
+            "missing-union-attribute",
         ),
     ],
 )
