@@ -132,6 +132,7 @@ invalid-assignment = "error"
 invalid-explicit-return = "error"
 possibly-missing-attribute = "error"
 missing-attribute = "error"
+missing-union-attribute = "error"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
